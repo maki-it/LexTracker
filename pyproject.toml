@@ -1,0 +1,7 @@
+[project]
+name = "lextracker"
+version = "0.1.0"
+description = "Project time tracker for Lexoffice / Lexware Office"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = []
