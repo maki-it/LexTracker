@@ -1,0 +1,7 @@
+{
+    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+    "extends": [
+      "github>maki-it/renovate-config:default.json5",
+      "github>maki-it/renovate-config:lang-python.json5"
+    ]
+  }
