@@ -1,4 +1,4 @@
-FROM ghcr.io/maki-it/python:debian as base
+FROM ghcr.io/maki-it/python:debian-3.13 as base
 
 ####################
 # Python dependencies
