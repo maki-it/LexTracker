@@ -21,3 +21,7 @@ install:
 env venv: # Create a virtual environment if it doesn't exist
 	@test -d .venv || uv venv
 	@. .venv/bin/activate
+
+.PHONY: run
+run:
+	@fastapi dev
