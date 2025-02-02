@@ -1,7 +1,7 @@
 import asyncio
 
 from asgiref.sync import sync_to_async
-from django.contrib import admin, messages
+from django.contrib import admin
 
 from .utils import api_client, save_customer
 from .models import Customer
