@@ -1,6 +1,5 @@
 import asyncio
 
-from asgiref.sync import sync_to_async
 from pydantic import UUID4
 from httpx import AsyncClient
 from httpx_limiter import AsyncRateLimitedTransport
@@ -84,5 +83,5 @@ async def save_customer(customer: dict) -> Customer | None:
       customer_obj.name = " ".join([customer["person"]["firstName"], customer["person"]["lastName"]])
       customer_obj.type = Customer.CustomerType.PERSON
 
-    await sync_to_async(customer_obj.save)()
+    await customer_obj.asave()
     return customer_obj
