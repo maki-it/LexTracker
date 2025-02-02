@@ -20,8 +20,16 @@ install:
 .PHONY: venv
 env venv: # Create a virtual environment if it doesn't exist
 	@test -d .venv || uv venv
-	@. .venv/bin/activate
+	@source .venv/bin/activate
 
 .PHONY: run
 run:
-	@fastapi dev
+	@cd $(APP_DIR) && uvicorn lextracker.asgi:application --reload
+
+manage:
+	@cd $(APP_DIR) && ./manage.py $(filter-out $@,$(MAKECMDGOALS))
+
+# Workaround to pass arguments to manage command
+# https://stackoverflow.com/a/6273809
+%:
+	@:
