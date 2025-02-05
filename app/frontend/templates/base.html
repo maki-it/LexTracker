@@ -1,0 +1,53 @@
+{% load static %}
+{% load static tailwind_tags %}
+<!DOCTYPE html>
+<html lang="en" data-theme="night">
+	<head>
+    <title>{% block title %}LexTracker{% endblock %}</title>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="icon" href="{% static 'icons/icon.png' %}" type="image/x-icon">
+    {% tailwind_preload_css %}
+		{% tailwind_css %}
+    {% block head_extra %}{% endblock %}
+	</head>
+  <body class="h-screen flex flex-col">
+
+  <div class="flex">
+    <!-- Sidebar -->
+    <aside class="w-20 md:w-48 h-screen p-4 flex flex-col">
+      <a href="{% url 'frontend:index' %}">
+        <h1 class="text-lg md:text-xl font-bold mb-6 text-center">LexTracker</h1>
+      </a>
+      <ul class="menu">
+        <li><a href="{% url 'frontend:index' %}" class="btn btn-ghost">Dashboard</a></li>
+        <li><a href="{% url 'frontend:time_tracker' %}" class="btn btn-ghost">Time Tracker</a></li>
+        <li><a href="{% url 'frontend:settings' %}" class="btn btn-ghost">Settings</a></li>
+      </ul>
+    </aside>
+
+    <div class="flex-1 flex flex-col">
+      <!-- Navbar -->
+      <header class="w-full p-2">
+        <nav class="flex justify-between md:justify-end items-center">
+          <button class="md:hidden btn btn-ghost btn-sm">Menu</button>
+          <div class="flex items-center">
+            <button class="btn btn-ghost btn-sm">Profile</button>
+            <button class="btn btn-ghost btn-sm">Logout</button>
+          </div>
+        </nav>
+      </header>
+
+      <!-- Main Content -->
+      <main class="flex-1 p-6 bg-gray-100 rounded-tl-[2rem]">
+        {% block content %}
+
+        {% endblock %}
+      </main>
+    </div>
+  </div>
+
+  </body>
+
+</html>

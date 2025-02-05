@@ -9,8 +9,10 @@ https://docs.djangoproject.com/en/5.1/howto/deployment/asgi/
 
 import os
 
+from django.contrib.staticfiles.handlers import ASGIStaticFilesHandler
 from django.core.asgi import get_asgi_application
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'lextracker.settings')
 
-application = get_asgi_application()
+application = ASGIStaticFilesHandler(get_asgi_application())
+#application = get_asgi_application()

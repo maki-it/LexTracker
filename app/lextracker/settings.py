@@ -24,23 +24,23 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = app_config.secret_key
 
 # SECURITY WARNING: don't run with debug turned on in production!
-print("Starting application in mode: ", app_config.environment)
 DEBUG = app_config.environment == "development"
-print("DEBUG: ", DEBUG)
 
 ALLOWED_HOSTS = app_config.allowed_hosts
 
 # Application definition
 
 INSTALLED_APPS = [
-  'lexoffice.apps.LexofficeConfig',
-  'projects.apps.ProjectsConfig',
   'django.contrib.admin',
   'django.contrib.auth',
   'django.contrib.contenttypes',
   'django.contrib.sessions',
   'django.contrib.messages',
   'django.contrib.staticfiles',
+  'lexoffice',
+  'projects',
+  'tailwind',
+  'frontend',
 ]
 
 MIDDLEWARE = [
@@ -53,6 +53,20 @@ MIDDLEWARE = [
   'django.contrib.messages.middleware.MessageMiddleware',
   'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+# Add dev apps and middleware in development mode
+if DEBUG:
+  DEV_APPS = [
+    'django_browser_reload',
+    'debug_toolbar',
+  ]
+
+  INSTALLED_APPS += DEV_APPS
+
+  MIDDLEWARE += [
+    'django_browser_reload.middleware.BrowserReloadMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
+  ]
 
 INTERNAL_IPS = [
   "127.0.0.1",
@@ -135,3 +149,5 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+TAILWIND_APP_NAME = 'frontend'

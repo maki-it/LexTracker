@@ -1,7 +1,10 @@
-from django.urls import path
+from django.urls import path, include
 
-from frontend import views
+from . import views
 
+app_name = 'frontend'
 urlpatterns = [
-    path('', views.dashboard, name='dashboard'),
+  path('', views.index, name='index'),
+  path('tracker/', views.time_tracker, name='time_tracker'),
+  path('settings/', views.settings, name='settings'),
 ]

@@ -24,10 +24,24 @@ env venv: # Create a virtual environment if it doesn't exist
 
 .PHONY: run
 run:
-	@cd $(APP_DIR) && uvicorn lextracker.asgi:application --reload
+	@cd $(APP_DIR) && \
+	./manage.py collectstatic --noinput && \
+	uvicorn lextracker.asgi:application --reload
 
 manage:
 	@cd $(APP_DIR) && ./manage.py $(filter-out $@,$(MAKECMDGOALS))
+
+makemigrations:
+	@cd $(APP_DIR) && ./manage.py makemigrations
+
+migrate:
+	@cd $(APP_DIR) && ./manage.py migrate
+
+tailwind-start:
+	@cd $(APP_DIR) && ./manage.py tailwind start
+
+tailwind-build:
+	@cd $(APP_DIR) && ./manage.py tailwind build
 
 # Workaround to pass arguments to manage command
 # https://stackoverflow.com/a/6273809

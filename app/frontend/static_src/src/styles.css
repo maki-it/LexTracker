@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.btn {
+  animation: none;
+}
+
+/* Make play icon white */
+/*.play-icon {*/
+/*  filter: invert(1);*/
+/*}*/
+
+/*@media (prefers-color-scheme: dark) {*/
+/*  .play-icon {*/
+/*    filter: invert(1);*/
+/*  }*/
+/*}*/

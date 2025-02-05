@@ -9,10 +9,23 @@ class CategoryInline(admin.TabularInline):
   verbose_name_plural = 'Categories'
   extra = 0
 
+
 class ActivityInline(admin.TabularInline):
   model = Activity
   verbose_name_plural = 'Activities'
   extra = 0
+
+
+class ActivityAdmin(admin.ModelAdmin):
+  list_display = ('started_at', 'ended_at', 'project__customer', 'project', 'category', 'is_chargeable')
+  list_filter = ('project', 'category', 'is_chargeable', 'started_at', 'project__customer')
+  search_fields = ('project__title', 'category__title', 'notes')
+  ordering = ('started_at',)
+  readonly_fields = ('id',)
+
+  class Meta:
+    verbose_name_plural = 'Activities'
+
 
 class CategoryAdmin(admin.ModelAdmin):
   list_display = ('title', 'description', 'assigned_projects')
@@ -28,6 +41,7 @@ class CategoryAdmin(admin.ModelAdmin):
   def assigned_projects(obj):
     return obj.projects.count()
 
+
 class ProjectAdmin(admin.ModelAdmin):
     list_display = ('title', 'customer', 'start_date', 'end_date', 'is_archived')
     list_filter = ('customer', 'start_date', 'end_date', 'is_archived')
@@ -38,5 +52,5 @@ class ProjectAdmin(admin.ModelAdmin):
 
 admin.site.register(Project, ProjectAdmin)
 admin.site.register(Category, CategoryAdmin)
-admin.site.register(Activity)
+admin.site.register(Activity, ActivityAdmin)
 

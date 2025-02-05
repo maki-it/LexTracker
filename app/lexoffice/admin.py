@@ -1,19 +1,24 @@
-import asyncio
-
-from asgiref.sync import sync_to_async
-from django.contrib import admin
+from asgiref.sync import async_to_sync
+from django.contrib import admin, messages
+from django.utils.translation import ngettext
 
 from .utils import api_client, save_customer
 from .models import Customer
 
 
 @admin.action(description="Re-Sync selected customers from Lexoffice API")
-async def sync_customers(modeladmin, request, queryset):
+def sync_customers(modeladmin, request, queryset):
   """Sync the selected customers from Lexoffice API"""
   for customer in queryset:
-    customer = await api_client.get_customers(customer.id)
-    await save_customer(customer)
-  await sync_to_async(modeladmin.message_user)(request, f"{len(queryset)} Customers synced successfully")
+    customer = async_to_sync(api_client.get_customers)(customer.id)
+    async_to_sync(save_customer)(customer)
+  modeladmin.message_user(
+    request,
+    ngettext(
+      '%d customer synced.',
+      '%d customers synced.',
+      len(queryset),
+    ) % len(queryset), messages.SUCCESS)
 
 
 class CustomerAdmin(admin.ModelAdmin):

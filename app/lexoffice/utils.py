@@ -37,7 +37,12 @@ class ApiClient:
     """
 
     async def get(page: int) -> dict:
-      resp = await self.client.get(path, params={'size': PageSizeLimits.CONTACTS, 'page': page, 'customer': True, 'vendor': False})
+      resp = await self.client.get(path, params={
+        'size': PageSizeLimits.CONTACTS,
+        'page': page,
+        'customer': True,
+        'vendor': False}
+      )
       resp.raise_for_status()
       return resp.json()
 
