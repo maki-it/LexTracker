@@ -14,7 +14,13 @@
     <p class="text-lg text-center">Your project time tracker</p>
     <form>
       {% csrf_token %}
-      <button type="submit" hx-post="{% url 'lexoffice:sync_customers' %}" hx-trigger="click" class="btn mt-4">Synchronize Customers</button>
+      <button type="submit"
+              hx-post="{% url 'lexoffice:sync_customers' %}"
+              hx-trigger="click"
+              hx-indicator="#loader"
+              class="btn mt-4">
+        <span id="loader" class="loader"></span>
+        Synchronize Customers</button>
     </form>
   </div>
 {% endblock %}

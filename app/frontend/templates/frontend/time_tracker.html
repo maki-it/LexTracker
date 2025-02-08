@@ -117,7 +117,11 @@
   const started_at = document.getElementById('id_started_at')
   const ended_at = document.getElementById('id_ended_at')
   const form = document.getElementById('form_activity')
-  started_at.value = toLocalISOString(new Date());
+
+  // Set initial value for started_at
+  if (started_at.value === '') {
+    started_at.value = toLocalISOString(new Date());
+  }
 
   document.getElementById('id_started_at_now').addEventListener('click', function(event) {
     document.getElementById('id_started_at').value = toLocalISOString(new Date());

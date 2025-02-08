@@ -1,4 +1,5 @@
 import asyncio
+from asyncio import sleep
 
 from pydantic import UUID4
 from django.contrib.auth.decorators import login_required
@@ -32,6 +33,7 @@ async def sync_customers(request):
 
   customers = await api_client.get_customers()
   await asyncio.gather(*[save_customer(customer) for customer in customers])
+  await sleep(3)
 
   return HttpResponse(status=201, content=ngettext(
     '%d Customer synced',

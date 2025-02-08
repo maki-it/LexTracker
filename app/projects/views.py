@@ -14,12 +14,8 @@ from .models import Category, Activity
 
 
 def split_activities(activities):
-  """
-  Split activities that span multiple days into multiple activities
-  :param activities:
-  :return:
-  """
   split_activities = []
+  daily_durations = {}
   for activity in activities:
     start = activity.started_at
     end = activity.ended_at
@@ -38,6 +34,7 @@ def split_activities(activities):
         'is_chargeable': activity.is_chargeable,
         'notes': activity.notes,
       })
+      daily_durations[start.date()] = daily_durations.get(start.date(), timedelta()) + (next_day - start)
       start = next_day + timedelta(seconds=1)
     split_activities.append({
       'id': activity.id,
@@ -48,7 +45,8 @@ def split_activities(activities):
       'is_chargeable': activity.is_chargeable,
       'notes': activity.notes,
     })
-  return sorted(split_activities, key=lambda x: x['started_at'], reverse=True)
+    daily_durations[start.date()] = daily_durations.get(start.date(), timedelta()) + (end - start)
+  return sorted(split_activities, key=lambda x: x['started_at'], reverse=True), daily_durations
 
 def duration_sum(activities):
   total_duration = timedelta()
@@ -102,8 +100,11 @@ async def get_activities(request):
     started_at__week=week,
   )
   activities = await sync_to_async(activities.order_by)('-started_at')
-  split_activities_list = await sync_to_async(split_activities)(activities)
+  split_activities_list, daily_durations = await sync_to_async(split_activities)(activities)
   total_duration = await sync_to_async(duration_sum)(activities)
+
+  start_date = datetime.strptime(f'{year}-W{week-1}-1', "%Y-W%W-%w").date()
+  weekdays = [start_date + timedelta(days=i) for i in range(7)]
 
   return await sync_to_async(render)(
     request,
@@ -112,6 +113,8 @@ async def get_activities(request):
       'total_duration': total_duration,
       'week_input_val': d,
       'week_input_max': current_year_week,
+      'daily_durations': daily_durations,
+      'weekdays': weekdays
     })
 
 

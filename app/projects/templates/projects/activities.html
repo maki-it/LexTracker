@@ -36,7 +36,9 @@
       {% regroup activities by started_at.date as date_groups %}
       {% for date_group in date_groups %}
         <tr>
-          <td colspan="9" class="bg-gray-200 text-center py-0.5 text-sm">{{ date_group.grouper|date:"D, d. M" }}</td>
+          <td colspan="9" class="bg-gray-200 text-center py-0.5 text-sm">
+            {{ date_group.grouper|date:"D, d. M" }} - Total: {{ daily_durations|get_item:date_group.grouper|format_timedelta }} h
+          </td>
         </tr>
         {% for act in date_group.list %}
           <tr class="hover:bg-gray-100 *:px-4 *:py-2 *:border-b">

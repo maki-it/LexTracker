@@ -31,3 +31,13 @@ def format_timedelta(d):
     hours, remainder = divmod(total_seconds, 3600)
     minutes, _ = divmod(remainder, 60)
     return f"{hours}:{minutes:02d}"
+
+@register.filter
+def get_item(dictionary, key):
+    """
+    Get an item from a dictionary
+    :param dictionary: dict
+    :param key: any
+    :return: any
+    """
+    return dictionary.get(key)

@@ -7,6 +7,18 @@
   animation: none;
 }
 
+.loader {
+  @apply loading loading-dots loading-sm hidden;
+}
+
+.htmx-request .loader {
+  @apply inline;
+}
+
+.htmx-request.loader {
+  @apply inline;
+}
+
 /* Make play icon white */
 /*.play-icon {*/
 /*  filter: invert(1);*/
