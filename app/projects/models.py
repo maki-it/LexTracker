@@ -102,7 +102,7 @@ class Activity(models.Model):
       started_at__lt=self.ended_at,
       ended_at__gt=self.started_at
     ).exists():
-      raise ValueError("Activity overlaps with other activity")
+      raise ValueError("Time range overlaps with another activity")
 
   def save(self, *args, **kwargs):
     # Round started_at and ended_at to the nearest minute

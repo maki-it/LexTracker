@@ -1,0 +1,49 @@
+{% load static %}
+<div hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+  <table class="table text-base-100">
+    <thead class="text-base-100">
+    <tr>
+      <th>Customer</th>
+      <th>Activity</th>
+      <th>Category</th>
+      <th>Started at</th>
+      <th>Ended at</th>
+      <th>Chargeable</th>
+      <th>Notes</th>
+      <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    {% regroup activities by started_at.date as date_groups %}
+    {% for date_group in date_groups %}
+      <tr>
+        <td colspan="8" class="bg-gray-200 text-center">{{ date_group.grouper|date:"d.m.Y" }}</td>
+      </tr>
+      {% for act in date_group.list %}
+        <tr>
+          <td>{{ act.project.customer }}</td>
+          <td>{{ act.project }}</td>
+          <td>{{ act.category }}</td>
+          <td>{{ act.started_at|date:"H:i" }}</td>
+          <td>{{ act.ended_at|date:"H:i" }}</td>
+          <td>{{ act.is_chargeable }}</td>
+          <td>{{ act.notes }}</td>
+          <td class="join">
+            <button
+              hx-post="{% url 'projects:update_activity' act.id %}"
+              class="btn btn-xs btn-ghost join-item bg-blue-500 *:hover:invert-0">
+              <img src="{% static 'icons/edit.svg' %}" class="h-4 invert" alt="Edit Activity">
+            </button>
+            <button
+              hx-post="{% url 'projects:delete_activity' act.id %}"
+              hx-confirm="Are you sure you want to delete the activity?"
+              class="btn btn-xs btn-ghost join-item bg-red-500 *:hover:invert-0">
+              <img src="{% static 'icons/trash.svg' %}" class="h-4 invert" alt="Delete Activity">
+            </button>
+          </td>
+        </tr>
+      {% endfor %}
+    {% endfor %}
+    </tbody>
+  </table>
+</div>

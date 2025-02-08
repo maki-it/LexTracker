@@ -16,22 +16,14 @@
 
   <div class="flex">
     <!-- Sidebar -->
-    <aside class="w-20 md:w-48 h-screen p-4 flex flex-col">
-      <a href="{% url 'frontend:index' %}">
-        <h1 class="text-lg md:text-xl font-bold mb-6 text-center">LexTracker</h1>
-      </a>
-      <ul class="menu">
-        <li><a href="{% url 'frontend:index' %}" class="btn btn-ghost">Dashboard</a></li>
-        <li><a href="{% url 'frontend:time_tracker' %}" class="btn btn-ghost">Time Tracker</a></li>
-        <li><a href="{% url 'frontend:settings' %}" class="btn btn-ghost">Settings</a></li>
-      </ul>
+    <aside class="hidden 2xl:flex w-48 h-screen p-4 flex-col">
+      {% include 'partials/sidebar.html' %}
     </aside>
 
+    <!-- Navbar -->
     <div class="flex-1 flex flex-col">
-      <!-- Navbar -->
-      <header class="w-full p-2">
-        <nav class="flex justify-between md:justify-end items-center">
-          <button class="md:hidden btn btn-ghost btn-sm">Menu</button>
+      <header class="w-full p-2 h-12">
+        <nav class="flex justify-end md:justify-end items-center">
           <div class="flex items-center">
             <button class="btn btn-ghost btn-sm">Profile</button>
             <button class="btn btn-ghost btn-sm">Logout</button>
@@ -39,12 +31,16 @@
         </nav>
       </header>
 
-      <!-- Main Content -->
-      <main class="flex-1 p-6 bg-gray-100 rounded-tl-[2rem]">
-        {% block content %}
-
-        {% endblock %}
+      <main class="flex-1 p-4 lg:p-6 bg-gray-100 2xl:rounded-tl-[2rem]">
+        <div class="bg-white p-3 lg:p-4 rounded-lg shadow-md h-[calc(100vh-9rem)] 2xl:h-[calc(100vh-6rem)] overflow-scroll">
+        {% block content %}No Content{% endblock %}
+        </div>
       </main>
+
+      <footer>
+        {% include 'partials/footer.html' %}
+      </footer>
+
     </div>
   </div>
 
