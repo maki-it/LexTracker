@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 .btn {
+  /*Remove initial animation on page load */
   animation: none;
 }
 

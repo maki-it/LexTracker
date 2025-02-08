@@ -1,16 +1,60 @@
-from datetime import date
+from datetime import date, timedelta, datetime
 
 from asgiref.sync import sync_to_async
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.shortcuts import render
-from django.views.generic import View
+from django.templatetags.tz import timezone
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 from pydantic import UUID4
 
 from .forms import TrackActivityForm
 from .models import Category, Activity
 
+
+def split_activities(activities):
+  """
+  Split activities that span multiple days into multiple activities
+  :param activities:
+  :return:
+  """
+  split_activities = []
+  for activity in activities:
+    start = activity.started_at
+    end = activity.ended_at
+    while start.date() < end.date():
+      next_day = datetime.combine(
+        start.date(),
+        datetime.max.time(),
+        tzinfo=timezone.get_current_timezone()
+      )
+      split_activities.append({
+        'id': activity.id,
+        'started_at': start,
+        'ended_at': next_day,
+        'project': activity.project,
+        'category': activity.category,
+        'is_chargeable': activity.is_chargeable,
+        'notes': activity.notes,
+      })
+      start = next_day + timedelta(seconds=1)
+    split_activities.append({
+      'id': activity.id,
+      'started_at': start,
+      'ended_at': end,
+      'project': activity.project,
+      'category': activity.category,
+      'is_chargeable': activity.is_chargeable,
+      'notes': activity.notes,
+    })
+  return sorted(split_activities, key=lambda x: x['started_at'], reverse=True)
+
+def duration_sum(activities):
+  total_duration = timedelta()
+  for activity in activities:
+    total_duration += activity.ended_at - activity.started_at
+  return total_duration
 
 @login_required
 async def get_categories(request):
@@ -42,27 +86,39 @@ async def get_activities(request):
   """
   Get all activities
   :param request:
+  :param d: first day of the week to get activities for
   :return:
   """
 
-  current_week = date.today().isocalendar()[1]
+  today = date.today()
+  current_year_week = f"{today.year}-W{today.isocalendar()[1]:02}"
+  d = request.GET.get('week') or current_year_week
+  year = int(d.split('-')[0])
+  week = int(d.split('-W')[1])
+
   activities = await sync_to_async(Activity.objects.filter)(
     user=request.user,
-    started_at__week=current_week,
+    started_at__year=year,
+    started_at__week=week,
   )
-  activities = await sync_to_async(activities.order_by)('started_at')
+  activities = await sync_to_async(activities.order_by)('-started_at')
+  split_activities_list = await sync_to_async(split_activities)(activities)
+  total_duration = await sync_to_async(duration_sum)(activities)
 
   return await sync_to_async(render)(
     request,
     'projects/activities.html', {
-      'activities': activities,
+      'activities': split_activities_list,
+      'total_duration': total_duration,
+      'week_input_val': d,
+      'week_input_max': current_year_week,
     })
 
 
 @login_required
 @require_POST
 @sync_to_async
-def save_activity(request):
+def create_activity(request):
   form = TrackActivityForm(request.POST)
   form.instance.user = request.user
   try:
@@ -74,7 +130,12 @@ def save_activity(request):
   if form.errors:
     return render(request, 'frontend/error.html', {'error': form.errors.as_text()}, status=400)
   else:
-    return HttpResponse(status=201)
+    return HttpResponse(
+      status=201,
+      headers={
+          'HX-Trigger': 'activities-updated',
+      },
+    )
 
 @login_required
 @require_POST
@@ -91,5 +152,7 @@ async def delete_activity(request, activity_id):
 
   return HttpResponse(
     status=204,
-    # headers={'HX-Refresh': 'true'},
+    headers={
+      'HX-Trigger': 'activities-updated',
+    },
   )
