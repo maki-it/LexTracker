@@ -34,57 +34,59 @@
       </thead>
       <tbody>
       {% regroup activities by started_at.date as date_groups %}
-      {% for date_group in date_groups %}
+      {% for day in weekdays %}
         <tr>
-          <td colspan="9" class="bg-gray-200 text-center py-0.5 text-sm">
-            {{ date_group.grouper|date:"D, d. M" }} - Total: {{ daily_durations|get_item:date_group.grouper|format_timedelta }} h
+          <td colspan="9" class="bg-gray-200 text-center py-0.5 text-sm border-y border-gray-300">
+            {% with daily_durations|get_item:day|format_timedelta as daily_duration %}
+            {{ day|date:"D, d. M" }} - {{ daily_duration|default_if_none:"0:00" }} h
+            {% endwith %}
           </td>
         </tr>
-        {% for act in date_group.list %}
-          <tr class="hover:bg-gray-100 *:px-4 *:py-2 *:border-b">
-            <td>
-              <div class="join">
-                <button
-                  id="update_activity"
-                  data-activity-id="{{ act.id }}"
-                  hx-post="{% url 'projects:update_activity' act.id %}"
-                  class="btn btn-xs join-item btn-primary">
-                  <img src="{% static 'icons/edit.svg' %}" class="h-4 invert" alt="Edit Activity">
-                </button>
-                <button
-                  id="duplicate_activity"
-                  data-activity-id="{{ act.id }}"
-                  class="btn btn-xs join-item btn-secondary">
-                  <img src="{% static 'icons/duplicate.svg' %}" class="h-4 invert" alt="Duplicate Activity">
-                </button>
-                <button id="delete_activity"
-                  hx-post="{% url 'projects:delete_activity' act.id %}"
-                  hx-confirm="Are you sure you want to delete the activity?"
-                  class="btn btn-xs join-item btn-error">
-                  <img src="{% static 'icons/trash.svg' %}" class="h-4 invert" alt="Delete Activity">
-                </button>
-              </div>
-            </td>
-            <td>{{ act.started_at|date:"H:i" }}</td>
-            <td>{{ act.ended_at|date:"H:i" }}</td>
-            <td>{{ act.started_at|duration:act.ended_at }}</td>
-            <td>{{ act.project.customer }}</td>
-            <td>{{ act.project }}</td>
-            <td>{{ act.category }}</td>
-            <td>
-              {% if act.is_chargeable %}
-                <div class="tooltip align-middle" data-tip="Activity is chargeable">
-                  <img src="{% static 'icons/banknotes.svg' %}" class="h-5" alt="Activity is chargeable">
-                </div>
-              {% endif %}
-            </td>
-            <td>{{ act.notes }}</td>
-          </tr>
+        {% for date_group in date_groups %}
+          {% if date_group.grouper == day %}
+            {% for act in date_group.list %}
+              <tr class="hover:bg-gray-100 *:px-4 *:py-2 *:border-x">
+                <td>
+                  <div class="join">
+                    <button
+                      id="update_activity"
+                      data-activity-id="{{ act.id }}"
+                      hx-post="{% url 'projects:update_activity' act.id %}"
+                      class="btn btn-xs join-item btn-primary">
+                      <img src="{% static 'icons/edit.svg' %}" class="h-4 invert" alt="Edit Activity">
+                    </button>
+                    <button
+                      id="duplicate_activity"
+                      data-activity-id="{{ act.id }}"
+                      class="btn btn-xs join-item btn-secondary">
+                      <img src="{% static 'icons/duplicate.svg' %}" class="h-4 invert" alt="Duplicate Activity">
+                    </button>
+                    <button id="delete_activity"
+                            hx-post="{% url 'projects:delete_activity' act.id %}"
+                            hx-confirm="Are you sure you want to delete the activity?"
+                            class="btn btn-xs join-item btn-error">
+                      <img src="{% static 'icons/trash.svg' %}" class="h-4 invert" alt="Delete Activity">
+                    </button>
+                  </div>
+                </td>
+                <td>{{ act.started_at|date:"H:i" }}</td>
+                <td>{{ act.ended_at|date:"H:i" }}</td>
+                <td>{{ act.started_at|duration:act.ended_at }}</td>
+                <td>{{ act.project.customer }}</td>
+                <td>{{ act.project }}</td>
+                <td>{{ act.category }}</td>
+                <td>
+                  {% if act.is_chargeable %}
+                    <div class="tooltip align-middle" data-tip="Activity is chargeable">
+                      <img src="{% static 'icons/banknotes.svg' %}" class="h-5" alt="Activity is chargeable">
+                    </div>
+                  {% endif %}
+                </td>
+                <td>{{ act.notes }}</td>
+              </tr>
+            {% endfor %}
+          {% endif %}
         {% endfor %}
-      {% empty %}
-        <tr>
-          <td colspan="9" class="text-center py-2">No activities available</td>
-        </tr>
       {% endfor %}
       </tbody>
     </table>

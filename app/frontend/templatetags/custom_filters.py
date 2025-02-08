@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django import template
 
@@ -20,24 +20,27 @@ def duration(start: datetime, end: datetime) -> str:
     return f"{hours}:{minutes:02d}"
 
 @register.filter
-def format_timedelta(d):
+def format_timedelta(d: timedelta) -> str:
     """
     Format a timedelta object as H:MM
     :param d: timedelta
     :return: str
     """
 
-    total_seconds = int(d.total_seconds())
-    hours, remainder = divmod(total_seconds, 3600)
-    minutes, _ = divmod(remainder, 60)
-    return f"{hours}:{minutes:02d}"
+    try:
+      total_seconds = int(d.total_seconds())
+      hours, remainder = divmod(total_seconds, 3600)
+      minutes, _ = divmod(remainder, 60)
+      return f"{hours}:{minutes:02d}"
+    except AttributeError:
+      return d
 
 @register.filter
-def get_item(dictionary, key):
+def get_item(dictionary: dict, key: str) -> any:
     """
     Get an item from a dictionary
     :param dictionary: dict
-    :param key: any
+    :param key: str
     :return: any
     """
     return dictionary.get(key)

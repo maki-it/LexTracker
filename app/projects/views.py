@@ -114,7 +114,7 @@ async def get_activities(request):
       'week_input_val': d,
       'week_input_max': current_year_week,
       'daily_durations': daily_durations,
-      'weekdays': weekdays
+      'weekdays': sorted(weekdays, reverse=True),
     })
 
 
