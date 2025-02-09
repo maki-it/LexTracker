@@ -32,13 +32,13 @@
         <th>Notes</th>
       </tr>
       </thead>
-      <tbody>
+      <tbody class="text-sm">
       {% regroup activities by started_at.date as date_groups %}
       {% for day in weekdays %}
         {% with daily_durations|get_item:day|format_timedelta as daily_duration %}
           {% if settings.show_empty_days or daily_duration|default_if_none:"0:00" != "0:00" %}
           <tr>
-            <td colspan="9" class="bg-gray-200 text-center py-0.5 text-sm border-y border-gray-300 font-bold">
+            <td colspan="9" class="bg-gray-200 text-center py-0.5 border-y border-gray-300 font-bold">
             {{ day|date:settings.date_format }} - {{ daily_duration|default_if_none:"0:00" }} h
             </td>
           </tr>
