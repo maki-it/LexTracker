@@ -35,23 +35,27 @@
       <tbody>
       {% regroup activities by started_at.date as date_groups %}
       {% for day in weekdays %}
-        <tr>
-          <td colspan="9" class="bg-gray-200 text-center py-0.5 text-sm border-y border-gray-300">
-            {% with daily_durations|get_item:day|format_timedelta as daily_duration %}
-            {{ day|date:"D, d. M" }} - {{ daily_duration|default_if_none:"0:00" }} h
-            {% endwith %}
-          </td>
-        </tr>
+        {% with daily_durations|get_item:day|format_timedelta as daily_duration %}
+          {% if settings.show_empty_days or daily_duration|default_if_none:"0:00" != "0:00" %}
+          <tr>
+            <td colspan="9" class="bg-gray-200 text-center py-0.5 text-sm border-y border-gray-300 font-bold">
+            {{ day|date:settings.date_format }} - {{ daily_duration|default_if_none:"0:00" }} h
+            </td>
+          </tr>
+          {% endif %}
+        {% endwith %}
         {% for date_group in date_groups %}
           {% if date_group.grouper == day %}
             {% for act in date_group.list %}
-              <tr class="hover:bg-gray-100 *:px-4 *:py-2 *:border-x">
+              <tr class="hover:bg-gray-100 *:px-4 *:py-2 *:border-y">
                 <td>
                   <div class="join">
                     <button
                       id="update_activity"
-                      data-activity-id="{{ act.id }}"
-                      hx-post="{% url 'projects:update_activity' act.id %}"
+                      hx-get="{% url 'frontend:update_activity_form' act.id %}"
+                      hx-target="#add_activity_form"
+                      hx-swap="innerHTML"
+                      hx-trigger="click"
                       class="btn btn-xs join-item btn-primary">
                       <img src="{% static 'icons/edit.svg' %}" class="h-4 invert" alt="Edit Activity">
                     </button>
@@ -92,3 +96,11 @@
     </table>
   </div>
 </div>
+
+<script>
+  document.addEventListener('htmx:afterSwap', function (event) {
+    if (event.detail.target.id === 'add_activity_form') {
+      document.getElementById('add_activity').scrollIntoView({behavior: 'smooth'});
+    }
+  });
+</script>

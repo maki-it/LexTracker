@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Project, Category, Activity
+from .models import Project, Category, Activity, Settings
 
 # Register your models here.
 
@@ -50,7 +50,16 @@ class ProjectAdmin(admin.ModelAdmin):
     readonly_fields = ('duration', 'id', 'created_at', 'updated_at')
     inlines = [ActivityInline, CategoryInline]
 
+
+class SettingsAdmin(admin.ModelAdmin):
+  list_display = ('user', 'updated_at')
+  list_filter = ('updated_at',)
+  search_fields = ('user__username',)
+  ordering = ('user', 'updated_at')
+  readonly_fields = ('updated_at',)
+
+
 admin.site.register(Project, ProjectAdmin)
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(Activity, ActivityAdmin)
-
+admin.site.register(Settings, SettingsAdmin)

@@ -29,6 +29,25 @@ async def time_tracker(request):
     })
 
 @login_required
+async def activity_form(request, activity_id=None):
+  form = TrackActivityForm()
+  projects = await sync_to_async(Project.objects.filter)(is_archived=False)
+  projects = await sync_to_async(projects.order_by)('customer__number', 'title')
+
+  activity = None
+  if activity_id:
+    activity = await Activity.objects.aget(id=activity_id)
+    form = TrackActivityForm(instance=activity)
+
+  return await sync_to_async(render)(
+    request,
+    'frontend/activity_form.html', {
+      'form': form,
+      'projects': projects,
+      'activity': activity,
+    })
+
+@login_required
 async def reports(request):
   # TODO Make paginated view
   return render(request, 'frontend/reports.html')

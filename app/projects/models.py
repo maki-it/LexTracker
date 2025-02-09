@@ -42,7 +42,7 @@ class Project(models.Model):
   def clean(self):
     # Check if end_date is after start_date
     if self.end_date and self.end_date < self.start_date:
-      raise ValueError("End date must be after start date")
+      raise ValueError("End time must be after start time")
 
   def save(self, *args, **kwargs):
     # Set end_date to current date if project is archived
@@ -65,6 +65,7 @@ class Category(models.Model):
 
   def __str__(self):
     return self.title
+
 
 class Activity(models.Model):
   """
@@ -94,14 +95,14 @@ class Activity(models.Model):
   def clean(self):
     # Check if ended_at is after started_at
     if self.ended_at and self.ended_at < self.started_at:
-      raise ValueError("End date must be after start date")
+      raise ValueError("End time must be after start time")
 
     # Check if other activity overlaps with this activity
     if Activity.objects.filter(
       user=self.user,
       started_at__lt=self.ended_at,
       ended_at__gt=self.started_at
-    ).exists():
+    ).exclude(id=self.id).exists():
       raise ValueError("Time range overlaps with another activity")
 
   def save(self, *args, **kwargs):
@@ -120,3 +121,31 @@ class Activity(models.Model):
     :return:
     """
     return dt - timedelta(seconds=dt.second, microseconds=dt.microsecond) + timedelta(seconds=60 if dt.second >= 30 else 0)
+
+
+DATE_FORMATS = [
+  ('D, d. M', 'Wed, 31. Dec'),
+  ('d.m.Y', '31.12.2021'),
+  ('Y-m-d', '2021-12-31'),
+  ('d/m/Y', '31/12/2021'),
+  ('m/d/Y', '12/31/2021'),
+  ('Y/m/d', '2021/12/31'),
+  ('Y.m.d', '2021.31.12'),
+  ('d.m.Y', '12.31.2021'),
+  ('d. M Y', '31. Dec 2021'),
+  ('Y. M. d', '2021. Dec. 31'),
+]
+
+
+class Settings(models.Model):
+  """User settings for the time tracker"""
+  user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+  show_empty_days = models.BooleanField(default=False, help_text="Show days without activities in the weekly view")
+  date_format = models.CharField(max_length=10, choices=DATE_FORMATS, default='D, d. M')
+  updated_at = models.DateTimeField(auto_now=True)
+
+  def __str__(self):
+    return f"{self.user.username} - {self.date_format}"
+
+  class Meta:
+    verbose_name_plural = 'Settings'

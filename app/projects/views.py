@@ -10,7 +10,7 @@ from django.views.decorators.http import require_POST
 from pydantic import UUID4
 
 from .forms import TrackActivityForm
-from .models import Category, Activity
+from .models import Category, Activity, Settings
 
 
 def split_activities(activities):
@@ -55,29 +55,23 @@ def duration_sum(activities):
   return total_duration
 
 @login_required
-async def get_categories(request):
+async def get_categories(request, category_id=None):
   """
   Get all categories
+  :param category_id:
   :param request:
   :return:
   """
+
+  selected_category = None
+  if category_id:
+    selected_category = await Category.objects.aget(id=category_id)
 
   project_id: UUID4 = request.GET.get('project')
   categories = await sync_to_async(Category.objects.filter)(projects=project_id)
-  return await sync_to_async(render)(request, 'projects/select_form.html', {'items': categories})
 
-@login_required
-async def get_activity(request, activity_id):
-  """
-  Get a single activity
-  :param request:
-  :param activity_id:
-  :return:
-  """
-
-  # TODO: Implement this
-  activity = await Activity.objects.aget(id=activity_id)
-  pass
+  return await sync_to_async(render)(
+    request, 'projects/category_select.html', {'items': categories, 'selected_category': selected_category})
 
 @login_required
 async def get_activities(request):
@@ -106,6 +100,8 @@ async def get_activities(request):
   start_date = datetime.strptime(f'{year}-W{week-1}-1', "%Y-W%W-%w").date()
   weekdays = [start_date + timedelta(days=i) for i in range(7)]
 
+  settings, created = await Settings.objects.aget_or_create(user=request.user)
+
   return await sync_to_async(render)(
     request,
     'projects/activities.html', {
@@ -115,6 +111,7 @@ async def get_activities(request):
       'week_input_max': current_year_week,
       'daily_durations': daily_durations,
       'weekdays': sorted(weekdays, reverse=True),
+      'settings': settings,
     })
 
 
@@ -134,7 +131,7 @@ def create_activity(request):
     return render(request, 'frontend/error.html', {'error': form.errors.as_text()}, status=400)
   else:
     return HttpResponse(
-      status=201,
+      status=204,
       headers={
           'HX-Trigger': 'activities-updated',
       },
@@ -142,9 +139,24 @@ def create_activity(request):
 
 @login_required
 @require_POST
-async def update_activity(request, activity_id):
-  activity = await Activity.objects.aget(id=activity_id)
-  # TODO: Implement this
+@sync_to_async
+def update_activity(request, activity_id):
+  activity = Activity.objects.get(id=activity_id)
+  form = TrackActivityForm(request.POST, instance=activity)
+  try:
+    if form.is_valid():
+      form.save()
+    else:
+      return render(request, 'frontend/error.html', {'error': form.errors.as_text()}, status=400)
+  except Exception as e:
+    return render(request, 'frontend/error.html', {'error': str(e)}, status=400)
+
+  return HttpResponse(
+    status=204,
+    headers={
+      'HX-Trigger': 'activities-updated',
+    },
+  )
 
 
 @login_required

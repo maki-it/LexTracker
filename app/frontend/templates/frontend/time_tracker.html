@@ -10,142 +10,15 @@
 
 {% block content %}
 
-  <details class="collapse collapse-arrow border mb-4" open>
-    <summary class="collapse-title text-lg font-medium text-base-100 bg-gray-100">Add Activity</summary>
-    <div class="collapse-content">
-      <form id="form_activity" method="post"
-        hx-ext="response-targets"
-        hx-post="{% url 'projects:create_activity' %}"
-        hx-target="#errors"
-        hx-target-400="#errors">
-        <div id="errors"></div>
-        {% csrf_token %}
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4">
-          <div>
-            <label class="form-control w-full">
-              <div class="label">
-                <span class="label-text text-base-100">{{ form.project.label }}</span>
-              </div>
-              <select name="project" id="id_project" class="select" required
-                hx-get="{% url 'projects:get_categories' %}"
-                hx-target="#id_category"
-                hx-swap="innerHTML"
-                hx-trigger="change, load"
-                >
-                {% for project in projects %}
-                  <option value="{{ project.id }}">{{ project.title }} ({{ project.customer }})</option>
-                {% empty %}
-                  <option disabled>No projects available</option>
-                {% endfor %}
-              </select>
-            </label>
-          </div>
-
-          <div>
-            <label class="form-control">
-              <div class="label">
-                <span class="label-text text-base-100">{{ form.category.label }}</span>
-              </div>
-              <select name="category" id="id_category" class="select" required></select>
-            </label>
-          </div>
-
-          <div class="md:row-start-2 grid md:grid-flow-col md:grid-cols-2 gap-2 md:gap-4">
-            <div class="w-fit md:row-start-1">
-              <div class="label">
-                <span class="label-text text-base-100">{{ form.started_at.label }}</span>
-                <a id="id_started_at_now" class="label-text text-base-100 hover:cursor-pointer link">Now</a>
-              </div>
-              <input type="datetime-local" name="started_at" id="id_started_at" class="input input-bordered" required>
-            </div>
-
-            <div class="w-fit md:row-start-1">
-              <div class="label">
-                <span class="label-text text-base-100">{{ form.ended_at.label }}</span>
-                <a id="id_ended_at_now" class="label-text text-base-100 hover:cursor-pointer link">Now</a>
-              </div>
-              <input type="datetime-local" name="ended_at" id="id_ended_at" class="input input-bordered" required>
-            </div>
-
-            <div class="form-control h-fit w-fit md:row-start-2 md:col-start-1">
-              <label class="label cursor-pointer">
-                <input type="checkbox" name="is_chargeable" id="id_is_chargeable" class="checkbox checkbox-primary" checked="checked">
-                <span class="label-text text-base-100 ml-2">{{ form.is_chargeable.label }}</span>
-              </label>
-            </div>
-          </div>
-
-          <div class="md:row-start-2">
-            <div class="label">
-              <span class="label-text text-base-100">{{ form.notes.label }}</span>
-            </div>
-            <textarea name="notes" id="id_notes" class="textarea textarea-md w-full"></textarea>
-          </div>
-
-          <div class="md:row-start-3">
-            <button
-              id="id_submit" class="btn btn-primary"
-              hx-get="#table_activities"
-              hx-trigger="submit">
-              <img src="{% static 'icons/check.svg' %}" class="h-6 invert" alt="Save Activity">
-              <span class="invert">Save Activity</span>
-            </button>
-          </div>
-
-        </div>
-      </form>
+  <details id="add_activity" class="collapse collapse-arrow border mb-4" open>
+    <summary id="add_activity_title" class="collapse-title text-lg font-medium text-base-100 bg-gray-100">Track Activity</summary>
+    <div id="add_activity_form" class="collapse-content"
+      hx-get="{% url 'frontend:activity_form' %}"
+      hx-trigger="load, clear-form from:body"
+      hx-swap="innerHTML">
     </div>
   </details>
 
   <div id="table_activities" hx-get="{% url 'projects:get_activities' %}" hx-trigger="activities-updated from:body, load" class="overflow-auto"></div>
-
-  <script>
-  // After submit, clear the notes field
-  document.getElementById('form_activity').addEventListener('htmx:afterSwap', function(event) {
-    document.getElementById('id_notes').value = '';
-  });
-
-  function toLocalISOString(date) {
-    const localDate = new Date(date - date.getTimezoneOffset() * 60000); //offset in milliseconds. Credit https://stackoverflow.com/questions/10830357/javascript-toisostring-ignores-timezone-offset
-
-    // Optionally remove second/millisecond if needed
-    localDate.setSeconds(null);
-    localDate.setMilliseconds(null);
-    return localDate.toISOString().slice(0, -1);
-  }
-
-  const started_at = document.getElementById('id_started_at')
-  const ended_at = document.getElementById('id_ended_at')
-  const form = document.getElementById('form_activity')
-
-  // Set initial value for started_at
-  if (started_at.value === '') {
-    started_at.value = toLocalISOString(new Date());
-  }
-
-  document.getElementById('id_started_at_now').addEventListener('click', function(event) {
-    document.getElementById('id_started_at').value = toLocalISOString(new Date());
-  });
-
-  document.getElementById('id_ended_at_now').addEventListener('click', function(event) {
-    document.getElementById('id_ended_at').value = toLocalISOString(new Date());
-  });
-
-  started_at.addEventListener('change', function(event) {
-    ended_at.setCustomValidity('');
-  });
-
-  ended_at.addEventListener('change', function(event) {
-    ended_at.setCustomValidity('');
-  });
-
-  form.addEventListener('submit', function(event) {
-    if (new Date(started_at.value) >= new Date(ended_at.value)) {
-      ended_at.setCustomValidity('End must be after start');
-      ended_at.reportValidity();
-      event.preventDefault();
-    }
-  });
-  </script>
 
 {% endblock %}
