@@ -19,6 +19,7 @@
     </div>
   </details>
 
+  {# FIXME: Table causes overflow on small screens #}
   <div id="table_activities" hx-get="{% url 'projects:get_activities' %}" hx-trigger="activities-updated from:body, load" class="overflow-auto"></div>
 
 {% endblock %}

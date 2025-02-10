@@ -7,7 +7,7 @@ from django.contrib.auth.views import redirect_to_login
 from django.shortcuts import render
 
 from projects.forms import TrackActivityForm
-from projects.models import Activity, Project
+from projects.models import Activity, Project, Settings
 
 
 @login_required
@@ -39,12 +39,15 @@ async def activity_form(request, activity_id=None):
     activity = await Activity.objects.aget(id=activity_id)
     form = TrackActivityForm(instance=activity)
 
+  settings, created = await Settings.objects.aget_or_create(user=request.user)
+
   return await sync_to_async(render)(
     request,
     'frontend/activity_form.html', {
       'form': form,
       'projects': projects,
       'activity': activity,
+      'settings': settings,
     })
 
 @login_required

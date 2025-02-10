@@ -23,10 +23,21 @@
     <!-- Navbar -->
     <div class="flex-1 flex flex-col">
       <header class="w-full p-2 h-12">
-        <nav class="flex justify-end md:justify-end items-center">
+        <nav class="flex justify-between md:justify-end items-center">
           <div class="flex items-center">
-            <button class="btn btn-ghost btn-sm">Profile</button>
-            <button class="btn btn-ghost btn-sm">Logout</button>
+            <h1 class="text-lg font-bold text-center ml-6">LexTracker</h1>
+          </div>
+          <div class="flex items-center">
+            <button class="btn btn-ghost btn-sm tooltip tooltip-bottom" data-tip="Profile">
+              <img src="{% static 'icons/profile.svg' %}" class="h-6 invert" alt="Profile">
+            </button>
+            <button class="btn btn-ghost btn-sm tooltip tooltip-bottom" data-tip="Logout">
+              {% if user.is_authenticated %}
+              <img src="{% static 'icons/logout.svg' %}" class="h-6 invert" alt="Logout">
+              {% else %}
+              <img src="{% static 'icons/login.svg' %}" class="h-6 invert" alt="Login">
+              {% endif %}
+            </button>
           </div>
         </nav>
       </header>

@@ -136,6 +136,14 @@ DATE_FORMATS = [
   ('Y. M. d', '2021. Dec. 31'),
 ]
 
+TIME_STEPS = [
+  (1*60, '1 minute'),
+  (5*60, '5 minutes'),
+  (10*60, '10 minutes'),
+  (15*60, '15 minutes'),
+  (30*60, '30 minutes'),
+  (60*60, '1 hour'),
+]
 
 class Settings(models.Model):
   """User settings for the time tracker"""
@@ -143,6 +151,7 @@ class Settings(models.Model):
   show_empty_days = models.BooleanField(default=False, help_text="Show days without activities in the weekly view")
   date_format = models.CharField(max_length=10, choices=DATE_FORMATS, default='D, d. M')
   updated_at = models.DateTimeField(auto_now=True)
+  time_step = models.PositiveSmallIntegerField(default=15, choices=TIME_STEPS, help_text="Time step for the time picker in minutes")
 
   def __str__(self):
     return f"{self.user.username} - {self.date_format}"

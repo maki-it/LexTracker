@@ -44,3 +44,32 @@ def get_item(dictionary: dict, key: str) -> any:
     :return: any
     """
     return dictionary.get(key)
+
+@register.filter
+def multiply(a: float|int , b: float|int) -> float|int:
+    """
+    Multiply a value by an argument
+    :param a: float|int
+    :param b: float|int
+    :return: float|int
+    """
+    return a * b
+
+@register.filter
+def divide(a: float|int , b: float|int) -> float|int:
+    """
+    Divide a value by an argument
+    :param a: float|int
+    :param b: float|int
+    :return: float|int
+    """
+    return a / b
+
+@register.filter
+def to_int(a: float) -> int:
+    """
+    Convert a float to an integer
+    :param a: float
+    :return: int
+    """
+    return int(a)

@@ -1,4 +1,6 @@
+{% load custom_filters %}
 {% load static %}
+{% with settings.time_step|default_if_none:60 as step %}
 <form id="form_activity" method="post"
     hx-ext="response-targets"
     {% if activity %}
@@ -58,11 +60,22 @@
           <span class="label-text text-base-100">{{ form.started_at.label }}</span>
           <a id="id_started_at_now" class="label-text text-base-100 hover:cursor-pointer link">Now</a>
         </div>
-        <input type="datetime-local" name="started_at" id="id_started_at" class="input input-bordered"
-          {% if activity %}
-            value="{{ activity.started_at|date:'Y-m-d\TH:i' }}"
-          {% endif %}
-         required>
+        <div class="join">
+          <input type="datetime-local" name="started_at" id="id_started_at" class="input input-bordered join-item w-52"
+             step="{{ step }}"
+            {% if activity %}
+              value="{{ activity.started_at|date:'Y-m-d\TH:i' }}"
+            {% endif %}
+           required>
+          <div class="join-item join join-vertical">
+            <a class="btn btn-xs join-item" id="id_started_at_up">
+              <img src="{% static 'icons/arrow-up.svg' %}" class="h-5 invert" alt="Arrow Up">
+            </a>
+            <a class="btn btn-xs join-item" id="id_started_at_down">
+              <img src="{% static 'icons/arrow-down.svg' %}" class="h-5 invert" alt="Arrow Down">
+            </a>
+          </div>
+        </div>
       </div>
 
       <div class="w-fit md:row-start-1">
@@ -70,11 +83,22 @@
           <span class="label-text text-base-100">{{ form.ended_at.label }}</span>
           <a id="id_ended_at_now" class="label-text text-base-100 hover:cursor-pointer link">Now</a>
         </div>
-        <input type="datetime-local" name="ended_at" id="id_ended_at" class="input input-bordered"
-          {% if activity %}
-            value="{{ activity.ended_at|date:'Y-m-d\TH:i' }}"
-          {% endif %}
-         required>
+        <div class="join">
+          <input type="datetime-local" name="ended_at" id="id_ended_at" class="input input-bordered join-item w-52"
+               step="{{ step }}"
+            {% if activity %}
+              value="{{ activity.ended_at|date:'Y-m-d\TH:i' }}"
+            {% endif %}
+           required>
+          <div class="join-item join join-vertical">
+            <a class="btn btn-xs join-item" id="id_ended_at_up">
+              <img src="{% static 'icons/arrow-up.svg' %}" class="h-5 invert" alt="Arrow Up">
+            </a>
+            <a class="btn btn-xs join-item" id="id_ended_at_down">
+              <img src="{% static 'icons/arrow-down.svg' %}" class="h-5 invert" alt="Arrow Down">
+            </a>
+          </div>
+        </div>
       </div>
 
       <div class="form-control h-fit w-fit md:row-start-2 md:col-start-1">
@@ -132,50 +156,100 @@
 
 
 <script>
-  // After submit, clear the notes field
-  document.getElementById('form_activity').addEventListener('htmx:afterSwap', function(event) {
-    document.getElementById('id_notes').value = '';
-  });
+  function initializeForm() {
+    console.log('Initializing form');
 
-  function toLocalISOString(date) {
-    const localDate = new Date(date - date.getTimezoneOffset() * 60000); //offset in milliseconds. Credit https://stackoverflow.com/questions/10830357/javascript-toisostring-ignores-timezone-offset
+    // After submit, clear the notes field
+    document.getElementById('form_activity').addEventListener('htmx:afterSwap', function(event) {
+      document.getElementById('id_notes').value = '';
+    });
 
-    // Optionally remove second/millisecond if needed
-    localDate.setSeconds(null);
-    localDate.setMilliseconds(null);
-    return localDate.toISOString().slice(0, -1);
+    function toLocalISOString(date) {
+      const localDate = new Date(date - date.getTimezoneOffset() * 60000); //offset in milliseconds. Credit https://stackoverflow.com/questions/10830357/javascript-toisostring-ignores-timezone-offset
+
+      // Optionally remove second/millisecond if needed
+      localDate.setSeconds(null);
+      localDate.setMilliseconds(null);
+      return localDate.toISOString().slice(0, -1);
+    }
+
+    const adjustDate = (input, step) => {
+      const date = new Date(input.value);
+      date.setMinutes(date.getMinutes() + step / 60);
+      input.value = toLocalISOString(date);
+    };
+
+    const form = document.getElementById('form_activity');
+    const started_at = document.getElementById('id_started_at');
+    const started_at_up = document.getElementById('id_started_at_up');
+    const started_at_down = document.getElementById('id_started_at_down');
+    const ended_at = document.getElementById('id_ended_at');
+    const ended_at_up = document.getElementById('id_ended_at_up');
+    const ended_at_down = document.getElementById('id_ended_at_down');
+
+    // Set initial value for started_at to current time and ended_at to current time + step
+    if (started_at.value === '') {
+      const date = new Date();
+      const step = parseInt(started_at.step);
+      const roundedMinutes = Math.round(date.getMinutes() / (step / 60)) * (step / 60);
+      date.setMinutes(roundedMinutes);
+      started_at.value = toLocalISOString(date);
+    }
+
+    // Set initial value for ended_at to current time + step
+    if (ended_at.value === '') {
+      const date = new Date(started_at.value);
+      date.setMinutes(date.getMinutes() + parseInt(ended_at.step) / 60);
+      ended_at.value = toLocalISOString(date);
+    }
+
+    // Set started_at to current time when Now is clicked
+    document.getElementById('id_started_at_now').addEventListener('click', function(event) {
+      const date = new Date();
+      const step = parseInt(started_at.step);
+      const roundedMinutes = Math.round(date.getMinutes() / (step / 60)) * (step / 60);
+      date.setMinutes(roundedMinutes);
+      started_at.value = toLocalISOString(date);
+    });
+
+    document.getElementById('id_ended_at_now').addEventListener('click', function(event) {
+      const date = new Date();
+      const step = parseInt(ended_at.step);
+      const roundedMinutes = Math.round(date.getMinutes() / (step / 60)) * (step / 60);
+      date.setMinutes(roundedMinutes);
+      ended_at.value = toLocalISOString(date);
+    });
+
+    started_at_up.addEventListener('click', () => adjustDate(started_at, started_at.step));
+    started_at_down.addEventListener('click', () => adjustDate(started_at, -started_at.step));
+    ended_at_up.addEventListener('click', () => adjustDate(ended_at, ended_at.step));
+    ended_at_down.addEventListener('click', () => adjustDate(ended_at, -ended_at.step));
+
+    started_at.addEventListener('change', function(event) {
+      ended_at.setCustomValidity('');
+    });
+
+    ended_at.addEventListener('change', function(event) {
+      ended_at.setCustomValidity('');
+    });
+
+    form.addEventListener('submit', function(event) {
+      if (new Date(started_at.value) >= new Date(ended_at.value)) {
+        ended_at.setCustomValidity('End must be after start');
+        ended_at.reportValidity();
+        event.preventDefault();
+      }
+    });
   }
 
-  const started_at = document.getElementById('id_started_at')
-  const ended_at = document.getElementById('id_ended_at')
-  const form = document.getElementById('form_activity')
+  // Initialize form on page load
+  initializeForm();
 
-  // Set initial value for started_at
-  if (started_at.value === '') {
-    started_at.value = toLocalISOString(new Date());
-  }
-
-  document.getElementById('id_started_at_now').addEventListener('click', function(event) {
-    document.getElementById('id_started_at').value = toLocalISOString(new Date());
-  });
-
-  document.getElementById('id_ended_at_now').addEventListener('click', function(event) {
-    document.getElementById('id_ended_at').value = toLocalISOString(new Date());
-  });
-
-  started_at.addEventListener('change', function(event) {
-    ended_at.setCustomValidity('');
-  });
-
-  ended_at.addEventListener('change', function(event) {
-    ended_at.setCustomValidity('');
-  });
-
-  form.addEventListener('submit', function(event) {
-    if (new Date(started_at.value) >= new Date(ended_at.value)) {
-      ended_at.setCustomValidity('End must be after start');
-      ended_at.reportValidity();
-      event.preventDefault();
+  // Reinitialize form after HTMX content swap
+  document.body.addEventListener('htmx:afterSwap', function(event) {
+    if (event.target.id === 'form_activity') {
+      initializeForm();
     }
   });
 </script>
+{% endwith %}
