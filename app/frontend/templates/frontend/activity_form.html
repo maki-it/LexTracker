@@ -157,8 +157,6 @@
 
 <script>
   function initializeForm() {
-    console.log('Initializing form');
-
     // After submit, clear the notes field
     document.getElementById('form_activity').addEventListener('htmx:afterSwap', function(event) {
       document.getElementById('id_notes').value = '';

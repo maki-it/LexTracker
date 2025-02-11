@@ -1,24 +1,33 @@
 {% load custom_filters %}
 {% load static %}
 <div hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
-  <div class="grid gap-4 grid-flow-row md:grid-flow-col w-fit mb-2 items-baseline">
+  <div class="justify-around grid gap-2 lg:gap-4 grid-flow-col lg:w-fit mb-2 items-baseline">
     <div>
-      <form>
-        <input
-          type="week" name="week" id="id_week" class="input input-bordered"
-          value="{{ week_input_val }}" max="{{ week_input_max }}"
-          hx-get="{% url 'projects:get_activities' %}"
-          hx-target="#table_activities"
-          required>
-      </form>
+      <div class="join">
+        <form>
+          <input type="week" name="week" id="id_week" class="input input-bordered join-item"
+            value="{{ week_input_val }}" max="{{ week_input_max }}"
+            hx-get="{% url 'projects:get_activities' %}"
+            hx-target="#table_activities"
+            required>
+        </form>
+        <div class="join-item join join-vertical">
+          <a class="btn btn-xs join-item" id="id_week_up">
+            <img src="{% static 'icons/arrow-up.svg' %}" class="h-5 invert" alt="Next Week (Arrow Up)">
+          </a>
+          <a class="btn btn-xs join-item" id="id_week_down">
+            <img src="{% static 'icons/arrow-down.svg' %}" class="h-5 invert" alt="Previous Week (Arrow Down)">
+          </a>
+        </div>
+      </div>
     </div>
     <div class="text-base-100 text-lg">
       Total: {{ total_duration|format_timedelta }} h
     </div>
   </div>
 
-  <div class="overflow-auto rounded-xl">
-    <table class="table-auto w-full text-base-100 border-collapse border rounded-xl">
+  <div class="overflow-x-auto rounded-xl w-[calc(100vw)] lg:w-full">
+    <table class="table-auto w-full text-base-100 border-collapse border rounded-xl" id="id_activities_table">
       <thead class="bg-base-100 text-white">
       <tr class="*:px-4 *:py-2 text-sm">
         <th></th>
@@ -34,6 +43,11 @@
       </thead>
       <tbody class="text-sm">
       {% regroup activities by started_at.date as date_groups %}
+      {% if not activities and not settings.show_empty_days %}
+        <tr>
+          <td colspan="9" class="text-center py-2 font-bold">No activities found</td>
+        </tr>
+      {% endif %}
       {% for day in weekdays %}
         {% with daily_durations|get_item:day|format_timedelta as daily_duration %}
           {% if settings.show_empty_days or daily_duration|default_if_none:"0:00" != "0:00" %}
@@ -101,6 +115,35 @@
   document.addEventListener('htmx:afterSwap', function (event) {
     if (event.detail.target.id === 'add_activity_form') {
       document.getElementById('add_activity').scrollIntoView({behavior: 'smooth'});
+    }
+  });
+  function initializeWeekInput() {
+    const weekUp = document.getElementById('id_week_up');
+    const weekDown = document.getElementById('id_week_down');
+    const week = document.getElementById('id_week');
+
+    weekUp.addEventListener('click', function () {
+      if (week.value === week.max) {
+        // Show a validation message if the value is already at the maximum
+        week.setCustomValidity('Latest week already selected');
+        week.reportValidity();
+        return;
+      }
+      week.stepUp(1);
+      week.dispatchEvent(new Event('change'));
+    });
+
+    weekDown.addEventListener('click', function () {
+      week.stepDown(1);
+      week.dispatchEvent(new Event('change'));
+    });
+  }
+
+  initializeWeekInput();
+
+  document.addEventListener('htmx:afterSwap', function (event) {
+    if (event.detail.target.id === 'id_activities_table') {
+      initializeWeekInput();
     }
   });
 </script>
