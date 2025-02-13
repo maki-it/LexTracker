@@ -3,7 +3,7 @@
 <div hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
   <div class="justify-around grid gap-2 lg:gap-4 grid-flow-col lg:w-fit mb-2 items-baseline">
     <div>
-      <div class="join">
+      <div class="join flex items-stretch">
         <form>
           <input type="week" name="week" id="id_week" class="input input-bordered join-item"
             value="{{ week_input_val }}" max="{{ week_input_max }}"
@@ -11,11 +11,11 @@
             hx-target="#table_activities"
             required>
         </form>
-        <div class="join-item join join-vertical">
-          <a class="btn btn-xs join-item" id="id_week_up">
+        <div class="join-item join join-vertical flex flex-col">
+          <a class="btn btn-xs join-item flex-1" id="id_week_up">
             <img src="{% static 'icons/arrow-up.svg' %}" class="h-5 invert" alt="Next Week (Arrow Up)">
           </a>
-          <a class="btn btn-xs join-item" id="id_week_down">
+          <a class="btn btn-xs join-item flex-1" id="id_week_down">
             <img src="{% static 'icons/arrow-down.svg' %}" class="h-5 invert" alt="Previous Week (Arrow Down)">
           </a>
         </div>
