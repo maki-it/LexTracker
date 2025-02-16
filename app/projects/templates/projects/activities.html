@@ -28,18 +28,18 @@
 
   <div class="overflow-x-auto rounded-xl w-[calc(100vw)] lg:w-full">
     <table class="table-auto w-full text-base-100 border-collapse border rounded-xl" id="id_activities_table">
-      <thead class="bg-base-100 text-white">
-      <tr class="*:px-4 *:py-2 text-sm">
-        <th></th>
-        <th>Start</th>
-        <th>End</th>
-        <th>Time</th>
-        <th>Customer</th>
-        <th>Activity</th>
-        <th>Category</th>
-        <th></th>
-        <th>Notes</th>
-      </tr>
+      <thead class="bg-base-100 text-base-content sticky top-0 z-10">
+        <tr class="*:px-4 *:py-2 text-sm">
+          <th></th>
+          <th>Start</th>
+          <th>End</th>
+          <th>Time</th>
+          <th>Customer</th>
+          <th>Activity</th>
+          <th>Category</th>
+          <th></th>
+          <th>Notes</th>
+        </tr>
       </thead>
       <tbody class="text-sm">
       {% regroup activities by started_at.date as date_groups %}
@@ -66,7 +66,7 @@
                   <div class="join">
                     <button
                       id="update_activity"
-                      hx-get="{% url 'frontend:update_activity_form' act.id %}"
+                      hx-get="{% url 'frontend:update_activity_form' act.id 'update' %}"
                       hx-target="#add_activity_form"
                       hx-swap="innerHTML"
                       hx-trigger="click"
@@ -75,7 +75,10 @@
                     </button>
                     <button
                       id="duplicate_activity"
-                      data-activity-id="{{ act.id }}"
+                      hx-get="{% url 'frontend:update_activity_form' act.id 'duplicate' %}"
+                      hx-target="#add_activity_form"
+                      hx-swap="innerHTML"
+                      hx-trigger="click"
                       class="btn btn-xs join-item btn-secondary">
                       <img src="{% static 'icons/duplicate.svg' %}" class="h-4 invert" alt="Duplicate Activity">
                     </button>
@@ -87,8 +90,8 @@
                     </button>
                   </div>
                 </td>
-                <td>{{ act.started_at|date:"H:i" }}</td>
-                <td>{{ act.ended_at|date:"H:i" }}</td>
+                <td>{{ act.started_at|date:settings.time_format }}</td>
+                <td>{{ act.ended_at|date:settings.time_format }}</td>
                 <td>{{ act.started_at|duration:act.ended_at }}</td>
                 <td>{{ act.project.customer }}</td>
                 <td>{{ act.project }}</td>

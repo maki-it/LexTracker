@@ -33,9 +33,9 @@ async def sync_customers(request):
 
   customers = await api_client.get_customers()
   await asyncio.gather(*[save_customer(customer) for customer in customers])
-  await sleep(3)
 
-  return HttpResponse(status=201, content=ngettext(
+  return HttpResponse(status=201,
+    content=ngettext(
     '%d Customer synced',
     '%d Customers synced',
     len(customers),

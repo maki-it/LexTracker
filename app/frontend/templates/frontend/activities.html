@@ -1,21 +1,15 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Dashboard{% endblock %}
-
-{% block head_extra %}
-  <script src="{% static 'js/htmx/htmx.min.js' %}"></script>
-  <script src="{% static 'js/htmx/htmx-response-targets.js' %}" defer></script>
-{% endblock %}
+{% block title %}Activities{% endblock %}
 
 {% block content %}
 
   <details id="add_activity" class="collapse collapse-arrow border mb-4" open>
     <summary id="add_activity_title" class="collapse-title text-lg font-medium text-base-100 bg-gray-100">Track Activity</summary>
     <div id="add_activity_form" class="collapse-content"
-      hx-get="{% url 'frontend:activity_form' %}"
-      hx-trigger="load, clear-form from:body"
-      hx-swap="innerHTML">
+      hx-get="{% url 'frontend:create_activity_form' %}"
+      hx-trigger="load, clear-form from:body">
     </div>
   </details>
 
@@ -23,5 +17,12 @@
        hx-get="{% url 'projects:get_activities' %}"
        hx-trigger="activities-updated from:body, load">
   </div>
+
+  <script>
+    document.getElementById('settings_modal_content').addEventListener('htmx:afterRequest', function(event) {
+      htmx.trigger('#add_activity_form', 'clear-form');
+      htmx.trigger('#table_activities', 'activities-updated');
+    });
+  </script>
 
 {% endblock %}

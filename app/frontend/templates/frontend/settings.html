@@ -1,0 +1,35 @@
+{% load static %}
+<form method="dialog">
+  <button class="btn btn-sm btn-circle btn-ghost text-base-100 absolute right-2 top-2">✕</button>
+</form>
+
+<form id="settings_form"
+      class="text-base-100 grid gap-3 lg:gap-4"
+      hx-post="{% url 'frontend:settings' %}"
+      hx-target="#settings_modal_content">
+
+  <div class="flex items-center gap-3">
+    <h2 class="text-2xl font-bold">Settings</h2>
+    <img id="settings_saved" src="{% static 'icons/check.svg' %}" class="h-5 bg-success rounded-box hidden" alt="Settings saved">
+  </div>
+
+  {% csrf_token %}
+  {% if form.errors %}
+    <p class="text-error">Please correct the error{{ form.errors|pluralize }} below.</p>
+  {% endif %}
+
+  {% for field in form %}
+    <div class="form-control">
+      {{ field.label_tag }}
+      <div class="w-fit">
+      {{ field }}
+      </div>
+      {% if field.help_text %}
+        <small>{{ field.help_text }}</small>
+      {% endif %}
+      {% for error in field.errors %}
+        <p class="text-error">{{ error }}</p>
+      {% endfor %}
+    </div>
+  {% endfor %}
+</form>

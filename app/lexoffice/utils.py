@@ -36,20 +36,22 @@ class ApiClient:
     :return: Any
     """
 
-    async def get(page: int) -> dict:
-      resp = await self.client.get(path, params={
-        'size': PageSizeLimits.CONTACTS,
-        'page': page,
-        'customer': True,
-        'vendor': False}
+    async def get(c: AsyncClient, page: int) -> dict:
+      resp = await c.get(path,
+        params={
+          'size': PageSizeLimits.CONTACTS,
+          'page': page,
+          'customer': True,
+          'vendor': False},
+        headers=[('Connection', 'close')]
       )
       resp.raise_for_status()
       return resp.json()
 
     path = f'/contacts/{customer_id}' if customer_id else '/contacts'
 
-    async with AsyncClient(**self.opts) as self.client:
-      data = await get(page=0)
+    async with AsyncClient(**self.opts) as client:
+      data = await get(client, page=0)
 
       if customer_id:
         return data

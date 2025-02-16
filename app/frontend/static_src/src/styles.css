@@ -19,6 +19,14 @@
   @apply inline;
 }
 
+.form-checkbox {
+  @apply checkbox checkbox-secondary;
+}
+
+.form-select {
+  @apply select text-base-content;
+}
+
 /* Make play icon white */
 /*.play-icon {*/
 /*  filter: invert(1);*/

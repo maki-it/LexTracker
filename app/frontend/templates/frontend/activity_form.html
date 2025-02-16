@@ -63,7 +63,7 @@
         <div class="join flex items-stretch">
           <input type="datetime-local" name="started_at" id="id_started_at" class="input input-bordered join-item w-52"
              step="{{ step }}"
-            {% if activity %}
+            {% if activity and action != 'duplicate' %}
               value="{{ activity.started_at|date:'Y-m-d\TH:i' }}"
             {% endif %}
            required>
@@ -86,7 +86,7 @@
         <div class="join flex items-stretch">
           <input type="datetime-local" name="ended_at" id="id_ended_at" class="input input-bordered join-item w-52"
                step="{{ step }}"
-            {% if activity %}
+            {% if activity and action != 'duplicate' %}
               value="{{ activity.ended_at|date:'Y-m-d\TH:i' }}"
             {% endif %}
            required>
@@ -103,7 +103,7 @@
 
       <div class="form-control h-fit w-fit md:row-start-2 md:col-start-1">
         <label class="label cursor-pointer">
-          <input type="checkbox" name="is_chargeable" id="id_is_chargeable" class="checkbox"
+          <input type="checkbox" name="is_chargeable" id="id_is_chargeable" class="checkbox checkbox-secondary"
             {% if activity %}
               {% if activity.is_chargeable %}
                 checked="checked"
@@ -120,7 +120,7 @@
       <div class="label">
         <span class="label-text text-base-100">{{ form.notes.label }}</span>
       </div>
-      <textarea name="notes" id="id_notes" class="textarea textarea-md w-full">{% if activity %}{{ activity.notes }}{% endif %}</textarea>
+      <textarea name="notes" id="id_notes" class="textarea textarea-md w-full">{% if activity and action != 'duplicate' %}{{ activity.notes }}{% endif %}</textarea>
     </div>
 
     <div class="md:row-start-3">
@@ -129,24 +129,24 @@
         id="id_submit" class="btn btn-primary"
         hx-get="#table_activities"
         hx-trigger="submit">
-        {% if activity %}
+        {% if activity and action != 'duplicate' %}
         <img src="{% static 'icons/check.svg' %}" class="h-6 invert" alt="Checkmark">
-        <span class="invert">Update Activity</span>
+        <span class="invert">Save</span>
         {% else %}
         <img src="{% static 'icons/plus.svg' %}" class="h-6 invert" alt="Add/Plus Sign">
-        <span class="invert">Add Activity</span>
+        <span class="invert">Create</span>
         {% endif %}
       </button>
 
-      {% if activity %}
+      {% if activity and action != 'duplicate' %}
       <button
         id="id_clear_form" class="btn btn-secondary"
-        hx-get="{% url 'frontend:activity_form' %}"
+        hx-get="{% url 'frontend:create_activity_form' %}"
         hx-trigger="click"
         hx-target="#add_activity_form"
         hx-swap="innerHTML">
-        <img src="{% static 'icons/x-mark.svg' %}" class="h-6 invert" alt="X Mark">
-        <span class="invert">Cancel Update</span>
+        <img src="{% static 'icons/x-mark.svg' %}" class="h-6 invert" alt="X Icon">
+        <span class="invert">Cancel</span>
       </button>
       {% endif %}
     </div>
@@ -160,6 +160,14 @@
     // After submit, clear the notes field
     document.getElementById('form_activity').addEventListener('htmx:afterSwap', function(event) {
       document.getElementById('id_notes').value = '';
+    });
+
+    document.addEventListener('htmx:afterSwap', function (event) {
+      if (event.detail.target.id === 'add_activity_form') {
+        document.getElementById('add_activity').scrollIntoView({behavior: 'smooth'});
+      } else if (event.detail.target.id === 'settings_modal_content') {
+        htmx.trigger('#table_activities', 'activities-updated');
+      }
     });
 
     function toLocalISOString(date) {

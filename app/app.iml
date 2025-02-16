@@ -23,6 +23,7 @@
     <option name="TEMPLATE_FOLDERS">
       <list>
         <option value="$MODULE_DIR$/frontend/templates" />
+        <option value="$MODULE_DIR$/projects/templates" />
       </list>
     </option>
   </component>

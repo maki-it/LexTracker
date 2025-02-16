@@ -6,7 +6,7 @@ from django.http import HttpResponse
 from django.shortcuts import render
 from django.templatetags.tz import timezone
 from django.urls import reverse
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_GET
 from pydantic import UUID4
 
 from .forms import TrackActivityForm
@@ -136,6 +136,12 @@ def create_activity(request):
           'HX-Trigger': 'activities-updated',
       },
     )
+
+@login_required
+@require_GET
+async def get_activity(request, activity_id):
+  activity = await Activity.objects.aget(id=activity_id)
+  return await sync_to_async(render)(request, 'projects/activity.html', {'activity': activity})
 
 @login_required
 @require_POST

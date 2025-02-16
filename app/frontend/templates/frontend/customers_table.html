@@ -1,0 +1,32 @@
+{% load static %}
+<table class="table table-auto table-pin-rows w-full">
+  <thead class="font-bold">
+    <tr class="text-base-content *:*:flex *:*:items-center *:*:cursor-pointer">
+      <th>Number</th>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Last Updated</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for customer in page_obj %}
+    <tr>
+      <td>{{ customer.number }}</td>
+      <td>{{ customer.name }}</td>
+      <td>{{ customer.type|title }}</td>
+      <td>{{ customer.updated_at|date:datetime_format }}</td>
+      <td>
+        {% if customer.is_archived %}
+          <div class="badge badge-warning">Archived</div>
+        {% endif %}
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<div class="flex justify-center">
+  {% url 'frontend:customers_table' as table_url %}
+  {% include 'partials/pagination.html' with url=table_url %}
+</div>

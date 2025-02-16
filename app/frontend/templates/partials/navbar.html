@@ -1,0 +1,33 @@
+{% load static %}
+<header class="w-full p-2 h-12">
+  <nav class="flex justify-between lg:justify-end items-center">
+    <div class="flex 2xl:hidden items-center">
+      <h1 class="text-lg font-bold text-center ml-6">LexTracker</h1>
+    </div>
+    <div class="flex items-center">
+      <button class="btn btn-ghost btn-sm tooltip tooltip-bottom" data-tip="Settings" onclick="settings_modal.showModal()">
+        <img src="{% static 'icons/cog.svg' %}" class="h-6 invert" alt="Settings">
+      </button>
+      <a class="btn btn-ghost btn-sm tooltip tooltip-bottom" data-tip="Logout"
+        {% if user.is_authenticated %}
+          href="{% url 'frontend:logout' %}">
+          <img src="{% static 'icons/logout.svg' %}" class="h-6 invert" alt="Logout">
+        {% else %}
+          href="{% url 'frontend:logout' %}">
+          <img src="{% static 'icons/login.svg' %}" class="h-6 invert" alt="Login">
+        {% endif %}
+      </a>
+    </div>
+  </nav>
+</header>
+
+<dialog id="settings_modal" class="modal"
+  hx-get="{% url 'frontend:settings' %}"
+  hx-trigger="load"
+  hx-target="#settings_modal_content">
+  <div class="modal-box bg-white" id="settings_modal_content">
+  </div>
+  <form method="dialog" class="modal-backdrop">
+    <button>close</button>
+  </form>
+</dialog>

@@ -125,6 +125,9 @@ class Activity(models.Model):
 
 DATE_FORMATS = [
   ('D, d. M', 'Wed, 31. Dec'),
+  ('D, d. M Y', 'Wed, 31. Dec 2021'),
+  ('D, d.m', 'Wed, 31.12'),
+  ('D, d.m.Y', 'Wed, 31.12.2021'),
   ('d.m.Y', '31.12.2021'),
   ('Y-m-d', '2021-12-31'),
   ('d/m/Y', '31/12/2021'),
@@ -134,6 +137,11 @@ DATE_FORMATS = [
   ('d.m.Y', '12.31.2021'),
   ('d. M Y', '31. Dec 2021'),
   ('Y. M. d', '2021. Dec. 31'),
+]
+
+TIME_FORMATS = [
+  ('H:i', '13:45'),
+  ('h:i A', '1:45 PM'),
 ]
 
 TIME_STEPS = [
@@ -148,10 +156,11 @@ TIME_STEPS = [
 class Settings(models.Model):
   """User settings for the time tracker"""
   user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-  show_empty_days = models.BooleanField(default=False, help_text="Show days without activities in the weekly view")
-  date_format = models.CharField(max_length=10, choices=DATE_FORMATS, default='D, d. M')
   updated_at = models.DateTimeField(auto_now=True)
-  time_step = models.PositiveSmallIntegerField(default=15, choices=TIME_STEPS, help_text="Time step for the time picker in minutes")
+  show_empty_days = models.BooleanField(default=False, help_text="Show days without activities in the activity list")
+  date_format = models.CharField(max_length=10, choices=DATE_FORMATS, default=DATE_FORMATS[0][0])
+  time_format = models.CharField(max_length=10, choices=TIME_FORMATS, default=TIME_FORMATS[0][0])
+  time_step = models.PositiveSmallIntegerField(default=TIME_STEPS[3][0], choices=TIME_STEPS, help_text="Step size for time input in activity form")
 
   def __str__(self):
     return f"{self.user.username} - {self.date_format}"
