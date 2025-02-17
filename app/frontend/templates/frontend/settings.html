@@ -1,17 +1,9 @@
 {% load static %}
-<form method="dialog">
-  <button class="btn btn-sm btn-circle btn-ghost text-base-100 absolute right-2 top-2">✕</button>
-</form>
-
 <form id="settings_form"
       class="text-base-100 grid gap-3 lg:gap-4"
       hx-post="{% url 'frontend:settings' %}"
+      hx-trigger="change"
       hx-target="#settings_modal_content">
-
-  <div class="flex items-center gap-3">
-    <h2 class="text-2xl font-bold">Settings</h2>
-    <img id="settings_saved" src="{% static 'icons/check.svg' %}" class="h-5 bg-success rounded-box hidden" alt="Settings saved">
-  </div>
 
   {% csrf_token %}
   {% if form.errors %}
@@ -19,7 +11,7 @@
   {% endif %}
 
   {% for field in form %}
-    <div class="form-control">
+    <div class="form-control no-animation">
       {{ field.label_tag }}
       <div class="w-fit">
       {{ field }}
@@ -33,3 +25,27 @@
     </div>
   {% endfor %}
 </form>
+
+<script>
+  // Show saved icon when settings are saved
+  document.getElementById('settings_form').addEventListener('htmx:afterRequest', function(event) {
+    const savedIcon = document.getElementById('settings_saved');
+    savedIcon.classList.remove('opacity-0');
+
+    if (savedIcon.timeoutId) {
+      clearTimeout(savedIcon.timeoutId);
+    }
+
+    savedIcon.timeoutId = setTimeout(function() {
+      savedIcon.classList.add('opacity-0');
+    }, 2500);
+  });
+</script>
+
+<script>
+  document.getElementById('settings_modal_content').addEventListener('htmx:afterRequest', function(event) {
+    htmx.trigger('#add_activity_form', 'clear-form');
+    htmx.trigger('#table_activities', 'activities-updated');
+    htmx.trigger('#table', 'refresh-table');
+  });
+</script>

@@ -25,7 +25,20 @@
   hx-get="{% url 'frontend:settings' %}"
   hx-trigger="load"
   hx-target="#settings_modal_content">
-  <div class="modal-box bg-white" id="settings_modal_content">
+  <div class="modal-box bg-white">
+    <form method="dialog">
+      <button class="btn btn-sm btn-circle btn-ghost text-base-100 absolute right-2 top-2">✕</button>
+    </form>
+
+    <div class="flex items-center gap-3 mb-3">
+      <h2 class="text-2xl text-base-100 font-bold">Settings</h2>
+      <div id="settings_saved" class="badge badge-success badge-md opacity-0 ease-out duration-100 transition-opacity flex items-center">
+        <img src="{% static 'icons/check.svg' %}" class="h-4 bg-success rounded-box" alt="Settings saved">
+        <span>Saved</span>
+      </div>
+    </div>
+
+    <div id="settings_modal_content"></div>
   </div>
   <form method="dialog" class="modal-backdrop">
     <button>close</button>

@@ -17,12 +17,4 @@
        hx-get="{% url 'projects:get_activities' %}"
        hx-trigger="activities-updated from:body, load">
   </div>
-
-  <script>
-    document.getElementById('settings_modal_content').addEventListener('htmx:afterRequest', function(event) {
-      htmx.trigger('#add_activity_form', 'clear-form');
-      htmx.trigger('#table_activities', 'activities-updated');
-    });
-  </script>
-
 {% endblock %}

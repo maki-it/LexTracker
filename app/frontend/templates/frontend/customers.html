@@ -17,7 +17,7 @@
         Synchronize Customers</button>
     </form>
 
-    <div id="customers_table"
+    <div id="table"
       class="text-base-100 overflow-x-auto lg:rounded-lg"
       hx-get="{% url 'frontend:customers_table' %}"
       hx-trigger="load, refresh-table from:body">
@@ -34,7 +34,7 @@
   }
 
   function refreshTable(event) {
-    htmx.trigger('#customers_table', 'refresh-table');
+    htmx.trigger('#table', 'refresh-table');
     resetSyncButton(event);
   }
 </script>
