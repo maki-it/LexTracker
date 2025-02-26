@@ -43,9 +43,14 @@
 </script>
 
 <script>
+  function triggerHtmxRequest(elementId, eventName) {
+    if (document.getElementById(elementId)) {
+      htmx.trigger(`#${elementId}`, eventName);
+    }
+  }
+
   document.getElementById('settings_modal_content').addEventListener('htmx:afterRequest', function(event) {
-    htmx.trigger('#add_activity_form', 'clear-form');
-    htmx.trigger('#table_activities', 'activities-updated');
-    htmx.trigger('#table', 'refresh-table');
+    triggerHtmxRequest('add_activity_form', 'clear-form');
+    triggerHtmxRequest('table', 'refresh-table');
   });
 </script>

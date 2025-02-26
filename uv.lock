@@ -2,6 +2,15 @@ version = 1
 requires-python = ">=3.13"
 
 [[package]]
+name = "aiolimiter"
+version = "1.2.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f1/23/b52debf471f7a1e42e362d959a3982bdcb4fe13a5d46e63d28868807a79c/aiolimiter-1.2.1.tar.gz", hash = "sha256:e02a37ea1a855d9e832252a105420ad4d15011505512a1a1d814647451b5cca9", size = 7185 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f3/ba/df6e8e1045aebc4778d19b8a3a9bc1808adb1619ba94ca354d9ba17d86c3/aiolimiter-1.2.1-py3-none-any.whl", hash = "sha256:d3f249e9059a20badcb56b61601a83556133655c11d1eb3dd3e04ff069e5f3c7", size = 6711 },
+]
+
+[[package]]
 name = "annotated-types"
 version = "0.7.0"
 source = { registry = "https://pypi.org/simple" }
@@ -293,15 +302,11 @@ wheels = [
 
 [[package]]
 name = "httpx-limiter"
-version = "0.1.0"
-source = { registry = "https://pypi.org/simple" }
+version = "0.1.1.dev11+ga23157d"
+source = { git = "https://github.com/Midnighter/httpx-limiter.git?rev=aiolimiter#a23157dc463c207fa9722caf26c83f9bc91a57f1" }
 dependencies = [
+    { name = "aiolimiter" },
     { name = "httpx" },
-    { name = "limiter" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/d2/69/a9062906ee8d3762c45c1ca276054ff02b349bb2d8987680eb12a578fc92/httpx_limiter-0.1.0.tar.gz", hash = "sha256:023e63333664b757256f9df2d2d2982363b6233811bf23114d0d272613dd3237", size = 10318 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/4c/48/11e518f9c771100689250501ecb51a86f81cb8900bc47b3b00e3d34f5376/httpx_limiter-0.1.0-py3-none-any.whl", hash = "sha256:fd037fe70c51d916505ad5318f4222dfc4a3a8214763306d687837fb90ee0380", size = 8482 },
 ]
 
 [[package]]
@@ -348,23 +353,10 @@ requires-dist = [
     { name = "django-debug-toolbar", specifier = ">=5.0.1" },
     { name = "django-tailwind", extras = ["reload"], specifier = ">=3.8.0" },
     { name = "httpx", specifier = ">=0.28.1" },
-    { name = "httpx-limiter", specifier = ">=0.1.0" },
+    { name = "httpx-limiter", git = "https://github.com/Midnighter/httpx-limiter.git?rev=aiolimiter" },
     { name = "pydantic", specifier = ">=2.10.6" },
     { name = "pydantic-settings", specifier = ">=2.7.1" },
     { name = "uvicorn", specifier = ">=0.34.0" },
-]
-
-[[package]]
-name = "limiter"
-version = "0.5.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "strenum" },
-    { name = "token-bucket" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/5f/76/3fcdddbac1a64a65630a0fc54b7b372d61b67da1fadf55649f8ca3d7d61e/limiter-0.5.0.tar.gz", hash = "sha256:71b9e972e04f1dcf3fa9b541ca3a16dcc1be6ce0d6a12407b25a0888a57e612f", size = 10212 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/11/3a/6a9b416113254840870d8db98fb7018957b1324898e65874cb1844f69dea/limiter-0.5.0-py2.py3-none-any.whl", hash = "sha256:920ee7587596b6421690ee2009a755a9970b743001567ae1005310d9b654985c", size = 10120 },
 ]
 
 [[package]]
@@ -592,30 +584,12 @@ wheels = [
 ]
 
 [[package]]
-name = "strenum"
-version = "0.4.15"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/85/ad/430fb60d90e1d112a62ff57bdd1f286ec73a2a0331272febfddd21f330e1/StrEnum-0.4.15.tar.gz", hash = "sha256:878fb5ab705442070e4dd1929bb5e2249511c0bcf2b0eeacf3bcd80875c82eff", size = 23384 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/81/69/297302c5f5f59c862faa31e6cb9a4cd74721cd1e052b38e464c5b402df8b/StrEnum-0.4.15-py3-none-any.whl", hash = "sha256:a30cda4af7cc6b5bf52c8055bc4bf4b2b6b14a93b574626da33df53cf7740659", size = 8851 },
-]
-
-[[package]]
 name = "text-unidecode"
 version = "1.3"
 source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/ab/e2/e9a00f0ccb71718418230718b3d900e71a5d16e701a3dae079a21e9cd8f8/text-unidecode-1.3.tar.gz", hash = "sha256:bad6603bb14d279193107714b288be206cac565dfa49aa5b105294dd5c4aab93", size = 76885 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a6/a5/c0b6468d3824fe3fde30dbb5e1f687b291608f9473681bbf7dabbf5a87d7/text_unidecode-1.3-py2.py3-none-any.whl", hash = "sha256:1311f10e8b895935241623731c2ba64f4c455287888b18189350b67134a822e8", size = 78154 },
-]
-
-[[package]]
-name = "token-bucket"
-version = "0.3.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/b7/6d/386ed0cfb7f3c2e0311a96b3884a2ba98a7b958344f51c7cce0b1c7bbb0f/token_bucket-0.3.0.tar.gz", hash = "sha256:979571c99db2ff9e651f2b2146a62b2ebadf7de6c217a8781698282976cb675f", size = 6735 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/4b/ce/61ee52521766059d2c2537e85ba5f9773313e74b86df14652a61dd2e990e/token_bucket-0.3.0-py2.py3-none-any.whl", hash = "sha256:6df24309e3cf5b808ae5ef714a3191ec5b54f48c34ef959e4882eef140703369", size = 9459 },
 ]
 
 [[package]]

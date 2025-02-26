@@ -12,7 +12,7 @@ class PageSizeLimits:
   # https://developers.lexoffice.io/docs/#paging-of-resources
   CONTACTS = 250
 
-
+# TODO: Move from git+https://github.com/Midnighter/httpx-limiter.git@aiolimiter to httpx-limiter after fix is released
 class ApiClient:
   def __init__(self):
     config = get_config()
@@ -24,8 +24,8 @@ class ApiClient:
         'Content-Type': 'application/json'
       },
       transport=AsyncRateLimitedTransport.create(
-        rate=config.requests_per_seconds,
-        capacity=config.requests_per_seconds - 1
+        rate=1,
+        interval=1/config.requests_per_seconds
       )
     )
 
@@ -41,8 +41,8 @@ class ApiClient:
         params={
           'size': PageSizeLimits.CONTACTS,
           'page': page,
-          'customer': True,
-          'vendor': False},
+          'customer': True
+        },
         headers=[('Connection', 'close')]
       )
       resp.raise_for_status()
@@ -59,7 +59,7 @@ class ApiClient:
       customers = data.get("content")
 
       # Fetch data from remaining pages
-      for data in await asyncio.gather(*[get(page) for page in range(1, data.get("totalPages"))]):
+      for data in await asyncio.gather(*[get(client, page=page) for page in range(1, data.get("totalPages"))]):
         customers.extend(data.get("content"))
 
     return customers

@@ -2,6 +2,59 @@
 {% load static %}
 
 {% block title %}Reports{% endblock %}
+{% block head_extra %}
+<script src="https://cdn.jsdelivr.net/npm/apexcharts" defer async></script>
+<script src="{% static 'js/charts.js' %}" defer async></script>
+{% endblock %}
 
 {% block content %}
+  <div>
+    <select name="timerange" id="id_timerange" class="select my-4 ml-3 lg:ml-0 lg:mt-0">
+      <option value="1">Today</option>
+      <option value="7" selected>Last Week</option>
+      <option value="30">Last Month</option>
+      <option value="90">Last 3 Months</option>
+      <option value="180">Last 6 Months</option>
+      <option value="365">Last Year</option>
+    </select>
+
+    <select name="chart_type" id="id_chart_type" class="select my-4 ml-3 lg:ml-0 lg:mt-0">
+      <option value="bar">Bar Chart</option>
+      <option value="pie" selected>Pie Chart</option>ched
+    </select>
+
+    <div class="grid lg:grid-cols-3 gap-4">
+
+    {% for unit in types %}
+      <div class="bg-white p-4 rounded-lg shadow-md mx-auto md:mx-0">
+        <h2 class="text-xl font-semibold text-center text-base-100">Hours spent per {{ unit|title }}</h2>
+        <div class="w-full" id="{{ unit }}_chart_container"
+             hx-get="{% url 'projects:count_activities_per_unit' unit %}"
+             hx-vals='js:{days: timeRange.value, chart_type: chartType.value}'
+             hx-trigger="load, reload_charts from:body"></div>
+      </div>
+    {% endfor %}
+
+    </div>
+  </div>
+
+  <script>
+  const timeRange = document.getElementById('id_timerange');
+  const chartType = document.getElementById('id_chart_type');
+
+  reloadCharts = function() {
+    const days = timeRange.value;
+    const chart_type = chartType.value;
+    htmx.trigger('body', 'reload_charts', {days: days, chart_type: chart_type});
+  }
+
+  timeRange.addEventListener('change', function() {
+    reloadCharts();
+  });
+
+  chartType.addEventListener('change', function() {
+    reloadCharts();
+  });
+
+  </script>
 {% endblock %}

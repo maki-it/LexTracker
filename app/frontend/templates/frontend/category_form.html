@@ -1,0 +1,110 @@
+{% load static %}
+<form id="form_category"
+      hx-ext="response-targets"
+  {% if category %}
+      hx-post="{% url 'projects:update_category' category.id %}"
+  {% else %}
+      hx-post="{% url 'projects:create_category' %}"
+  {% endif %}
+      hx-target="#errors"
+      hx-target-400="#errors">
+  <div id="errors"></div>
+  {% csrf_token %}
+  {% if category %}
+    <input type="hidden" name="id" value="{{ category.id }}">
+  {% endif %}
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4">
+    <div>
+      <label class="form-control">
+        <div class="label">
+          <span class="label-text text-base-100">{{ form.title.label }}</span>
+        </div>
+        <input type="text" name="title" id="id_title" class="input" required {% if category %}value="{{ category.title }}"{% endif %}>
+      </label>
+    </div>
+
+    <div>
+      <div class="label">
+        <span class="label-text text-base-100">{{ form.description.label }}</span>
+      </div>
+      <textarea name="description" id="id_description" class="textarea textarea-md w-full">{% if category and action != 'duplicate' %}{{ category.description }}{% endif %}</textarea>
+    </div>
+
+    <div class="form-control h-fit w-fit">
+      <label class="label cursor-pointer">
+        <input type="checkbox" name="is_chargeable" id="id_is_chargeable" class="checkbox checkbox-secondary no-animation"
+          {% if category %}
+            {% if category.is_chargeable %}
+               checked="checked"
+            {% endif %}
+          {% endif %}>
+        <span class="label-text text-base-100 ml-2">{{ form.is_chargeable.label }}</span>
+      </label>
+    </div>
+
+    <div class="md:row-start-3">
+      {# TODO: Close update form after successful submit  #}
+      <button
+        id="id_submit" class="btn btn-primary"
+        hx-get="#table"
+        hx-trigger="submit">
+        {% if category and action != 'duplicate' %}
+          <img src="{% static 'icons/check.svg' %}" class="h-6 invert" alt="Checkmark">
+          <span class="invert">Save</span>
+        {% else %}
+          <img src="{% static 'icons/plus.svg' %}" class="h-6 invert" alt="Add/Plus Sign">
+          <span class="invert">Create</span>
+        {% endif %}
+      </button>
+
+      {% if category and action != 'duplicate' %}
+        <button
+          id="id_clear_form" class="btn btn-secondary"
+          hx-get="{% url 'frontend:create_category_form' %}"
+          hx-trigger="click"
+          hx-target="#add_category_form"
+          hx-swap="innerHTML">
+          <img src="{% static 'icons/x-mark.svg' %}" class="h-6 invert" alt="X Icon">
+          <span class="invert">Cancel</span>
+        </button>
+      {% endif %}
+    </div>
+
+  </div>
+</form>
+
+
+<script>
+  function initializeForm() {
+    document.getElementById('form_category').addEventListener('htmx:afterSwap', function(event) {
+      document.getElementById('id_title').value = '';
+      document.getElementById('id_description').value = '';
+    });
+
+    document.addEventListener('htmx:afterSwap', function (event) {
+      if (event.detail.target.id === 'add_category_form') {
+        document.getElementById('add_category').scrollIntoView({behavior: 'smooth'});
+      } else if (event.detail.target.id === 'settings_modal_content') {
+        htmx.trigger('#table', 'refresh-table');
+      }
+    });
+
+    const start_date = document.getElementById('id_start_date');
+    const end_date = document.getElementById('id_end_date');
+
+    end_date.min = start_date.value;
+
+    start_date.addEventListener('change', function() {
+      end_date.min = start_date.value;
+    });
+  }
+
+  initializeForm();
+
+  // Reinitialize form after HTMX content swap
+  document.body.addEventListener('htmx:afterSwap', function(event) {
+    if (event.target.id === 'form_category') {
+      initializeForm();
+    }
+  });
+</script>

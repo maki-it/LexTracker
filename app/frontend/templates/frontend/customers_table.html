@@ -1,21 +1,23 @@
 {% load static %}
-<table class="table table-auto table-pin-rows w-full">
+<table class="table table-auto table-pin-rows w-full border-collapse border">
   <thead class="font-bold">
-    <tr class="text-base-content *:*:flex *:*:items-center *:*:cursor-pointer">
+    <tr class="text-base-content text-sm">
       <th>Number</th>
       <th>Name</th>
       <th>Type</th>
       <th>Last Updated</th>
+      <th>Projects</th>
       <th>Status</th>
     </tr>
   </thead>
   <tbody>
   {% for customer in page_obj %}
-    <tr>
+    <tr class="hover:bg-gray-100 *:border-y">
       <td>{{ customer.number }}</td>
       <td>{{ customer.name }}</td>
       <td>{{ customer.type|title }}</td>
       <td>{{ customer.updated_at|date:datetime_format }}</td>
+      <td>{% if customer.projects.count > 0 %}{{ customer.projects.count }}{% endif %}</td>
       <td>
         {% if customer.is_archived %}
           <div class="badge badge-warning">Archived</div>
@@ -26,7 +28,7 @@
   </tbody>
 </table>
 
-<div class="flex justify-center">
+<div class="flex justify-center mt-3">
   {% url 'frontend:customers_table' as table_url %}
   {% include 'partials/pagination.html' with url=table_url %}
 </div>

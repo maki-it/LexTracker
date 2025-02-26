@@ -12,3 +12,15 @@ class TrackActivityForm(forms.ModelForm):
   class Meta:
     model = Activity
     exclude = ['id', 'user']
+
+
+class ProjectForm(forms.ModelForm):
+  class Meta:
+    model = Project
+    exclude = ['id', 'created_at', 'updated_at']
+
+
+class CategoryForm(forms.ModelForm):
+  class Meta:
+    model = Category
+    exclude = ['id', 'created_at', 'updated_at']

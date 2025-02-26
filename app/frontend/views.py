@@ -6,8 +6,8 @@ from django.core.paginator import Paginator
 from django.shortcuts import render
 from django.views.decorators.http import require_GET
 
-from projects.forms import TrackActivityForm
-from projects.models import Activity, Project, Settings, Customer
+from projects.forms import TrackActivityForm, ProjectForm, CategoryForm
+from projects.models import Activity, Project, Settings, Customer, Category
 
 from .forms import SettingsForm
 
@@ -58,10 +58,14 @@ async def activity_form(request, activity_id=None, action=None):
 
 @login_required
 async def reports(request):
-  # TODO
+  types = ['project', 'category', 'customer']
+
   return await sync_to_async(render)(
     request,
-    'frontend/reports.html'
+    'frontend/reports.html',
+    {
+      'types': types,
+    },
   )
 
 @login_required
@@ -79,7 +83,7 @@ async def customers_table(request):
 
   customer_list = await sync_to_async(Customer.objects.order_by)('number')
 
-  paginator = Paginator(customer_list, 25)
+  paginator = Paginator(customer_list, settings.table_rows)
 
   page_number = request.GET.get('page')
   page_obj = await sync_to_async(paginator.get_page)(page_number)
@@ -90,6 +94,103 @@ async def customers_table(request):
     {
       'page_obj': page_obj,
       'datetime_format': datetime_format,
+    },
+  )
+
+@login_required
+async def projects(request):
+  if request.path.endswith('categories'):
+    view = 'category'
+  else:
+    view = 'project'
+
+  return await sync_to_async(render)(
+    request,
+    'frontend/projects.html',
+    {
+      'view': view,
+    },
+  )
+
+@login_required
+@require_GET
+async def projects_table(request):
+  settings = await Settings.objects.aget(user=request.user)
+  projects_list = await sync_to_async(Project.objects.order_by)('customer__number', 'start_date', 'end_date')
+
+  paginator = Paginator(projects_list, settings.table_rows)
+
+  page_number = request.GET.get('page')
+  page_obj = await sync_to_async(paginator.get_page)(page_number)
+
+  return await sync_to_async(render)(
+    request,
+    'frontend/projects_table.html',
+    {
+      'page_obj': page_obj,
+      'settings': settings,
+    },
+  )
+
+@login_required
+async def project_form(request, project_id=None, action=None):
+  form = ProjectForm()
+  customers = await sync_to_async(Customer.objects.filter)(is_archived=False)
+  customers = await sync_to_async(customers.order_by)('number')
+
+  categories = await sync_to_async(Category.objects.order_by)("title")
+
+  project = None
+  if project_id:
+    project = await Project.objects.aget(id=project_id)
+    form = await sync_to_async(ProjectForm)(instance=project)
+
+  return await sync_to_async(render)(
+    request,
+    'frontend/project_form.html',
+    {
+      'form': form,
+      'action': action,
+      'project': project,
+      'customers': customers,
+      'categories': categories,
+    },
+  )
+
+@login_required
+@require_GET
+async def categories_table(request):
+  settings = await Settings.objects.aget(user=request.user)
+  categories_list = await sync_to_async(Category.objects.order_by)('title')
+
+  paginator = Paginator(categories_list, settings.table_rows)
+
+  page_number = request.GET.get('page')
+  page_obj = await sync_to_async(paginator.get_page)(page_number)
+
+  return await sync_to_async(render)(
+    request,
+    'frontend/categories_table.html',
+    {
+      'page_obj': page_obj,
+    },
+  )
+
+@login_required
+async def category_form(request, category_id=None, action=None):
+  form = CategoryForm()
+
+  category = None
+  if category_id:
+    category = await Category.objects.aget(id=category_id)
+
+  return await sync_to_async(render)(
+    request,
+    'frontend/category_form.html',
+    {
+      'form': form,
+      'action': action,
+      'category': category,
     },
   )
 

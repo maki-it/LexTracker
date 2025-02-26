@@ -4,12 +4,6 @@ from .models import Project, Category, Activity, Settings
 
 # Register your models here.
 
-class CategoryInline(admin.TabularInline):
-  model = Category.projects.through
-  verbose_name_plural = 'Categories'
-  extra = 0
-
-
 class ActivityInline(admin.TabularInline):
   model = Activity
   verbose_name_plural = 'Activities'
@@ -28,11 +22,10 @@ class ActivityAdmin(admin.ModelAdmin):
 
 
 class CategoryAdmin(admin.ModelAdmin):
-  list_display = ('title', 'description', 'assigned_projects')
+  list_display = ('title', 'description', 'is_chargeable', 'assigned_projects')
   list_filter = ('created_at', 'updated_at', 'projects')
   search_fields = ('title',)
   ordering = ('projects', 'title')
-  inlines = [CategoryInline]
 
   class Meta:
     verbose_name_plural = 'Categories'
@@ -43,12 +36,15 @@ class CategoryAdmin(admin.ModelAdmin):
 
 
 class ProjectAdmin(admin.ModelAdmin):
-    list_display = ('title', 'customer', 'start_date', 'end_date', 'is_archived')
+    list_display = ('title', 'customer', 'start_date', 'end_date', 'is_archived', 'duration', 'assigned_categories')
     list_filter = ('customer', 'start_date', 'end_date', 'is_archived')
     search_fields = ('id', 'title', 'customer__name')
     ordering = ('-start_date', 'customer')
     readonly_fields = ('duration', 'id', 'created_at', 'updated_at')
-    inlines = [ActivityInline, CategoryInline]
+
+    @staticmethod
+    def assigned_categories(obj):
+        return obj.categories.count()
 
 
 class SettingsAdmin(admin.ModelAdmin):

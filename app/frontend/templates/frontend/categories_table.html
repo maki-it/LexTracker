@@ -1,0 +1,78 @@
+{% load static %}
+<div hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+  <div class="overflow-x-auto rounded-xl w-[calc(100vw)] lg:w-full">
+    <table class="table table-auto table-pin-rows w-full border-collapse border">
+      <thead class="font-bold">
+        <tr class="text-base-content text-sm">
+          <th></th>
+          <th>Title</th>
+          <th>Description</th>
+          <th>Chargeable</th>
+          <th>Assigned Projects</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for category in page_obj %}
+        <tr class="hover:bg-gray-100 *:border-y">
+          <td>
+            <div class="join">
+              <button
+                id="update_category"
+                hx-get="{% url 'frontend:update_category_form' category.id 'update' %}"
+                hx-target="#add_category_form"
+                hx-swap="innerHTML"
+                hx-trigger="click"
+                class="btn btn-xs join-item btn-primary">
+                <img src="{% static 'icons/edit.svg' %}" class="h-4 invert" alt="Edit Category">
+              </button>
+              <button
+                id="duplicate_category"
+                hx-get="{% url 'frontend:update_category_form' category.id 'duplicate' %}"
+                hx-target="#add_category_form"
+                hx-swap="innerHTML"
+                hx-trigger="click"
+                class="btn btn-xs join-item btn-secondary">
+                <img src="{% static 'icons/duplicate.svg' %}" class="h-4 invert" alt="Duplicate Category">
+              </button>
+              <button id="delete_category"
+                      hx-post="{% url 'projects:delete_category' category.id %}"
+                      hx-confirm="Are you sure you want to delete the category {{ category.title }}?"
+                      class="btn btn-xs join-item btn-error">
+                <img src="{% static 'icons/trash.svg' %}" class="h-4 invert" alt="Delete Category">
+              </button>
+            </div>
+          </td>
+          <td>{{ category.title }}</td>
+          <td>{{ category.description|default:"-" }}</td>
+          <td>
+            {% if category.is_chargeable %}
+              <div class="badge badge-success tooltip" data-tip="Is Chargable">
+                <img src="{% static 'icons/check.svg' %}" class="h-4 invert" alt="Checkmark">
+              </div>
+            {% else %}
+              <div class="badge badge-error tooltip" data-tip="Not Chargable">
+                <img src="{% static 'icons/x-mark.svg' %}" class="h-4 invert" alt="X Icon">
+              </div>
+            {% endif %}
+          <td>
+            {% if category.projects.count > 5 %}
+              <div class="badge badge-success">{{ category.projects.count }}</div>
+            {% else %}
+              <div class="grid gap-1 lg:grid-flow-col-dense w-fit">
+              {% for project in category.projects.all %}
+                <div class="badge badge-outline text-nowrap">{{ project.title }}</div>
+              {% endfor %}
+              </div>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="flex justify-center mt-3">
+  {% url 'frontend:customers_table' as table_url %}
+  {% include 'partials/pagination.html' with url=table_url %}
+</div>

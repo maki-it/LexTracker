@@ -3,6 +3,8 @@ from datetime import timedelta, datetime
 
 from django.conf import settings
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch.dispatcher import receiver
 from django.utils import timezone
 
 from lexoffice.models import Customer
@@ -15,7 +17,8 @@ class Project(models.Model):
   A project is a collection of activities, e.g. website development, marketing campaign, etc.
   """
   id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-  customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+  customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='projects')
+  categories = models.ManyToManyField('Category', related_name='projects')
   title = models.CharField(max_length=255)
   description = models.TextField(blank=True, null=True, default=None)
 
@@ -36,8 +39,13 @@ class Project(models.Model):
     return self.end_date - self.start_date
 
   @property
-  def is_active(self) -> bool:
-    return not self.is_archived
+  def is_completed(self) -> bool:
+    if not self.end_date:
+      return False
+
+    if self.end_date < timezone.now().date():
+      return True
+    return False
 
   def clean(self):
     # Check if end_date is after start_date
@@ -57,9 +65,9 @@ class Category(models.Model):
   A category defines the type of activity, e.g. development, design, training, administration, etc.
   """
   id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-  projects = models.ManyToManyField(Project, related_name='categories', blank=True, default=None)
   title = models.CharField(max_length=255)
   description = models.TextField(blank=True, null=True, default=None)
+  is_chargeable = models.BooleanField(default=True)
   created_at = models.DateTimeField(auto_now_add=True)
   updated_at = models.DateTimeField(auto_now=True)
 
@@ -153,6 +161,13 @@ TIME_STEPS = [
   (60*60, '1 hour'),
 ]
 
+TABLE_ROWS = [
+  (10, '10 rows'),
+  (25, '25 rows'),
+  (50, '50 rows'),
+  (100, '100 rows'),
+]
+
 class Settings(models.Model):
   """User settings for the time tracker"""
   user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -160,10 +175,16 @@ class Settings(models.Model):
   show_empty_days = models.BooleanField(default=False, help_text="Show days without activities in the activity list")
   date_format = models.CharField(max_length=10, choices=DATE_FORMATS, default=DATE_FORMATS[0][0])
   time_format = models.CharField(max_length=10, choices=TIME_FORMATS, default=TIME_FORMATS[0][0])
-  time_step = models.PositiveSmallIntegerField(default=TIME_STEPS[3][0], choices=TIME_STEPS, help_text="Step size for time input in activity form")
+  time_step = models.PositiveSmallIntegerField(choices=TIME_STEPS, default=TIME_STEPS[3][0], help_text="Step size for time input in activity form")
+  table_rows = models.PositiveSmallIntegerField(choices=TABLE_ROWS, default=TABLE_ROWS[1][0], help_text="Number of rows to show in tables")
 
   def __str__(self):
     return f"{self.user.username} - {self.date_format}"
+
+  @receiver(post_save, sender=settings.AUTH_USER_MODEL)
+  def create_user_settings(sender, instance=None, created=False, **kwargs):
+    if created:
+      Settings.objects.create(user=instance,)
 
   class Meta:
     verbose_name_plural = 'Settings'

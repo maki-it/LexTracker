@@ -8,7 +8,7 @@
           <input type="week" name="week" id="id_week" class="input input-bordered join-item"
             value="{{ week_input_val }}" max="{{ week_input_max }}"
             hx-get="{% url 'projects:get_activities' %}"
-            hx-target="#table_activities"
+            hx-target="#table"
             required>
         </form>
         <div class="join-item join join-vertical flex flex-col">
@@ -27,9 +27,9 @@
   </div>
 
   <div class="overflow-x-auto rounded-xl w-[calc(100vw)] lg:w-full">
-    <table class="table-auto w-full text-base-100 border-collapse border rounded-xl" id="id_activities_table">
-      <thead class="bg-base-100 text-base-content sticky top-0 z-10">
-        <tr class="*:px-4 *:py-2 text-sm">
+    <table class="table table-auto table-pin-rows w-full border-collapse border text-base-100" id="id_activities_table">
+      <thead class="font-bold">
+        <tr class="text-base-content text-sm">
           <th></th>
           <th>Start</th>
           <th>End</th>
@@ -61,7 +61,7 @@
         {% for date_group in date_groups %}
           {% if date_group.grouper == day %}
             {% for act in date_group.list %}
-              <tr class="hover:bg-gray-100 *:px-4 *:py-2 *:border-y">
+              <tr class="hover:bg-gray-100 *:border-y">
                 <td>
                   <div class="join">
                     <button

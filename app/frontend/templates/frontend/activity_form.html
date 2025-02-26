@@ -1,6 +1,6 @@
 {% load custom_filters %}
 {% load static %}
-{% with settings.time_step|default_if_none:60 as step %}
+{% with settings.time_step|default_if_none:15 as step %}
 <form id="form_activity" method="post"
     hx-ext="response-targets"
     {% if activity %}
@@ -38,7 +38,7 @@
               <option value="{{ project.id }}">{{ project.title }} ({{ project.customer }})</option>
             {% endif %}
           {% empty %}
-            <option disabled>No projects available</option>
+            <option disabled selected>No projects available</option>
           {% endfor %}
         </select>
       </label>
@@ -47,10 +47,11 @@
     <div>
       <label class="form-control">
         <div class="label">
-          {# Gets loaded via HTMX #}
           <span class="label-text text-base-100">{{ form.category.label }}</span>
         </div>
-        <select name="category" id="id_category" class="select" required></select>
+        <select name="category" id="id_category" class="select" required>
+          <option disabled>No categories available</option>
+        </select>
       </label>
     </div>
 
@@ -124,11 +125,7 @@
     </div>
 
     <div class="md:row-start-3">
-    {# TODO: Close update form after successful submit  #}
-      <button
-        id="id_submit" class="btn btn-primary"
-        hx-get="#table_activities"
-        hx-trigger="submit">
+      <button id="id_submit" class="btn btn-primary">
         {% if activity and action != 'duplicate' %}
         <img src="{% static 'icons/check.svg' %}" class="h-6 invert" alt="Checkmark">
         <span class="invert">Save</span>
@@ -143,8 +140,7 @@
         id="id_clear_form" class="btn btn-secondary"
         hx-get="{% url 'frontend:create_activity_form' %}"
         hx-trigger="click"
-        hx-target="#add_activity_form"
-        hx-swap="innerHTML">
+        hx-target="#add_activity_form">
         <img src="{% static 'icons/x-mark.svg' %}" class="h-6 invert" alt="X Icon">
         <span class="invert">Cancel</span>
       </button>
@@ -166,7 +162,7 @@
       if (event.detail.target.id === 'add_activity_form') {
         document.getElementById('add_activity').scrollIntoView({behavior: 'smooth'});
       } else if (event.detail.target.id === 'settings_modal_content') {
-        htmx.trigger('#table_activities', 'activities-updated');
+        htmx.trigger('#table', 'refresh-table');
       }
     });
 
@@ -209,6 +205,12 @@
       ended_at.value = toLocalISOString(date);
     }
 
+    ended_at.min = started_at.value;
+
+    started_at.addEventListener('change', function() {
+      ended_at.min = started_at.value;
+    });
+
     // Set started_at to current time when Now is clicked
     document.getElementById('id_started_at_now').addEventListener('click', function(event) {
       const date = new Date();
@@ -245,6 +247,13 @@
         ended_at.reportValidity();
         event.preventDefault();
       }
+    });
+
+    const category = document.getElementById('id_category');
+    category.addEventListener('change', function(event) {
+      const selected = category.options[category.selectedIndex];
+      const isChargeable = selected.getAttribute('data-chargeable') === 'true';
+      document.getElementById('id_is_chargeable').checked = isChargeable;
     });
   }
 

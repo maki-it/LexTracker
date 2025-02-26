@@ -4,6 +4,35 @@
 {% block title %}Projects{% endblock %}
 
 {% block content %}
+
+  <div class="mx-3 lg:mx-0 mt-3 mb-3 lg:mt-0 w-fit">
+    <ul class="menu menu-horizontal gap-1 bg-base-200 rounded-box">
+      <li><a {% if view == 'project' %}class="active"{% endif %} href="{% url 'frontend:projects' %}">Projects</a></li>
+      <li><a {% if view == 'category' %}class="active"{% endif %} href="{% url 'frontend:categories' %}">Categories</a></li>
+    </ul>
+  </div>
+
+  <details id="add_{{ view }}" class="collapse collapse-arrow border mb-4" open>
+    <summary id="add_{{ view }}_title" class="collapse-title text-lg font-medium text-base-100 bg-gray-100">{{ view|title }}</summary>
+    <div id="add_{{ view }}_form" class="collapse-content"
+        {% if view == 'project' %}
+         hx-get="{% url 'frontend:create_project_form' %}"
+        {% elif view == 'category' %}
+         hx-get="{% url 'frontend:create_category_form' %}"
+        {% endif %}
+         hx-trigger="load, clear-form from:body">
+    </div>
+  </details>
+
   <div>
+    <div id="table"
+         class="text-base-100 overflow-x-auto lg:rounded-lg"
+        {% if view == 'project' %}
+         hx-get="{% url 'frontend:projects_table' %}"
+        {% elif view == 'category' %}
+          hx-get="{% url 'frontend:categories_table' %}"
+        {% endif %}
+         hx-trigger="load, refresh-table from:body">
+    </div>
   </div>
 {% endblock %}

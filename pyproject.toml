@@ -10,8 +10,11 @@ dependencies = [
     "django-tailwind[reload]>=3.8.0",
     "django[argon2]>=5.1.5",
     "httpx>=0.28.1",
-    "httpx-limiter>=0.1.0",
+    "httpx-limiter",
     "pydantic>=2.10.6",
     "pydantic-settings>=2.7.1",
     "uvicorn>=0.34.0",
 ]
+
+[tool.uv.sources]
+httpx-limiter = { git = "https://github.com/Midnighter/httpx-limiter.git", rev = "aiolimiter" }

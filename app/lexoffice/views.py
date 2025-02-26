@@ -1,5 +1,4 @@
 import asyncio
-from asyncio import sleep
 
 from pydantic import UUID4
 from django.contrib.auth.decorators import login_required

@@ -1,8 +1,8 @@
-{% for item in items %}
-  {% if item.id == selected_category.id %}
-    <option value="{{ item.id }}" selected>{{ item }}</option>
+{% for category in categories %}
+  {% if category.id == selected_category.id %}
+    <option value="{{ category.id }}" data-chargeable="{{ category.is_chargeable|lower }}" selected>{{ category }}</option>
   {% else %}
-    <option value="{{ item.id }}">{{ item }}</option>
+    <option value="{{ category.id }}" data-chargeable="{{ category.is_chargeable|lower }}">{{ category }}</option>
   {% endif %}
 {% empty %}
   <option disabled selected>No options available</option>
