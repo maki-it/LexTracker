@@ -3,7 +3,7 @@
 {% with settings.time_step|default_if_none:15 as step %}
 <form id="form_activity" method="post"
     hx-ext="response-targets"
-    {% if activity %}
+    {% if activity and action == 'update' %}
       hx-post="{% url 'projects:update_activity' activity.id %}"
     {% else %}
       hx-post="{% url 'projects:create_activity' %}"
@@ -12,7 +12,7 @@
     hx-target-400="#errors">
   <div id="errors"></div>
   {% csrf_token %}
-  {% if activity %}
+  {% if activity and action == 'update' %}
     <input type="hidden" name="id" value="{{ activity.id }}">
   {% endif %}
   <div class="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4">
@@ -64,7 +64,7 @@
         <div class="join flex items-stretch">
           <input type="datetime-local" name="started_at" id="id_started_at" class="input input-bordered join-item w-52"
              step="{{ step }}"
-            {% if activity and action != 'duplicate' %}
+            {% if activity and action == 'update' %}
               value="{{ activity.started_at|date:'Y-m-d\TH:i' }}"
             {% endif %}
            required>
@@ -87,7 +87,7 @@
         <div class="join flex items-stretch">
           <input type="datetime-local" name="ended_at" id="id_ended_at" class="input input-bordered join-item w-52"
                step="{{ step }}"
-            {% if activity and action != 'duplicate' %}
+            {% if activity and action == 'update' %}
               value="{{ activity.ended_at|date:'Y-m-d\TH:i' }}"
             {% endif %}
            required>
@@ -120,13 +120,14 @@
     <div class="md:row-start-2">
       <div class="label">
         <span class="label-text text-base-100">{{ form.notes.label }}</span>
+        <a id="id_clear_notes" class="label-text text-base-100 hover:cursor-pointer link">Clear</a>
       </div>
-      <textarea name="notes" id="id_notes" class="textarea textarea-md w-full">{% if activity and action != 'duplicate' %}{{ activity.notes }}{% endif %}</textarea>
+      <textarea name="notes" id="id_notes" class="textarea textarea-md w-full">{% if activity %}{{ activity.notes }}{% endif %}</textarea>
     </div>
 
     <div class="md:row-start-3">
       <button id="id_submit" class="btn btn-primary">
-        {% if activity and action != 'duplicate' %}
+        {% if activity and action == 'update' %}
         <img src="{% static 'icons/check.svg' %}" class="h-6 invert" alt="Checkmark">
         <span class="invert">Save</span>
         {% else %}
@@ -135,7 +136,7 @@
         {% endif %}
       </button>
 
-      {% if activity and action != 'duplicate' %}
+      {% if activity and action == 'update' %}
       <button
         id="id_clear_form" class="btn btn-secondary"
         hx-get="{% url 'frontend:create_activity_form' %}"
@@ -154,9 +155,11 @@
 <script>
   function initializeForm() {
     // After submit, clear the notes field
+    /*
     document.getElementById('form_activity').addEventListener('htmx:afterSwap', function(event) {
       document.getElementById('id_notes').value = '';
     });
+     */
 
     document.addEventListener('htmx:afterSwap', function (event) {
       if (event.detail.target.id === 'add_activity_form') {
@@ -188,6 +191,7 @@
     const ended_at = document.getElementById('id_ended_at');
     const ended_at_up = document.getElementById('id_ended_at_up');
     const ended_at_down = document.getElementById('id_ended_at_down');
+    const clear_notes = document.getElementById('id_clear_notes');
 
     // Set initial value for started_at to current time and ended_at to current time + step
     if (started_at.value === '') {
@@ -226,6 +230,10 @@
       const roundedMinutes = Math.round(date.getMinutes() / (step / 60)) * (step / 60);
       date.setMinutes(roundedMinutes);
       ended_at.value = toLocalISOString(date);
+    });
+
+    clear_notes.addEventListener('click', function(event) {
+      document.getElementById('id_notes').value = '';
     });
 
     started_at_up.addEventListener('click', () => adjustDate(started_at, started_at.step));
