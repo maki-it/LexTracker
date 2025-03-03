@@ -1,10 +1,16 @@
 function renderPieChart(id, data, labels) {
+  if (data.length === 0) {
+    document.getElementById(id).innerHTML = '<p class="text-base-100 text-center">No data available.</p>';
+    return;
+  }
+
   const options = {
     series: data,
     labels: labels,
     chart: {
       type: 'pie', //'donut',
       width: 450,
+      // height: 200,
       animations: {
         enabled: true,
         speed: 350,
@@ -65,6 +71,11 @@ function renderPieChart(id, data, labels) {
 }
 
 function renderBarChart(id, data, labels) {
+  if (data.length === 0) {
+    document.getElementById(id).innerHTML = '<p class="text-base-100 text-center">No data available.</p>';
+    return;
+  }
+
   const options = {
     series: [{data: data}],
     xaxis: {categories: labels},

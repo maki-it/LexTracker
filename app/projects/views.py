@@ -321,11 +321,19 @@ def count_activities_per_unit(request, unit: str):
 
   days = request.GET.get('days', 1)
   chart_type = request.GET.get('chart_type', 'pie')
+  customer_id = request.GET.get('customer_id', 'all')
+  chargeable = request.GET.get('chargeable', 'all')
 
   activities = Activity.objects.filter(
     user=request.user,
     started_at__gte=date.today() - timedelta(days=float(days))
   )
+
+  if customer_id != 'all':
+    activities = activities.filter(project__customer_id=customer_id)
+
+  if chargeable != 'all':
+    activities = activities.filter(is_chargeable=(chargeable=='true'))
 
   match unit:
     case 'project':
@@ -355,3 +363,40 @@ def count_activities_per_unit(request, unit: str):
 
   return render(request, template,
                                      {'labels': labels, 'data': data, 'unit': unit})
+
+
+@login_required
+@require_GET
+@sync_to_async
+def chargeable_activities(request):
+  labels = []
+  data = []
+
+  days = request.GET.get('days', 1)
+  chart_type = request.GET.get('chart_type', 'pie')
+  customer_id = request.GET.get('customer_id', 'all')
+
+  activities = Activity.objects.filter(
+    user=request.user,
+    started_at__gte=date.today() - timedelta(days=float(days))
+  )
+
+  if customer_id != 'all':
+    activities = activities.filter(project__customer_id=customer_id)
+
+  queryset = activities.values('is_chargeable').annotate(total_duration=Sum(F('ended_at') - F('started_at')))
+  queryset = [{'is_chargeable': item['is_chargeable'], 'total_duration': item['total_duration']} for item in queryset]
+
+  for item in queryset:
+    labels.append('Chargeable' if item['is_chargeable'] else 'Non-chargeable')
+    data.append(item['total_duration'].total_seconds() / 3600)  # Convert duration to hours
+
+  match chart_type:
+    case 'bar':
+      template = 'projects/charts/bar_chart.html'
+    case 'pie':
+      template = 'projects/charts/pie_chart.html'
+    case _:
+      return HttpResponse(status=400)
+
+  return render(request, template, {'labels': labels, 'data': data, 'unit': 'chargeable'})

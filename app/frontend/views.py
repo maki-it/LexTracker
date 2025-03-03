@@ -1,3 +1,5 @@
+from datetime import date, timedelta
+
 from asgiref.sync import sync_to_async
 from django.contrib.auth import alogout
 from django.contrib.auth.decorators import login_required
@@ -8,6 +10,7 @@ from django.views.decorators.http import require_GET
 
 from projects.forms import TrackActivityForm, ProjectForm, CategoryForm
 from projects.models import Activity, Project, Settings, Customer, Category
+from projects.views import split_activities, duration_sum
 
 from .forms import SettingsForm
 
@@ -60,13 +63,60 @@ async def activity_form(request, activity_id=None, action=None):
 async def reports(request):
   types = ['project', 'category', 'customer']
 
+  customers = await sync_to_async(Customer.objects.filter)(is_archived=False)
+  customers = await sync_to_async(customers.order_by)('name')
+
   return await sync_to_async(render)(
     request,
     'frontend/reports.html',
     {
       'types': types,
+      'customers': customers,
     },
   )
+
+@login_required
+@require_GET
+@sync_to_async
+def reports_table(request):
+  days = request.GET.get('days', 1)
+  customer_id = request.GET.get('customer_id', 'all')
+  chargeable = request.GET.get('chargeable', 'all')
+
+  activities = Activity.objects.filter(
+    user=request.user,
+    started_at__gte=date.today() - timedelta(days=float(days))
+  )
+
+  if customer_id != 'all':
+    activities = activities.filter(project__customer_id=customer_id)
+
+  if chargeable != 'all':
+    activities = activities.filter(is_chargeable=(chargeable=='true'))
+
+  activities = activities.order_by('-started_at')
+
+  split_activities_list, daily_durations = split_activities(activities)
+  total_duration = duration_sum(activities)
+
+  start_date = date.today() - timedelta(days=float(days))
+  weekdays = [start_date + timedelta(days=i) for i in range(int(days))]
+
+  settings, created = Settings.objects.get_or_create(user=request.user)
+
+  return render(
+    request,
+    'frontend/reports_activities_table.html',
+    {
+      'activities': split_activities_list,
+      'total_duration': total_duration,
+      'daily_durations': daily_durations,
+      'weekdays': sorted(weekdays, reverse=True),
+      'settings': settings,
+    },
+  )
+
+
 
 @login_required
 async def customers(request):

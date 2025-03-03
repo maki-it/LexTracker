@@ -9,19 +9,34 @@
 
 {% block content %}
   <div>
-    <select name="timerange" id="id_timerange" class="select my-4 ml-3 lg:ml-0 lg:mt-0">
-      <option value="1">Today</option>
-      <option value="7" selected>Last Week</option>
-      <option value="30">Last Month</option>
-      <option value="90">Last 3 Months</option>
-      <option value="180">Last 6 Months</option>
-      <option value="365">Last Year</option>
-    </select>
+    <div class="grid gap-2 grid-flow-row lg:grid-flow-col lg:justify-start my-4 mx-auto lg:mx-0 lg:mt-0 w-fit">
+      <select name="timerange" id="id_timerange" class="select">
+        <option value="1">Today</option>
+        <option value="7" selected>Last Week</option>
+        <option value="30">Last Month</option>
+        <option value="90">Last 3 Months</option>
+        <option value="180">Last 6 Months</option>
+        <option value="365">Last Year</option>
+      </select>
 
-    <select name="chart_type" id="id_chart_type" class="select my-4 ml-3 lg:ml-0 lg:mt-0">
-      <option value="bar">Bar Chart</option>
-      <option value="pie" selected>Pie Chart</option>ched
-    </select>
+      <select name="customer" id="id_customer" class="select">
+        <option value="all" selected>All Customers</option>
+        {% for customer in customers %}
+          <option value="{{ customer.id }}">{{ customer.name }} - {{ customer.number }}</option>
+        {% endfor %}
+      </select>
+
+      <select name="chargeable" id="id_chargeable" class="select">
+        <option value="all" selected>All Activities</option>
+        <option value="true">Chargeable Activities</option>
+        <option value="false">Non-Chargeable Activities</option>
+      </select>
+
+      <select name="chart_type" id="id_chart_type" class="select">
+        <option value="bar">Bar Chart</option>
+        <option value="pie" selected>Pie Chart</option>ched
+      </select>
+    </div>
 
     <div class="grid lg:grid-cols-3 gap-4">
 
@@ -30,30 +45,58 @@
         <h2 class="text-xl font-semibold text-center text-base-100">Hours spent per {{ unit|title }}</h2>
         <div class="w-full" id="{{ unit }}_chart_container"
              hx-get="{% url 'projects:count_activities_per_unit' unit %}"
-             hx-vals='js:{days: timeRange.value, chart_type: chartType.value}'
+             hx-vals='js:{days: timeRange.value, chart_type: chartType.value, customer_id: customer.value, chargeable: chargeable.value}'
              hx-trigger="load, reload_charts from:body"></div>
       </div>
     {% endfor %}
 
+      <div class="bg-white p-4 rounded-lg shadow-md mx-auto md:mx-0">
+        <h2 class="text-xl font-semibold text-center text-base-100">Chargeable Activities</h2>
+        <div class="w-full" id="chargeable_activity_chart_container"
+             hx-get="{% url 'projects:chargeable_activities' %}"
+             hx-vals='js:{days: timeRange.value, chart_type: chartType.value, customer_id: customer.value, chargeable: chargeable.value}'
+             hx-trigger="load, reload_charts from:body"></div>
+      </div>
+
+    </div>
+
+    <div id="table" class="mt-4"
+         hx-get="{% url 'frontend:reports_activities_table' %}"
+         hx-vals='js:{days: timeRange.value, chart_type: chartType.value, customer_id: customer.value, chargeable: chargeable.value}'
+         hx-trigger="load, refresh-table from:body, reload_charts from:body">
     </div>
   </div>
 
   <script>
   const timeRange = document.getElementById('id_timerange');
   const chartType = document.getElementById('id_chart_type');
+  const customer = document.getElementById('id_customer');
+  const chargeable = document.getElementById('id_chargeable');
 
   reloadCharts = function() {
-    const days = timeRange.value;
-    const chart_type = chartType.value;
-    htmx.trigger('body', 'reload_charts', {days: days, chart_type: chart_type});
+    htmx.trigger('body', 'reload_charts', {
+      days: timeRange.value,
+      chart_type: chartType.value,
+      customer_id: customer.value,
+      chargeable: chargeable.value
+    });
   }
 
-  timeRange.addEventListener('change', function() {
-    reloadCharts();
-  });
+  const elements = [timeRange, chartType, customer, chargeable];
 
-  chartType.addEventListener('change', function() {
-    reloadCharts();
+  elements.forEach(element => {
+    element.addEventListener('change', function() {
+      // Hide the chart for chargeable activities if the user selects not "All Activities"
+      if (element.id === chargeable.id) {
+        if (element.value !== 'all') {
+          document.getElementById('chargeable_activity_chart_container').parentElement.style.display = 'none';
+        } else {
+          document.getElementById('chargeable_activity_chart_container').parentElement.style.display = 'block';
+        }
+      }
+
+      reloadCharts();
+    });
   });
 
   </script>

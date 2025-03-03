@@ -28,4 +28,5 @@ urlpatterns = [
 
   # Statistics
   path('statistics/count_activites_per_unit/<str:unit>', views.count_activities_per_unit, name='count_activities_per_unit'),
+  path('statistics/chargeable_activities', views.chargeable_activities, name='chargeable_activities'),
 ]
