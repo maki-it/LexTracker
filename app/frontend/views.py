@@ -85,11 +85,13 @@ def reports_table(request):
 
   activities = Activity.objects.filter(
     user=request.user,
-    started_at__gte=date.today() - timedelta(days=float(days))
+    started_at__gte=date.today() - timedelta(days=float(days)),
   )
 
   if customer_id != 'all':
     activities = activities.filter(project__customer_id=customer_id)
+  else:
+    activities = activities.filter(project__customer__is_archived=False)
 
   if chargeable != 'all':
     activities = activities.filter(is_chargeable=(chargeable=='true'))
