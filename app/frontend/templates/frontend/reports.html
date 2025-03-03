@@ -12,8 +12,8 @@
     <div class="grid gap-2 grid-flow-row lg:grid-flow-col lg:justify-start my-4 mx-auto lg:mx-0 lg:mt-0 w-fit">
       <select name="timerange" id="id_timerange" class="select">
         <option value="1">Today</option>
-        <option value="7" selected>Last Week</option>
-        <option value="30">Last Month</option>
+        <option value="7">Last Week</option>
+        <option value="30" selected>Last Month</option>
         <option value="90">Last 3 Months</option>
         <option value="180">Last 6 Months</option>
         <option value="365">Last Year</option>
@@ -86,12 +86,21 @@
 
   elements.forEach(element => {
     element.addEventListener('change', function() {
-      // Hide the chart for chargeable activities if the user selects not "All Activities"
+      // Hide chart for chargeable activities if the user selects not "All Activities"
       if (element.id === chargeable.id) {
         if (element.value !== 'all') {
           document.getElementById('chargeable_activity_chart_container').parentElement.style.display = 'none';
         } else {
           document.getElementById('chargeable_activity_chart_container').parentElement.style.display = 'block';
+        }
+      }
+
+      // Hide chart for hours spent per customer if the user selects not "All Customers"
+      if (element.id === customer.id) {
+        if (element.value !== 'all') {
+          document.getElementById('customer_chart_container').parentElement.style.display = 'none';
+        } else {
+          document.getElementById('customer_chart_container').parentElement.style.display = 'block';
         }
       }
 
