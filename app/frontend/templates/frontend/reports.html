@@ -88,17 +88,23 @@
     element.addEventListener('change', function() {
       switch (element.id) {
         case chargeable.id:
+          const chargeableContainer = document.getElementById('chargeable_activity_chart_container');
           if (element.value !== 'all') {
-            document.getElementById('chargeable_activity_chart_container').parentElement.style.display = 'none';
+            chargeableContainer.parentElement.style.display = 'none';
+            chargeableContainer.setAttribute('hx-disable', '');
           } else {
-            document.getElementById('chargeable_activity_chart_container').parentElement.style.display = 'block';
+            chargeableContainer.parentElement.style.display = 'block';
+            chargeableContainer.removeAttribute('hx-disable');
           }
           break;
         case customer.id:
+          const customerContainer = document.getElementById('customer_chart_container');
           if (element.value !== 'all') {
-            document.getElementById('customer_chart_container').parentElement.style.display = 'none';
+            customerContainer.parentElement.style.display = 'none';
+            customerContainer.setAttribute('hx-disable', '');
           } else {
-            document.getElementById('customer_chart_container').parentElement.style.display = 'block';
+            customerContainer.parentElement.style.display = 'block';
+            customerContainer.removeAttribute('hx-disable');
           }
           break;
       }
