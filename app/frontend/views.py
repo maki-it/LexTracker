@@ -101,7 +101,7 @@ def reports_table(request):
   split_activities_list, daily_durations = split_activities(activities)
   total_duration = duration_sum(activities)
 
-  start_date = date.today() - timedelta(days=float(days))
+  start_date = date.today() - timedelta(days=float(days) - 1)
   weekdays = [start_date + timedelta(days=i) for i in range(int(days))]
 
   settings, created = Settings.objects.get_or_create(user=request.user)
