@@ -5,7 +5,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class ApiConfig(BaseSettings):
-  endpoint: HttpUrl = Field(description="Base url to Lexoffice API Endpoints", default='https://api.lexoffice.io/v1')
+  endpoint: HttpUrl = Field(description="Base url to Lexoffice API Endpoints", default='https://api.lexware.io/v1')
   requests_per_seconds: PositiveInt = Field(description="Max allowed requests per second to Lexoffice API", default=2)
   token: str = Field(description="Auth Bearer Token")
 

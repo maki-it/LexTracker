@@ -8,6 +8,6 @@
   ],
   "presets": {
     "requestType": "http",
-    "requestUrl": "https://api.lexoffice.io/v1/"
+    "requestUrl": "https://api.lexware.io/v1/"
   }
 }
