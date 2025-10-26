@@ -5,6 +5,7 @@
       <h1 class="text-lg font-bold text-center ml-6">LexTracker</h1>
     </div>
     <div class="flex items-center">
+      <a>{{ user.username }}</a>
       <button class="btn btn-ghost btn-sm tooltip tooltip-bottom" data-tip="Settings" onclick="settings_modal.showModal()">
         <img src="{% static 'icons/cog.svg' %}" class="h-6 invert" alt="Settings">
       </button>
