@@ -1,0 +1,47 @@
+{% load static %}
+<header class="w-full p-2 h-12">
+  <nav class="flex justify-between lg:justify-end items-center">
+    <div class="flex 2xl:hidden items-center">
+      <h1 class="text-lg font-bold text-center ml-6">LexTracker</h1>
+    </div>
+    <div class="flex items-center">
+      <a>{{ user.username }}</a>
+      <button class="btn btn-ghost btn-sm tooltip tooltip-bottom" data-tip="Settings" onclick="settings_modal.showModal()">
+        <img src="{% static 'icons/cog.svg' %}" class="h-6 invert" alt="Settings">
+      </button>
+      <a class="btn btn-ghost btn-sm tooltip tooltip-bottom" data-tip="Logout"
+        {% if user.is_authenticated %}
+          href="{% url 'frontend:logout' %}">
+          <img src="{% static 'icons/logout.svg' %}" class="h-6 invert" alt="Logout">
+        {% else %}
+          href="{% url 'frontend:logout' %}">
+          <img src="{% static 'icons/login.svg' %}" class="h-6 invert" alt="Login">
+        {% endif %}
+      </a>
+    </div>
+  </nav>
+</header>
+
+<dialog id="settings_modal" class="modal"
+  hx-get="{% url 'frontend:settings' %}"
+  hx-trigger="load"
+  hx-target="#settings_modal_content">
+  <div class="modal-box bg-white">
+    <form method="dialog">
+      <button class="btn btn-sm btn-circle btn-ghost text-base-100 absolute right-2 top-2">✕</button>
+    </form>
+
+    <div class="flex items-center gap-3 mb-3">
+      <h2 class="text-2xl text-base-100 font-bold">Settings</h2>
+      <div id="settings_saved" class="badge badge-success badge-md opacity-0 ease-out duration-100 transition-opacity flex items-center">
+        <img src="{% static 'icons/check.svg' %}" class="h-4 bg-success rounded-box" alt="Settings saved">
+        <span>Saved</span>
+      </div>
+    </div>
+
+    <div id="settings_modal_content"></div>
+  </div>
+  <form method="dialog" class="modal-backdrop">
+    <button>close</button>
+  </form>
+</dialog>

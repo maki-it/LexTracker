@@ -1,0 +1,44 @@
+{% load static %}
+{% load static tailwind_tags %}
+<!DOCTYPE html>
+<html lang="en" data-theme="night">
+	<head>
+    <title>{% block title %}Home{% endblock %} • LexTracker</title>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="icon" href="{% static 'icons/clock.svg' %}" type="image/x-icon">
+    {% tailwind_preload_css %}
+		{% tailwind_css %}
+    <script src="{% static 'js/htmx/htmx.min.js' %}"></script>
+    <script src="{% static 'js/htmx/htmx-response-targets.js' %}" defer></script>
+    {% block head_extra %}{% endblock %}
+	</head>
+  <body class="h-screen flex flex-col">
+
+  <div class="flex">
+    <!-- Sidebar -->
+    <aside class="hidden 2xl:flex w-48 h-screen p-4 flex-col">
+      {% include 'partials/sidebar.html' %}
+    </aside>
+
+    <div class="flex-1 flex flex-col">
+      <!-- Navbar -->
+      {% include 'partials/navbar.html' %}
+
+      <main class="flex-1 bg-gray-100 2xl:rounded-tl-lg">
+        <div class="bg-white lg:p-4 rounded-lg shadow-md h-[calc(100vh-7rem)] 2xl:h-[calc(100vh-3rem)] overflow-y-scroll">
+        {% block content %}No Content{% endblock %}
+        </div>
+      </main>
+
+      <footer>
+        {% include 'partials/footer.html' %}
+      </footer>
+
+    </div>
+  </div>
+
+  </body>
+
+</html>

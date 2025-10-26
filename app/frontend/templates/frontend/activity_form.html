@@ -1,0 +1,278 @@
+{% load custom_filters %}
+{% load static %}
+{% with settings.time_step|default_if_none:15 as step %}
+<form id="form_activity" method="post"
+    hx-ext="response-targets"
+    {% if activity and action == 'update' %}
+      hx-post="{% url 'projects:update_activity' activity.id %}"
+    {% else %}
+      hx-post="{% url 'projects:create_activity' %}"
+    {% endif %}
+    hx-target="#errors"
+    hx-target-400="#errors">
+  <div id="errors"></div>
+  {% csrf_token %}
+  {% if activity and action == 'update' %}
+    <input type="hidden" name="id" value="{{ activity.id }}">
+  {% endif %}
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4">
+    <div>
+      <label class="form-control w-full">
+        <div class="label">
+          <span class="label-text text-base-100">{{ form.project.label }}</span>
+        </div>
+        <select name="project" id="id_project" class="select" required
+            {% if activity %}
+                hx-get="{% url 'projects:get_category_with_selected' activity.category.id %}"
+            {% else %}
+                hx-get="{% url 'projects:get_categories' %}"
+            {% endif %}
+                hx-target="#id_category"
+                hx-swap="innerHTML"
+                hx-trigger="change, load, update-categories from:body"
+        >
+          {% for project in projects %}
+            {% if activity.project == project %}
+              <option value="{{ project.id }}" selected>{{ project.title }} ({{ project.customer }})</option>
+            {% else %}
+              <option value="{{ project.id }}">{{ project.title }} ({{ project.customer }})</option>
+            {% endif %}
+          {% empty %}
+            <option disabled selected>No projects available</option>
+          {% endfor %}
+        </select>
+      </label>
+    </div>
+
+    <div>
+      <label class="form-control">
+        <div class="label">
+          <span class="label-text text-base-100">{{ form.category.label }}</span>
+        </div>
+        <select name="category" id="id_category" class="select" required>
+          <option disabled>No categories available</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="md:row-start-2 grid md:grid-flow-col md:grid-cols-2 gap-2 md:gap-4">
+      <div class="w-fit md:row-start-1">
+        <div class="label">
+          <span class="label-text text-base-100">{{ form.started_at.label }}</span>
+          <a id="id_started_at_now" class="label-text text-base-100 hover:cursor-pointer link">Now</a>
+        </div>
+        <div class="join flex items-stretch">
+          <input type="datetime-local" name="started_at" id="id_started_at" class="input input-bordered join-item w-52"
+             step="{{ step }}"
+            {% if activity and action == 'update' %}
+              value="{{ activity.started_at|date:'Y-m-d\TH:i' }}"
+            {% endif %}
+           required>
+          <div class="join-item join join-vertical flex flex-col">
+            <a class="btn btn-xs join-item flex-1" id="id_started_at_up">
+              <img src="{% static 'icons/arrow-up.svg' %}" class="h-5 invert" alt="Arrow Up">
+            </a>
+            <a class="btn btn-xs join-item flex-1" id="id_started_at_down">
+              <img src="{% static 'icons/arrow-down.svg' %}" class="h-5 invert" alt="Arrow Down">
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="w-fit md:row-start-1">
+        <div class="label">
+          <span class="label-text text-base-100">{{ form.ended_at.label }}</span>
+          <a id="id_ended_at_now" class="label-text text-base-100 hover:cursor-pointer link">Now</a>
+        </div>
+        <div class="join flex items-stretch">
+          <input type="datetime-local" name="ended_at" id="id_ended_at" class="input input-bordered join-item w-52"
+               step="{{ step }}"
+            {% if activity and action == 'update' %}
+              value="{{ activity.ended_at|date:'Y-m-d\TH:i' }}"
+            {% endif %}
+           required>
+          <div class="join-item join join-vertical flex flex-col">
+            <a class="btn btn-xs join-item flex-1" id="id_ended_at_up">
+              <img src="{% static 'icons/arrow-up.svg' %}" class="h-5 invert" alt="Arrow Up">
+            </a>
+            <a class="btn btn-xs join-item flex-1" id="id_ended_at_down">
+              <img src="{% static 'icons/arrow-down.svg' %}" class="h-5 invert" alt="Arrow Down">
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-control h-fit w-fit md:row-start-2 md:col-start-1">
+        <label class="label cursor-pointer">
+          <input type="checkbox" name="is_chargeable" id="id_is_chargeable" class="checkbox checkbox-secondary no-animation"
+            {% if activity %}
+              {% if activity.is_chargeable %}
+                checked="checked"
+              {% endif %}
+            {% else %}
+              checked="checked"
+            {% endif %}>
+          <span class="label-text text-base-100 ml-2">{{ form.is_chargeable.label }}</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="md:row-start-2">
+      <div class="label">
+        <span class="label-text text-base-100">{{ form.notes.label }}</span>
+        <a id="id_clear_notes" class="label-text text-base-100 hover:cursor-pointer link">Clear</a>
+      </div>
+      <textarea name="notes" id="id_notes" class="textarea textarea-md w-full">{% if activity %}{{ activity.notes }}{% endif %}</textarea>
+    </div>
+
+    <div class="md:row-start-3">
+      <button id="id_submit" class="btn btn-primary">
+        {% if activity and action == 'update' %}
+        <img src="{% static 'icons/check.svg' %}" class="h-6 invert" alt="Checkmark">
+        <span class="invert">Save</span>
+        {% else %}
+        <img src="{% static 'icons/plus.svg' %}" class="h-6 invert" alt="Add/Plus Sign">
+        <span class="invert">Create</span>
+        {% endif %}
+      </button>
+
+      {% if activity and action == 'update' %}
+      <button
+        id="id_clear_form" class="btn btn-secondary"
+        hx-get="{% url 'frontend:create_activity_form' %}"
+        hx-trigger="click"
+        hx-target="#add_activity_form">
+        <img src="{% static 'icons/x-mark.svg' %}" class="h-6 invert" alt="X Icon">
+        <span class="invert">Cancel</span>
+      </button>
+      {% endif %}
+    </div>
+
+  </div>
+</form>
+
+
+<script>
+  function initializeForm() {
+    // After submit, clear the notes field
+    /*
+    document.getElementById('form_activity').addEventListener('htmx:afterSwap', function(event) {
+      document.getElementById('id_notes').value = '';
+    });
+     */
+
+    document.addEventListener('htmx:afterSwap', function (event) {
+      if (event.detail.target.id === 'add_activity_form') {
+        document.getElementById('add_activity').scrollIntoView({behavior: 'smooth'});
+      } else if (event.detail.target.id === 'settings_modal_content') {
+        htmx.trigger('#table', 'refresh-table');
+      }
+    });
+
+    function toLocalISOString(date) {
+      const localDate = new Date(date - date.getTimezoneOffset() * 60000); //offset in milliseconds. Credit https://stackoverflow.com/questions/10830357/javascript-toisostring-ignores-timezone-offset
+
+      // Optionally remove second/millisecond if needed
+      localDate.setSeconds(null);
+      localDate.setMilliseconds(null);
+      return localDate.toISOString().slice(0, -1);
+    }
+
+    const adjustDate = (input, step) => {
+      const date = new Date(input.value);
+      date.setMinutes(date.getMinutes() + step / 60);
+      input.value = toLocalISOString(date);
+    };
+
+    const form = document.getElementById('form_activity');
+    const started_at = document.getElementById('id_started_at');
+    const started_at_up = document.getElementById('id_started_at_up');
+    const started_at_down = document.getElementById('id_started_at_down');
+    const ended_at = document.getElementById('id_ended_at');
+    const ended_at_up = document.getElementById('id_ended_at_up');
+    const ended_at_down = document.getElementById('id_ended_at_down');
+    const clear_notes = document.getElementById('id_clear_notes');
+
+    // Set initial value for started_at to current time and ended_at to current time + step
+    if (started_at.value === '') {
+      const date = new Date();
+      const step = parseInt(started_at.step);
+      const roundedMinutes = Math.round(date.getMinutes() / (step / 60)) * (step / 60);
+      date.setMinutes(roundedMinutes);
+      started_at.value = toLocalISOString(date);
+    }
+
+    // Set initial value for ended_at to current time + step
+    if (ended_at.value === '') {
+      const date = new Date(started_at.value);
+      date.setMinutes(date.getMinutes() + parseInt(ended_at.step) / 60);
+      ended_at.value = toLocalISOString(date);
+    }
+
+    ended_at.min = started_at.value;
+
+    started_at.addEventListener('change', function() {
+      ended_at.min = started_at.value;
+    });
+
+    // Set started_at to current time when Now is clicked
+    document.getElementById('id_started_at_now').addEventListener('click', function(event) {
+      const date = new Date();
+      const step = parseInt(started_at.step);
+      const roundedMinutes = Math.round(date.getMinutes() / (step / 60)) * (step / 60);
+      date.setMinutes(roundedMinutes);
+      started_at.value = toLocalISOString(date);
+    });
+
+    document.getElementById('id_ended_at_now').addEventListener('click', function(event) {
+      const date = new Date();
+      const step = parseInt(ended_at.step);
+      const roundedMinutes = Math.round(date.getMinutes() / (step / 60)) * (step / 60);
+      date.setMinutes(roundedMinutes);
+      ended_at.value = toLocalISOString(date);
+    });
+
+    clear_notes.addEventListener('click', function(event) {
+      document.getElementById('id_notes').value = '';
+    });
+
+    started_at_up.addEventListener('click', () => adjustDate(started_at, started_at.step));
+    started_at_down.addEventListener('click', () => adjustDate(started_at, -started_at.step));
+    ended_at_up.addEventListener('click', () => adjustDate(ended_at, ended_at.step));
+    ended_at_down.addEventListener('click', () => adjustDate(ended_at, -ended_at.step));
+
+    started_at.addEventListener('change', function(event) {
+      ended_at.setCustomValidity('');
+    });
+
+    ended_at.addEventListener('change', function(event) {
+      ended_at.setCustomValidity('');
+    });
+
+    form.addEventListener('submit', function(event) {
+      if (new Date(started_at.value) >= new Date(ended_at.value)) {
+        ended_at.setCustomValidity('End must be after start');
+        ended_at.reportValidity();
+        event.preventDefault();
+      }
+    });
+
+    const category = document.getElementById('id_category');
+    category.addEventListener('change', function(event) {
+      const selected = category.options[category.selectedIndex];
+      const isChargeable = selected.getAttribute('data-chargeable') === 'true';
+      document.getElementById('id_is_chargeable').checked = isChargeable;
+    });
+  }
+
+  // Initialize form on page load
+  initializeForm();
+
+  // Reinitialize form after HTMX content swap
+  document.body.addEventListener('htmx:afterSwap', function(event) {
+    if (event.target.id === 'form_activity') {
+      initializeForm();
+    }
+  });
+</script>
+{% endwith %}

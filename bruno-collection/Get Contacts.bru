@@ -1,0 +1,15 @@
+meta {
+  name: Get Contacts
+  type: http
+  seq: 2
+}
+
+get {
+  url: https://api.lexware.io/v1/contacts?customer=true
+  body: none
+  auth: none
+}
+
+params:query {
+  customer: true
+}

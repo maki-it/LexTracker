@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Activities{% endblock %}
+
+{% block content %}
+  <details id="add_activity" class="collapse collapse-arrow border mb-4" open>
+    <summary id="add_activity_title" class="collapse-title text-lg font-medium text-base-100 bg-gray-100">Track Activity</summary>
+    <div id="add_activity_form" class="collapse-content"
+      hx-get="{% url 'frontend:create_activity_form' %}"
+      hx-trigger="load, clear-form from:body">
+    </div>
+  </details>
+
+  <div id="table"
+       hx-get="{% url 'projects:get_activities' %}"
+       hx-trigger="load, refresh-table from:body">
+  </div>
+{% endblock %}

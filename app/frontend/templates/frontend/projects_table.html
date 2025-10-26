@@ -1,0 +1,72 @@
+{% load static %}
+<div hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+  <div class="overflow-x-auto rounded-xl w-[calc(100vw)] lg:w-full">
+    <table class="table table-auto table-pin-rows w-full border-collapse border" id="id_projects_table">
+      <thead class="font-bold">
+        <tr class="text-base-content text-sm">
+          <th></th>
+          <th>Customer</th>
+          <th>Title</th>
+          <th>Description</th>
+          <th>Start Date</th>
+          <th>End Date</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for project in page_obj %}
+        <tr class="hover:bg-gray-100 *:border-y">
+          <td>
+            <div class="join">
+              <button
+                id="update_project"
+                hx-get="{% url 'frontend:update_project_form' project.id 'update' %}"
+                hx-target="#add_project_form"
+                hx-swap="innerHTML"
+                hx-trigger="click"
+                class="btn btn-xs join-item btn-primary">
+                <img src="{% static 'icons/edit.svg' %}" class="h-4 invert" alt="Edit Project">
+              </button>
+              <button
+                id="duplicate_project"
+                hx-get="{% url 'frontend:update_project_form' project.id 'duplicate' %}"
+                hx-target="#add_project_form"
+                hx-swap="innerHTML"
+                hx-trigger="click"
+                class="btn btn-xs join-item btn-secondary">
+                <img src="{% static 'icons/duplicate.svg' %}" class="h-4 invert" alt="Duplicate Project">
+              </button>
+              <button id="delete_project"
+                      hx-post="{% url 'projects:delete_project' project.id %}"
+                      hx-confirm="Are you sure you want to delete the project {{ project.customer }} - {{ project.title }}?"
+                      class="btn btn-xs join-item btn-error">
+                <img src="{% static 'icons/trash.svg' %}" class="h-4 invert" alt="Delete Project">
+              </button>
+            </div>
+          </td>
+          <td>{{ project.customer }}</td>
+          <td>{{ project.title }}</td>
+          <td>{{ project.description|default:"-" }}</td>
+          <td>{{ project.start_date|date:settings.date_format|default:"-" }}</td>
+          <td>{{ project.end_date|date:settings.date_format|default:"-" }}</td>
+          <td>
+            <div class="grid gap-1">
+              {% if project.is_completed %}<div class="badge badge-success">Completed</div>{% endif %}
+              {% if project.is_archived %}<div class="badge badge-warning">Archived</div>{% endif %}
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" class="text-center py-2 font-bold">No projects found</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="flex justify-center mt-3">
+  {% url 'frontend:customers_table' as table_url %}
+  {% include 'partials/pagination.html' with url=table_url %}
+</div>

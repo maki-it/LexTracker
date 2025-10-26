@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Customers{% endblock %}
+
+{% block content %}
+  <div class="grid grid-cols-1 gap-4 lg:gap-3 mt-4 lg:mt-0">
+    <form>
+      {% csrf_token %}
+      <button type="submit" id="sync_customers"
+        hx-post="{% url 'lexoffice:sync_customers' %}"
+        hx-trigger="click"
+        hx-indicator="#loader"
+        hx-on::after-request="refreshTable(event)"
+        class="btn ml-3 lg:ml-0">
+        <span id="loader" class="loader"></span>
+        Synchronize Customers</button>
+    </form>
+
+    <div id="table"
+      class="text-base-100 overflow-x-auto lg:rounded-lg"
+      hx-get="{% url 'frontend:customers_table' %}"
+      hx-trigger="load, refresh-table from:body">
+    </div>
+  </div>
+
+<script>
+  const syncButton = document.getElementById('sync_customers');
+  const syncButtonText = syncButton.innerHTML;
+  function resetSyncButton() {
+    setTimeout(function() {
+      syncButton.innerHTML = syncButtonText;
+    }, 3000);
+  }
+
+  function refreshTable(event) {
+    htmx.trigger('#table', 'refresh-table');
+    resetSyncButton(event);
+  }
+</script>
+{% endblock %}
