@@ -17,4 +17,4 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-httpx-limiter = { git = "https://github.com/Midnighter/httpx-limiter.git", rev = "aiolimiter" }
+httpx-limiter = { git = "https://github.com/Midnighter/httpx-limiter.git", rev = "b2425cd3294e3b58cbd38b715149c73af207b8a4" }
