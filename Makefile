@@ -20,7 +20,7 @@ install:
 .PHONY: venv
 env venv: # Create a virtual environment if it doesn't exist
 	@test -d .venv || uv venv
-	@source .venv/bin/activate
+	@. .venv/bin/activate
 
 .PHONY: run
 run:
