@@ -2,7 +2,8 @@ import asyncio
 
 from pydantic import UUID4
 from httpx import AsyncClient
-from httpx_limiter import AsyncRateLimitedTransport
+from httpx_limiter import AsyncRateLimitedTransport, Rate
+from httpx_limiter.aiolimiter import AiolimiterAsyncLimiter
 
 from .config import get_config
 from .models import Customer
@@ -24,8 +25,7 @@ class ApiClient:
         'Content-Type': 'application/json'
       },
       transport=AsyncRateLimitedTransport.create(
-        rate=1,
-        interval=1/config.requests_per_seconds
+        limiter=AiolimiterAsyncLimiter.create(Rate.create(magnitude=config.requests_per_seconds, duration=1)),
       )
     )
 

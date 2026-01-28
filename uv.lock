@@ -3,6 +3,15 @@ revision = 3
 requires-python = ">=3.13"
 
 [[package]]
+name = "aiolimiter"
+version = "1.2.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f1/23/b52debf471f7a1e42e362d959a3982bdcb4fe13a5d46e63d28868807a79c/aiolimiter-1.2.1.tar.gz", hash = "sha256:e02a37ea1a855d9e832252a105420ad4d15011505512a1a1d814647451b5cca9", size = 7185, upload-time = "2024-12-08T15:31:51.496Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f3/ba/df6e8e1045aebc4778d19b8a3a9bc1808adb1619ba94ca354d9ba17d86c3/aiolimiter-1.2.1-py3-none-any.whl", hash = "sha256:d3f249e9059a20badcb56b61601a83556133655c11d1eb3dd3e04ff069e5f3c7", size = 6711, upload-time = "2024-12-08T15:31:49.874Z" },
+]
+
+[[package]]
 name = "annotated-types"
 version = "0.7.0"
 source = { registry = "https://pypi.org/simple" }
@@ -300,6 +309,11 @@ dependencies = [
     { name = "httpx" },
 ]
 
+[package.optional-dependencies]
+aiolimiter = [
+    { name = "aiolimiter" },
+]
+
 [[package]]
 name = "idna"
 version = "3.10"
@@ -331,7 +345,7 @@ dependencies = [
     { name = "django-debug-toolbar" },
     { name = "django-tailwind", extra = ["reload"] },
     { name = "httpx" },
-    { name = "httpx-limiter" },
+    { name = "httpx-limiter", extra = ["aiolimiter"] },
     { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "uvicorn" },
@@ -344,7 +358,7 @@ requires-dist = [
     { name = "django-debug-toolbar", specifier = ">=6.2.0" },
     { name = "django-tailwind", extras = ["reload"], specifier = ">=3.8.0" },
     { name = "httpx", specifier = ">=0.28.1" },
-    { name = "httpx-limiter", git = "https://github.com/Midnighter/httpx-limiter.git?rev=636cb6e52520018c348d48c4d24734ec07b6ea69" },
+    { name = "httpx-limiter", extras = ["aiolimiter"], git = "https://github.com/Midnighter/httpx-limiter.git?rev=636cb6e52520018c348d48c4d24734ec07b6ea69" },
     { name = "pydantic", specifier = ">=2.10.6" },
     { name = "pydantic-settings", specifier = ">=2.7.1" },
     { name = "uvicorn", specifier = ">=0.34.0" },
