@@ -8,7 +8,7 @@ dependencies = [
     "cookiecutter>=2.6.0",
     "django-debug-toolbar>=6.2.0",
     "django-tailwind[reload]>=3.8.0",
-    "django[argon2]>=5.1.5",
+    "django[argon2]>=6.0.1",
     "httpx>=0.28.1",
     "httpx-limiter",
     "pydantic>=2.10.6",
@@ -17,4 +17,4 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-httpx-limiter = { git = "https://github.com/Midnighter/httpx-limiter.git", rev = "b2425cd3294e3b58cbd38b715149c73af207b8a4" }
+httpx-limiter = { git = "https://github.com/Midnighter/httpx-limiter.git", rev = "636cb6e52520018c348d48c4d24734ec07b6ea69" }
