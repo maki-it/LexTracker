@@ -15,7 +15,6 @@ if [[ "$1" == "uvicorn" ]]; then
 
     # Create superuser from environment variables if specified
     if [ -n "$DJANGO_SUPERUSER_USERNAME" ] && [ -n "$DJANGO_SUPERUSER_PASSWORD" ] && [ -n "$DJANGO_SUPERUSER_EMAIL" ]; then
-        echo "Creating superuser..."
         python manage.py shell << END
 from django.contrib.auth import get_user_model
 User = get_user_model()
