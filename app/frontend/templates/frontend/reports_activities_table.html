@@ -22,46 +22,44 @@
       </tr>
       </thead>
       <tbody class="text-sm">
-      {% regroup activities by started_at.date as date_groups %}
-      {% if not activities and not settings.show_empty_days %}
+      {% if not page_obj %}
         <tr>
           <td colspan="9" class="text-center py-2 font-bold">No activities found</td>
         </tr>
       {% endif %}
-      {% for day in weekdays %}
-        {% with daily_durations|get_item:day|format_timedelta as daily_duration %}
-          {% if settings.show_empty_days or daily_duration|default_if_none:"0:00" != "0:00" %}
-            <tr>
-              <td colspan="9" class="bg-gray-200 text-center py-0.5 border-y border-gray-300 font-bold">
-                {{ day|date:settings.date_format }} - {{ daily_duration|default_if_none:"0:00" }} h
-              </td>
-            </tr>
-          {% endif %}
-        {% endwith %}
-        {% for date_group in date_groups %}
-          {% if date_group.grouper == day %}
-            {% for act in date_group.list %}
-              <tr class="hover:bg-gray-100 *:border-y">
-                <td>{{ act.started_at|date:settings.time_format }}</td>
-                <td>{{ act.ended_at|date:settings.time_format }}</td>
-                <td>{{ act.started_at|duration:act.ended_at }}</td>
-                <td>{{ act.project.customer }}</td>
-                <td>{{ act.project }}</td>
-                <td>{{ act.category }}</td>
-                <td>
-                  {% if act.is_chargeable %}
-                    <div class="tooltip align-middle" data-tip="Activity is chargeable">
-                      <img src="{% static 'icons/banknotes.svg' %}" class="h-5" alt="Activity is chargeable">
-                    </div>
-                  {% endif %}
-                </td>
-                <td>{{ act.notes }}</td>
-              </tr>
-            {% endfor %}
-          {% endif %}
+      {% for day_entry in page_obj %}
+        <tr>
+          <td colspan="9" class="bg-gray-200 text-center py-0.5 border-y border-gray-300 font-bold">
+            {{ day_entry.date|date:settings.date_format }} - {{ day_entry.duration|format_timedelta }} h
+          </td>
+        </tr>
+        {% for act in day_entry.activities %}
+          <tr class="hover:bg-gray-100 *:border-y">
+            <td>{{ act.started_at|date:settings.time_format }}</td>
+            <td>{{ act.ended_at|date:settings.time_format }}</td>
+            <td>{{ act.started_at|duration:act.ended_at }}</td>
+            <td>{{ act.project.customer }}</td>
+            <td>{{ act.project }}</td>
+            <td>{{ act.category }}</td>
+            <td>
+              {% if act.is_chargeable %}
+                <div class="tooltip align-middle" data-tip="Activity is chargeable">
+                  <img src="{% static 'icons/banknotes.svg' %}" class="h-5" alt="Activity is chargeable">
+                </div>
+              {% endif %}
+            </td>
+            <td>{{ act.notes }}</td>
+          </tr>
         {% endfor %}
       {% endfor %}
       </tbody>
     </table>
   </div>
+
+  {% if page_obj.paginator.num_pages > 1 %}
+  <div class="flex justify-center mt-3">
+    {% url 'frontend:reports_activities_table' as table_url %}
+    {% include 'partials/pagination.html' with url=table_url hx_vals="days: timeRange.value, customer_id: customer.value, chargeable: chargeable.value" %}
+  </div>
+  {% endif %}
 </div>

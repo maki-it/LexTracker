@@ -106,14 +106,37 @@ def reports_table(request):
 
   settings, created = Settings.objects.get_or_create(user=request.user)
 
+  # Group activities by day
+  from collections import defaultdict
+  activities_by_day = defaultdict(list)
+  for activity in split_activities_list:
+    activities_by_day[activity['started_at'].date()].append(activity)
+
+  # Build a list of day entries for pagination
+  day_entries = []
+  for day in sorted(weekdays, reverse=True):
+    day_activities = activities_by_day.get(day, [])
+    daily_duration = daily_durations.get(day, timedelta())
+
+    # Only include days with activities, or all days if show_empty_days is enabled
+    if settings.show_empty_days or day_activities:
+      day_entries.append({
+        'date': day,
+        'activities': day_activities,
+        'duration': daily_duration,
+      })
+
+  # Paginate day entries (each day counts as one "row")
+  paginator = Paginator(day_entries, settings.table_rows)
+  page_number = request.GET.get('page')
+  page_obj = paginator.get_page(page_number)
+
   return render(
     request,
     'frontend/reports_activities_table.html',
     {
-      'activities': split_activities_list,
+      'page_obj': page_obj,
       'total_duration': total_duration,
-      'daily_durations': daily_durations,
-      'weekdays': sorted(weekdays, reverse=True),
       'settings': settings,
     },
   )
