@@ -1,5 +1,69 @@
+# Environment and secrets
 **/.env
+.env.local
+.env.*.local
+
+# Tests
 app/tests/**/*
 app/tests
+
+# Docker files (already in docker/ directory)
 app/docker/**/*
 app/docker
+docker-compose*.yml
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Django
+*.log
+db.sqlite3
+db.sqlite3-journal
+app/staticfiles/
+media/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+*.swn
+.DS_Store
+*.iml
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+docs/
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# Other
+bruno-collection/
+Makefile
+renovate.json
