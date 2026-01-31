@@ -342,6 +342,7 @@ def count_activities_per_unit(request, unit: str):
       target = 'category__title'
     case 'customer':
       target = 'project__customer__name'
+      activities = activities.filter(project__customer__isnull=False)
     case _:
       return HttpResponse(status=400)
 
