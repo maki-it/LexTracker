@@ -1,9 +1,11 @@
-from django.urls import path, include
+from django.urls import path
 
 from . import views
 
 app_name = 'frontend'
 urlpatterns = [
+  path('login', views.login_view, name='login'),
+  path('logout', views.logout, name='logout'),
   path('', views.activities, name='activities'),
   path('reports', views.reports, name='reports'),
   path('reports/table', views.reports_table, name='reports_activities_table'),
@@ -20,5 +22,4 @@ urlpatterns = [
   path('forms/project/<uuid:project_id>/<str:action>', views.project_form, name='update_project_form'),
   path('forms/category', views.category_form, name='create_category_form'),
   path('forms/category/<uuid:category_id>/<str:action>', views.category_form, name='update_category_form'),
-  path('logout', views.logout, name='logout'),
 ]

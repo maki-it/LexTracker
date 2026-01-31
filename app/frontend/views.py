@@ -1,12 +1,12 @@
 from datetime import date, timedelta
 
 from asgiref.sync import sync_to_async
-from django.contrib.auth import alogout
+from django.contrib.auth import alogout, alogin, authenticate
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.views import redirect_to_login
 from django.core.paginator import Paginator
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.views.decorators.http import require_GET
+from django.contrib import messages
 
 from projects.forms import TrackActivityForm, ProjectForm, CategoryForm
 from projects.models import Activity, Project, Settings, Customer, Category
@@ -288,7 +288,29 @@ async def settings(request):
     }
   )
 
+async def login_view(request):
+  if request.user.is_authenticated:
+    return redirect('frontend:activities')
+
+  if request.method == 'POST':
+    username = request.POST.get('username')
+    password = request.POST.get('password')
+
+    user = await sync_to_async(authenticate)(request, username=username, password=password)
+
+    if user is not None:
+      await alogin(request, user)
+      next_url = request.GET.get('next', 'frontend:activities')
+      return redirect(next_url)
+    else:
+      await sync_to_async(messages.error)(request, 'Invalid username or password.')
+
+  return await sync_to_async(render)(
+    request,
+    'frontend/login.html',
+  )
+
 @login_required
 async def logout(request):
   await alogout(request)
-  return await sync_to_async(redirect_to_login)(next='/')
+  return redirect('frontend:login')

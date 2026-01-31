@@ -31,7 +31,7 @@ build/
 *.log
 db.sqlite3
 db.sqlite3-journal
-app/db.sqlite3
+app/data/
 app/staticfiles/
 media/
 
