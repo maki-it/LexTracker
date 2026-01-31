@@ -15,7 +15,7 @@ class AppConfig(BaseSettings):
     timezone: str = Field(alias="TZ", default="UTC")
     secret_key: str = Field(description="Django secret key")
     allowed_hosts: list[str] = Field(default=('.localhost', '127.0.0.1', '[::1]'))
-    domain: HttpUrlString
+    domain: HttpUrlString = Field(default="http://localhost:8080")
 
     model_config = SettingsConfigDict(
         env_prefix="APP_",
