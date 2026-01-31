@@ -1,0 +1,35 @@
+{# Invoice table partial for htmx use #}
+<div class="flex flex-row justify-end mb-2">
+  <button class="btn btn-primary" hx-get="/forms/invoice" hx-target="#modal-body" hx-trigger="click" hx-swap="innerHTML">Create Invoice</button>
+</div>
+<div id="modal-body"></div>
+<table id="invoice-table" class="table">
+  <thead>
+    <tr>
+      <th>Invoice #</th>
+      <th>Customer</th>
+      <th>Date</th>
+      <th>Total</th>
+      <th>Status</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for invoice in invoices %}
+    <tr>
+      <td>{{ invoice.id }}</td>
+      <td>{{ invoice.customer }}</td>
+      <td>{{ invoice.created_at|date:"Y-m-d" }}</td>
+      <td>{{ invoice.total_amount }}</td>
+      <td>{% if invoice.finalized %}Finalized{% else %}Draft{% endif %}</td>
+      <td>
+        {% if invoice.lexware_invoice_url %}
+          <a href="{{ invoice.lexware_invoice_url }}" target="_blank">View</a>
+        {% endif %}
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="6">No invoices found.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>

@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="flex flex-col gap-4">
+  <div class="flex flex-row justify-between items-center mb-2">
+    <h2 class="text-2xl font-bold">Invoices</h2>
+    <button class="btn btn-primary" hx-get="/forms/customer-select" hx-target="#modal-body" hx-trigger="click" hx-swap="innerHTML">Create Invoice</button>
+  </div>
+  <div id="modal-body"></div>
+  <div class="overflow-x-auto rounded-xl w-full">
+    <table class="table table-auto w-full border-collapse border text-base-100">
+      <thead class="bg-gray-800 text-white font-bold">
+        <tr class="text-base-content text-sm">
+          <th>Invoice ID</th>
+          <th>Customer</th>
+          <th>Date</th>
+          <th>Total</th>
+          <th>Finalized</th>
+          <th>Lexware Link</th>
+          <th>Activities</th>
+        </tr>
+      </thead>
+      <tbody class="text-sm">
+        {% for invoice in invoices %}
+        <tr>
+          <td>{{ invoice.lexware_invoice_id }}</td>
+          <td>{{ invoice.customer.name }}</td>
+          <td>{{ invoice.created_at|date:'Y-m-d H:i' }}</td>
+          <td>{{ invoice.total_amount }} {{ invoice.currency }}</td>
+          <td>{{ invoice.finalized|yesno:"Yes,No" }}</td>
+          <td>
+            {% if invoice.lexware_invoice_url %}
+              <a href="{{ invoice.lexware_invoice_url }}" target="_blank">View</a>
+            {% else %}-{% endif %}
+          </td>
+          <td>
+            <ul>
+            {% for activity in invoice.activities.all %}
+              <li>{{ activity }} ({{ activity.started_at|date:'Y-m-d H:i' }} - {{ activity.ended_at|date:'Y-m-d H:i' }})</li>
+            {% endfor %}
+            </ul>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="text-center py-2 font-bold">No invoices found</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block content %}
+<h2>Unbilled Activities for Invoice</h2>
+<form method="post">
+  {% csrf_token %}
+  {{ form.customer.label_tag }} {{ form.customer }}<br><br>
+  {% if error %}<div class="error">{{ error }}</div>{% endif %}
+  <table>
+    <thead>
+      <tr>
+        <th>Select</th>
+        <th>Activity</th>
+        <th>Project</th>
+        <th>Category</th>
+        <th>Start</th>
+        <th>End</th>
+        <th>Duration (h)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for activity in form.activities.field.queryset %}
+      <tr>
+        <td>{{ form.activities.as_widget }}</td>
+        <td>{{ activity }}</td>
+        <td>{{ activity.project }}</td>
+        <td>{{ activity.category }}</td>
+        <td>{{ activity.started_at|date:settings.time_format }}</td>
+        <td>{{ activity.ended_at|date:settings.time_format }}</td>
+        <td>{{ activity.started_at|duration:activity.ended_at }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <button type="submit">Generate Invoice</button>
+</form>
+{% endblock %}

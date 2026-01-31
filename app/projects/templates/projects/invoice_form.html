@@ -1,0 +1,16 @@
+{# Invoice form partial for htmx/modal use #}
+<form id="invoice-form" method="post" action="/forms/invoice/submit" hx-post="/forms/invoice/submit" hx-target="#invoice-form" hx-swap="outerHTML">
+  {% csrf_token %}
+  {# Hidden customer field, set by htmx or parent context #}
+  {% if form.customer.value %}
+    <input type="hidden" name="customer" value="{{ form.customer.value }}">
+  {% endif %}
+  {% if form.activities %}
+  <div>
+    {{ form.activities.label_tag }}
+    {{ form.activities }}
+  </div>
+  {% endif %}
+  {% if error %}<div class="error">{{ error }}</div>{% endif %}
+  <button type="submit">Generate Invoice</button>
+</form>

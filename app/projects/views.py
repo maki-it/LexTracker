@@ -2,15 +2,17 @@ from datetime import date, timedelta, datetime
 
 from asgiref.sync import sync_to_async
 from django.contrib.auth.decorators import login_required
-from django.db.models import Count, Sum, F
+from django.db.models import Sum, F
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.templatetags.tz import timezone
 from django.views.decorators.http import require_POST, require_GET
-from pydantic import UUID4
+import httpx
+from django.conf import settings
 
-from .forms import TrackActivityForm, ProjectForm, CategoryForm
-from .models import Category, Activity, Settings, Project
+from lexoffice.config import get_config
+from .forms import TrackActivityForm, ProjectForm, CategoryForm, UnbilledActivitySelectionForm
+from .models import Category, Activity, Settings, Project, Invoice
 
 
 def split_activities(activities):
@@ -238,7 +240,7 @@ async def get_categories(request, category_id=None):
   if category_id:
     selected_category = await Category.objects.aget(id=category_id)
 
-  project_id: UUID4 = request.GET.get('project')
+  project_id = request.GET.get('project')
   categories = await sync_to_async(Category.objects.filter)(projects=project_id)
 
   return await sync_to_async(render)(
@@ -401,3 +403,152 @@ def chargeable_activities(request):
       return HttpResponse(status=400)
 
   return render(request, template, {'labels': labels, 'data': data, 'unit': 'chargeable'})
+
+
+@login_required
+@require_GET
+async def invoice_list(request):
+    invoices = await sync_to_async(lambda: list(Invoice.objects.select_related('customer').prefetch_related('activities').order_by('-created_at')))()
+    return await sync_to_async(render)(request, 'frontend/invoices.html', {'invoices': invoices})
+
+@login_required
+@require_GET
+@sync_to_async
+def invoice_form(request):
+    # If htmx GET, pass request.GET as data to bind the form and preserve selection
+    form = UnbilledActivitySelectionForm(data=request.GET if request.GET else None)
+    return render(request, 'projects/invoice_form.html', {'form': form})
+
+@login_required
+@require_POST
+@sync_to_async
+def process_invoice_form(request):
+    form = UnbilledActivitySelectionForm(request.POST)
+    if form.is_valid():
+        customer = form.cleaned_data['customer']
+        activities = form.cleaned_data['activities']
+        # Fetch customer contact data from Lexware API
+        api_token = get_config().token
+        contact_url = f"https://api.lexware.io/v1/contacts/{customer.id}"
+        headers = {
+            "Authorization": f"Bearer {api_token}",
+            "Accept": "application/json"
+        }
+        try:
+            contact_response = httpx.get(contact_url, headers=headers, timeout=30)
+            contact_response.raise_for_status()
+            contact_data = contact_response.json()
+        except Exception as e:
+            return render(request, 'projects/invoice_form.html', {'form': form, 'error': f'Failed to fetch customer data: {e}'})
+
+        # Extract address and company info
+        billing_address = (contact_data.get('addresses', {}).get('billing') or [{}])[0]
+        company = contact_data.get('company', {})
+        org_name = company.get('name', customer.name)
+        zip_code = billing_address.get('zip', '-')
+        city = billing_address.get('city', '-')
+        country_code = billing_address.get('countryCode', 'DE')
+        street = billing_address.get('street', '-')
+        supplement = billing_address.get('supplement', '')
+
+        # Prepare line items for Lexware
+        line_items = []
+        total_net = 0
+
+        for activity in activities:
+            duration = (activity.ended_at - activity.started_at).total_seconds() / 3600
+            price_per_hour = 80 # TODO: Set hourly rate in database (e.g., per project, customer, or globally (in Settings))
+            rounded_duration = round(duration, 2)
+            total_net += round(rounded_duration * price_per_hour, 2)
+            line_items.append({
+                "type": "custom",
+                "name": f"{activity.category.title} ({activity.project.title})",
+                "description": f"{activity.notes}",
+                "quantity": rounded_duration,
+                "unitName": "Stunde",
+                "unitPrice": {
+                    "currency": "EUR",
+                    "netAmount": price_per_hour,
+                    "taxRatePercentage": 0 # 19 % VAT can be added if needed
+                },
+                "discountPercentage": 0
+            })
+        payment_duration = 14  # days
+        invoice_payload = {
+            "voucherDate": to_iso8601(datetime.now(timezone.get_current_timezone())),
+            "address": {
+                "contactId": customer.id,
+                "name": org_name,
+                "supplement": supplement,
+                "street": street,
+                "zip": zip_code,
+                "city": city,
+                "countryCode": country_code,
+            },
+            "lineItems": line_items,
+            "totalPrice": {"currency": "EUR"},
+            "taxConditions": {"taxType": "vatfree"},
+            "paymentConditions": {
+              "paymentTermLabel": f"Bitte überweisen Sie den Betrag bis zum {(datetime.now() + timedelta(days=payment_duration)).strftime('%d.%m.%Y')} auf das unten angegebene Bankkonto.",
+              "paymentTermDuration": payment_duration
+            },
+            "shippingConditions": {
+              "shippingType": "serviceperiod",
+              "shippingDate": to_iso8601(min(activity.started_at for activity in activities)),
+              "shippingEndDate": to_iso8601(max(activity.ended_at for activity in activities))
+
+            },
+            "title": "Rechnung",
+            "introduction": "Vielen Dank für Ihren Auftrag.\nMeine Produkte und Leistungen stelle ich Ihnen wie folgt in Rechnung.",
+            "remark": "Sind Sie mit meinen Leistungen zufrieden? Ich freue mich über Ihr Feedback und eine Weiterempfehlung."
+        }
+        api_url = f"https://api.lexware.io/v1/invoices"
+        headers = {
+            "Authorization": f"Bearer {api_token}",
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+        }
+        print(invoice_payload)
+        try:
+            response = httpx.post(api_url, json=invoice_payload, headers=headers, timeout=30)
+            response.raise_for_status()
+            data = response.json()
+            invoice_id = data.get("id")
+            invoice_url = data.get("resourceUri")
+            activities.update(billed=True, lexware_invoice_id=invoice_id, lexware_invoice_url=invoice_url)
+            invoice = Invoice.objects.create(
+                customer=customer,
+                lexware_invoice_id=invoice_id,
+                lexware_invoice_url=invoice_url,
+                total_amount=total_net,
+                finalized=False
+            )
+            invoice.activities.add(*activities)
+            invoices = Invoice.objects.select_related('customer').prefetch_related('activities').order_by('-created_at')
+            return render(request, 'projects/invoice_table.html', {'invoices': invoices})
+        except Exception as e:
+            return render(request, 'projects/invoice_form.html', {'form': form, 'error': f'API error: {e}, Response: {response.text}'})
+    return render(request, 'projects/invoice_form.html', {'form': form, 'error': 'Invalid selection'})
+
+@login_required
+@require_GET
+@sync_to_async
+def invoice_table(request):
+    invoices = Invoice.objects.select_related('customer').prefetch_related('activities').order_by('-created_at')
+    return render(request, 'projects/invoice_table.html', {'invoices': invoices})
+
+@login_required
+@require_GET
+@sync_to_async
+def customer_select(request):
+    from lexoffice.models import Customer
+    customers = Customer.objects.filter(
+        projects__activities__billed=False,
+        projects__activities__ended_at__isnull=False,
+        projects__activities__category__is_chargeable=True
+    ).distinct().order_by('name')
+    return render(request, 'projects/customer_select.html', {'customers': customers})
+
+def to_iso8601(dt: datetime) -> str:
+    """Convert datetime to ISO 8601 format with milliseconds and timezone."""
+    return dt.astimezone().isoformat(timespec='milliseconds')
