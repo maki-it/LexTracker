@@ -1,7 +1,8 @@
 <div class="join">
 {% if page_obj.has_previous %}
   <a class="btn join-item"
-    hx-get="{{ url }}?page=1"
+    hx-get="{% if hx_vals %}{{ url }}{% else %}{{ url }}?page=1{% endif %}"
+    {% if hx_vals %}hx-vals='js:{page: 1, {{ hx_vals }}}'{% endif %}
     hx-trigger="click"
     hx-target="#table">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
@@ -10,7 +11,8 @@
     </svg>
   </a>
   <a class="btn join-item"
-    hx-get="{{ url }}?page={{ page_obj.previous_page_number }}"
+    hx-get="{% if hx_vals %}{{ url }}{% else %}{{ url }}?page={{ page_obj.previous_page_number }}{% endif %}"
+    {% if hx_vals %}hx-vals='js:{page: {{ page_obj.previous_page_number }}, {{ hx_vals }}}'{% endif %}
     hx-trigger="click"
     hx-target="#table">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
@@ -21,7 +23,8 @@
 <span class="btn btn-outline hover:bg-white hover:border-base-100 no-animation text-base-100 join-item">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
 {% if page_obj.has_next %}
   <a class="btn join-item"
-    hx-get="{{ url }}?page={{ page_obj.next_page_number }}"
+    hx-get="{% if hx_vals %}{{ url }}{% else %}{{ url }}?page={{ page_obj.next_page_number }}{% endif %}"
+    {% if hx_vals %}hx-vals='js:{page: {{ page_obj.next_page_number }}, {{ hx_vals }}}'{% endif %}
     hx-trigger="click"
     hx-target="#table">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
@@ -29,7 +32,8 @@
     </svg>
   </a>
   <a class="btn join-item"
-    hx-get="{{ url }}?page={{ page_obj.paginator.num_pages }}"
+    hx-get="{% if hx_vals %}{{ url }}{% else %}{{ url }}?page={{ page_obj.paginator.num_pages }}{% endif %}"
+    {% if hx_vals %}hx-vals='js:{page: {{ page_obj.paginator.num_pages }}, {{ hx_vals }}}'{% endif %}
     hx-trigger="click"
     hx-target="#table">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">

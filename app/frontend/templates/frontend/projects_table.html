@@ -66,7 +66,9 @@
   </div>
 </div>
 
+{% if page_obj.paginator.num_pages > 1 %}
 <div class="flex justify-center mt-3">
-  {% url 'frontend:customers_table' as table_url %}
+  {% url 'frontend:projects_table' as table_url %}
   {% include 'partials/pagination.html' with url=table_url %}
 </div>
+{% endif %}
