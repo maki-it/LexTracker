@@ -31,6 +31,10 @@
 {% if page_obj.paginator.num_pages > 1 %}
 <div class="flex justify-center mt-3">
   {% url 'frontend:customers_table' as table_url %}
-  {% include 'partials/pagination.html' with url=table_url %}
+  {% if show_archived %}
+    {% include 'partials/pagination.html' with url=table_url extra_params='&show_archived=true' %}
+  {% else %}
+    {% include 'partials/pagination.html' with url=table_url extra_params='&show_archived=false' %}
+  {% endif %}
 </div>
 {% endif %}

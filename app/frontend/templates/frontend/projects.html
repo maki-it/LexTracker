@@ -5,11 +5,19 @@
 
 {% block content %}
 
-  <div class="mx-3 lg:mx-0 mt-3 mb-3 lg:mt-0 w-fit">
+  <div class="flex flex-wrap gap-2 mx-3 lg:mx-0 mt-3 mb-3 lg:mt-0">
     <ul class="menu menu-horizontal gap-1 bg-base-200 rounded-box">
       <li><a {% if view == 'project' %}class="active"{% endif %} href="{% url 'frontend:projects' %}">Projects</a></li>
       <li><a {% if view == 'category' %}class="active"{% endif %} href="{% url 'frontend:categories' %}">Categories</a></li>
     </ul>
+
+    {% if view == 'project' %}
+    <button type="button" id="toggle_archived"
+      onclick="toggleArchivedProjects()"
+      class="btn btn-secondary">
+      <span id="toggle_text">Show Archived</span>
+    </button>
+    {% endif %}
   </div>
 
   <details id="add_{{ view }}" class="collapse collapse-arrow border mb-4" open>
@@ -28,11 +36,30 @@
     <div id="table"
          class="text-base-100 overflow-x-auto lg:rounded-lg"
         {% if view == 'project' %}
-         hx-get="{% url 'frontend:projects_table' %}"
+         hx-get="{% url 'frontend:projects_table' %}?show_archived=false"
         {% elif view == 'category' %}
           hx-get="{% url 'frontend:categories_table' %}"
         {% endif %}
          hx-trigger="load, refresh-table from:body">
     </div>
   </div>
+
+{% if view == 'project' %}
+<script>
+  let showArchived = false;
+
+  function toggleArchivedProjects() {
+    showArchived = !showArchived;
+    const toggleText = document.getElementById('toggle_text');
+
+    if (showArchived) {
+      toggleText.textContent = 'Hide Archived';
+      htmx.ajax('GET', '{% url 'frontend:projects_table' %}?show_archived=true', {target: '#table'});
+    } else {
+      toggleText.textContent = 'Show Archived';
+      htmx.ajax('GET', '{% url 'frontend:projects_table' %}?show_archived=false', {target: '#table'});
+    }
+  }
+</script>
+{% endif %}
 {% endblock %}

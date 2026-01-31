@@ -5,21 +5,29 @@
 
 {% block content %}
   <div class="grid grid-cols-1 gap-4 lg:gap-3 mt-4 lg:mt-0">
-    <form>
-      {% csrf_token %}
-      <button type="submit" id="sync_customers"
-        hx-post="{% url 'lexoffice:sync_customers' %}"
-        hx-trigger="click"
-        hx-indicator="#loader"
-        hx-on::after-request="refreshTable(event)"
-        class="btn ml-3 lg:ml-0">
-        <span id="loader" class="loader"></span>
-        Synchronize Customers</button>
-    </form>
+    <div class="flex flex-wrap gap-2 ml-3 lg:ml-0">
+      <form>
+        {% csrf_token %}
+        <button type="submit" id="sync_customers"
+          hx-post="{% url 'lexoffice:sync_customers' %}"
+          hx-trigger="click"
+          hx-indicator="#loader"
+          hx-on::after-request="refreshTable(event)"
+          class="btn">
+          <span id="loader" class="loader"></span>
+          Synchronize Customers</button>
+      </form>
+
+      <button type="button" id="toggle_archived"
+        onclick="toggleArchivedCustomers()"
+        class="btn btn-secondary">
+        <span id="toggle_text">Show Archived</span>
+      </button>
+    </div>
 
     <div id="table"
       class="text-base-100 overflow-x-auto lg:rounded-lg"
-      hx-get="{% url 'frontend:customers_table' %}"
+      hx-get="{% url 'frontend:customers_table' %}?show_archived=false"
       hx-trigger="load, refresh-table from:body">
     </div>
   </div>
@@ -27,6 +35,8 @@
 <script>
   const syncButton = document.getElementById('sync_customers');
   const syncButtonText = syncButton.innerHTML;
+  let showArchived = false;
+
   function resetSyncButton() {
     setTimeout(function() {
       syncButton.innerHTML = syncButtonText;
@@ -36,6 +46,19 @@
   function refreshTable(event) {
     htmx.trigger('#table', 'refresh-table');
     resetSyncButton(event);
+  }
+
+  function toggleArchivedCustomers() {
+    showArchived = !showArchived;
+    const toggleText = document.getElementById('toggle_text');
+
+    if (showArchived) {
+      toggleText.textContent = 'Hide Archived';
+      htmx.ajax('GET', '{% url 'frontend:customers_table' %}?show_archived=true', {target: '#table'});
+    } else {
+      toggleText.textContent = 'Show Archived';
+      htmx.ajax('GET', '{% url 'frontend:customers_table' %}?show_archived=false', {target: '#table'});
+    }
   }
 </script>
 {% endblock %}
