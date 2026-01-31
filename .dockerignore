@@ -11,7 +11,6 @@ app/tests
 app/docker/**/*
 app/docker
 docker-compose*.yml
-docker-data/
 
 # Python
 __pycache__/
@@ -32,6 +31,7 @@ build/
 *.log
 db.sqlite3
 db.sqlite3-journal
+app/db.sqlite3
 app/staticfiles/
 media/
 
