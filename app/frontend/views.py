@@ -156,7 +156,15 @@ async def customers_table(request):
   settings = await Settings.objects.aget(user=request.user)
   datetime_format = f"{settings.date_format} {settings.time_format}"
 
-  customer_list = await sync_to_async(Customer.objects.order_by)('number')
+  # Get filter parameter - default to hiding archived customers
+  show_archived = request.GET.get('show_archived', 'false') == 'true'
+
+  # Filter customers based on archived status
+  if show_archived:
+    customer_list = await sync_to_async(Customer.objects.order_by)('number')
+  else:
+    customer_queryset = await sync_to_async(Customer.objects.filter)(is_archived=False)
+    customer_list = await sync_to_async(customer_queryset.order_by)('number')
 
   paginator = Paginator(customer_list, settings.table_rows)
 
@@ -169,6 +177,7 @@ async def customers_table(request):
     {
       'page_obj': page_obj,
       'datetime_format': datetime_format,
+      'show_archived': show_archived,
     },
   )
 
@@ -191,7 +200,16 @@ async def projects(request):
 @require_GET
 async def projects_table(request):
   settings = await Settings.objects.aget(user=request.user)
-  projects_list = await sync_to_async(Project.objects.order_by)('customer__number', 'start_date', 'end_date')
+
+  # Get filter parameter - default to hiding archived projects
+  show_archived = request.GET.get('show_archived', 'false') == 'true'
+
+  # Filter projects based on archived status
+  if show_archived:
+    projects_list = await sync_to_async(Project.objects.order_by)('customer__number', 'start_date', 'end_date')
+  else:
+    projects_queryset = await sync_to_async(Project.objects.filter)(is_archived=False)
+    projects_list = await sync_to_async(projects_queryset.order_by)('customer__number', 'start_date', 'end_date')
 
   paginator = Paginator(projects_list, settings.table_rows)
 
@@ -204,6 +222,7 @@ async def projects_table(request):
     {
       'page_obj': page_obj,
       'settings': settings,
+      'show_archived': show_archived,
     },
   )
 
