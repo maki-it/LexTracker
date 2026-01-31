@@ -7,24 +7,9 @@
   "packageRules": [
     {
       "matchManagers": ["pep621"],
-      "matchDepTypes": ["project.dependencies"],
       "groupName": "project dependencies",
       "semanticCommitType": "deps",
       "semanticCommitScope": "project"
-    },
-    {
-      "matchManagers": ["pep621"],
-      "matchDepTypes": ["project.optional-dependencies"],
-      "groupName": "optional dependencies",
-      "semanticCommitType": "deps",
-      "semanticCommitScope": "optional"
-    },
-    {
-      "matchManagers": ["pep621"],
-      "excludeDepTypes": ["project.dependencies", "project.optional-dependencies"],
-      "groupName": "other dependencies",
-      "semanticCommitType": "deps",
-      "semanticCommitScope": "other"
     }
   ]
 }
