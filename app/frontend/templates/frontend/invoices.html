@@ -22,16 +22,16 @@
       <tbody class="text-sm">
         {% for invoice in invoices %}
         <tr>
-          <td>{{ invoice.lexware_invoice_id }}</td>
+          <td>{{ invoice.lexware_id }}</td>
           <td>{{ invoice.customer.name }}</td>
           <td>{{ invoice.created_at|date:'Y-m-d H:i' }}</td>
           <td>{{ invoice.total_amount }} {{ invoice.currency }}</td>
           <td>{{ invoice.finalized|yesno:"Yes,No" }}</td>
           <td>
-            {% if invoice.lexware_invoice_id %}
-              <a href="https://app.lexware.de/permalink/invoices/view/{{ invoice.lexware_invoice_id }}" target="_blank">View</a>
+            {% if invoice.lexware_id %}
+              <a href="https://app.lexware.de/permalink/invoices/view/{{ invoice.lexware_id }}" target="_blank">View</a>
               |
-              <a href="https://app.lexware.de/permalink/invoices/edit/{{ invoice.lexware_invoice_id }}" target="_blank">Edit</a>
+              <a href="https://app.lexware.de/permalink/invoices/edit/{{ invoice.lexware_id }}" target="_blank">Edit</a>
             {% else %}-{% endif %}
             <form method="POST" hx-post="/invoices/{{ invoice.id }}/delete/" hx-target="closest tr" hx-swap="outerHTML remove" style="display:inline;">
               {% csrf_token %}

@@ -17,14 +17,14 @@
   <tbody>
     {% for invoice in invoices %}
     <tr>
-      <td>{{ invoice.lexware_invoice_id }}</td>
+      <td>{{ invoice.lexware_id }}</td>
       <td>{{ invoice.customer.name }}</td>
       <td>{{ invoice.created_at|date:'Y-m-d H:i' }}</td>
       <td>{{ invoice.total_amount }} {{ invoice.currency }}</td>
       <td>{{ invoice.finalized|yesno:"Yes,No" }}</td>
       <td>
-        {% if invoice.lexware_invoice_url %}
-          <a href="{{ invoice.lexware_invoice_url }}" target="_blank">View</a>
+        {% if invoice.lexware_url %}
+          <a href="{{ invoice.lexware_url }}" target="_blank">View</a>
         {% else %}
           -
         {% endif %}

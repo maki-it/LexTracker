@@ -1,9 +1,9 @@
 {% extends 'base.html' %}
 {% block content %}
 <h2>Invoice Created Successfully</h2>
-<p>Invoice ID: {{ invoice.lexware_invoice_id }}</p>
-{% if invoice.lexware_invoice_url %}
-<p><a href="{{ invoice.lexware_invoice_url }}" target="_blank">View in Lexware</a></p>
+<p>Invoice ID: {{ invoice.lexware_id }}</p>
+{% if invoice.lexware_url %}
+<p><a href="{{ invoice.lexware_url }}" target="_blank">View in Lexware</a></p>
 {% else %}
 <p>No Lexware link available.</p>
 {% endif %}

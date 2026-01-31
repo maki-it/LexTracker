@@ -23,8 +23,8 @@
       <td>{{ invoice.total_amount }}</td>
       <td>{% if invoice.finalized %}Finalized{% else %}Draft{% endif %}</td>
       <td>
-        {% if invoice.lexware_invoice_url %}
-          <a href="{{ invoice.lexware_invoice_url }}" target="_blank">View</a>
+        {% if invoice.lexware_url %}
+          <a href="{{ invoice.lexware_url }}" target="_blank">View</a>
         {% endif %}
       </td>
     </tr>

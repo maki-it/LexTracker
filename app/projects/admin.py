@@ -12,11 +12,11 @@ class ActivityInline(admin.TabularInline):
 
 
 class ActivityAdmin(admin.ModelAdmin):
-  list_display = ('started_at', 'ended_at', 'project__customer', 'project', 'category', 'is_chargeable', 'billed', 'lexware_invoice_id')
+  list_display = ('started_at', 'ended_at', 'project__customer', 'project', 'category', 'is_chargeable', 'billed')
   list_filter = ('project', 'category', 'is_chargeable', 'started_at', 'project__customer', 'billed')
-  search_fields = ('project__title', 'category__title', 'notes', 'lexware_invoice_id')
+  search_fields = ('project__title', 'category__title', 'notes')
   ordering = ('started_at',)
-  readonly_fields = ('id', 'lexware_invoice_id', 'lexware_invoice_url')
+  readonly_fields = ('id',)
   actions = ['mark_unbilled']
 
   def get_readonly_fields(self, request, obj=None):
@@ -26,7 +26,7 @@ class ActivityAdmin(admin.ModelAdmin):
     return ro
 
   def mark_unbilled(self, request, queryset):
-    updated = queryset.update(billed=False, lexware_invoice_id=None, lexware_invoice_url=None)
+    updated = queryset.update(billed=False, invoice_lexware_id=None, invoice_lexware_url=None)
     self.message_user(request, f"{updated} activities marked as unbilled.")
   mark_unbilled.short_description = "Mark selected activities as unbilled"
 
@@ -69,9 +69,9 @@ class SettingsAdmin(admin.ModelAdmin):
 
 
 class InvoiceAdmin(admin.ModelAdmin):
-    list_display = ('lexware_invoice_id', 'customer', 'created_at', 'total_amount', 'finalized')
-    search_fields = ('lexware_invoice_id', 'customer__name')
-    readonly_fields = ('lexware_invoice_id', 'lexware_invoice_url', 'created_at')
+    list_display = ('lexware_id', 'customer', 'created_at', 'total_amount', 'finalized')
+    search_fields = ('lexware_id', 'customer__name')
+    readonly_fields = ('lexware_id', 'lexware_url', 'created_at')
     list_filter = ('customer', 'finalized')
 
 

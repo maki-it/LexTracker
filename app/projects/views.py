@@ -516,15 +516,19 @@ def process_invoice_form(request):
             data = response.json()
             invoice_id = data.get("id")
             invoice_url = data.get("resourceUri")
-            activities.update(billed=True, lexware_invoice_id=invoice_id, lexware_invoice_url=invoice_url)
             invoice = Invoice.objects.create(
                 customer=customer,
-                lexware_invoice_id=invoice_id,
-                lexware_invoice_url=invoice_url,
+                lexware_id=invoice_id,
+                lexware_url=invoice_url,
                 total_amount=total_net,
                 finalized=False
             )
-            invoice.activities.add(*activities)
+            for activity in activities:
+                activity.billed = True
+                activity.lexware_id = invoice_id
+                activity.lexware_url = invoice_url
+                activity.invoice = invoice
+                activity.save()
             invoices = Invoice.objects.select_related('customer').prefetch_related('activities').order_by('-created_at')
             if request.headers.get('HX-Request'):
                 return render(request, 'frontend/invoices.html', {'invoices': invoices})
@@ -535,11 +539,27 @@ def process_invoice_form(request):
     return render(request, 'projects/invoice_form.html', {'form': form, 'error': 'Invalid selection'})
 
 @login_required
-@require_GET
-@sync_to_async
-def invoice_table(request):
-    invoices = Invoice.objects.select_related('customer').prefetch_related('activities').order_by('-created_at')
-    return render(request, 'projects/invoice_table.html', {'invoices': invoices})
+@require_POST
+async def delete_invoice(request, invoice_id):
+    invoice = await Invoice.objects.aget(id=invoice_id)
+    # Delete from Lexware API if possible
+    if invoice.lexware_id:
+        api_token = get_config().token
+        api_url = f"https://api.lexware.io/v1/invoices/{invoice.lexware_id}"
+        headers = {
+            "Authorization": f"Bearer {api_token}",
+            "Accept": "application/json"
+        }
+        async with httpx.AsyncClient() as client:
+            response = await client.delete(api_url, headers=headers, timeout=30)
+            print(response.status_code, response.text)
+    # Set related activities back to billable and clear invoice fields and invoice FK
+    await invoice.activities.aupdate(
+      billed=False,
+      invoice=None
+    )
+    await invoice.adelete()
+    return HttpResponse(status=204)
 
 @login_required
 @require_GET
@@ -554,34 +574,11 @@ def customer_select(request):
     return render(request, 'projects/customer_select.html', {'customers': customers})
 
 @login_required
-@require_POST
-async def delete_invoice(request, invoice_id):
-    invoice = await Invoice.objects.aget(id=invoice_id)
-    # Delete from Lexware API if possible
-    if invoice.lexware_invoice_id:
-        api_token = get_config().token
-        api_url = f"https://api.lexware.io/v1/invoices/{invoice.lexware_invoice_id}"
-        headers = {
-            "Authorization": f"Bearer {api_token}",
-            "Accept": "application/json"
-        }
-        async with httpx.AsyncClient() as client:
-            response = await client.delete(api_url, headers=headers, timeout=30)
-            if response.status_code not in (200, 204, 404):
-                print(f"Failed to delete invoice from Lexware: {response.text}")
-                # return HttpResponse(f"Failed to delete invoice from Lexware: {response.text}", status=500)
-
-    # Set related activities back to billable and clear invoice fields
-    await invoice.activities.aupdate(
-        billed=False,
-        lexware_invoice_id=None,
-        lexware_invoice_url=None
-    )
-
-    # Remove activities from invoice (optional, for DB integrity)
-    #await sync_to_async(invoice.activities.clear)()
-    await invoice.adelete()
-    return HttpResponse(status=204)
+@require_GET
+@sync_to_async
+def invoice_table(request):
+    invoices = Invoice.objects.select_related('customer').prefetch_related('activities').order_by('-created_at')
+    return render(request, 'projects/invoice_table.html', {'invoices': invoices})
 
 def to_iso8601(dt: datetime) -> str:
     """Convert datetime to ISO 8601 format with milliseconds and timezone."""
