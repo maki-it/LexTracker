@@ -52,12 +52,17 @@
     showArchived = !showArchived;
     const toggleText = document.getElementById('toggle_text');
 
+    // Get current URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const sort = urlParams.get('sort') || 'customer';
+    const order = urlParams.get('order') || 'asc';
+
     if (showArchived) {
       toggleText.textContent = 'Hide Archived';
-      htmx.ajax('GET', '{% url 'frontend:projects_table' %}?show_archived=true', {target: '#table'});
+      htmx.ajax('GET', '{% url 'frontend:projects_table' %}?show_archived=true&sort=' + sort + '&order=' + order, {target: '#table'});
     } else {
       toggleText.textContent = 'Show Archived';
-      htmx.ajax('GET', '{% url 'frontend:projects_table' %}?show_archived=false', {target: '#table'});
+      htmx.ajax('GET', '{% url 'frontend:projects_table' %}?show_archived=false&sort=' + sort + '&order=' + order, {target: '#table'});
     }
   }
 </script>

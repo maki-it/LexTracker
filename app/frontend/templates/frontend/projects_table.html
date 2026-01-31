@@ -5,11 +5,81 @@
       <thead class="font-bold">
         <tr class="text-base-content text-sm">
           <th></th>
-          <th>Customer</th>
-          <th>Title</th>
-          <th>Description</th>
-          <th>Start Date</th>
-          <th>End Date</th>
+          <th>
+            <a href="#" hx-get="{% url 'frontend:projects_table' %}?sort=customer&order={% if sort_by == 'customer' and sort_order == 'asc' %}desc{% else %}asc{% endif %}{% if show_archived %}&show_archived=true{% else %}&show_archived=false{% endif %}"
+               hx-target="#table"
+               hx-swap="innerHTML"
+               class="flex items-center gap-1 hover:underline cursor-pointer">
+              Customer
+              {% if sort_by == 'customer' %}
+                {% if sort_order == 'asc' %}
+                  <img src="{% static 'icons/arrow-up.svg' %}" class="h-3 inline invert" alt="Sorted Ascending">
+                {% else %}
+                  <img src="{% static 'icons/arrow-down.svg' %}" class="h-3 inline invert" alt="Sorted Descending">
+                {% endif %}
+              {% endif %}
+            </a>
+          </th>
+          <th>
+            <a href="#" hx-get="{% url 'frontend:projects_table' %}?sort=title&order={% if sort_by == 'title' and sort_order == 'asc' %}desc{% else %}asc{% endif %}{% if show_archived %}&show_archived=true{% else %}&show_archived=false{% endif %}"
+               hx-target="#table"
+               hx-swap="innerHTML"
+               class="flex items-center gap-1 hover:underline cursor-pointer">
+              Title
+              {% if sort_by == 'title' %}
+                {% if sort_order == 'asc' %}
+                  <img src="{% static 'icons/arrow-up.svg' %}" class="h-3 inline invert" alt="Sorted Ascending">
+                {% else %}
+                  <img src="{% static 'icons/arrow-down.svg' %}" class="h-3 inline invert" alt="Sorted Descending">
+                {% endif %}
+              {% endif %}
+            </a>
+          </th>
+          <th>
+            <a href="#" hx-get="{% url 'frontend:projects_table' %}?sort=description&order={% if sort_by == 'description' and sort_order == 'asc' %}desc{% else %}asc{% endif %}{% if show_archived %}&show_archived=true{% else %}&show_archived=false{% endif %}"
+               hx-target="#table"
+               hx-swap="innerHTML"
+               class="flex items-center gap-1 hover:underline cursor-pointer">
+              Description
+              {% if sort_by == 'description' %}
+                {% if sort_order == 'asc' %}
+                  <img src="{% static 'icons/arrow-up.svg' %}" class="h-3 inline invert" alt="Sorted Ascending">
+                {% else %}
+                  <img src="{% static 'icons/arrow-down.svg' %}" class="h-3 inline invert" alt="Sorted Descending">
+                {% endif %}
+              {% endif %}
+            </a>
+          </th>
+          <th>
+            <a href="#" hx-get="{% url 'frontend:projects_table' %}?sort=start_date&order={% if sort_by == 'start_date' and sort_order == 'asc' %}desc{% else %}asc{% endif %}{% if show_archived %}&show_archived=true{% else %}&show_archived=false{% endif %}"
+               hx-target="#table"
+               hx-swap="innerHTML"
+               class="flex items-center gap-1 hover:underline cursor-pointer">
+              Start Date
+              {% if sort_by == 'start_date' %}
+                {% if sort_order == 'asc' %}
+                  <img src="{% static 'icons/arrow-up.svg' %}" class="h-3 inline invert" alt="Sorted Ascending">
+                {% else %}
+                  <img src="{% static 'icons/arrow-down.svg' %}" class="h-3 inline invert" alt="Sorted Descending">
+                {% endif %}
+              {% endif %}
+            </a>
+          </th>
+          <th>
+            <a href="#" hx-get="{% url 'frontend:projects_table' %}?sort=end_date&order={% if sort_by == 'end_date' and sort_order == 'asc' %}desc{% else %}asc{% endif %}{% if show_archived %}&show_archived=true{% else %}&show_archived=false{% endif %}"
+               hx-target="#table"
+               hx-swap="innerHTML"
+               class="flex items-center gap-1 hover:underline cursor-pointer">
+              End Date
+              {% if sort_by == 'end_date' %}
+                {% if sort_order == 'asc' %}
+                  <img src="{% static 'icons/arrow-up.svg' %}" class="h-3 inline invert" alt="Sorted Ascending">
+                {% else %}
+                  <img src="{% static 'icons/arrow-down.svg' %}" class="h-3 inline invert" alt="Sorted Descending">
+                {% endif %}
+              {% endif %}
+            </a>
+          </th>
           <th>Status</th>
         </tr>
       </thead>
@@ -70,9 +140,9 @@
 <div class="flex justify-center mt-3">
   {% url 'frontend:projects_table' as table_url %}
   {% if show_archived %}
-    {% include 'partials/pagination.html' with url=table_url extra_params='&show_archived=true' %}
+    {% include 'partials/pagination.html' with url=table_url extra_params='&show_archived=true&sort='|add:sort_by|add:'&order='|add:sort_order %}
   {% else %}
-    {% include 'partials/pagination.html' with url=table_url extra_params='&show_archived=false' %}
+    {% include 'partials/pagination.html' with url=table_url extra_params='&show_archived=false&sort='|add:sort_by|add:'&order='|add:sort_order %}
   {% endif %}
 </div>
 {% endif %}
