@@ -4,6 +4,7 @@ from asgiref.sync import sync_to_async
 from django.contrib.auth import alogout, alogin, authenticate
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from django.db.models import Count
 from django.shortcuts import render, redirect
 from django.views.decorators.http import require_GET
 from django.contrib import messages
@@ -159,12 +160,36 @@ async def customers_table(request):
   # Get filter parameter - default to hiding archived customers
   show_archived = request.GET.get('show_archived', 'false') == 'true'
 
-  # Filter customers based on archived status
+  # Get sort parameters
+  sort_by = request.GET.get('sort', 'number')
+  sort_order = request.GET.get('order', 'asc')
+
+  # Map sort fields to model fields
+  sort_field_map = {
+    'number': 'number',
+    'name': 'name',
+    'type': 'type',
+    'updated_at': 'updated_at',
+    'projects': 'projects_count',
+  }
+
+  # Validate sort field
+  if sort_by not in sort_field_map:
+    sort_by = 'number'
+
+  # Build order_by string
+  order_by_field = sort_field_map[sort_by]
+  if sort_order == 'desc':
+    order_by_field = f'-{order_by_field}'
+
+  # Filter customers based on archived status and add annotation for projects count
   if show_archived:
-    customer_list = await sync_to_async(Customer.objects.order_by)('number')
+    customer_queryset = await sync_to_async(Customer.objects.annotate)(projects_count=Count('projects'))
   else:
     customer_queryset = await sync_to_async(Customer.objects.filter)(is_archived=False)
-    customer_list = await sync_to_async(customer_queryset.order_by)('number')
+    customer_queryset = await sync_to_async(customer_queryset.annotate)(projects_count=Count('projects'))
+
+  customer_list = await sync_to_async(customer_queryset.order_by)(order_by_field)
 
   paginator = Paginator(customer_list, settings.table_rows)
 
@@ -178,6 +203,8 @@ async def customers_table(request):
       'page_obj': page_obj,
       'datetime_format': datetime_format,
       'show_archived': show_archived,
+      'sort_by': sort_by,
+      'sort_order': sort_order,
     },
   )
 
@@ -204,12 +231,34 @@ async def projects_table(request):
   # Get filter parameter - default to hiding archived projects
   show_archived = request.GET.get('show_archived', 'false') == 'true'
 
+  # Get sort parameters
+  sort_by = request.GET.get('sort', 'customer')
+  sort_order = request.GET.get('order', 'asc')
+
+  # Map sort fields to model fields
+  sort_field_map = {
+    'customer': 'customer__number',
+    'title': 'title',
+    'description': 'description',
+    'start_date': 'start_date',
+    'end_date': 'end_date',
+  }
+
+  # Validate sort field
+  if sort_by not in sort_field_map:
+    sort_by = 'customer'
+
+  # Build order_by string
+  order_by_field = sort_field_map[sort_by]
+  if sort_order == 'desc':
+    order_by_field = f'-{order_by_field}'
+
   # Filter projects based on archived status
   if show_archived:
-    projects_list = await sync_to_async(Project.objects.order_by)('customer__number', 'start_date', 'end_date')
+    projects_list = await sync_to_async(Project.objects.order_by)(order_by_field)
   else:
     projects_queryset = await sync_to_async(Project.objects.filter)(is_archived=False)
-    projects_list = await sync_to_async(projects_queryset.order_by)('customer__number', 'start_date', 'end_date')
+    projects_list = await sync_to_async(projects_queryset.order_by)(order_by_field)
 
   paginator = Paginator(projects_list, settings.table_rows)
 
@@ -223,6 +272,8 @@ async def projects_table(request):
       'page_obj': page_obj,
       'settings': settings,
       'show_archived': show_archived,
+      'sort_by': sort_by,
+      'sort_order': sort_order,
     },
   )
 
@@ -255,7 +306,31 @@ async def project_form(request, project_id=None, action=None):
 @require_GET
 async def categories_table(request):
   settings = await Settings.objects.aget(user=request.user)
-  categories_list = await sync_to_async(Category.objects.order_by)('title')
+
+  # Get sort parameters
+  sort_by = request.GET.get('sort', 'title')
+  sort_order = request.GET.get('order', 'asc')
+
+  # Map sort fields to model fields
+  sort_field_map = {
+    'title': 'title',
+    'description': 'description',
+    'is_chargeable': 'is_chargeable',
+    'projects': 'projects_count',
+  }
+
+  # Validate sort field
+  if sort_by not in sort_field_map:
+    sort_by = 'title'
+
+  # Build order_by string
+  order_by_field = sort_field_map[sort_by]
+  if sort_order == 'desc':
+    order_by_field = f'-{order_by_field}'
+
+  # Always add annotation for projects count, then order
+  categories_queryset = await sync_to_async(Category.objects.annotate)(projects_count=Count('projects'))
+  categories_list = await sync_to_async(categories_queryset.order_by)(order_by_field)
 
   paginator = Paginator(categories_list, settings.table_rows)
 
@@ -267,6 +342,8 @@ async def categories_table(request):
     'frontend/categories_table.html',
     {
       'page_obj': page_obj,
+      'sort_by': sort_by,
+      'sort_order': sort_order,
     },
   )
 

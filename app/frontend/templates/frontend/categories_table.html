@@ -5,10 +5,66 @@
       <thead class="font-bold">
         <tr class="text-base-content text-sm">
           <th></th>
-          <th>Title</th>
-          <th>Description</th>
-          <th>Chargeable</th>
-          <th>Assigned Projects</th>
+          <th>
+            <a href="#" hx-get="{% url 'frontend:categories_table' %}?sort=title&order={% if sort_by == 'title' and sort_order == 'asc' %}desc{% else %}asc{% endif %}"
+               hx-target="#table"
+               hx-swap="innerHTML"
+               class="flex items-center gap-1 hover:underline cursor-pointer">
+              Title
+              {% if sort_by == 'title' %}
+                {% if sort_order == 'asc' %}
+                  <img src="{% static 'icons/arrow-up.svg' %}" class="h-3 inline invert" alt="Sorted Ascending">
+                {% else %}
+                  <img src="{% static 'icons/arrow-down.svg' %}" class="h-3 inline invert" alt="Sorted Descending">
+                {% endif %}
+              {% endif %}
+            </a>
+          </th>
+          <th>
+            <a href="#" hx-get="{% url 'frontend:categories_table' %}?sort=description&order={% if sort_by == 'description' and sort_order == 'asc' %}desc{% else %}asc{% endif %}"
+               hx-target="#table"
+               hx-swap="innerHTML"
+               class="flex items-center gap-1 hover:underline cursor-pointer">
+              Description
+              {% if sort_by == 'description' %}
+                {% if sort_order == 'asc' %}
+                  <img src="{% static 'icons/arrow-up.svg' %}" class="h-3 inline invert" alt="Sorted Ascending">
+                {% else %}
+                  <img src="{% static 'icons/arrow-down.svg' %}" class="h-3 inline invert" alt="Sorted Descending">
+                {% endif %}
+              {% endif %}
+            </a>
+          </th>
+          <th>
+            <a href="#" hx-get="{% url 'frontend:categories_table' %}?sort=is_chargeable&order={% if sort_by == 'is_chargeable' and sort_order == 'asc' %}desc{% else %}asc{% endif %}"
+               hx-target="#table"
+               hx-swap="innerHTML"
+               class="flex items-center gap-1 hover:underline cursor-pointer">
+              Chargeable
+              {% if sort_by == 'is_chargeable' %}
+                {% if sort_order == 'asc' %}
+                  <img src="{% static 'icons/arrow-up.svg' %}" class="h-3 inline invert" alt="Sorted Ascending">
+                {% else %}
+                  <img src="{% static 'icons/arrow-down.svg' %}" class="h-3 inline invert" alt="Sorted Descending">
+                {% endif %}
+              {% endif %}
+            </a>
+          </th>
+          <th>
+            <a href="#" hx-get="{% url 'frontend:categories_table' %}?sort=projects&order={% if sort_by == 'projects' and sort_order == 'asc' %}desc{% else %}asc{% endif %}"
+               hx-target="#table"
+               hx-swap="innerHTML"
+               class="flex items-center gap-1 hover:underline cursor-pointer">
+              Assigned Projects
+              {% if sort_by == 'projects' %}
+                {% if sort_order == 'asc' %}
+                  <img src="{% static 'icons/arrow-up.svg' %}" class="h-3 inline invert" alt="Sorted Ascending">
+                {% else %}
+                  <img src="{% static 'icons/arrow-down.svg' %}" class="h-3 inline invert" alt="Sorted Descending">
+                {% endif %}
+              {% endif %}
+            </a>
+          </th>
         </tr>
       </thead>
       <tbody>
@@ -75,6 +131,6 @@
 {% if page_obj.paginator.num_pages > 1 %}
 <div class="flex justify-center mt-3">
   {% url 'frontend:categories_table' as table_url %}
-  {% include 'partials/pagination.html' with url=table_url %}
+  {% include 'partials/pagination.html' with url=table_url extra_params='&sort='|add:sort_by|add:'&order='|add:sort_order %}
 </div>
 {% endif %}
