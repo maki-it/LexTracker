@@ -83,7 +83,14 @@
   <tbody>
   {% for customer in page_obj %}
     <tr class="hover:bg-gray-100 *:border-y">
-      <td>{{ customer.number }}</td>
+      <td>
+        <a href="https://app.lexoffice.de/contacts/{{ customer.id }}"
+           target="_blank"
+           rel="noreferrer"
+           class="link  hover:link-hover">
+        {{ customer.number }}
+        </a>
+      </td>
       <td>{{ customer.name }}</td>
       <td>{{ customer.type|title }}</td>
       <td>{{ customer.updated_at|date:datetime_format }}</td>
