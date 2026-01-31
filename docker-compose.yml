@@ -26,7 +26,6 @@ services:
       - DJANGO_SUPERUSER_PASSWORD=${DJANGO_SUPERUSER_PASSWORD:-}
       - DJANGO_SUPERUSER_EMAIL=${DJANGO_SUPERUSER_EMAIL:-}
     volumes:
-      # Persist only the database file
       - db_data:/app/app/data/
     restart: unless-stopped
     healthcheck:
@@ -36,7 +35,6 @@ services:
       retries: 3
       start_period: 10s
 
-# Create named volumes for data persistence
 volumes:
   db_data:
     driver: local

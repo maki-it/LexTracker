@@ -13,9 +13,6 @@ if [[ "$1" == "uvicorn" ]]; then
     echo "Running database migrations..."
     python manage.py migrate --noinput
 
-    echo "Collecting static files..."
-    python manage.py collectstatic --noinput --clear
-
     # Create superuser from environment variables if specified
     if [ -n "$DJANGO_SUPERUSER_USERNAME" ] && [ -n "$DJANGO_SUPERUSER_PASSWORD" ] && [ -n "$DJANGO_SUPERUSER_EMAIL" ]; then
         echo "Creating superuser..."

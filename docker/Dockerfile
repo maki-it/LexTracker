@@ -85,11 +85,6 @@ COPY --from=frontend-builder --chown=appuser:appuser /app/frontend/static/css/di
 COPY --chown=appuser:appuser app/ /app/app/
 COPY --chown=appuser:appuser docker/docker-entrypoint.sh /app/
 
-# Create data and staticfiles directories with proper permissions
-RUN mkdir -p /app/app/data /app/app/staticfiles && \
-    chown -R appuser:appuser /app/app/data /app/app/staticfiles && \
-    chmod +x /app/docker-entrypoint.sh
-
 # Set environment variables
 ENV PATH="/app/.venv/bin:$PATH" \
     APP_ENVIRONMENT=production \
@@ -101,6 +96,13 @@ WORKDIR /app/app
 USER appuser
 
 EXPOSE 8080
+
+# Create data and staticfiles directories with proper permissions
+RUN mkdir -p /app/app/data /app/app/staticfiles && \
+    chmod +x /app/docker-entrypoint.sh && \
+    chown -R appuser:appuser /app/app/data /app/app/staticfiles && \
+    # Set dummy environment variables to run collectstatic during build \
+    APP_SECRET_KEY= LEXOFFICE_API_TOKEN= python manage.py collectstatic --noinput --clear -v2
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["uvicorn", "lextracker.asgi:application", "--host", "0.0.0.0", "--port", "8080"]
