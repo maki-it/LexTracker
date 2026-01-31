@@ -162,3 +162,7 @@ cython_debug/
 #.idea/
 
 app/database/db.sqlite3
+
+# Docker persistent data
+docker-data/
+

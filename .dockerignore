@@ -11,6 +11,7 @@ app/tests
 app/docker/**/*
 app/docker
 docker-compose*.yml
+docker-data/
 
 # Python
 __pycache__/

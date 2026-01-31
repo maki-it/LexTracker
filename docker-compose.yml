@@ -17,7 +17,7 @@ services:
       - APP_SECRET_KEY=${APP_SECRET_KEY:-change-me-in-production}
       - APP_ENVIRONMENT=${APP_ENVIRONMENT:-production}
       - APP_LOGLEVEL=${APP_LOGLEVEL:-info}
-      - APP_DOMAIN=${APP_DOMAIN:-http://localhost:8000}
+      - APP_DOMAIN=${APP_DOMAIN:-http://localhost:8080}
       - TZ=${TZ:-UTC}
       # Lexoffice API settings
       - LEXOFFICE_API_TOKEN=${LEXOFFICE_API_TOKEN}
@@ -26,7 +26,7 @@ services:
       - DJANGO_SUPERUSER_PASSWORD=${DJANGO_SUPERUSER_PASSWORD:-}
       - DJANGO_SUPERUSER_EMAIL=${DJANGO_SUPERUSER_EMAIL:-}
     volumes:
-      - db_data:/app/app/data/
+      - ./app/db.sqlite3:/app/app/data/db.sqlite3
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import socket; s=socket.socket(); s.settimeout(3); s.connect(('127.0.0.1', 8080)); s.close()"]
@@ -34,7 +34,3 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
-
-volumes:
-  db_data:
-    driver: local
