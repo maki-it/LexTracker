@@ -1,5 +1,5 @@
 {# Invoice form partial for htmx/modal use #}
-<form id="invoice-form" method="post" action="/forms/invoice/submit" hx-post="/forms/invoice/submit" hx-target="#invoice-form" hx-swap="outerHTML">
+<form id="invoice-form" method="post" action="/forms/invoice/submit" hx-post="/forms/invoice/submit" hx-target="#invoice-table-container" hx-swap="outerHTML">
   {% csrf_token %}
   {# Hidden customer field, set by htmx or parent context #}
   {% if form.customer.value %}

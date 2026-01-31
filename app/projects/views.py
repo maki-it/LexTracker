@@ -9,6 +9,7 @@ from django.templatetags.tz import timezone
 from django.views.decorators.http import require_POST, require_GET
 import httpx
 from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
 
 from lexoffice.config import get_config
 from .forms import TrackActivityForm, ProjectForm, CategoryForm, UnbilledActivitySelectionForm
@@ -435,9 +436,9 @@ def process_invoice_form(request):
             "Accept": "application/json"
         }
         try:
-            contact_response = httpx.get(contact_url, headers=headers, timeout=30)
-            contact_response.raise_for_status()
-            contact_data = contact_response.json()
+            response = httpx.get(contact_url, headers=headers, timeout=30)
+            response.raise_for_status()
+            contact_data = response.json()
         except Exception as e:
             return render(request, 'projects/invoice_form.html', {'form': form, 'error': f'Failed to fetch customer data: {e}'})
 
@@ -477,7 +478,7 @@ def process_invoice_form(request):
         invoice_payload = {
             "voucherDate": to_iso8601(datetime.now(timezone.get_current_timezone())),
             "address": {
-                "contactId": customer.id,
+                "contactId": str(customer.id),  # Ensure UUID is a string
                 "name": org_name,
                 "supplement": supplement,
                 "street": street,
@@ -508,7 +509,7 @@ def process_invoice_form(request):
             "Content-Type": "application/json",
             "Accept": "application/json"
         }
-        print(invoice_payload)
+
         try:
             response = httpx.post(api_url, json=invoice_payload, headers=headers, timeout=30)
             response.raise_for_status()
@@ -525,7 +526,10 @@ def process_invoice_form(request):
             )
             invoice.activities.add(*activities)
             invoices = Invoice.objects.select_related('customer').prefetch_related('activities').order_by('-created_at')
-            return render(request, 'projects/invoice_table.html', {'invoices': invoices})
+            if request.headers.get('HX-Request'):
+                return render(request, 'frontend/invoices.html', {'invoices': invoices})
+            else:
+                return render(request, 'projects/invoice_table.html', {'invoices': invoices})
         except Exception as e:
             return render(request, 'projects/invoice_form.html', {'form': form, 'error': f'API error: {e}, Response: {response.text}'})
     return render(request, 'projects/invoice_form.html', {'form': form, 'error': 'Invalid selection'})
@@ -548,6 +552,36 @@ def customer_select(request):
         projects__activities__category__is_chargeable=True
     ).distinct().order_by('name')
     return render(request, 'projects/customer_select.html', {'customers': customers})
+
+@login_required
+@require_POST
+async def delete_invoice(request, invoice_id):
+    invoice = await Invoice.objects.aget(id=invoice_id)
+    # Delete from Lexware API if possible
+    if invoice.lexware_invoice_id:
+        api_token = get_config().token
+        api_url = f"https://api.lexware.io/v1/invoices/{invoice.lexware_invoice_id}"
+        headers = {
+            "Authorization": f"Bearer {api_token}",
+            "Accept": "application/json"
+        }
+        async with httpx.AsyncClient() as client:
+            response = await client.delete(api_url, headers=headers, timeout=30)
+            if response.status_code not in (200, 204, 404):
+                print(f"Failed to delete invoice from Lexware: {response.text}")
+                # return HttpResponse(f"Failed to delete invoice from Lexware: {response.text}", status=500)
+
+    # Set related activities back to billable and clear invoice fields
+    await invoice.activities.aupdate(
+        billed=False,
+        lexware_invoice_id=None,
+        lexware_invoice_url=None
+    )
+
+    # Remove activities from invoice (optional, for DB integrity)
+    #await sync_to_async(invoice.activities.clear)()
+    await invoice.adelete()
+    return HttpResponse(status=204)
 
 def to_iso8601(dt: datetime) -> str:
     """Convert datetime to ISO 8601 format with milliseconds and timezone."""

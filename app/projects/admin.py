@@ -26,7 +26,7 @@ class ActivityAdmin(admin.ModelAdmin):
     return ro
 
   def mark_unbilled(self, request, queryset):
-    updated = queryset.update(billed=False)
+    updated = queryset.update(billed=False, lexware_invoice_id=None, lexware_invoice_url=None)
     self.message_user(request, f"{updated} activities marked as unbilled.")
   mark_unbilled.short_description = "Mark selected activities as unbilled"
 

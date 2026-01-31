@@ -29,4 +29,5 @@ urlpatterns = [
   path('invoices/', project_views.invoice_list, name='invoice_list'),
   path('invoices/table/', project_views.invoice_table, name='invoice_table'),
   path('forms/customer-select', project_views.customer_select, name='customer_select'),
+  path('invoices/<uuid:invoice_id>/delete/', project_views.delete_invoice, name='delete_invoice'),
 ]
