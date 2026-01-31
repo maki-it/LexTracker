@@ -542,17 +542,6 @@ def process_invoice_form(request):
 @require_POST
 async def delete_invoice(request, invoice_id):
     invoice = await Invoice.objects.aget(id=invoice_id)
-    # Delete from Lexware API if possible
-    if invoice.lexware_id:
-        api_token = get_config().token
-        api_url = f"https://api.lexware.io/v1/invoices/{invoice.lexware_id}"
-        headers = {
-            "Authorization": f"Bearer {api_token}",
-            "Accept": "application/json"
-        }
-        async with httpx.AsyncClient() as client:
-            response = await client.delete(api_url, headers=headers, timeout=30)
-            print(response.status_code, response.text)
     # Set related activities back to billable and clear invoice fields and invoice FK
     await invoice.activities.aupdate(
       billed=False,
