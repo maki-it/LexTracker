@@ -47,7 +47,7 @@ env venv: # Create a virtual environment if it doesn't exist
 run:
 	@cd $(APP_DIR) && \
 	uv run ./manage.py collectstatic --noinput && \
-	uv run uvicorn lextracker.asgi:application --reload
+	uv run uvicorn lextracker.asgi:application --reload --timeout-graceful-shutdown 3
 
 manage:
 	@cd $(APP_DIR) && uv run ./manage.py $(filter-out $@,$(MAKECMDGOALS))
