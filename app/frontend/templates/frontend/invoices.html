@@ -28,8 +28,10 @@
           <td>{{ invoice.total_amount }} {{ invoice.currency }}</td>
           <td>{{ invoice.finalized|yesno:"Yes,No" }}</td>
           <td>
-            {% if invoice.lexware_invoice_url %}
-              <a href="{{ invoice.lexware_invoice_url }}" target="_blank">View</a>
+            {% if invoice.lexware_invoice_id %}
+              <a href="https://app.lexware.de/permalink/invoices/view/{{ invoice.lexware_invoice_id }}" target="_blank">View</a>
+              |
+              <a href="https://app.lexware.de/permalink/invoices/edit/{{ invoice.lexware_invoice_id }}" target="_blank">Edit</a>
             {% else %}-{% endif %}
           </td>
           <td>
