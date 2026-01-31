@@ -34,3 +34,47 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+    develop:
+      watch:
+        # Watch Python files and sync changes
+        - action: sync
+          path: ./app
+          target: /app/app
+          ignore:
+            - __pycache__/
+            - "*.pyc"
+            - "*.pyo"
+            - "*.pyd"
+            - db.sqlite3
+            - staticfiles/
+            - frontend/static_src/node_modules/
+
+        # Watch Tailwind CSS source files and rebuild on change
+        - action: sync+restart
+          path: ./app/frontend/static_src/src
+          target: /app/frontend/static_src/src
+
+        # Watch Tailwind config files and rebuild on change
+        - action: sync+restart
+          path: ./app/frontend/static_src/tailwind.config.js
+          target: /app/frontend/static_src/tailwind.config.js
+
+        - action: sync+restart
+          path: ./app/frontend/static_src/postcss.config.js
+          target: /app/frontend/static_src/postcss.config.js
+
+        # Watch Django templates that may contain Tailwind classes
+        - action: sync+restart
+          path: ./app/frontend/templates
+          target: /app/frontend/templates
+
+        # Rebuild container on dependency changes
+        - action: rebuild
+          path: ./pyproject.toml
+
+        - action: rebuild
+          path: ./uv.lock
+
+        - action: rebuild
+          path: ./app/frontend/static_src/package.json
+
