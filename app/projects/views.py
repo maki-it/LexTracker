@@ -541,7 +541,7 @@ def process_invoice_form(request):
                 return render(request, 'frontend/invoices.html', {'invoices': invoices})
         except Exception as e:
             return render(request, 'projects/invoice_form.html', {'form': form, 'error': f'API error: {e}, Response: {response.text}'})
-    return render(request, 'projects/invoice_form.html', {'form': form, 'error': 'Invalid selection'})
+    return render(request, 'projects/invoice_form.html', {'form': form, 'error': form.errors})
 
 @login_required
 @require_POST

@@ -14,3 +14,19 @@
   {% if error %}<div class="error">{{ error }}</div>{% endif %}
   <button type="submit">Generate Invoice</button>
 </form>
+
+<script>
+  document.getElementById('invoice-form').addEventListener('submit', function(e) {
+    const checkboxes = document.querySelectorAll('input[name="activities"]');
+    const checked = Array.from(checkboxes).some(cb => cb.checked);
+    // Use the first checkbox for validity reporting
+    if (checkboxes.length > 0) {
+      if (!checked) {
+        checkboxes[0].setCustomValidity('Please select at least one activity.');
+      } else {
+        checkboxes[0].setCustomValidity('');
+        return true; // Allow form submission
+      }
+    }
+  });
+</script>
