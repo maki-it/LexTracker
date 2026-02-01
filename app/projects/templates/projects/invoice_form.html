@@ -1,0 +1,32 @@
+{# Invoice form partial for htmx/modal use #}
+<form id="invoice-form" method="post" action="/forms/invoice/submit" hx-post="/forms/invoice/submit" hx-target="#invoice-table-container" hx-swap="outerHTML">
+  {% csrf_token %}
+  {# Hidden customer field, set by htmx or parent context #}
+  {% if form.customer.value %}
+    <input type="hidden" name="customer" value="{{ form.customer.value }}">
+  {% endif %}
+  {% if form.activities %}
+  <div>
+    {{ form.activities.label_tag }}
+    {{ form.activities }}
+  </div>
+  {% endif %}
+  {% if error %}<div class="error">{{ error }}</div>{% endif %}
+  <button type="submit">Generate Invoice</button>
+</form>
+
+<script>
+  document.getElementById('invoice-form').addEventListener('submit', function(e) {
+    const checkboxes = document.querySelectorAll('input[name="activities"]');
+    const checked = Array.from(checkboxes).some(cb => cb.checked);
+    // Use the first checkbox for validity reporting
+    if (checkboxes.length > 0) {
+      if (!checked) {
+        checkboxes[0].setCustomValidity('Please select at least one activity.');
+      } else {
+        checkboxes[0].setCustomValidity('');
+        return true; // Allow form submission
+      }
+    }
+  });
+</script>

@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="flex flex-col gap-4">
+  <h2 class="text-2xl font-bold mb-2">Create Invoice</h2>
+  <form method="get" class="mb-4 flex flex-row gap-2 items-end">
+    <div>
+      {{ form.customer.label_tag }}<br>
+      <select name="customer" class="select select-bordered w-full" onchange="this.form.submit()">
+        <option value="">Select customer</option>
+        {% for customer in form.fields.customer.queryset %}
+          <option value="{{ customer.pk }}" {% if selected_customer and customer.pk|stringformat:'s' == selected_customer|stringformat:'s' %}selected{% endif %}>{{ customer }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Show Activities</button>
+  </form>
+  {% if selected_customer %}
+  <form method="post" class="space-y-4">
+    {% csrf_token %}
+    <div>
+      <label class="font-semibold">Unbilled Activities</label>
+      <div class="overflow-x-auto rounded-xl w-full">
+        {% if form.fields.activities.queryset %}
+        {{ form.activities }}
+        {% else %}
+        <div class="text-center py-4 text-gray-500">No unbilled activities for this customer.</div>
+        {% endif %}
+      </div>
+    </div>
+    {% if error %}<div class="error">{{ error }}</div>{% endif %}
+    <input type="hidden" name="customer" value="{{ selected_customer }}">
+    <button type="submit" class="btn btn-primary">Generate Invoice</button>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

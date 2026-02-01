@@ -86,8 +86,9 @@ class Activity(models.Model):
   notes = models.TextField(blank=True, null=True, default=None)
   started_at = models.DateTimeField(default=timezone.now)
   ended_at = models.DateTimeField(blank=True, null=True, default=None)
-  # If the category is chargeable, the activity is chargeable by default
   is_chargeable = models.BooleanField(default=True)
+  billed = models.BooleanField(default=False, db_index=True)
+  invoice = models.ForeignKey('Invoice', on_delete=models.SET_NULL, null=True, blank=True, related_name='activities')
 
   def __str__(self):
     return f"{self.project.title} - {self.category.title} - {self.started_at.strftime('%Y-%m-%d %H:%M')}"
@@ -129,6 +130,21 @@ class Activity(models.Model):
     :return:
     """
     return dt - timedelta(seconds=dt.second, microseconds=dt.microsecond) + timedelta(seconds=60 if dt.second >= 30 else 0)
+
+
+class Invoice(models.Model):
+    """Stores metadata for generated invoices and links to Lexware."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='invoices')
+    created_at = models.DateTimeField(auto_now_add=True)
+    lexware_id = models.CharField(max_length=64, blank=True, null=True)
+    lexware_url = models.URLField(blank=True, null=True)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    currency = models.CharField(max_length=8, default='EUR')
+    finalized = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Invoice {self.lexware_id or self.id} for {self.customer.name}"
 
 
 DATE_FORMATS = [

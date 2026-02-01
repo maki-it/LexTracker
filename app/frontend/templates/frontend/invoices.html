@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="flex flex-col gap-4">
+  <div class="flex flex-row justify-between items-center mb-2">
+    <h2 class="text-2xl font-bold">Invoices</h2>
+    <button class="btn btn-primary" hx-get="/forms/customer-select" hx-target="#modal-body" hx-trigger="click" hx-swap="innerHTML">Create Invoice</button>
+  </div>
+  <div id="modal-body"></div>
+  {% include 'projects/invoice_table.html' %}
+</div>
+{% endblock %}

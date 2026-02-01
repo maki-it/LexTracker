@@ -1,0 +1,16 @@
+{# Customer selection partial for htmx/modal use #}
+<form id="customer-select-form">
+  <div>
+    <label for="customer-select">Select Customer</label>
+    <select name="customer" id="customer-select" required
+      hx-get="/forms/invoice"
+      hx-target="#modal-body"
+      hx-swap="innerHTML"
+      hx-trigger="change">
+      <option value="">-- Select a customer --</option>
+      {% for customer in customers %}
+        <option value="{{ customer.pk }}">{{ customer }}</option>
+      {% endfor %}
+    </select>
+  </div>
+</form>
