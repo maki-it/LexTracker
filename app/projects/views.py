@@ -456,6 +456,9 @@ def process_invoice_form(request):
         line_items = []
         total_net = 0
 
+        shippingDate: datetime = min(activity.started_at for activity in activities)
+        shippingEndDate: datetime = max(activity.ended_at for activity in activities)
+
         for activity in activities:
             duration = (activity.ended_at - activity.started_at).total_seconds() / 3600
             price_per_hour = 80 # TODO: Set hourly rate in database (e.g., per project, customer, or globally (in Settings))
@@ -494,9 +497,9 @@ def process_invoice_form(request):
               "paymentTermDuration": payment_duration
             },
             "shippingConditions": {
-              "shippingType": "serviceperiod",
-              "shippingDate": to_iso8601(min(activity.started_at for activity in activities)),
-              "shippingEndDate": to_iso8601(max(activity.ended_at for activity in activities))
+              "shippingType": "service" if shippingDate.date() == shippingEndDate.date() else "serviceperiod",
+              "shippingDate": to_iso8601(shippingDate),
+              "shippingEndDate": to_iso8601(shippingEndDate)
 
             },
             "title": "Rechnung",
