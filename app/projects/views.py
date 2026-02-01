@@ -553,6 +553,10 @@ async def delete_invoice(request, invoice_id):
       invoice=None
     )
     await invoice.adelete()
+    invoices = await sync_to_async(lambda: list(Invoice.objects.select_related('customer').prefetch_related('activities').order_by('-created_at')))()
+    if request.headers.get('HX-Request'):
+        # For HTMX, return the updated table partial
+        return render(request, 'projects/invoice_table.html', {'invoices': invoices})
     return HttpResponse(status=204)
 
 @login_required

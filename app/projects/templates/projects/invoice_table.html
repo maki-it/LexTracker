@@ -29,7 +29,7 @@
             <a class="join-item btn btn-xs btn-secondary" href="https://app.lexware.de/permalink/invoices/view/{{ invoice.lexware_id }}" target="_blank" title="View Invoice at Lexware Office">
               <img src="/static/icons/eye.svg" class="h-4 invert" alt="Eye icon">
             </a>
-            <form method="POST" hx-post="/invoices/{{ invoice.id }}/delete/" hx-target="closest tr" hx-swap="outerHTML remove" class="inline">
+            <form method="POST" hx-post="/invoices/{{ invoice.id }}/delete/" hx-target="#invoice-table-container" hx-swap="outerHTML" class="inline">
               {% csrf_token %}
               <button type="submit" class="join-item btn btn-xs btn-error" title="Delete Invoice">
                 <img src="/static/icons/trash.svg" class="h-4 invert" alt="trash icon">
