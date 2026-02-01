@@ -534,9 +534,11 @@ def process_invoice_form(request):
                 activity.save()
             invoices = Invoice.objects.select_related('customer').prefetch_related('activities').order_by('-created_at')
             if request.headers.get('HX-Request'):
-                return render(request, 'frontend/invoices.html', {'invoices': invoices})
-            else:
+                # For HTMX requests, only render the invoice table partial
                 return render(request, 'projects/invoice_table.html', {'invoices': invoices})
+            else:
+                # For normal requests, render the full invoices page
+                return render(request, 'frontend/invoices.html', {'invoices': invoices})
         except Exception as e:
             return render(request, 'projects/invoice_form.html', {'form': form, 'error': f'API error: {e}, Response: {response.text}'})
     return render(request, 'projects/invoice_form.html', {'form': form, 'error': 'Invalid selection'})
