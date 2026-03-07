@@ -3,18 +3,18 @@ name = "lextracker"
 version = "0.1.0"
 description = "Project time tracker for Lexoffice / Lexware Office"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.14.3"
 dependencies = [
-    "cookiecutter>=2.6.0",
+    "cookiecutter>=2.7.1",
     "django-debug-toolbar>=6.2.0",
-    "django-tailwind[reload]>=3.9.1",
+    "django-tailwind[reload]>=4.4.2",
     "django[argon2]>=6.0.1",
     "httpx>=0.28.1",
     "httpx-limiter[aiolimiter]",
     "pydantic>=2.12.5",
-    "pydantic-settings>=2.12.0",
-    "uvicorn>=0.40.0",
+    "pydantic-settings>=2.13.1",
+    "uvicorn>=0.41.0",
 ]
 
 [tool.uv.sources]
-httpx-limiter = { git = "https://github.com/Midnighter/httpx-limiter.git", rev = "45bdbc103f2a19c2906fc596845586171e82cd2c" }
+httpx-limiter = { git = "https://github.com/Midnighter/httpx-limiter.git", rev = "58ce7bf818634e992d93adca4cf7d4f4908473d0" }
