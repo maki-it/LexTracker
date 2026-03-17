@@ -327,8 +327,8 @@ wheels = [
 
 [[package]]
 name = "httpx-limiter"
-version = "0.5.1.dev86+g7c4489017"
-source = { git = "https://github.com/Midnighter/httpx-limiter.git?rev=7c4489017f74c92a363c5ce718c4f4423d1d1eae#7c4489017f74c92a363c5ce718c4f4423d1d1eae" }
+version = "0.5.1.dev90+g69aba6f3c"
+source = { git = "https://github.com/Midnighter/httpx-limiter.git?rev=69aba6f3c2a2ac7823f84ecde9a553a685f412c0#69aba6f3c2a2ac7823f84ecde9a553a685f412c0" }
 dependencies = [
     { name = "httpx" },
 ]
@@ -382,7 +382,7 @@ requires-dist = [
     { name = "django-debug-toolbar", specifier = ">=6.2.0" },
     { name = "django-tailwind", extras = ["reload"], specifier = ">=4.4.2" },
     { name = "httpx", specifier = ">=0.28.1" },
-    { name = "httpx-limiter", extras = ["aiolimiter"], git = "https://github.com/Midnighter/httpx-limiter.git?rev=7c4489017f74c92a363c5ce718c4f4423d1d1eae" },
+    { name = "httpx-limiter", extras = ["aiolimiter"], git = "https://github.com/Midnighter/httpx-limiter.git?rev=69aba6f3c2a2ac7823f84ecde9a553a685f412c0" },
     { name = "pydantic", specifier = ">=2.12.5" },
     { name = "pydantic-settings", specifier = ">=2.13.1" },
     { name = "uvicorn", specifier = ">=0.41.0" },
