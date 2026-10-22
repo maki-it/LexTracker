@@ -10,7 +10,9 @@ Zeiterfassung und Projektsteuerung mit Anbindung an die [Lexware Office Public A
 2. **Lexware-Anbindung** ✓: Kunden aus Lexware Office importieren und abgleichen.
 3. **Projekte und Zeiterfassung** ✓: Projekte und Aufgaben anlegen, Zeiten per Timer oder manuell buchen, Wochenübersicht.
 4. **Abrechnung** ✓: Abrechnung nach Stundensatz oder als Retainer (z. B. 20 Stunden pro Quartal zum Festpreis, Rest nach Stundensatz), Vorschau und Rechnungsentwürfe in Lexware.
-5. **Später**: Dashboards und Auswertungen, Zugänge für Mitarbeiter und Kunden.
+5. **Auswertungen** ✓: Stunden, Umsatz, Budgets und Retainer, CSV-Export.
+6. **MCP-Server** ✓: KI-Agenten erfassen Zeiten über das Model Context Protocol.
+7. **Später**: Zugänge für Mitarbeiter und Kunden.
 
 ## Technik
 
@@ -36,6 +38,7 @@ app/
   tracking/    Zeiteinträge (ein Eintrag ohne Ende ist ein laufender Timer)
   billing/     Abrechnungsvereinbarungen, Berechnung und Rechnungen
   reports/     Auswertungen und CSV-Export
+  mcpserver/   MCP-Server für KI-Agenten
   templates/   HTML-Templates
   assets/      Tailwind-Quelle mit Farben und eigenen Komponenten
   static/      Statische Dateien (htmx, gebautes CSS)
@@ -110,6 +113,34 @@ Unter **Auswertungen** wählst du einen Zeitraum (dieser oder letzter Monat, Qua
 - Stunden je Kunde und je Projekt, mit dem Gesamtverbrauch gegenüber dem Projektbudget.
 
 **Zeiten als CSV** lädt alle Einträge des Zeitraums herunter (Semikolon-getrennt, Dezimalkomma, für Excel und LibreOffice).
+
+## KI-Agenten (MCP)
+
+LexTracker ist ein [MCP-Server](https://modelcontextprotocol.io): Ein KI-Agent wie Claude Code kann damit Zeiten erfassen, während er an einer Aufgabe arbeitet. Er handelt dabei als der Benutzer, dem der Token gehört.
+
+1. Unter **Konto → KI-Agenten und API-Tokens** einen Token erstellen. Er wird nur einmal angezeigt; gespeichert wird nur sein Hash.
+2. Den Agenten verbinden, z. B. in Claude Code:
+
+   ```sh
+   claude mcp add --transport http lextracker https://lextracker.example.de/mcp/ \
+     --header "Authorization: Bearer lxt_..."
+   ```
+
+   Andere Clients brauchen dieselben Angaben: Transport „Streamable HTTP“, die Adresse `/mcp/` und den Header `Authorization: Bearer <Token>`.
+
+Werkzeuge für den Agenten:
+
+| Tool | Was es tut |
+| --- | --- |
+| `list_projects`, `find_tasks` | Projekte und offene Aufgaben finden |
+| `create_task` | Aufgabe in einem Projekt anlegen |
+| `start_timer`, `stop_timer`, `get_running_timer` | Timer steuern; beim Stoppen kann der Agent die Beschreibung durch eine Zusammenfassung ersetzen |
+| `add_time_entry` | Zeit nachtragen, mit Ende oder Dauer; gerundet wie eingestellt |
+| `list_time_entries` | Gebuchte Zeiten eines Zeitraums mit Summe |
+
+Ein Hinweis für den Agenten, etwa in der `CLAUDE.md` eines Projekts, sorgt dafür, dass er es auch tut. Fertige Beispiel-Prompts zum Kopieren (dauerhaft, einmalig im Chat, Zeit nachtragen) stehen im Konto unter **Beispiel-Prompts für deinen Agenten**.
+
+Der Server ist zustandslos und antwortet mit JSON, ohne Event-Stream. Ein widerrufener Token funktioniert sofort nicht mehr.
 
 ## Konto und Sicherheit
 

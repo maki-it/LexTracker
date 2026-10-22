@@ -1,3 +1,6 @@
+import hashlib
+import secrets
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
@@ -49,3 +52,39 @@ class User(AbstractUser):
                 name="customer_user_has_customer",
             ),
         ]
+
+
+class ApiToken(models.Model):
+    """A token for programs acting as a user, e.g. an AI agent using the MCP server.
+
+    Only a hash is stored; the token itself is shown once when it is created.
+    """
+
+    PREFIX = "lxt_"
+
+    user = models.ForeignKey(User, verbose_name="Benutzer", on_delete=models.CASCADE, related_name="api_tokens")
+    name = models.CharField("Name", max_length=100, help_text="Wofür du den Token nutzt, z. B. „Claude Code Laptop“.")
+    key_hash = models.CharField(max_length=64, unique=True, editable=False)
+    # The first characters, so the token can be recognised in the list.
+    hint = models.CharField(max_length=12, editable=False)
+    created_at = models.DateTimeField("erstellt", auto_now_add=True)
+    last_used_at = models.DateTimeField("zuletzt benutzt", null=True, blank=True, editable=False)
+
+    class Meta:
+        verbose_name = "API-Token"
+        verbose_name_plural = "API-Tokens"
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return self.name
+
+    @staticmethod
+    def hash(key: str) -> str:
+        return hashlib.sha256(key.encode()).hexdigest()
+
+    @classmethod
+    def issue(cls, user: User, name: str) -> tuple[ApiToken, str]:
+        """Create a token and return it with its key, which is not stored."""
+        key = cls.PREFIX + secrets.token_urlsafe(32)
+        token = cls.objects.create(user=user, name=name, key_hash=cls.hash(key), hint=key[:10])
+        return token, key

@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import PasswordChangeForm
 
-from accounts.models import User
+from accounts.models import ApiToken, User
 from core.forms import StyledFormMixin
 
 
@@ -46,3 +46,9 @@ class ConfirmPasswordForm(forms.Form):
         if not self.user.check_password(password):
             raise forms.ValidationError("Das Passwort ist falsch.")
         return password
+
+
+class ApiTokenForm(StyledFormMixin, forms.ModelForm):
+    class Meta:
+        model = ApiToken
+        fields = ["name"]

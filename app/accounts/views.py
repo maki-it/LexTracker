@@ -11,8 +11,15 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_http_methods, require_POST
 
 from accounts import mfa
-from accounts.forms import CodeForm, ConfirmPasswordForm, LoginForm, PreferencesForm, StyledPasswordChangeForm
-from accounts.models import User
+from accounts.forms import (
+    ApiTokenForm,
+    CodeForm,
+    ConfirmPasswordForm,
+    LoginForm,
+    PreferencesForm,
+    StyledPasswordChangeForm,
+)
+from accounts.models import ApiToken, User
 
 # Password checked, code from the authenticator app still missing.
 MFA_PENDING_KEY = "mfa_pending"
@@ -85,11 +92,41 @@ async def account(request: HttpRequest) -> HttpResponse:
         await sync_to_async(form.save)()
         messages.success(request, "Einstellungen gespeichert.")
         return redirect("account:settings")
+    return await _account_page(request, form)
+
+
+async def _account_page(request: HttpRequest, form, token_form=None, new_key: str = "") -> HttpResponse:
     return render(
         request,
         "accounts/account.html",
-        {"form": form, "has_mfa": await sync_to_async(mfa.has_mfa)(request.user)},
+        {
+            "form": form,
+            "has_mfa": await sync_to_async(mfa.has_mfa)(request.user),
+            "tokens": [t async for t in request.user.api_tokens.all()],
+            "token_form": token_form or ApiTokenForm(),
+            "new_key": new_key,
+            "mcp_url": request.build_absolute_uri(reverse("mcp:endpoint")),
+        },
     )
+
+
+@require_POST
+async def token_create(request: HttpRequest) -> HttpResponse:
+    token_form = ApiTokenForm(request.POST)
+    new_key = ""
+    if await sync_to_async(token_form.is_valid)():
+        _, new_key = await sync_to_async(ApiToken.issue)(request.user, token_form.cleaned_data["name"])
+        token_form = None
+    # Rendered, not redirected: the key is shown only on this response.
+    return await _account_page(request, PreferencesForm(instance=request.user), token_form, new_key)
+
+
+@require_POST
+async def token_revoke(request: HttpRequest, pk: int) -> HttpResponse:
+    deleted, _ = await request.user.api_tokens.filter(pk=pk).adelete()
+    if deleted:
+        messages.success(request, "Token widerrufen. Programme, die ihn nutzen, haben keinen Zugriff mehr.")
+    return redirect("account:settings")
 
 
 @require_http_methods(["GET", "POST"])
