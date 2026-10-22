@@ -31,3 +31,10 @@ class TaskForm(StyledFormMixin, forms.ModelForm):
     class Meta:
         model = Task
         fields = ["name", "is_billable", "hourly_rate", "estimated_hours"]
+
+
+class TaskEditForm(StyledFormMixin, forms.ModelForm):
+    class Meta:
+        model = Task
+        fields = ["name", "status", "description", "hourly_rate", "estimated_hours", "is_billable"]
+        widgets = {"description": forms.Textarea(attrs={"rows": 3})}

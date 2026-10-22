@@ -11,7 +11,7 @@
             <div class="text-xs text-muted">
               {% if not task.is_billable %}nicht abrechenbar · {% endif %}
               {% if task.hourly_rate is not None %}{{ task.hourly_rate }} €/h · {% endif %}
-              {{ task.booked|hours }} h gebucht{% if task.estimated_hours is not None %} von {{ task.estimated_hours }} h geschätzt{% endif %}
+              {{ task.booked|hours:duration_format }} h gebucht{% if task.estimated_hours is not None %} von {{ task.estimated_hours }} h geschätzt{% endif %}
             </div>
           </td>
           <td>
@@ -26,6 +26,7 @@
             <div class="flex justify-end gap-1.5">
               {% if task.status != 'done' %}{% include "tracking/_start_button.html" %}{% endif %}
               <a href="{% url 'tracking:create' %}?aufgabe={{ task.pk }}" class="btn btn-ghost btn-sm" title="Zeit nachtragen">{% icon "plus" size=14 %}Zeit</a>
+              <a href="{% url 'projects:task_edit' project.pk task.pk %}" class="btn btn-ghost btn-sm btn-icon size-8" title="Bearbeiten" aria-label="Aufgabe {{ task.name }} bearbeiten">{% icon "pencil" %}</a>
             </div>
           </td>
         </tr>

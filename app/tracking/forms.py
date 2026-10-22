@@ -2,8 +2,10 @@ from django import forms
 from django.db.models import Q
 
 from core.forms import StyledFormMixin
+from core.models import AppSettings
 from projects.models import Project, Task
 from tracking.models import TimeEntry
+from tracking.services import rounded_end
 
 
 class TaskChoiceField(forms.ModelChoiceField):
@@ -46,4 +48,6 @@ class TimeEntryForm(StyledFormMixin, forms.ModelForm):
         start, end = cleaned.get("started_at"), cleaned.get("ended_at")
         if start and end and end <= start:
             self.add_error("ended_at", "Das Ende muss nach dem Beginn liegen.")
+        elif start and end:
+            cleaned["ended_at"] = rounded_end(start, end, AppSettings.load().time_rounding)
         return cleaned

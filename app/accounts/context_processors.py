@@ -11,4 +11,5 @@ def preferences(request: HttpRequest) -> dict:
         "theme": getattr(user, "theme", User.Theme.SYSTEM),
         "date_format": date_format,
         "datetime_format": f"{date_format}, H:i",
+        "duration_format": getattr(user, "duration_format", User.DurationFormat.CLOCK),
     }

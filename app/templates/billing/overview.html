@@ -21,7 +21,7 @@
       {% for customer in customers %}
       <tr>
         <td class="w-full font-medium">{{ customer.name }}</td>
-        <td class="text-right whitespace-nowrap tabular-nums{% if customer.unbilled %} font-semibold{% else %} text-muted{% endif %}">{% if customer.unbilled %}{{ customer.unbilled|hours }} h{% else %}–{% endif %}</td>
+        <td class="text-right whitespace-nowrap tabular-nums{% if customer.unbilled %} font-semibold{% else %} text-muted{% endif %}">{% if customer.unbilled %}{{ customer.unbilled|hours:duration_format }} h{% else %}–{% endif %}</td>
         <td class="text-right"><a class="btn btn-sm{% if customer.unbilled %} btn-primary{% endif %}" href="{% url 'billing:customer' customer.pk %}">Abrechnen</a></td>
       </tr>
       {% empty %}

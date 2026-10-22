@@ -10,7 +10,7 @@ class StyledFormMixin:
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
             widget = field.widget
-            if isinstance(widget, forms.CheckboxInput):
+            if isinstance(widget, forms.CheckboxInput | forms.CheckboxSelectMultiple):
                 widget.attrs.setdefault("class", "size-4 accent-primary")
             else:
                 widget.attrs.setdefault("class", "input")
@@ -19,4 +19,4 @@ class StyledFormMixin:
 class AppSettingsForm(StyledFormMixin, forms.ModelForm):
     class Meta:
         model = AppSettings
-        fields = ["default_hourly_rate", "lexware_sync_interval"]
+        fields = ["default_hourly_rate", "time_rounding", "lexware_sync_interval"]

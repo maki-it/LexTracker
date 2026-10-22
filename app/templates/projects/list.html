@@ -14,7 +14,14 @@
     <a href="{% url 'projects:create' %}" class="btn btn-primary">{% icon "plus" %}Neues Projekt</a>
   </div>
 </div>
-<div class="table-wrap">
+<form method="get" role="search">
+  <input type="search" name="q" value="{{ query }}" placeholder="Projekt, Kunde oder Beschreibung suchen" aria-label="Projekte suchen" class="input max-w-sm"
+         hx-get="{% url 'projects:list' %}" hx-trigger="input changed delay:250ms, search" hx-include="closest form"
+         hx-target="#project-table" hx-select="#project-table" hx-swap="outerHTML" hx-push-url="true">
+  {% if show_done %}<input type="hidden" name="abgeschlossen" value="1">{% endif %}
+  <noscript><button type="submit" class="btn">Suchen</button></noscript>
+</form>
+<div class="table-wrap" id="project-table">
   <table class="table">
     <thead>
       <tr>
@@ -31,11 +38,11 @@
         <td class="font-medium"><a class="text-ink hover:text-primary-ink hover:underline" href="{% url 'projects:detail' project.pk %}">{{ project.name }}</a></td>
         <td class="text-muted">{{ project.customer.name }}</td>
         <td><span class="badge{% if project.status == 'active' %} badge-primary{% elif project.status == 'done' %} badge-success{% endif %}">{{ project.get_status_display }}</span></td>
-        <td class="text-right tabular-nums">{{ project.booked|hours }} h</td>
+        <td class="text-right tabular-nums">{{ project.booked|hours:duration_format }} h</td>
         <td class="text-right text-muted tabular-nums">{% if project.budget_hours is not None %}{{ project.budget_hours }} h{% else %}–{% endif %}</td>
       </tr>
       {% empty %}
-      <tr><td colspan="5" class="py-10 text-center text-muted">Noch keine Projekte.</td></tr>
+      <tr><td colspan="5" class="py-10 text-center text-muted">{% if query %}Keine Projekte gefunden.{% else %}Noch keine Projekte.{% endif %}</td></tr>
       {% endfor %}
     </tbody>
   </table>

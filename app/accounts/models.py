@@ -20,9 +20,16 @@ class User(AbstractUser):
         LONG = "j. F Y", "31. Dezember 2026"
         ISO = "Y-m-d", "2026-12-31"
 
+    class DurationFormat(models.TextChoices):
+        CLOCK = "clock", "Stunden und Minuten (2:45)"
+        DECIMAL = "decimal", "Dezimalstunden (2,75)"
+
     role = models.CharField("Rolle", max_length=20, choices=Role, default=Role.ADMIN)
     theme = models.CharField("Darstellung", max_length=10, choices=Theme, default=Theme.SYSTEM)
     date_format = models.CharField("Datumsformat", max_length=10, choices=DateFormat, default=DateFormat.NUMERIC)
+    duration_format = models.CharField(
+        "Zeitdauern anzeigen als", max_length=10, choices=DurationFormat, default=DurationFormat.CLOCK
+    )
     # Only set for customer logins: the customer whose data this user may see.
     customer = models.ForeignKey(
         "customers.Customer",

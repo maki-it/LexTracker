@@ -20,6 +20,23 @@ class AppSettings(models.Model):
         blank=True,
         help_text="Gilt, wenn weder Aufgabe, Projekt noch Kunde einen Stundensatz haben.",
     )
+
+    class Rounding(models.IntegerChoices):
+        EXACT = 0, "exakt (keine Rundung)"
+        FIVE = 5, "jede angefangenen 5 Minuten"
+        SIX = 6, "jede angefangenen 6 Minuten (Zehntelstunde)"
+        TEN = 10, "jede angefangenen 10 Minuten"
+        FIFTEEN = 15, "jede angefangene Viertelstunde"
+        THIRTY = 30, "jede angefangene halbe Stunde"
+        SIXTY = 60, "jede angefangene Stunde"
+
+    time_rounding = models.PositiveSmallIntegerField(
+        "Zeiten runden auf",
+        choices=Rounding,
+        default=Rounding.EXACT,
+        help_text="Beim Stoppen des Timers und beim Speichern eines Eintrags wird das Ende aufgerundet. "
+        "Bestehende Einträge bleiben, wie sie sind.",
+    )
     lexware_sync_interval = models.PositiveIntegerField(
         "Automatischer Kundenimport alle (Minuten)",
         default=60,
