@@ -8,3 +8,4 @@ tests
 **/__pycache__
 app/.django_tailwind_cli
 app/static/css/tailwind.css
+loadtest
