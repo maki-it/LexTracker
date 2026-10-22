@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     "customers",
     "projects",
     "tracking",
+    "lexware",
 ]
 
 # All middleware is async-capable, so Django never has to run the whole request in a thread.
@@ -133,6 +134,9 @@ SERVESTATIC_USE_FINDERS = SERVESTATIC_AUTOREFRESH = not IS_PRODUCTION
 TAILWIND_CLI_VERSION = "4.3.3"
 TAILWIND_CLI_SRC_CSS = "assets/tailwind.css"
 TAILWIND_CLI_DIST_CSS = "css/tailwind.css"
+
+LEXWARE_API_KEY = env.lexware_api_key.get_secret_value()
+LEXWARE_BASE_URL = env.lexware_base_url
 
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"

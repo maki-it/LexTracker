@@ -33,6 +33,7 @@ class Env(BaseSettings):
     log_level: Literal["debug", "info", "warning", "error"] = "info"
     # Lexware Office Public API, used from step 2 on.
     lexware_api_key: SecretStr = SecretStr("")
+    lexware_base_url: str = "https://api.lexware.io/v1/"
 
     @property
     def debug(self) -> bool:

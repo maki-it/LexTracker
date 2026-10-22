@@ -10,7 +10,10 @@
 <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
   {% if user.is_authenticated %}
   <nav class="flex items-center justify-between gap-4 border-b border-line bg-surface px-6 py-3">
-    <a href="{% url 'core:dashboard' %}" class="text-lg font-semibold">LexTracker</a>
+    <div class="flex items-center gap-4">
+      <a href="{% url 'core:dashboard' %}" class="text-lg font-semibold">LexTracker</a>
+      <a href="{% url 'customers:list' %}" class="btn btn-ghost btn-sm">Kunden</a>
+    </div>
     <div class="flex items-center gap-2">
       {% if user.is_staff %}<a href="{% url 'admin:index' %}" class="btn btn-ghost btn-sm">Verwaltung</a>{% endif %}
       <form method="post" action="{% url 'accounts:logout' %}">
