@@ -23,6 +23,7 @@ ICONS = {
     "logout": '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>',
     "play": '<path d="M7 4.5v15l12-7.5z"/>',
     "stop": '<rect x="6" y="6" width="12" height="12" rx="2"/>',
+    "menu": '<path d="M4 6h16M4 12h16M4 18h16"/>',
     "plus": '<path d="M12 5v14M5 12h14"/>',
     "pencil": '<path d="M4 20h4L19 9l-4-4L4 16z"/>',
     "chart": '<path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/>',
@@ -50,4 +51,24 @@ def icon(name: str, size: int = 16, css_class: str = "") -> str:
         size,
         size,
         mark_safe(ICONS[name]),  # static markup from the dict above
+    )
+
+
+# The LexTracker mark: a clock whose hands form an "L". Same drawing as static/img/favicon.svg.
+LOGO = (
+    '<rect width="32" height="32" rx="8" fill="#4f46e5"/>'
+    '<circle cx="16" cy="16" r="10" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="2.4"/>'
+    '<path d="M16 9.5V16h5.5" fill="none" stroke="#fff" stroke-width="3" '
+    'stroke-linecap="round" stroke-linejoin="round"/>'
+)
+
+
+@register.simple_tag
+def logo(size: int = 28) -> str:
+    """Inline SVG of the app logo, hidden from screen readers (the name stands next to it)."""
+    return format_html(
+        '<svg aria-hidden="true" class="shrink-0" width="{}" height="{}" viewBox="0 0 32 32">{}</svg>',
+        size,
+        size,
+        mark_safe(LOGO),  # static markup from above
     )

@@ -54,3 +54,11 @@ document.addEventListener("htmx:load", (event) => {
   for (const form of event.detail.elt.querySelectorAll?.("form") ?? []) syncDependentCheckboxes(form);
 });
 document.addEventListener("DOMContentLoaded", () => document.querySelectorAll("form").forEach(syncDependentCheckboxes));
+
+// Menu button of the top bar on phones: shows or hides the navigation.
+document.addEventListener("click", (event) => {
+  const toggle = event.target.closest("[data-nav-toggle]");
+  if (!toggle) return;
+  const open = document.getElementById("sidebar").toggleAttribute("data-open");
+  toggle.setAttribute("aria-expanded", open);
+});
