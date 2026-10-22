@@ -292,6 +292,9 @@ def test_customer_downloads_the_invoice_pdf(client, customer_user, other_task, m
     assert response.content == b"%PDF-1.7" and response["Content-Type"] == "application/pdf"
     assert 'filename="Rechnung-RE0042.pdf"' in response["Content-Disposition"]
     assert requests[0].headers["Accept"] == "application/pdf"
+    # "Online ansehen" opens the same PDF in the browser.
+    response = client.get(reverse("portal:invoice_pdf", args=[own.pk]), {"ansehen": "1"})
+    assert response["Content-Disposition"].startswith("inline")
 
     # Drafts and other customers' invoices are not to be had.
     assert client.get(reverse("portal:invoice_pdf", args=[draft.pk])).status_code == 404
@@ -387,3 +390,35 @@ def test_admin_unlocks_customers_and_projects(client, user, employee, task, othe
     # Another role keeps the unlocks, they are just not used.
     client.post(url, {"username": employee.username, "role": User.Role.ADMIN, "is_active": "on"})
     assert employee.bookable_customers.exists()
+
+
+def test_portal_invoices_filter_by_status_and_date(client, customer_user):
+    def invoice(number, status, day):
+        return Invoice.objects.create(
+            customer=customer_user.customer,
+            period_start=day,
+            period_end=day,
+            voucher_date=day,
+            total_net=Decimal("100"),
+            status=status,
+            voucher_number=number,
+            lexware_id=uuid.uuid4(),
+        )
+
+    invoice("RE-ALT", Invoice.Status.PAID, date(2025, 3, 1))
+    current = invoice("RE-NEU", Invoice.Status.OPEN, date(2026, 10, 1))
+    client.force_login(customer_user)
+    url = reverse("portal:invoices")
+
+    text = client.get(url).text
+    assert "RE-ALT" in text and "RE-NEU" in text
+    text = client.get(url, {"status": "bezahlt"}).text
+    assert "RE-ALT" in text and "RE-NEU" not in text
+    text = client.get(url, {"von": "2026-01-01", "bis": "2026-12-31"}).text
+    assert "RE-ALT" not in text and "RE-NEU" in text
+    text = client.get(url, {"von": "2026-01-01", "bis": "2026-12-31", "status": "bezahlt"}).text
+    assert "Keine Rechnung passt zum Filter" in text
+    # Drafts cannot be picked.
+    assert "RE-NEU" in client.get(url, {"status": "entwurf"}).text
+
+    assert f"{reverse('portal:invoice_pdf', args=[current.pk])}?ansehen=1" in client.get(url).text
