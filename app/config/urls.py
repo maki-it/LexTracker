@@ -7,5 +7,6 @@ urlpatterns = [
     path("kunden/", include("customers.urls")),
     path("projekte/", include("projects.urls")),
     path("zeiten/", include("tracking.urls")),
+    path("abrechnung/", include("billing.urls")),
     path("", include("core.urls")),
 ]

@@ -9,7 +9,8 @@ Zeiterfassung und Projektsteuerung mit Anbindung an die [Lexware Office Public A
 1. **Fundament** ✓: Projektgerüst, Login, Datenmodell für Kunden, Projekte, Aufgaben und Zeiteinträge, Docker, Tests, CI.
 2. **Lexware-Anbindung** ✓: Kunden aus Lexware Office importieren und abgleichen.
 3. **Projekte und Zeiterfassung** ✓: Projekte und Aufgaben anlegen, Zeiten per Timer oder manuell buchen, Wochenübersicht.
-4. **Später**: Abrechnungsmodelle (z. B. Stundenkontingent pro Quartal zum Festpreis, Rest nach Stundensatz), Rechnungen über Lexware, Dashboards, Zugänge für Mitarbeiter und Kunden.
+4. **Abrechnung** ✓: Abrechnung nach Stundensatz oder als Retainer (z. B. 20 Stunden pro Quartal zum Festpreis, Rest nach Stundensatz), Vorschau und Rechnungsentwürfe in Lexware.
+5. **Später**: Dashboards und Auswertungen, Zugänge für Mitarbeiter und Kunden.
 
 ## Technik
 
@@ -33,6 +34,7 @@ app/
   lexware/     Async Client für die Lexware Office Public API
   projects/    Projekte und Aufgaben
   tracking/    Zeiteinträge (ein Eintrag ohne Ende ist ein laufender Timer)
+  billing/     Abrechnungsvereinbarungen, Berechnung und Rechnungen
   templates/   HTML-Templates
   assets/      Tailwind-Quelle mit Farben und eigenen Komponenten
   static/      Statische Dateien (htmx, gebautes CSS)
@@ -65,6 +67,17 @@ Auf der Kommandozeile geht das auch: `uv run app/manage.py sync_lexware_customer
 Der Import legt neue Kunden an und aktualisiert Name, Kundennummer, E-Mail, Telefon und Archiv-Status, wenn sich der Kontakt in Lexware geändert hat (erkannt an der Versionsnummer).
 Felder, die es nur hier gibt, etwa Stundensatz und Notizen, bleiben unberührt.
 Der Client hält das Rate-Limit der API ein (2 Anfragen pro Sekunde) und wiederholt Anfragen, die mit HTTP 429 abgelehnt werden.
+
+## Abrechnung
+
+Pro Kunde legst du unter **Abrechnung** eine Vereinbarung an:
+
+- **Stundensatz**: Jede abrechenbare Stunde kostet den Satz der Aufgabe, sonst des Projekts, sonst des Kunden.
+- **Retainer**: Ein Festpreis pro Monat, Quartal oder Jahr enthält ein Stundenkontingent. Stunden darüber hinaus kosten den Mehrstundensatz der Vereinbarung oder, wenn keiner gesetzt ist, den normalen Satz. Nicht genutzte Stunden verfallen am Ende des Zeitraums.
+
+Für einen gewählten Zeitraum zeigt die Vorschau alle noch nicht abgerechneten, abrechenbaren Zeiten als Rechnungspositionen.
+**Rechnungsentwurf in Lexware anlegen** erstellt daraus einen Entwurf (nicht finalisiert), den du in Lexware prüfst und abschließt. Die Zeiten gelten danach als abgerechnet und tauchen in keiner weiteren Rechnung auf.
+Der Kunde muss dafür mit einem Lexware-Kontakt verknüpft sein. Den Steuersatz der Positionen legt `APP_INVOICE_TAX_RATE` fest (Standard 19, für Kleinunternehmer 0).
 
 ## Betrieb mit Docker
 

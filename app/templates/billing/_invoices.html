@@ -1,0 +1,16 @@
+<div class="card overflow-x-auto p-0">
+  <table class="w-full text-left text-sm">
+    <tbody>
+      {% for invoice in invoices %}
+      <tr class="border-b border-line last:border-0">
+        <td class="px-4 py-3">{{ invoice.customer.name }}</td>
+        <td class="px-4 py-3 tabular-nums">{{ invoice.period_start|date:"d.m.Y" }} – {{ invoice.period_end|date:"d.m.Y" }}</td>
+        <td class="px-4 py-3 text-right tabular-nums">{{ invoice.total_net }} € netto</td>
+        <td class="px-4 py-3 text-right">{% if invoice.lexware_url %}<a class="text-primary hover:underline" href="{{ invoice.lexware_url }}" target="_blank" rel="noopener">In Lexware öffnen</a>{% endif %}</td>
+      </tr>
+      {% empty %}
+      <tr><td class="px-4 py-6 text-center text-muted">Noch keine Rechnungen erstellt.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
