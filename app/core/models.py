@@ -37,11 +37,30 @@ class AppSettings(models.Model):
         help_text="Beim Stoppen des Timers und beim Speichern eines Eintrags wird das Ende aufgerundet. "
         "Bestehende Einträge bleiben, wie sie sind.",
     )
+
+    class SyncInterval(models.IntegerChoices):
+        # Minutes between two automatic runs.
+        OFF = 0, "aus"
+        QUARTER_HOUR = 15, "alle 15 Minuten"
+        HALF_HOUR = 30, "alle 30 Minuten"
+        HOUR = 60, "stündlich"
+        TWO_HOURS = 120, "alle 2 Stunden"
+        FOUR_HOURS = 240, "alle 4 Stunden"
+        SIX_HOURS = 360, "alle 6 Stunden"
+        TWELVE_HOURS = 720, "alle 12 Stunden"
+        DAY = 1440, "täglich"
+        WEEK = 10080, "wöchentlich"
+
     lexware_sync_interval = models.PositiveIntegerField(
-        "Automatischer Abgleich mit Lexware alle (Minuten)",
-        default=60,
-        help_text="Importiert Kunden und aktualisiert den Status der Rechnungen. 0 schaltet den Abgleich ab.",
+        "Kunden importieren", choices=SyncInterval, default=SyncInterval.HOUR
     )
+    lexware_sync_from = models.TimeField("ab", null=True, blank=True)
+    lexware_sync_until = models.TimeField("bis", null=True, blank=True)
+    invoice_sync_interval = models.PositiveIntegerField(
+        "Rechnungsstatus abgleichen", choices=SyncInterval, default=SyncInterval.HOUR
+    )
+    invoice_sync_from = models.TimeField("ab", null=True, blank=True)
+    invoice_sync_until = models.TimeField("bis", null=True, blank=True)
     # Written by the import, not on the settings page.
     lexware_synced_at = models.DateTimeField("letzter Kundenimport", null=True, blank=True, editable=False)
     lexware_sync_status = models.CharField("Ergebnis des letzten Imports", max_length=500, blank=True, editable=False)

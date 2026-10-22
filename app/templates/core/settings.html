@@ -2,14 +2,48 @@
 {% block title %}Einstellungen · LexTracker{% endblock %}
 {% block content %}
 <h1>Einstellungen</h1>
-<form method="post" class="card flex max-w-2xl flex-col gap-4">
+<form method="post" class="flex max-w-2xl flex-col gap-6">
   {% csrf_token %}
+  {% for error in form.non_field_errors %}<div role="alert" class="alert alert-error">{{ error }}</div>{% endfor %}
   <p class="text-sm text-muted">Diese Einstellungen gelten für alle Benutzer.</p>
-  {% include "core/_form_fields.html" %}
-  <p class="text-sm text-muted">
-    Die Umsatzsteuer auf Rechnungen richtet sich nach deinem Lexware-Konto: als Kleinunternehmer ohne Umsatzsteuer, sonst mit 19 %.
-  </p>
-  <div class="border-t border-line pt-4">
+
+  <section class="card flex flex-col gap-4">
+    <h2>Abrechnung</h2>
+    {% include "core/_field.html" with field=form.default_hourly_rate %}
+    {% include "core/_field.html" with field=form.time_rounding %}
+    <p class="text-sm text-muted">
+      Die Umsatzsteuer auf Rechnungen richtet sich nach deinem Lexware-Konto: als Kleinunternehmer ohne Umsatzsteuer, sonst mit 19 %.
+    </p>
+  </section>
+
+  <section class="card flex flex-col gap-5">
+    <div>
+      <h2>Abgleich mit Lexware</h2>
+      <p class="mt-1 text-sm text-muted">
+        Wie oft und in welchem Zeitfenster die App Kunden importiert und den Status der Rechnungen abgleicht.
+        Ohne Zeitfenster läuft der Abgleich rund um die Uhr. Bei „täglich“ oder „wöchentlich“ legt „ab“ die Uhrzeit fest.
+        Liegt „bis“ vor „ab“, reicht das Fenster über Mitternacht.
+      </p>
+    </div>
+    {% for job in sync_jobs %}
+    <fieldset class="flex flex-col gap-2">
+      <div class="grid gap-3 sm:grid-cols-[2fr_1fr_1fr]">
+        {% include "core/_field.html" with field=job.interval %}
+        {% include "core/_field.html" with field=job.start %}
+        {% include "core/_field.html" with field=job.end %}
+      </div>
+      {% if job.last_run %}
+      <p class="text-[13px]{% if job.failed %} text-danger{% else %} text-muted{% endif %}">
+        Zuletzt {{ job.last_run|date:datetime_format }} Uhr: {% if job.failed %}fehlgeschlagen ({{ job.status }}){% else %}{{ job.status }}{% endif %}
+      </p>
+      {% else %}
+      <p class="text-[13px] text-muted">Noch nicht gelaufen.</p>
+      {% endif %}
+    </fieldset>
+    {% endfor %}
+  </section>
+
+  <div>
     <button type="submit" class="btn btn-primary">Speichern</button>
   </div>
 </form>

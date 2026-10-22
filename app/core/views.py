@@ -61,4 +61,23 @@ async def app_settings(request: HttpRequest) -> HttpResponse:
         await form.instance.asave(update_fields=list(form.fields))
         messages.success(request, "Einstellungen gespeichert.")
         return redirect("core:settings")
-    return render(request, "core/settings.html", {"form": form})
+    current = form.instance
+    sync_jobs = [
+        {
+            "interval": form["lexware_sync_interval"],
+            "start": form["lexware_sync_from"],
+            "end": form["lexware_sync_until"],
+            "last_run": current.lexware_synced_at,
+            "status": current.lexware_sync_status,
+            "failed": current.lexware_sync_failed,
+        },
+        {
+            "interval": form["invoice_sync_interval"],
+            "start": form["invoice_sync_from"],
+            "end": form["invoice_sync_until"],
+            "last_run": current.invoices_synced_at,
+            "status": current.invoices_sync_status,
+            "failed": current.invoices_sync_failed,
+        },
+    ]
+    return render(request, "core/settings.html", {"form": form, "sync_jobs": sync_jobs})

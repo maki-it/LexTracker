@@ -19,4 +19,17 @@ class StyledFormMixin:
 class AppSettingsForm(StyledFormMixin, forms.ModelForm):
     class Meta:
         model = AppSettings
-        fields = ["default_hourly_rate", "time_rounding", "lexware_sync_interval"]
+        fields = [
+            "default_hourly_rate",
+            "time_rounding",
+            "lexware_sync_interval",
+            "lexware_sync_from",
+            "lexware_sync_until",
+            "invoice_sync_interval",
+            "invoice_sync_from",
+            "invoice_sync_until",
+        ]
+        widgets = {
+            name: forms.TimeInput(attrs={"type": "time"}, format="%H:%M")
+            for name in ["lexware_sync_from", "lexware_sync_until", "invoice_sync_from", "invoice_sync_until"]
+        }
