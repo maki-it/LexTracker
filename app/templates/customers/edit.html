@@ -10,7 +10,7 @@
   {% if customer.lexware_id %}
   <p class="text-sm text-muted">
     Name, E-Mail und Telefon gehören zum Kontakt in Lexware Office. Änderungen daran werden beim Speichern auch dort gespeichert.
-    {% if customer.lexware_synced_at %}Zuletzt abgeglichen {{ customer.lexware_synced_at|date:"d.m.Y, H:i" }} Uhr.{% endif %}
+    {% if customer.lexware_synced_at %}Zuletzt abgeglichen {{ customer.lexware_synced_at|date:datetime_format }} Uhr.{% endif %}
   </p>
   {% endif %}
   {% include "core/_form_fields.html" %}

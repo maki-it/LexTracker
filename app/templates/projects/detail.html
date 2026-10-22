@@ -14,7 +14,7 @@
   <div><div class="text-muted">Status</div><div class="font-medium">{{ project.get_status_display }}</div></div>
   <div><div class="text-muted">Gebucht</div><div class="font-medium tabular-nums">{{ booked|hours }} h{% if project.budget_hours is not None %} von {{ project.budget_hours }} h{% endif %}</div></div>
   <div><div class="text-muted">Stundensatz</div><div class="font-medium">{% if project.hourly_rate is not None %}{{ project.hourly_rate }} €{% elif project.customer.default_hourly_rate is not None %}{{ project.customer.default_hourly_rate }} € (Kunde){% else %}–{% endif %}</div></div>
-  <div><div class="text-muted">Zeitraum</div><div class="font-medium">{{ project.start_date|date:"d.m.Y"|default:"–" }} – {{ project.end_date|date:"d.m.Y"|default:"offen" }}</div></div>
+  <div><div class="text-muted">Zeitraum</div><div class="font-medium">{{ project.start_date|date:date_format|default:"–" }} – {{ project.end_date|date:date_format|default:"offen" }}</div></div>
   {% if project.description %}<p class="col-span-full whitespace-pre-line">{{ project.description }}</p>{% endif %}
 </section>
 

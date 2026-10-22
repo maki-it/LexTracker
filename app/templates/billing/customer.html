@@ -16,7 +16,7 @@
     <div>
       <div class="font-medium">{{ agreement.get_kind_display }}{% if agreement.kind == "retainer" %}: {{ agreement.included_hours }} h {{ agreement.get_period_display }} für {{ agreement.fixed_price }} €{% endif %}</div>
       <div class="text-muted">
-        gültig ab {{ agreement.valid_from|date:"d.m.Y" }}{% if agreement.valid_until %} bis {{ agreement.valid_until|date:"d.m.Y" }}{% endif %}
+        gültig ab {{ agreement.valid_from|date:date_format }}{% if agreement.valid_until %} bis {{ agreement.valid_until|date:date_format }}{% endif %}
         {% if agreement.kind == "retainer" %} · Mehrstunden {% if agreement.overage_rate is not None %}zu {{ agreement.overage_rate }} €/h{% else %}zum normalen Stundensatz{% endif %}{% endif %}
       </div>
     </div>

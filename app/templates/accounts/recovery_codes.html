@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Wiederherstellungscodes · LexTracker{% endblock %}
+{% block content %}
+<h1>Wiederherstellungscodes</h1>
+<div class="card flex max-w-2xl flex-col gap-4">
+  <div role="alert" class="alert alert-warning">
+    Speichere diese Codes jetzt an einem sicheren Ort, zum Beispiel in deinem Passwort-Manager. Sie werden nur dieses eine Mal angezeigt.
+  </div>
+  <p class="text-sm text-muted">Jeder Code funktioniert einmal, falls du keinen Zugriff auf deine Authenticator-App hast.</p>
+  <ul class="grid grid-cols-2 gap-2 font-mono text-base">
+    {% for code in codes %}<li class="rounded-md bg-surface-muted px-3 py-2">{{ code }}</li>{% endfor %}
+  </ul>
+  <div><a href="{% url 'account:settings' %}" class="btn btn-primary">Fertig</a></div>
+</div>
+{% endblock %}

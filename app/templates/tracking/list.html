@@ -5,7 +5,7 @@
 <div class="flex flex-wrap items-center justify-between gap-4">
   <div>
     <h1>Zeiten</h1>
-    <p class="text-sm text-muted">KW {{ monday|date:"W" }} · {{ monday|date:"d.m." }} – {{ sunday|date:"d.m.Y" }} · <span class="font-medium text-ink tabular-nums">{{ week_total|hours }} h</span></p>
+    <p class="text-sm text-muted">KW {{ monday|date:"W" }} · {{ monday|date:"d.m." }} – {{ sunday|date:date_format }} · <span class="font-medium text-ink tabular-nums">{{ week_total|hours }} h</span></p>
   </div>
   <div class="flex items-center gap-2">
     <a href="?woche={{ prev_week }}" class="btn btn-ghost btn-sm" aria-label="Vorherige Woche">←</a>

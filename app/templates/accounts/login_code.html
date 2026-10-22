@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Anmelden · LexTracker{% endblock %}
+{% block content %}
+<div class="flex justify-center pt-12">
+  <form method="post" class="card flex w-full max-w-sm flex-col gap-4">
+    <h1>Bestätigungscode</h1>
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ next }}">
+    <p class="text-sm text-muted">Gib den Code aus deiner Authenticator-App ein. Hast du dein Handy nicht zur Hand, geht auch einer deiner Wiederherstellungscodes.</p>
+    {% if error %}<div role="alert" class="alert alert-error">{{ error }}</div>{% endif %}
+    <label class="field">
+      <span>{{ form.code.label }}</span>
+      {{ form.code }}
+    </label>
+    <button type="submit" class="btn btn-primary">Anmelden</button>
+    <a href="{% url 'accounts:login' %}" class="text-center text-sm text-muted hover:underline">Zurück</a>
+  </form>
+</div>
+{% endblock %}

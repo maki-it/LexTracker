@@ -1,5 +1,5 @@
 {% load static tailwind_cli %}<!doctype html>
-<html lang="de">
+<html lang="de" data-theme="{{ theme }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -20,6 +20,7 @@
     </div>
     <div class="flex items-center gap-2">
       <div hx-get="{% url 'tracking:timer' %}" hx-trigger="load" hx-swap="outerHTML"></div>
+      <a href="{% url 'account:settings' %}" class="btn btn-ghost btn-sm{% if section == 'account' %} bg-surface-muted{% endif %}">{{ user.first_name|default:user.username }}</a>
       {% if user.role == "admin" %}<a href="{% url 'core:settings' %}" class="btn btn-ghost btn-sm{% if request.resolver_match.url_name == 'settings' %} bg-surface-muted{% endif %}">Einstellungen</a>{% endif %}
       {% if user.is_staff %}<a href="{% url 'admin:index' %}" class="btn btn-ghost btn-sm">Verwaltung</a>{% endif %}
       <form method="post" action="{% url 'accounts:logout' %}">

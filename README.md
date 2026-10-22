@@ -29,7 +29,7 @@ Zeiterfassung und Projektsteuerung mit Anbindung an die [Lexware Office Public A
 app/
   config/      Einstellungen (aus Umgebungsvariablen), URLs, ASGI
   core/        Basis-Modelle, Einstellungen, Middleware, Übersicht, Health-Check, Scheduler
-  accounts/    Benutzer mit Rolle (Admin, Mitarbeiter, Kunde) und Login
+  accounts/    Benutzer mit Rolle (Admin, Mitarbeiter, Kunde), Login mit Zwei-Faktor, Kontoeinstellungen
   customers/   Kunden (mit Verknüpfung zum Lexware-Kontakt) und Import aus Lexware
   lexware/     Async Client für die Lexware Office Public API
   projects/    Projekte und Aufgaben
@@ -80,6 +80,12 @@ Pro Kunde legst du unter **Abrechnung** eine Vereinbarung an:
 Für einen gewählten Zeitraum zeigt die Vorschau alle noch nicht abgerechneten, abrechenbaren Zeiten als Rechnungspositionen.
 **Rechnungsentwurf in Lexware anlegen** erstellt daraus einen Entwurf (nicht finalisiert), den du in Lexware prüfst und abschließt. Die Zeiten gelten danach als abgerechnet und tauchen in keiner weiteren Rechnung auf.
 Der Kunde muss dafür mit einem Lexware-Kontakt verknüpft sein. Den Steuersatz der Positionen stellst du unter **Einstellungen** ein (Standard 19 %, für Kleinunternehmer 0).
+
+## Konto und Sicherheit
+
+Unter deinem Namen oben rechts stellst du Darstellung (hell, dunkel oder wie das System) und Datumsformat ein und änderst dein Passwort.
+Dort schaltest du auch die **Zwei-Faktor-Anmeldung** mit einer Authenticator-App ein (TOTP, über [django-otp](https://django-otp-official.readthedocs.io/)). Dabei entstehen zehn Wiederherstellungscodes, die je einmal statt des App-Codes funktionieren.
+Auch die Verwaltung unter `/admin/` meldet über diese Anmeldung an, damit der zweite Faktor dort nicht umgangen wird.
 
 ## Betrieb mit Docker
 

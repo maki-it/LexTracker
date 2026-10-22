@@ -8,7 +8,7 @@
   {% endif %}
   {% if app_settings.lexware_synced_at %}
   <p class="text-sm {% if app_settings.lexware_sync_failed %}text-danger{% else %}text-muted{% endif %}">
-    Letzter Import {{ app_settings.lexware_synced_at|date:"d.m.Y, H:i" }} Uhr:
+    Letzter Import {{ app_settings.lexware_synced_at|date:datetime_format }} Uhr:
     {% if app_settings.lexware_sync_failed %}fehlgeschlagen ({{ app_settings.lexware_sync_status }}){% else %}{{ app_settings.lexware_sync_status }}{% endif %}
     {% if app_settings.lexware_sync_interval %}· automatisch alle {{ app_settings.lexware_sync_interval }} Minuten{% endif %}
   </p>
