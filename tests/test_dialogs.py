@@ -21,8 +21,13 @@ def logged_in(client, user):
 
 @pytest.fixture
 def entry(user, task):
-    start = timezone.now() - timedelta(hours=2)
-    return TimeEntry.objects.create(user=user, task=task, started_at=start, ended_at=start + timedelta(hours=1))
+    # Today, also just after midnight, so the overview lists it.
+    now = timezone.now()
+    midnight = timezone.localtime(now).replace(hour=0, minute=0, second=0, microsecond=0)
+    start = max(now - timedelta(hours=2), midnight)
+    return TimeEntry.objects.create(
+        user=user, task=task, started_at=start, ended_at=min(start + timedelta(hours=1), now)
+    )
 
 
 def test_page_in_dialog_has_no_sidebar(logged_in, entry):
@@ -129,9 +134,8 @@ def test_entries_filter_by_customer_and_project(logged_in, entry, user):
     other_customer = Customer.objects.create(name="Andere GmbH")
     other_project = Project.objects.create(customer=other_customer, name="Anderes Projekt")
     other_task = other_project.tasks.create(name="Pflege")
-    start = timezone.now() - timedelta(hours=1)
     TimeEntry.objects.create(
-        user=user, task=other_task, started_at=start, ended_at=start + timedelta(minutes=20), description="Zwei"
+        user=user, task=other_task, started_at=entry.started_at, ended_at=entry.ended_at, description="Zwei"
     )
     TimeEntry.objects.filter(pk=entry.pk).update(description="Eins")
     project = entry.task.project

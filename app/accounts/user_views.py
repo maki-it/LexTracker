@@ -32,14 +32,20 @@ async def _get_user(pk: int) -> User:
 
 @require_GET
 async def user_list(request: HttpRequest) -> HttpResponse:
-    users = [u async for u in User.objects.select_related("customer").order_by("role", "username")]
+    users = [
+        u
+        async for u in User.objects.select_related("customer")
+        .prefetch_related("bookable_customers", "bookable_projects")
+        .order_by("role", "username")
+    ]
     return render(request, "accounts/users/list.html", {"users": users})
 
 
 @require_http_methods(["GET", "POST"])
 async def user_form(request: HttpRequest, pk: int | None = None) -> HttpResponse:
     user = await _get_user(pk) if pk else User(role=User.Role.EMPLOYEE)
-    form = UserForm(request.POST or None, instance=user, acting_user=request.user)
+    # Built in a thread: the initial values of the many-to-many fields come from the database.
+    form = await sync_to_async(UserForm)(request.POST or None, instance=user, acting_user=request.user)
     if request.method == "POST" and await sync_to_async(form.is_valid)():
         if user.pk is None:
             user.set_unusable_password()

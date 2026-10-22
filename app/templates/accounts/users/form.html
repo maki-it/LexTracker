@@ -15,7 +15,19 @@
   </div>
   {% include "core/_field.html" with field=form.email %}
   {% include "core/_field.html" with field=form.role %}
-  <p class="-mt-2 text-[13px] text-muted">Mitarbeiter buchen Zeiten auf alle aktiven Projekte und sehen nur ihre eigenen. Kunden sehen nur ihre eigenen Daten und können nichts ändern.</p>
+  <p class="-mt-2 text-[13px] text-muted">Mitarbeiter buchen Zeiten auf die Kunden und Projekte, die du ihnen freischaltest, und sehen nur ihre eigenen Zeiten. Kunden sehen nur ihre eigenen Daten und können nichts ändern.</p>
+  <fieldset class="flex flex-col gap-3 rounded-lg border border-line p-4" data-shown-for="role=employee"{% if form.role.value != "employee" %} hidden disabled{% endif %}>
+    <legend class="px-1 font-medium">Darf buchen auf</legend>
+    {% for field in form %}{% if field.name in form.BOOKING_FIELDS %}
+    <div class="flex flex-col gap-1.5">
+      <span class="text-sm font-medium">{{ field.label }}</span>
+      <div class="flex max-h-48 flex-col gap-1.5 overflow-y-auto rounded-lg border border-line px-3 py-2">
+        {% for choice in field %}<label class="flex items-center gap-2 text-sm">{{ choice.tag }} {{ choice.choice_label }}</label>{% empty %}<span class="text-sm text-muted">Noch keine.</span>{% endfor %}
+      </div>
+      {% if field.help_text %}<span class="text-[13px] text-muted">{{ field.help_text }}</span>{% endif %}
+    </div>
+    {% endif %}{% endfor %}
+  </fieldset>
   <fieldset class="flex flex-col gap-3 rounded-lg border border-line p-4" data-shown-for="role=customer"{% if form.role.value != "customer" %} hidden disabled{% endif %}>
     <legend class="px-1 font-medium">Kundenzugang</legend>
     {% include "core/_field.html" with field=form.customer %}

@@ -12,7 +12,7 @@ from django.utils.dateparse import parse_date, parse_datetime
 from core.models import AppSettings
 from projects.models import Project, Task
 from tracking import services
-from tracking.forms import open_tasks
+from tracking.forms import bookable_projects, open_tasks
 from tracking.models import TimeEntry
 
 
@@ -80,9 +80,9 @@ def _entry(entry: TimeEntry) -> dict:
     }
 
 
-def _get_task(task_id) -> Task:
+def _get_task(user, task_id) -> Task:
     try:
-        return open_tasks().get(pk=int(task_id))
+        return open_tasks(user).get(pk=int(task_id))
     except Task.DoesNotExist, TypeError, ValueError:
         raise ToolError(
             f"Keine offene Aufgabe mit der ID {task_id}. Finde die richtige mit find_tasks oder lege sie an."
@@ -111,11 +111,11 @@ def _parse_date(value: str | None, field: str, default: date) -> date:
     {"query": {"type": "string", "description": "Only projects whose name or customer contains this text."}},
 )
 def list_projects(user, query: str = ""):
-    projects = Project.objects.exclude(status=Project.Status.DONE).select_related("customer")
+    projects = bookable_projects(user).exclude(status=Project.Status.DONE).select_related("customer")
     if query:
         projects = projects.filter(Q(name__icontains=query) | Q(customer__name__icontains=query))
     tasks_by_project: dict[int, list] = {}
-    for task in open_tasks().filter(project__in=projects):
+    for task in open_tasks(user).filter(project__in=projects):
         tasks_by_project.setdefault(task.project_id, []).append({"id": task.pk, "name": task.name})
     return [
         {
@@ -136,7 +136,7 @@ def list_projects(user, query: str = ""):
 )
 def find_tasks(user, query: str):
     words = query.split()
-    tasks = open_tasks()
+    tasks = open_tasks(user)
     for word in words:
         tasks = tasks.filter(
             Q(name__icontains=word) | Q(project__name__icontains=word) | Q(project__customer__name__icontains=word)
@@ -158,7 +158,7 @@ def create_task(user, project_id: int, name: str, description: str = ""):
     if not name:
         raise ToolError("name darf nicht leer sein.")
     try:
-        project = Project.objects.exclude(status=Project.Status.DONE).get(pk=int(project_id))
+        project = bookable_projects(user).exclude(status=Project.Status.DONE).get(pk=int(project_id))
     except Project.DoesNotExist, TypeError, ValueError:
         raise ToolError(f"Kein aktives Projekt mit der ID {project_id}. Siehe list_projects.") from None
     task = Task.objects.create(project=project, name=name[:255], description=description or "")
@@ -181,7 +181,7 @@ def get_running_timer(user):
     ["task_id"],
 )
 def start_timer(user, task_id: int, description: str = ""):
-    task = _get_task(task_id)
+    task = _get_task(user, task_id)
     with transaction.atomic():
         stopped = services.stop_timer(user)
         entry = services.start_timer(user, task, description or "")
@@ -220,7 +220,7 @@ def stop_timer(user, description: str | None = None):
     ["task_id", "start"],
 )
 def add_time_entry(user, task_id, start, end=None, duration_minutes=None, description="", billable=None):
-    task = _get_task(task_id)
+    task = _get_task(user, task_id)
     started_at = _parse_datetime(start, "start")
     if (end is None) == (duration_minutes is None):
         raise ToolError("Gib entweder end oder duration_minutes an.")

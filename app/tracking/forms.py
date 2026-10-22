@@ -1,5 +1,5 @@
 from django import forms
-from django.db.models import Q
+from django.db.models import Q, QuerySet
 
 from core.forms import StyledFormMixin
 from core.models import AppSettings
@@ -13,9 +13,19 @@ class TaskChoiceField(forms.ModelChoiceField):
         return f"{task.project.customer.name} · {task.project.name} · {task.name}"
 
 
-def open_tasks(include_pk: int | None = None):
-    """Tasks time can be booked on: not done, in a project that is not done."""
+def bookable_projects(user) -> QuerySet[Project]:
+    """The projects the user may book time on: all for administrators, the unlocked ones for employees."""
+    if user.is_admin:
+        return Project.objects.all()
+    if not user.is_employee:
+        return Project.objects.none()
+    return Project.objects.filter(Q(bookable_by=user) | Q(customer__bookable_by=user)).distinct()
+
+
+def open_tasks(user, include_pk: int | None = None):
+    """Tasks the user can book time on: not done, in a project that is not done and is unlocked for them."""
     is_open = ~Q(status=Task.Status.DONE) & ~Q(project__status=Project.Status.DONE)
+    is_open &= Q(project__in=bookable_projects(user).values("pk"))
     if include_pk:
         is_open |= Q(pk=include_pk)
     return (
@@ -37,10 +47,11 @@ class TimeEntryForm(StyledFormMixin, forms.ModelForm):
             "description": forms.Textarea(attrs={"rows": 2}),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, user, **kwargs):
         super().__init__(*args, **kwargs)
-        # Keep the entry's current task selectable even if it is done by now.
-        self.fields["task"].queryset = open_tasks(include_pk=self.instance.task_id if self.instance.pk else None)
+        # Keep the entry's current task selectable even if it is done or no longer unlocked by now.
+        include = self.instance.task_id if self.instance.pk else None
+        self.fields["task"].queryset = open_tasks(user, include_pk=include)
         self.fields["ended_at"].required = True
 
     def clean(self):

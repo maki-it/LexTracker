@@ -30,6 +30,7 @@
         <td class="whitespace-nowrap">
           <span class="badge{% if u.is_admin %} badge-primary{% endif %}">{{ u.get_role_display }}</span>
           {% if u.customer %}<div class="mt-1 text-[13px] text-muted">{{ u.customer.name }}</div>{% endif %}
+          {% if u.is_employee %}<div class="mt-1 text-[13px] text-muted">{% with c=u.bookable_customers.all|length p=u.bookable_projects.all|length %}{% if c or p %}{{ c }} Kunde{{ c|pluralize:"n" }}, {{ p }} Projekt{{ p|pluralize:"e" }}{% else %}noch nichts freigeschaltet{% endif %}{% endwith %}</div>{% endif %}
         </td>
         <td class="whitespace-nowrap">
           {% if not u.is_active %}<span class="badge">deaktiviert</span>
