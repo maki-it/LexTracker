@@ -1,16 +1,31 @@
-{% extends "base.html" %}
+{% extends layout %}
+{% load icons %}
 {% block title %}{% if project %}{{ project.name }} bearbeiten{% else %}Neues Projekt{% endif %} · LexTracker{% endblock %}
 {% block content %}
 <div>
   <p class="breadcrumb"><a href="{% url 'projects:list' %}">Projekte</a>{% if project %} / <a href="{% url 'projects:detail' project.pk %}">{{ project.name }}</a>{% endif %}</p>
   <h1>{% if project %}Projekt bearbeiten{% else %}Neues Projekt{% endif %}</h1>
 </div>
-<form method="post" class="card flex max-w-2xl flex-col gap-4">
+<form method="post" action="{{ request.get_full_path }}" class="card flex max-w-2xl flex-col gap-4">
   {% csrf_token %}
   {% include "core/_form_fields.html" %}
   <div class="flex gap-2 border-t border-line pt-4">
     <button type="submit" class="btn btn-primary">Speichern</button>
-    <a href="{% if project %}{% url 'projects:detail' project.pk %}{% else %}{% url 'projects:list' %}{% endif %}" class="btn btn-ghost">Abbrechen</a>
+    <a href="{% if project %}{% url 'projects:detail' project.pk %}{% else %}{% url 'projects:list' %}{% endif %}" class="btn btn-ghost" data-close-dialog>Abbrechen</a>
   </div>
 </form>
+{% if project %}
+<section class="card flex max-w-2xl flex-col gap-3">
+  <h2>Projekt löschen</h2>
+  {% if has_entries %}
+  <p class="text-sm text-muted">Auf dieses Projekt sind Zeiten gebucht, deshalb kann es nicht gelöscht werden. Setze seinen Status auf „abgeschlossen“, dann taucht es bei der Zeiterfassung nicht mehr auf.</p>
+  {% else %}
+  <p class="text-sm text-muted">Das Projekt und seine Aufgaben werden endgültig gelöscht.</p>
+  <form method="post" action="{% url 'projects:delete' project.pk %}" onsubmit="return confirm('Dieses Projekt mit allen Aufgaben wirklich löschen?')">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">{% icon "trash" size=14 %}Projekt löschen</button>
+  </form>
+  {% endif %}
+</section>
+{% endif %}
 {% endblock %}

@@ -1,0 +1,8 @@
+{# The active customer or project filter of a time entry list, with a link to remove it. #}
+{% load icons %}
+{% if filter_label %}
+<div class="flex flex-wrap items-center gap-2 text-sm">
+  <span class="text-muted">Gefiltert nach</span>
+  <a href="?{{ filter_base }}" class="pill pill-active gap-1.5" title="Filter entfernen">{{ filter_label }}{% icon "x" size=14 %}</a>
+</div>
+{% endif %}

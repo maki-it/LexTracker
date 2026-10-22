@@ -8,12 +8,9 @@
     <p class="page-subtitle">Kontakte mit Kundenrolle aus Lexware Office</p>
   </div>
   <div class="toolbar">
-    <a href="?archiviert={% if show_archived %}0{% else %}1{% endif %}" class="btn">
-      {% if show_archived %}Archivierte ausblenden{% else %}Archivierte anzeigen{% endif %}
-    </a>
     {% if lexware_configured %}
     <button class="btn btn-primary"
-            hx-post="{% url 'customers:import' %}{% if show_archived %}?archiviert=1{% endif %}"
+            hx-post="{% url 'customers:import' %}{% if list_query %}?{{ list_query }}{% endif %}"
             hx-target="#customer-table" hx-swap="outerHTML" hx-disabled-elt="this">
       {% icon "download" %}
       <span class="htmx-indicator-hide">Aus Lexware importieren</span>
@@ -32,18 +29,26 @@
     <input type="search" name="q" value="{{ query }}" placeholder="Name, Nummer, E-Mail oder Notiz suchen" aria-label="Kunden suchen" class="input max-w-sm"
            hx-get="{% url 'customers:list' %}" hx-trigger="input changed delay:250ms, search" hx-include="closest form"
            hx-target="#customer-table" hx-select="#customer-table" hx-swap="outerHTML" hx-push-url="true">
-    {% if show_archived %}<input type="hidden" name="archiviert" value="1">{% endif %}
+    {% if ansicht %}<input type="hidden" name="ansicht" value="{{ ansicht }}">{% endif %}
     {% if category %}<input type="hidden" name="kategorie" value="{{ category }}">{% endif %}
     <noscript><button type="submit" class="btn">Suchen</button></noscript>
   </form>
-  {% if categories %}
-  <nav aria-label="Nach Kategorie filtern" class="flex flex-wrap gap-1.5">
-    <a href="?{% if query %}q={{ query|urlencode }}&{% endif %}{% if show_archived %}archiviert=1{% endif %}" class="pill{% if not category %} pill-active{% endif %}">Alle</a>
-    {% for c in categories %}
-    <a href="?kategorie={{ c.pk }}{% if query %}&q={{ query|urlencode }}{% endif %}{% if show_archived %}&archiviert=1{% endif %}" class="pill{% if category == c.pk %} pill-active{% endif %}">{{ c.name }}</a>
-    {% endfor %}
-  </nav>
-  {% endif %}
+  <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+    <nav aria-label="Aktive oder archivierte Kunden" class="flex flex-wrap gap-1.5">
+      {% for key, label, count, link in view_links %}
+      <a href="?{{ link }}" class="pill gap-1.5{% if view == key %} pill-active{% endif %}">{% if key == "archiviert" %}{% icon "archive" size=14 %}{% endif %}{{ label }}<span class="text-muted tabular-nums">{{ count }}</span></a>
+      {% endfor %}
+    </nav>
+    {% if category_links %}
+    <span class="hidden h-5 w-px bg-line sm:block" aria-hidden="true"></span>
+    <nav aria-label="Nach Kategorie filtern" class="flex flex-wrap gap-1.5">
+      <a href="?{{ all_categories_link }}" class="pill{% if not category %} pill-active{% endif %}">Alle Kategorien</a>
+      {% for c, link in category_links %}
+      <a href="?{{ link }}" class="pill{% if category == c.pk %} pill-active{% endif %}">{{ c.name }}</a>
+      {% endfor %}
+    </nav>
+    {% endif %}
+  </div>
 </div>
 {% include "customers/_table.html" %}
 {% endblock %}

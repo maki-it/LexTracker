@@ -1,0 +1,23 @@
+{# One time entry in a list (overview, week). Expects `entry`. #}
+{% load timefmt icons dialogs %}
+<div class="row">
+  <span class="dot{% if not entry.is_billable %} bg-line{% endif %}"></span>
+  <div class="min-w-0 flex-[1_1_16rem]">
+    <div class="font-medium">{{ entry.task.name }}</div>
+    <div class="truncate text-[13px] text-muted">
+      <a class="text-muted no-underline hover:text-ink hover:underline" href="?{{ filter_base }}kunde={{ entry.task.project.customer_id }}" title="Nur Einträge dieses Kunden">{{ entry.task.project.customer.name }}</a>
+      ·
+      <a class="text-muted no-underline hover:text-ink hover:underline" href="?{{ filter_base }}projekt={{ entry.task.project_id }}" title="Nur Einträge dieses Projekts">{{ entry.task.project.name }}</a>{% if entry.description %} – {{ entry.description }}{% endif %}
+    </div>
+  </div>
+  <div class="ml-auto flex items-center gap-3 sm:gap-4">
+    {% if entry.is_running %}<span class="badge badge-success">läuft</span>{% elif not entry.is_billable %}<span class="badge">nicht abrechenbar</span>{% endif %}
+    <span class="text-right text-muted tabular-nums sm:w-28">{{ entry.started_at|time:"H:i" }} – {% if entry.ended_at %}{{ entry.ended_at|time:"H:i" }}{% else %}…{% endif %}</span>
+    <span class="w-12 text-right font-semibold tabular-nums">{{ entry.duration|hours:duration_format }}</span>
+    {% if entry.is_running %}
+    <span class="w-8"></span>
+    {% else %}
+    <a {% dialog_link "tracking:edit" entry.pk %} class="btn btn-ghost btn-sm btn-icon size-8" title="Bearbeiten" aria-label="Eintrag bearbeiten">{% icon "pencil" %}</a>
+    {% endif %}
+  </div>
+</div>

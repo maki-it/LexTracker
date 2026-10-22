@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load timefmt icons %}
+{% load timefmt icons dialogs %}
 {% block title %}{{ project.name }} · LexTracker{% endblock %}
 {% block content %}
 <div class="page-header">
@@ -10,7 +10,7 @@
       <span class="badge{% if project.status == 'active' %} badge-primary{% elif project.status == 'done' %} badge-success{% endif %}">{{ project.get_status_display }}</span>
     </div>
   </div>
-  <a href="{% url 'projects:edit' project.pk %}" class="btn">{% icon "pencil" size=14 %}Bearbeiten</a>
+  <a {% dialog_link "projects:edit" project.pk %} class="btn">{% icon "pencil" size=14 %}Bearbeiten</a>
 </div>
 
 <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">

@@ -271,6 +271,36 @@
     @apply inline-block size-2 shrink-0 rounded-full bg-primary;
   }
 
+  /* Dialog for edit forms (base.html, core/dialogs.py) */
+  .dialog {
+    @apply m-auto max-h-[90dvh] w-[min(40rem,calc(100vw-2rem))] overflow-y-auto rounded-xl border border-line bg-surface p-6 text-ink shadow-xl backdrop:bg-black/40;
+  }
+
+  .dialog-close {
+    @apply absolute top-3 right-3;
+  }
+
+  .dialog-content {
+    @apply flex flex-col gap-5;
+  }
+
+  /* Pages inside the dialog: no breadcrumb, and their cards blend into the dialog. */
+  .dialog-content .breadcrumb {
+    @apply hidden;
+  }
+
+  .dialog-content h1 {
+    @apply pr-8 text-lg;
+  }
+
+  .dialog-content .card {
+    @apply max-w-none border-0 bg-transparent p-0;
+  }
+
+  .dialog-content .card ~ .card {
+    @apply rounded-none border-t pt-5;
+  }
+
   /* Alerts */
   .alert {
     @apply rounded-lg border border-primary/25 bg-primary-soft px-4 py-3 text-primary-ink;

@@ -14,14 +14,18 @@ from core.forms import AppSettingsForm
 from core.models import AppSettings
 from tracking.forms import open_tasks
 from tracking.models import TimeEntry
+from tracking.queries import entry_filter
 
 
 @require_GET
 async def dashboard(request: HttpRequest) -> HttpResponse:
     today_start = datetime.combine(timezone.localdate(), time.min, tzinfo=timezone.get_current_timezone())
+    active_filter = await entry_filter(request)
     today_entries = [
         e
-        async for e in TimeEntry.objects.filter(user=request.user, started_at__gte=today_start)
+        async for e in TimeEntry.objects.filter(
+            user=request.user, started_at__gte=today_start, **active_filter["filters"]
+        )
         .select_related("task", "task__project", "task__project__customer")
         .order_by("started_at")
     ]
@@ -32,6 +36,8 @@ async def dashboard(request: HttpRequest) -> HttpResponse:
             "tasks": [t async for t in open_tasks()],
             "today_entries": today_entries,
             "today_total": sum((e.duration for e in today_entries), timedelta()),
+            "filter_label": active_filter["label"],
+            "filter_base": "",
         },
     )
 

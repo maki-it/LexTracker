@@ -1,0 +1,30 @@
+{% extends layout %}
+{% load icons %}
+{% block title %}Timer starten · LexTracker{% endblock %}
+{% block content %}
+<h1>Timer starten</h1>
+{% if tasks %}
+<form method="post" action="{% url 'tracking:timer_start' %}" class="card flex max-w-2xl flex-col gap-4">
+  {% csrf_token %}
+  <input type="hidden" name="next" value="{% url 'core:dashboard' %}">
+  <label class="field">
+    <span>Aufgabe</span>
+    <select name="task" class="input" required autofocus>
+      {% for task in tasks %}
+      <option value="{{ task.pk }}">{{ task.project.customer.name }} · {{ task.project.name }} · {{ task.name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label class="field">
+    <span>Beschreibung <span class="font-normal text-muted">(optional)</span></span>
+    <input type="text" name="description" class="input" placeholder="Was machst du gerade?">
+  </label>
+  <div class="flex gap-2 border-t border-line pt-4">
+    <button type="submit" class="btn btn-primary">{% icon "play" size=14 %}Starten</button>
+    <a href="{% url 'core:dashboard' %}" class="btn btn-ghost" data-close-dialog>Abbrechen</a>
+  </div>
+</form>
+{% else %}
+<p class="text-muted">Noch keine offenen Aufgaben. <a class="hover:underline" href="{% url 'projects:list' %}">Lege ein Projekt an</a> und füge Aufgaben hinzu.</p>
+{% endif %}
+{% endblock %}

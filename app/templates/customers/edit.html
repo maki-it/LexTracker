@@ -1,11 +1,11 @@
-{% extends "base.html" %}
+{% extends layout %}
 {% block title %}{{ customer.name }} · LexTracker{% endblock %}
 {% block content %}
 <div>
   <p class="breadcrumb"><a href="{% url 'customers:list' %}">Kunden</a>{% if customer.customer_number %} / Nr. {{ customer.customer_number }}{% endif %}</p>
   <h1>{{ customer.name }}</h1>
 </div>
-<form method="post" class="card flex max-w-2xl flex-col gap-4">
+<form method="post" action="{{ request.get_full_path }}" class="card flex max-w-2xl flex-col gap-4">
   {% csrf_token %}
   {% if customer.lexware_id %}
   <p class="rounded-lg bg-surface-muted px-4 py-3 text-[13px] text-muted">
@@ -16,7 +16,7 @@
   {% include "core/_form_fields.html" %}
   <div class="flex gap-2 border-t border-line pt-4">
     <button type="submit" class="btn btn-primary">Speichern</button>
-    <a href="{% url 'customers:list' %}" class="btn btn-ghost">Abbrechen</a>
+    <a href="{% url 'customers:list' %}" class="btn btn-ghost" data-close-dialog>Abbrechen</a>
   </div>
 </form>
 {% endblock %}

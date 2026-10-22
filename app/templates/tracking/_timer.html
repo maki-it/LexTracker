@@ -1,5 +1,5 @@
 {# Timer card in the sidebar. Reloads itself every minute and whenever a timer starts or stops. #}
-{% load timefmt icons %}
+{% load timefmt icons dialogs %}
 <div id="nav-timer" hx-get="{% url 'tracking:timer' %}" hx-trigger="every 60s, timer-changed from:body" hx-swap="outerHTML"
      class="flex items-center gap-3 rounded-xl border border-line bg-surface p-3 lg:flex-col lg:items-stretch lg:gap-2">
   {% if running_entry %}
@@ -18,6 +18,6 @@
     <div class="text-xs text-muted">Kein Timer aktiv</div>
     <div class="text-[22px] font-semibold tracking-tight text-muted tabular-nums">0:00 h</div>
   </div>
-  <a href="{% url 'core:dashboard' %}" class="btn w-auto lg:w-full">{% icon "play" size=14 %}Timer starten</a>
+  <a {% dialog_link "tracking:timer_start" %} class="btn w-auto lg:w-full">{% icon "play" size=14 %}Timer starten</a>
   {% endif %}
 </div>

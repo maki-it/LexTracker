@@ -1,4 +1,4 @@
-{% load timefmt icons %}
+{% load timefmt icons dialogs %}
 <section id="tasks" class="flex flex-col gap-3">
   <h2>Aufgaben</h2>
   <div class="table-wrap">
@@ -25,8 +25,8 @@
           <td>
             <div class="flex justify-end gap-1.5">
               {% if task.status != 'done' %}{% include "tracking/_start_button.html" %}{% endif %}
-              <a href="{% url 'tracking:create' %}?aufgabe={{ task.pk }}" class="btn btn-ghost btn-sm" title="Zeit nachtragen">{% icon "plus" size=14 %}Zeit</a>
-              <a href="{% url 'projects:task_edit' project.pk task.pk %}" class="btn btn-ghost btn-sm btn-icon size-8" title="Bearbeiten" aria-label="Aufgabe {{ task.name }} bearbeiten">{% icon "pencil" %}</a>
+              <a {% dialog_link "tracking:create" aufgabe=task.pk %} class="btn btn-ghost btn-sm" title="Zeit nachtragen">{% icon "plus" size=14 %}Zeit</a>
+              <a {% dialog_link "projects:task_edit" project.pk task.pk %} class="btn btn-ghost btn-sm btn-icon size-8" title="Bearbeiten" aria-label="Aufgabe {{ task.name }} bearbeiten">{% icon "pencil" %}</a>
             </div>
           </td>
         </tr>

@@ -1,3 +1,4 @@
+{% load icons dialogs %}
 <div id="customer-table" class="flex flex-col gap-4">
   {% if error %}
   <div role="alert" class="alert alert-error">{{ error }}</div>
@@ -26,11 +27,11 @@
       </thead>
       <tbody>
         {% for customer in customers %}
-        <tr{% if customer.is_archived %} class="text-muted"{% endif %}>
+        <tr{% if customer.is_archived %} class="bg-surface-muted text-muted"{% endif %}>
           <td class="text-muted tabular-nums">{{ customer.customer_number|default:"–" }}</td>
           <td class="font-medium">
-            <a class="hover:underline" href="{% url 'customers:edit' customer.pk %}">{{ customer.name }}</a>
-            {% if customer.lexware_deleted %}<span class="badge badge-warning ml-2">in Lexware gelöscht</span>{% elif customer.is_archived %}<span class="badge ml-2">archiviert</span>{% endif %}
+            <a class="hover:underline{% if customer.is_archived %} text-muted{% endif %}" {% dialog_link "customers:edit" customer.pk %}>{{ customer.name }}</a>
+            {% if customer.lexware_deleted %}<span class="badge badge-danger ml-2">{% icon "archive" size=12 %}in Lexware gelöscht</span>{% elif customer.is_archived %}<span class="badge badge-warning ml-2">{% icon "archive" size=12 %}Archiviert</span>{% endif %}
             {% for c in customer.categories.all %}<span class="badge ml-1.5">{{ c.name }}</span>{% endfor %}
           </td>
           <td>{% if customer.email %}<a class="hover:underline" href="mailto:{{ customer.email }}">{{ customer.email }}</a>{% else %}<span class="text-muted">–</span>{% endif %}</td>

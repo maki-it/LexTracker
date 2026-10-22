@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load timefmt icons %}
+{% load timefmt icons dialogs %}
 {% block title %}Projekte · LexTracker{% endblock %}
 {% block content %}
 <div class="page-header">
@@ -11,7 +11,7 @@
     <a href="?abgeschlossen={% if show_done %}0{% else %}1{% endif %}" class="btn">
       {% if show_done %}Abgeschlossene ausblenden{% else %}Abgeschlossene anzeigen{% endif %}
     </a>
-    <a href="{% url 'projects:create' %}" class="btn btn-primary">{% icon "plus" %}Neues Projekt</a>
+    <a {% dialog_link "projects:create" %} class="btn btn-primary">{% icon "plus" %}Neues Projekt</a>
   </div>
 </div>
 <form method="get" role="search">

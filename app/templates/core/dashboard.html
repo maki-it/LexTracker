@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load timefmt icons %}
+{% load timefmt icons dialogs %}
 {% block title %}Übersicht · LexTracker{% endblock %}
 {% block content %}
 <div class="page-header">
@@ -28,27 +28,17 @@
   {% endif %}
 </section>
 
-<section id="today" class="row-list" hx-get="{% url 'core:dashboard' %}" hx-select="#today" hx-swap="outerHTML" hx-trigger="timer-changed from:body">
+{% include "tracking/_filter.html" %}
+<section id="today" class="row-list" hx-get="{{ request.get_full_path }}" hx-select="#today" hx-swap="outerHTML" hx-trigger="timer-changed from:body">
   <div class="row-list-header">
     <h2>Heute</h2>
     <span class="font-semibold tabular-nums">{{ today_total|hours:duration_format }} h</span>
   </div>
   {% for entry in today_entries %}
-  <div class="row">
-    <span class="dot{% if not entry.is_billable %} bg-line{% endif %}"></span>
-    <div class="min-w-0 flex-[1_1_16rem]">
-      <div class="font-medium">{{ entry.task.name }}</div>
-      <div class="truncate text-[13px] text-muted">{{ entry.task.project.customer.name }} · {{ entry.task.project.name }}{% if entry.description %} – {{ entry.description }}{% endif %}</div>
-    </div>
-    <div class="ml-auto flex items-center gap-3 sm:gap-4">
-      {% if entry.is_running %}<span class="badge badge-success">läuft</span>{% endif %}
-      <span class="text-right text-muted tabular-nums sm:w-28">{{ entry.started_at|time:"H:i" }} – {% if entry.ended_at %}{{ entry.ended_at|time:"H:i" }}{% else %}…{% endif %}</span>
-      <span class="w-12 text-right font-semibold tabular-nums">{{ entry.duration|hours:duration_format }}</span>
-    </div>
-  </div>
+  {% include "tracking/_entry_row.html" %}
   {% empty %}
-  <p class="px-1 py-4 text-muted">Heute noch nichts erfasst.</p>
+  <p class="px-1 py-4 text-muted">{% if filter_label %}Heute ist dafür nichts erfasst.{% else %}Heute noch nichts erfasst.{% endif %}</p>
   {% endfor %}
-  <div class="pt-3"><a href="{% url 'tracking:create' %}" class="btn btn-sm">{% icon "plus" size=14 %}Zeit nachtragen</a></div>
+  <div class="pt-3"><a {% dialog_link "tracking:create" %} class="btn btn-sm">{% icon "plus" size=14 %}Zeit nachtragen</a></div>
 </section>
 {% endblock %}
