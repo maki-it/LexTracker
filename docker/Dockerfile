@@ -39,14 +39,14 @@ ENV PATH="/srv/.venv/bin:$PATH" \
     PYTHONDONTWRITEBYTECODE=1 \
     APP_ENVIRONMENT=production \
     APP_DATA_DIR=/data \
-    APP_WORKERS=1
+    UVICORN_WORKERS=1 \
+    FORWARDED_ALLOW_IPS=127.0.0.1
 
 WORKDIR /srv/app
 
 COPY --from=build /srv/.venv /srv/.venv
 COPY --from=build /srv/staticfiles /srv/staticfiles
 COPY --from=build /srv/app /srv/app
-COPY --chmod=755 docker/entrypoint.sh /entrypoint.sh
 
 USER app
 VOLUME ["/data"]
@@ -55,5 +55,7 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
     CMD ["python", "-c", "import urllib.request,sys; sys.exit(urllib.request.urlopen('http://127.0.0.1:8000/health/', timeout=4).status != 200)"]
 
-ENTRYPOINT ["/entrypoint.sh"]
-CMD ["serve"]
+# Migrations run as a pre_start hook in compose.yaml. Worker count and trusted proxy IPs
+# come from UVICORN_WORKERS and FORWARDED_ALLOW_IPS.
+CMD ["uvicorn", "config.asgi:application", "--host", "0.0.0.0", "--port", "8000", \
+     "--proxy-headers", "--lifespan", "off", "--no-server-header"]

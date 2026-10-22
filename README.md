@@ -62,14 +62,14 @@ docker compose up -d --build
 ```
 
 Die App lauscht auf Port 8000. Datenbank und alle Daten liegen im Volume `lextracker-data` (`/data` im Container).
-Beim Start werden Migrationen automatisch ausgeführt. Sind `DJANGO_SUPERUSER_USERNAME` und `DJANGO_SUPERUSER_PASSWORD` gesetzt, wird beim ersten Start ein Admin-Konto angelegt.
+Vor jedem Start führt Compose über `pre_start`-Hooks die Migrationen aus und legt, falls `DJANGO_SUPERUSER_USERNAME` und `DJANGO_SUPERUSER_PASSWORD` gesetzt sind, das Admin-Konto an (sofern es noch nicht existiert). Schlägt ein Hook fehl, startet die App nicht. Dafür ist ein aktuelles Docker Compose nötig (getestet mit v5.6).
 
 Hinter einem Reverse Proxy mit HTTPS (empfohlen) zusätzlich setzen:
 
 ```env
 APP_ALLOWED_HOSTS=zeit.example.de
 APP_CSRF_TRUSTED_ORIGINS=https://zeit.example.de
-APP_FORWARDED_ALLOW_IPS=<IP des Proxys>
+FORWARDED_ALLOW_IPS=<IP des Proxys>
 ```
 
 Ohne HTTPS funktioniert der Login nur mit `APP_SECURE_COOKIES=false`.
