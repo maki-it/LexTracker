@@ -20,6 +20,15 @@ class TimeEntry(TimeStampedModel):
     ended_at = models.DateTimeField("Ende", null=True, blank=True)
     description = models.TextField("Beschreibung", blank=True)
     is_billable = models.BooleanField("abrechenbar", default=True)
+    # Set once the entry has been billed. Billed entries are not billed again.
+    invoice = models.ForeignKey(
+        "billing.Invoice",
+        verbose_name="Rechnung",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="time_entries",
+    )
 
     class Meta:
         verbose_name = "Zeiteintrag"

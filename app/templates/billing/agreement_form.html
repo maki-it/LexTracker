@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Abrechnungsvereinbarung · LexTracker{% endblock %}
+{% block content %}
+<div>
+  <p class="text-sm text-muted">{{ customer.name }}</p>
+  <h1>Abrechnungsvereinbarung</h1>
+</div>
+<form method="post" class="card flex max-w-2xl flex-col gap-4">
+  {% csrf_token %}
+  <p class="text-sm text-muted">
+    <strong>Nach Aufwand:</strong> alle Stunden zum Stundensatz der Aufgabe, des Projekts oder Kunden.
+    <strong>Retainer:</strong> pro Zeitraum ein Festpreis mit enthaltenen Stunden; darüber hinaus gearbeitete Stunden werden extra berechnet. Nicht genutzte Stunden verfallen.
+  </p>
+  {% include "core/_form_fields.html" %}
+  <div class="flex gap-2">
+    <button type="submit" class="btn btn-primary">Speichern</button>
+    <a href="{% url 'billing:customer' customer.pk %}" class="btn btn-ghost">Abbrechen</a>
+  </div>
+</form>
+{% endblock %}

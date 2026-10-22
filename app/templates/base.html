@@ -16,6 +16,7 @@
       <a href="{% url 'tracking:list' %}" class="btn btn-ghost btn-sm{% if section == 'tracking' %} bg-surface-muted{% endif %}">Zeiten</a>
       <a href="{% url 'projects:list' %}" class="btn btn-ghost btn-sm{% if section == 'projects' %} bg-surface-muted{% endif %}">Projekte</a>
       <a href="{% url 'customers:list' %}" class="btn btn-ghost btn-sm{% if section == 'customers' %} bg-surface-muted{% endif %}">Kunden</a>
+      <a href="{% url 'billing:overview' %}" class="btn btn-ghost btn-sm{% if section == 'billing' %} bg-surface-muted{% endif %}">Abrechnung</a>
     </div>
     <div class="flex items-center gap-2">
       <div hx-get="{% url 'tracking:timer' %}" hx-trigger="load" hx-swap="outerHTML"></div>

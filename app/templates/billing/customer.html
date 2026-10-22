@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Abrechnung {{ customer.name }} · LexTracker{% endblock %}
+{% block content %}
+<div>
+  <p class="text-sm text-muted"><a class="hover:underline" href="{% url 'billing:overview' %}">Abrechnung</a></p>
+  <h1>{{ customer.name }}</h1>
+</div>
+
+<section class="card flex flex-col gap-3">
+  <div class="flex items-center justify-between gap-4">
+    <h2>Abrechnungsvereinbarung</h2>
+    <a href="{% url 'billing:agreement_create' customer.pk %}" class="btn btn-sm">+ Neue Vereinbarung</a>
+  </div>
+  {% for agreement in agreements %}
+  <div class="flex items-center justify-between gap-4 border-t border-line pt-3 text-sm">
+    <div>
+      <div class="font-medium">{{ agreement.get_kind_display }}{% if agreement.kind == "retainer" %}: {{ agreement.included_hours }} h {{ agreement.get_period_display }} für {{ agreement.fixed_price }} €{% endif %}</div>
+      <div class="text-muted">
+        gültig ab {{ agreement.valid_from|date:"d.m.Y" }}{% if agreement.valid_until %} bis {{ agreement.valid_until|date:"d.m.Y" }}{% endif %}
+        {% if agreement.kind == "retainer" %} · Mehrstunden {% if agreement.overage_rate is not None %}zu {{ agreement.overage_rate }} €/h{% else %}zum normalen Stundensatz{% endif %}{% endif %}
+      </div>
+    </div>
+    <a href="{% url 'billing:agreement_edit' customer.pk agreement.pk %}" class="btn btn-ghost btn-sm">Bearbeiten</a>
+  </div>
+  {% empty %}
+  <p class="text-sm text-muted">Keine Vereinbarung: Zeiten werden nach Aufwand zum Stundensatz abgerechnet.</p>
+  {% endfor %}
+</section>
+
+<section class="card flex flex-col gap-4">
+  <h2>Zeitraum</h2>
+  <div class="flex flex-wrap gap-2">
+    {% for option in period_options %}
+    <a href="?start={{ option.start|date:'Y-m-d' }}&end={{ option.end|date:'Y-m-d' }}"
+       class="btn btn-sm{% if period_form.cleaned_data.start == option.start and period_form.cleaned_data.end == option.end %} btn-primary{% endif %}">{{ option.label }}</a>
+    {% endfor %}
+  </div>
+  <form method="get" class="flex flex-wrap items-end gap-2"
+        hx-get="{% url 'billing:customer' customer.pk %}" hx-target="#preview" hx-swap="outerHTML" hx-trigger="change" hx-push-url="true">
+    <label class="field"><span>Von</span>{{ period_form.start }}</label>
+    <label class="field"><span>Bis</span>{{ period_form.end }}</label>
+    <noscript><button type="submit" class="btn">Anzeigen</button></noscript>
+  </form>
+  {% for error in period_form.non_field_errors %}<p class="text-sm text-danger">{{ error }}</p>{% endfor %}
+</section>
+
+{% include "billing/_preview.html" %}
+
+<h2>Rechnungen</h2>
+{% include "billing/_invoices.html" %}
+{% endblock %}
