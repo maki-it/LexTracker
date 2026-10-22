@@ -148,3 +148,18 @@ def test_entries_filter_by_customer_and_project(logged_in, entry, user):
         text = logged_in.get(url, {"projekt": project.pk}).text
         assert "ACME GmbH · Website" in text
         assert "– Eins" in text and "– Zwei" not in text
+
+
+def test_account_settings_open_in_the_dialog(logged_in):
+    page = logged_in.get(reverse("core:dashboard")).text
+    assert 'hx-get="/konto/" hx-target="#dialog-body"' in page
+
+    response = logged_in.get(reverse("account:settings"), headers=DIALOG)
+    assert 'id="sidebar"' not in response.text and 'action="/konto/"' in response.text
+
+
+def test_sidebar_timer_comes_with_the_page(logged_in, entry):
+    TimeEntry.objects.filter(pk=entry.pk).update(ended_at=None)
+    page = logged_in.get(reverse("projects:list")).text
+    assert 'id="nav-timer"' in page and entry.task.name in page
+    assert 'hx-trigger="load"' not in page
