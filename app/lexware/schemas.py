@@ -3,6 +3,7 @@
 See https://developers.lexware.io/docs/#contacts-endpoint
 """
 
+from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -109,6 +110,23 @@ class Profile(_Model):
 
 class ContactPage(_Model):
     content: list[Contact]
+    last: bool
+    number: int
+    total_pages: int = Field(alias="totalPages")
+
+
+class Voucher(_Model):
+    """An entry of the voucher list. See https://developers.lexware.io/docs/#voucherlist-endpoint"""
+
+    id: UUID
+    voucher_status: str = Field(alias="voucherStatus")
+    voucher_number: str | None = Field(None, alias="voucherNumber")
+    due_date: datetime | None = Field(None, alias="dueDate")
+    open_amount: float | None = Field(None, alias="openAmount")
+
+
+class VoucherPage(_Model):
+    content: list[Voucher]
     last: bool
     number: int
     total_pages: int = Field(alias="totalPages")

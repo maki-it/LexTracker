@@ -2,13 +2,25 @@
 {% load timefmt %}
 {% block title %}Abrechnung · LexTracker{% endblock %}
 {% block content %}
-<div class="page-header">
-  <div>
-    <h1>Abrechnung</h1>
-    <p class="page-subtitle">Offene Zeiten je Kunde und zuletzt erstellte Rechnungsentwürfe</p>
-  </div>
+{% include "billing/_tabs.html" with tab="abrechnen" %}
+<div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+  <div class="stat"><span class="stat-label">Noch nicht abgerechnet</span><span class="stat-value">{{ unbilled_total|hours:duration_format }} h</span></div>
+  <a href="{% url 'billing:invoices' %}?status=entwurf" class="stat text-ink no-underline hover:bg-surface-muted"><span class="stat-label">Entwürfe</span><span class="stat-value">{{ counts.entwurf }}</span></a>
+  <a href="{% url 'billing:invoices' %}?status=offen" class="stat text-ink no-underline hover:bg-surface-muted"><span class="stat-label">Offen</span><span class="stat-value">{{ counts.offen }}</span></a>
+  <a href="{% url 'billing:invoices' %}?status=ueberfaellig" class="stat text-ink no-underline hover:bg-surface-muted"><span class="stat-label">Überfällig</span><span class="stat-value{% if counts.ueberfaellig %} text-danger{% endif %}">{{ counts.ueberfaellig }}</span></a>
 </div>
-<div class="table-wrap">
+<form method="get" class="flex flex-wrap items-center gap-3" role="search">
+  <input type="search" name="q" value="{{ query }}" placeholder="Kunde oder Kundennummer suchen" aria-label="Kunden suchen" class="input max-w-sm"
+         hx-get="{% url 'billing:overview' %}" hx-trigger="input changed delay:250ms, search" hx-include="closest form"
+         hx-target="#billing-customers" hx-select="#billing-customers" hx-swap="outerHTML" hx-push-url="true">
+  {% if show_all %}<input type="hidden" name="alle" value="1">{% endif %}
+  <nav aria-label="Kunden filtern" class="flex flex-wrap gap-1.5">
+    <a href="?{% if query %}q={{ query|urlencode }}{% endif %}" class="pill{% if not show_all %} pill-active{% endif %}">Mit offenen Zeiten</a>
+    <a href="?alle=1{% if query %}&q={{ query|urlencode }}{% endif %}" class="pill{% if show_all %} pill-active{% endif %}">Alle Kunden</a>
+  </nav>
+  <noscript><button type="submit" class="btn">Anzeigen</button></noscript>
+</form>
+<div class="table-wrap" id="billing-customers">
   <table class="table">
     <thead>
       <tr>
@@ -25,14 +37,9 @@
         <td class="text-right"><a class="btn btn-sm{% if customer.unbilled %} btn-primary{% endif %}" href="{% url 'billing:customer' customer.pk %}">Abrechnen</a></td>
       </tr>
       {% empty %}
-      <tr><td colspan="3" class="py-10 text-center text-muted">Noch keine Kunden.</td></tr>
+      <tr><td colspan="3" class="py-10 text-center text-muted">{% if query %}Kein Kunde passt zur Suche.{% elif show_all %}Noch keine Kunden.{% else %}Alles abgerechnet: Kein Kunde hat offene Zeiten.{% endif %}</td></tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
-
-<section class="flex flex-col gap-3">
-  <h2>Letzte Rechnungen</h2>
-  {% include "billing/_invoices.html" %}
-</section>
 {% endblock %}

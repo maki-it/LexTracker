@@ -2,13 +2,14 @@ import asyncio
 import logging
 import time
 from collections.abc import AsyncIterator
+from datetime import date
 from types import TracebackType
 from typing import Self
 from uuid import UUID
 
 import httpx
 
-from lexware.schemas import Contact, ContactPage, Profile
+from lexware.schemas import Contact, ContactPage, Profile, Voucher, VoucherPage
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +17,7 @@ DEFAULT_BASE_URL = "https://api.lexware.io/v1/"
 # The API allows 2 requests per second. Larger pages mean fewer requests.
 REQUESTS_PER_SECOND = 2
 CONTACTS_PAGE_SIZE = 250
+VOUCHERS_PAGE_SIZE = 250
 MAX_RETRIES = 3
 
 
@@ -31,6 +33,10 @@ def _error_detail(response: httpx.Response) -> str:
 
 class LexwareError(Exception):
     """The Lexware Office API could not be reached or answered with an error."""
+
+
+class LexwareNotFound(LexwareError):
+    """Lexware does not know the requested resource (HTTP 404), for example a deleted draft."""
 
 
 def client_from_settings() -> LexwareClient:
@@ -96,6 +102,8 @@ class LexwareClient:
                 continue
             if response.status_code == httpx.codes.UNAUTHORIZED:
                 raise LexwareError("Lexware hat den API-Schlüssel abgelehnt.")
+            if response.status_code == httpx.codes.NOT_FOUND:
+                raise LexwareNotFound(f"Lexware kennt {path} nicht (HTTP 404).")
             if response.is_error:
                 raise LexwareError(f"Lexware antwortete mit HTTP {response.status_code}: {_error_detail(response)}")
             return response.json()
@@ -108,6 +116,24 @@ class LexwareClient:
         """Create an invoice draft (not finalized) and return its ID."""
         data = await self._request("POST", "invoices", json=payload)
         return UUID(data["id"])
+
+    async def get_invoice(self, invoice_id: UUID) -> dict:
+        """The invoice as Lexware returns it. Raises LexwareNotFound if it was deleted."""
+        return await self._request("GET", f"invoices/{invoice_id}")
+
+    async def iter_invoices(self, *, created_from: date | None = None) -> AsyncIterator[Voucher]:
+        """Yield the invoices in the voucher list, in every status, page by page."""
+        page = 0
+        while True:
+            params = {"voucherType": "invoice", "voucherStatus": "any", "page": page, "size": VOUCHERS_PAGE_SIZE}
+            if created_from:
+                params["createdDateFrom"] = created_from.isoformat()
+            result = VoucherPage.model_validate(await self._request("GET", "voucherlist", params))
+            for voucher in result.content:
+                yield voucher
+            if result.last or page + 1 >= result.total_pages:
+                return
+            page += 1
 
     async def get_contact(self, contact_id: UUID) -> dict:
         """The full contact as Lexware returns it, so it can be changed and sent back."""

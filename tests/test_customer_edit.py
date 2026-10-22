@@ -9,7 +9,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from core.models import AppSettings
-from core.scheduler import import_customers_if_due
+from core.scheduler import sync_lexware_if_due
 from customers.lexware import apply_to_contact
 from customers.models import Customer
 from tests.lexware_fakes import contact, fake_client, page, serve_pages
@@ -141,17 +141,17 @@ async def test_scheduler_imports_when_due(monkeypatch, settings):
     monkeypatch.setattr("customers.sync.client_from_settings", lambda: fake_client(handler))
     now = timezone.now()
 
-    assert await import_customers_if_due(now) is True
+    assert await sync_lexware_if_due(now) is True
     assert await Customer.objects.acount() == 1
     app_settings = await AppSettings.aload()
     assert app_settings.lexware_sync_status == "1 neu, 0 aktualisiert, 0 unverändert."
 
     # Not again before the interval (60 minutes by default) has passed.
-    assert await import_customers_if_due(now + timedelta(minutes=30)) is False
-    assert await import_customers_if_due(now + timedelta(minutes=61)) is True
+    assert await sync_lexware_if_due(now + timedelta(minutes=30)) is False
+    assert await sync_lexware_if_due(now + timedelta(minutes=61)) is True
 
     await AppSettings.objects.filter(pk=1).aupdate(lexware_sync_interval=0)
-    assert await import_customers_if_due(now + timedelta(days=1)) is False
+    assert await sync_lexware_if_due(now + timedelta(days=1)) is False
     assert len(handler.requests) == 2
 
 
@@ -160,7 +160,7 @@ async def test_scheduler_records_failures(monkeypatch, settings):
     settings.LEXWARE_API_KEY = "test-key"
     monkeypatch.setattr("customers.sync.client_from_settings", lambda: fake_client(lambda request: httpx.Response(401)))
 
-    assert await import_customers_if_due(timezone.now()) is True
+    assert await sync_lexware_if_due(timezone.now()) is True
 
     app_settings = await AppSettings.aload()
     assert app_settings.lexware_sync_failed

@@ -1,7 +1,9 @@
-from datetime import date
+from datetime import date, timedelta
 
 from asgiref.sync import sync_to_async
+from django.conf import settings
 from django.contrib import messages
+from django.db.models import Count, Q
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
@@ -13,9 +15,12 @@ from billing.forms import BillingAgreementForm, PeriodForm
 from billing.models import BillingAgreement, Invoice
 from billing.periods import Period, recent_periods
 from billing.services import create_invoice
+from billing.sync import sync_and_record
+from core.models import AppSettings
 from core.shortcuts import arender
 from customers.models import Customer
 from lexware.client import LexwareError, client_from_settings
+from tracking.models import TimeEntry
 from tracking.queries import booked_time
 
 
@@ -26,8 +31,31 @@ async def _get_customer(pk: int) -> Customer:
         raise Http404 from exc
 
 
+INVOICES_PER_PAGE = 50
+
+# The status filters on the invoice list. "Offen" includes payments that are on their way.
+STATUS_FILTERS = {
+    "entwurf": ("Entwürfe", [Invoice.Status.DRAFT]),
+    "offen": ("Offen", [Invoice.Status.OPEN, Invoice.Status.TRANSFERRED, Invoice.Status.SEPADEBIT]),
+    "ueberfaellig": ("Überfällig", [Invoice.Status.OVERDUE]),
+    "bezahlt": ("Bezahlt", [Invoice.Status.PAID]),
+    "storniert": ("Storniert", [Invoice.Status.VOIDED]),
+    "geloescht": ("In Lexware gelöscht", [Invoice.Status.DELETED]),
+}
+
+
+async def _invoice_counts() -> dict[str, int]:
+    by_status = {
+        row["status"]: row["n"] async for row in Invoice.objects.values("status").annotate(n=Count("pk")).order_by()
+    }
+    return {key: sum(by_status.get(s, 0) for s in statuses) for key, (_, statuses) in STATUS_FILTERS.items()}
+
+
 @require_GET
 async def overview(request: HttpRequest) -> HttpResponse:
+    """Customers with time that has not been billed yet."""
+    query = request.GET.get("q", "").strip()
+    show_all = request.GET.get("alle") == "1"
     customers = (
         Customer.objects.filter(is_archived=False)
         .annotate(
@@ -37,12 +65,85 @@ async def overview(request: HttpRequest) -> HttpResponse:
         )
         .order_by("name")
     )
-    invoices = Invoice.objects.select_related("customer")[:20]
-    return render(
-        request,
-        "billing/overview.html",
-        {"customers": [c async for c in customers], "invoices": [i async for i in invoices]},
-    )
+    if query:
+        customers = customers.filter(Q(name__icontains=query) | Q(customer_number__icontains=query))
+    if not show_all:
+        customers = customers.filter(unbilled__gt=timedelta(0))
+    customers = [c async for c in customers]
+    context = {
+        "customers": customers,
+        "query": query,
+        "show_all": show_all,
+        "unbilled_total": sum((c.unbilled or timedelta(0) for c in customers), timedelta(0)),
+        "counts": await _invoice_counts(),
+    }
+    return render(request, "billing/overview.html", context)
+
+
+@require_GET
+async def invoice_list(request: HttpRequest) -> HttpResponse:
+    query = request.GET.get("q", "").strip()
+    status = request.GET.get("status", "")
+    if status not in STATUS_FILTERS:
+        status = ""
+    try:
+        page = max(1, int(request.GET.get("seite", 1)))
+    except ValueError:
+        page = 1
+    invoices = Invoice.objects.select_related("customer").annotate(entry_count=Count("time_entries"))
+    if status:
+        invoices = invoices.filter(status__in=STATUS_FILTERS[status][1])
+    if query:
+        invoices = invoices.filter(Q(customer__name__icontains=query) | Q(voucher_number__icontains=query))
+    offset = (page - 1) * INVOICES_PER_PAGE
+    # One more than fits on the page tells whether there is a next page.
+    rows = [i async for i in invoices[offset : offset + INVOICES_PER_PAGE + 1]]
+    app_settings = await AppSettings.aload()
+    counts = await _invoice_counts()
+    context = {
+        "invoices": rows[:INVOICES_PER_PAGE],
+        "has_next": len(rows) > INVOICES_PER_PAGE,
+        "page": page,
+        "query": query,
+        "status": status,
+        # Only filters that would show something, plus the one in use.
+        "filters": [
+            (key, label, counts[key]) for key, (label, _) in STATUS_FILTERS.items() if counts[key] or key == status
+        ],
+        "app_settings": app_settings,
+        "lexware_configured": bool(settings.LEXWARE_API_KEY),
+    }
+    return render(request, "billing/invoices.html", context)
+
+
+@require_POST
+async def invoice_sync(request: HttpRequest) -> HttpResponse:
+    try:
+        result = await sync_and_record()
+    except LexwareError as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(request, f"Rechnungsstatus abgeglichen: {result.summary}")
+    return redirect(_invoice_list_url(request))
+
+
+@require_POST
+async def invoice_release(request: HttpRequest, invoice_pk: int) -> HttpResponse:
+    """Let the time of a voided invoice be billed again."""
+    try:
+        invoice = await Invoice.objects.aget(pk=invoice_pk, status=Invoice.Status.VOIDED)
+    except Invoice.DoesNotExist as exc:
+        raise Http404 from exc
+    released = await TimeEntry.objects.filter(invoice=invoice).aupdate(invoice=None)
+    messages.success(request, f"{released} Zeiteinträge wieder zur Abrechnung freigegeben.")
+    return redirect(_invoice_list_url(request))
+
+
+def _invoice_list_url(request: HttpRequest) -> str:
+    # Back to the list with the filter the form was sent from.
+    query = request.POST.get("return_query", "")
+    url = reverse("billing:invoices")
+    return f"{url}?{query}" if query and "//" not in query else url
 
 
 def _period_options(agreement: BillingAgreement | None, today: date):
@@ -76,7 +177,7 @@ async def customer_billing(request: HttpRequest, pk: int) -> HttpResponse:
         "period_options": options,
         "period_form": period_form,
         "draft": draft,
-        "invoices": [i async for i in customer.invoices.all()[:10]],
+        "invoices": [i async for i in customer.invoices.annotate(entry_count=Count("time_entries"))[:10]],
     }
     template = "billing/_preview.html" if request.htmx and request.htmx.target == "preview" else "billing/customer.html"
     return render(request, template, context)
