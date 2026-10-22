@@ -34,3 +34,11 @@ document.addEventListener(
 
 // The server can close the dialog with the response header "HX-Trigger: close-dialog".
 document.body.addEventListener("close-dialog", () => document.getElementById("dialog").close());
+
+// Menu button of the top bar on phones: shows or hides the navigation.
+document.addEventListener("click", (event) => {
+  const toggle = event.target.closest("[data-nav-toggle]");
+  if (!toggle) return;
+  const open = document.getElementById("sidebar").toggleAttribute("data-open");
+  toggle.setAttribute("aria-expanded", open);
+});

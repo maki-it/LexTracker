@@ -4,6 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}LexTracker{% endblock %}</title>
+  <link rel="icon" href="{% static 'img/favicon.ico' %}" sizes="48x48">
+  <link rel="icon" href="{% static 'img/favicon.svg' %}" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="{% static 'img/apple-touch-icon.png' %}">
+  <link rel="manifest" href="{% static 'img/site.webmanifest' %}">
+  <meta name="theme-color" content="#4f46e5">
   {% tailwind_css %}
   <script src="{% static 'js/htmx.min.js' %}" defer></script>
   <script src="{% static 'js/app.js' %}" defer></script>
@@ -12,19 +17,23 @@
   {% if user.is_authenticated %}
   {% with section=request.resolver_match.app_name %}
   <div class="lg:flex">
-    <aside class="sidebar">
-      <div class="flex items-center justify-between gap-3">
-        <a href="{% url 'core:dashboard' %}" class="flex items-center gap-2.5 px-1.5 py-1 text-[15px] font-semibold text-ink no-underline">
-          <span class="flex size-7 items-center justify-center rounded-md bg-primary text-sm font-bold text-on-primary">L</span>
-          LexTracker
-        </a>
-      </div>
+    {# On phones this is a slim top bar (logo, timer, menu button); the menu button opens nav and user row. #}
+    <aside class="sidebar group" id="sidebar">
+      <a href="{% url 'core:dashboard' %}" class="mr-auto flex items-center gap-2.5 px-1.5 py-1 text-[15px] font-semibold text-ink no-underline">
+        {% logo 28 %}
+        LexTracker
+      </a>
 
       {% if not user.is_customer %}
       <div hx-get="{% url 'tracking:timer' %}" hx-trigger="load" hx-swap="outerHTML"></div>
       {% endif %}
 
-      <nav aria-label="Hauptnavigation" class="-mx-1 flex gap-0.5 overflow-x-auto px-1 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0">
+      <button type="button" class="btn btn-ghost btn-icon lg:hidden" data-nav-toggle aria-controls="sidebar-nav" aria-expanded="false" aria-label="Menü">
+        <span class="group-data-open:hidden">{% icon "menu" size=20 %}</span>
+        <span class="hidden group-data-open:inline">{% icon "x" size=20 %}</span>
+      </button>
+
+      <nav id="sidebar-nav" aria-label="Hauptnavigation" class="sidebar-nav">
         {% with active=request.resolver_match.view_name %}
         {% if user.is_customer %}
         <a href="{% url 'portal:overview' %}" class="nav-link{% if active == 'portal:overview' %} nav-link-active{% endif %}"{% if active == 'portal:overview' %} aria-current="page"{% endif %}>{% icon "dashboard" %}Übersicht</a>
@@ -45,7 +54,7 @@
         {% endwith %}
       </nav>
 
-      <div class="flex items-center gap-2.5 border-t border-line pt-3 lg:mt-auto">
+      <div class="sidebar-user">
         <span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-line text-xs font-semibold uppercase">{{ user.get_username|first }}</span>
         <a href="{% url 'account:settings' %}" class="min-w-0 flex-1 truncate font-medium text-ink no-underline hover:underline" title="Konto">{{ user.get_full_name|default:user.get_username }}</a>
         {% if user.is_staff %}<a href="{% url 'admin:index' %}" class="btn btn-ghost btn-sm btn-icon" title="Verwaltung" aria-label="Verwaltung">{% icon "shield" %}</a>{% endif %}
