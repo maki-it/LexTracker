@@ -35,6 +35,7 @@ app/
   projects/    Projekte und Aufgaben
   tracking/    Zeiteinträge (ein Eintrag ohne Ende ist ein laufender Timer)
   billing/     Abrechnungsvereinbarungen, Berechnung und Rechnungen
+  reports/     Auswertungen und CSV-Export
   templates/   HTML-Templates
   assets/      Tailwind-Quelle mit Farben und eigenen Komponenten
   static/      Statische Dateien (htmx, gebautes CSS)
@@ -97,6 +98,18 @@ Der Kunde muss dafür mit einem Lexware-Kontakt verknüpft sein. Die Umsatzsteue
 Der Reiter **Rechnungen** listet alle Rechnungen mit Nummer, Status (Entwurf, offen, überfällig, bezahlt, storniert) und Fälligkeit, filterbar nach Status und durchsuchbar nach Kunde oder Nummer.
 Den Status holt der Scheduler nach dem eingestellten Zeitplan aus der Belegliste von Lexware; **Status aktualisieren** gleicht sofort ab.
 Löschst du einen Entwurf in Lexware, wird die Rechnung hier als gelöscht markiert und ihre Zeiten sind wieder offen. Bei einer stornierten Rechnung gibst du die Zeiten mit **Zeiten freigeben** selbst wieder frei, falls du sie neu abrechnen willst.
+
+## Auswertungen
+
+Unter **Auswertungen** wählst du einen Zeitraum (dieser oder letzter Monat, Quartal, Jahr oder frei) und optional einen Kunden. Die Seite zeigt:
+
+- erfasste, abrechenbare und noch nicht abgerechnete Stunden, dazu den Wert der offenen Zeit nach Stundensatz (ohne Retainer-Kunden),
+- den abgerechneten Umsatz netto (Rechnungen, deren Leistungszeitraum im gewählten Zeitraum endet; stornierte und gelöschte zählen nicht), aufgeteilt in bezahlt, offen und Entwurf,
+- ein Diagramm der Stunden pro Tag oder Monat,
+- den Verbrauch laufender Retainer im aktuellen Abrechnungszeitraum,
+- Stunden je Kunde und je Projekt, mit dem Gesamtverbrauch gegenüber dem Projektbudget.
+
+**Zeiten als CSV** lädt alle Einträge des Zeitraums herunter (Semikolon-getrennt, Dezimalkomma, für Excel und LibreOffice).
 
 ## Konto und Sicherheit
 
