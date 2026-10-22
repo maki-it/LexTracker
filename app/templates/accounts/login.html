@@ -1,9 +1,10 @@
 {% extends "base.html" %}
+{% load icons %}
 {% block title %}Anmelden · LexTracker{% endblock %}
 {% block public_content %}
 <div class="flex w-full max-w-sm flex-col gap-6">
   <div class="flex items-center justify-center gap-2.5 text-lg font-semibold">
-    <span class="flex size-8 items-center justify-center rounded-lg bg-primary font-bold text-on-primary">L</span>
+    {% logo 32 %}
     LexTracker
   </div>
   <form method="post" class="card flex flex-col gap-4 p-6">

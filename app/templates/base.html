@@ -4,6 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}LexTracker{% endblock %}</title>
+  <link rel="icon" href="{% static 'img/favicon.ico' %}" sizes="48x48">
+  <link rel="icon" href="{% static 'img/favicon.svg' %}" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="{% static 'img/apple-touch-icon.png' %}">
+  <link rel="manifest" href="{% static 'img/site.webmanifest' %}">
+  <meta name="theme-color" content="#4f46e5">
   {% tailwind_css %}
   <script src="{% static 'js/htmx.min.js' %}" defer></script>
   <script src="{% static 'js/app.js' %}" defer></script>
@@ -15,7 +20,7 @@
     <aside class="sidebar">
       <div class="flex items-center justify-between gap-3">
         <a href="{% url 'core:dashboard' %}" class="flex items-center gap-2.5 px-1.5 py-1 text-[15px] font-semibold text-ink no-underline">
-          <span class="flex size-7 items-center justify-center rounded-md bg-primary text-sm font-bold text-on-primary">L</span>
+          {% logo 28 %}
           LexTracker
         </a>
       </div>

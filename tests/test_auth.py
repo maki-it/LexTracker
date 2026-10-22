@@ -16,6 +16,12 @@ def test_health_is_public(client):
     assert response.json() == {"status": "ok"}
 
 
+def test_favicon_is_public(client):
+    response = client.get("/favicon.ico")
+    assert response.status_code == 301
+    assert response.url.endswith("img/favicon.ico")
+
+
 def test_login_with_valid_credentials(client, user):
     response = client.post(reverse("accounts:login"), {"username": "kim", "password": "geheim-123", "next": "/"})
     assert response.status_code == 302

@@ -47,3 +47,23 @@ def icon(name: str, size: int = 16, css_class: str = "") -> str:
         size,
         mark_safe(ICONS[name]),  # static markup from the dict above
     )
+
+
+# The LexTracker mark: a clock whose hands form an "L". Same drawing as static/img/favicon.svg.
+LOGO = (
+    '<rect width="32" height="32" rx="8" fill="#4f46e5"/>'
+    '<circle cx="16" cy="16" r="10" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="2.4"/>'
+    '<path d="M16 9.5V16h5.5" fill="none" stroke="#fff" stroke-width="3" '
+    'stroke-linecap="round" stroke-linejoin="round"/>'
+)
+
+
+@register.simple_tag
+def logo(size: int = 28) -> str:
+    """Inline SVG of the app logo, hidden from screen readers (the name stands next to it)."""
+    return format_html(
+        '<svg aria-hidden="true" class="shrink-0" width="{}" height="{}" viewBox="0 0 32 32">{}</svg>',
+        size,
+        size,
+        mark_safe(LOGO),  # static markup from above
+    )
