@@ -1,14 +1,15 @@
 from django.contrib import admin
-from django.templatetags.static import static
 from django.urls import include, path
 from django.views.generic import RedirectView
+
+from core.views import FaviconView
 
 urlpatterns = [
     # The admin has its own login without the second factor, so send it to ours.
     path("admin/login/", RedirectView.as_view(pattern_name="accounts:login", query_string=True)),
     path("admin/", admin.site.urls),
     # Browsers ask for /favicon.ico on their own, e.g. for the admin or a JSON response.
-    path("favicon.ico", RedirectView.as_view(url=static("img/favicon.ico"), permanent=True)),
+    path("favicon.ico", FaviconView.as_view()),
     path("accounts/", include("accounts.urls")),
     path("konto/", include("accounts.account_urls")),
     path("benutzer/", include("accounts.user_urls")),
