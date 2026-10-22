@@ -99,7 +99,8 @@ class UserForm(StyledFormMixin, forms.ModelForm):
         elif role and role != User.Role.CUSTOMER:
             cleaned["customer"] = None
         if not cleaned.get("portal_entries"):
-            cleaned["portal_descriptions"] = False
+            # The greyed-out box is not sent. Keep the stored choice so it is back when the entries are.
+            cleaned["portal_descriptions"] = self.instance.portal_descriptions
         if self.instance.pk and self.instance == self.acting_user:
             # Do not lock yourself out.
             if role != User.Role.ADMIN:

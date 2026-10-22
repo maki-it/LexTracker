@@ -36,14 +36,19 @@ document.addEventListener(
 document.body.addEventListener("close-dialog", () => document.getElementById("dialog").close());
 
 // A checkbox with data-requires="<name>" only counts when the checkbox <name> in the same form is ticked,
-// e.g. descriptions of time entries need the entries. Otherwise it is unticked and greyed out.
-// The server applies the same rule, see accounts/forms.py.
+// e.g. descriptions of time entries need the entries. Otherwise it is unticked and greyed out,
+// and gets its old state back when <name> is ticked again. The server keeps it too, see accounts/forms.py.
 function syncDependentCheckboxes(form) {
   for (const box of form.querySelectorAll("input[data-requires]")) {
     const parent = form.elements[box.dataset.requires];
-    if (!parent) continue;
+    if (!parent || box.disabled === !parent.checked) continue;
+    if (parent.checked) {
+      box.checked = box.dataset.wasChecked === "true";
+    } else {
+      box.dataset.wasChecked = box.checked;
+      box.checked = false;
+    }
     box.disabled = !parent.checked;
-    if (!parent.checked) box.checked = false;
     box.closest("label")?.classList.toggle("opacity-50", !parent.checked);
   }
 }

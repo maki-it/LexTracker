@@ -212,16 +212,25 @@ def test_descriptions_need_the_entries(client, user, customer_user):
     form = client.get(reverse("users:edit", args=[customer_user.pk])).text
     assert 'data-requires="portal_entries"' in form
 
-    # Sent without the browser's help, e.g. with scripts off: the server applies the rule too.
-    client.post(
-        reverse("users:edit", args=[customer_user.pk]),
-        {
-            "username": customer_user.username,
-            "role": User.Role.CUSTOMER,
-            "customer": customer_user.customer_id,
-            "portal_descriptions": "on",
-            "is_active": "on",
-        },
-    )
-    customer_user.refresh_from_db()
-    assert not customer_user.portal_entries and not customer_user.portal_descriptions
+    def save_without_entries():
+        # The browser does not send the greyed-out box. Scripts off, it would send it ticked: ignored either way.
+        client.post(
+            reverse("users:edit", args=[customer_user.pk]),
+            {
+                "username": customer_user.username,
+                "role": User.Role.CUSTOMER,
+                "customer": customer_user.customer_id,
+                "portal_descriptions": "on",
+                "is_active": "on",
+            },
+        )
+        customer_user.refresh_from_db()
+
+    # The stored choice is kept, so it is back when the entries are turned on again.
+    save_without_entries()
+    assert not customer_user.portal_entries and customer_user.portal_descriptions
+
+    customer_user.portal_descriptions = False
+    customer_user.save()
+    save_without_entries()
+    assert not customer_user.portal_descriptions
