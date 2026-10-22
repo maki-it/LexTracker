@@ -42,6 +42,16 @@ class User(AbstractUser):
         blank=True,
         related_name="users",
     )
+    # Only for employees: what they may book time on. A customer stands for all of its projects.
+    bookable_customers = models.ManyToManyField(
+        "customers.Customer",
+        verbose_name="bucht auf alle Projekte dieser Kunden",
+        blank=True,
+        related_name="bookable_by",
+    )
+    bookable_projects = models.ManyToManyField(
+        "projects.Project", verbose_name="bucht auf diese Projekte", blank=True, related_name="bookable_by"
+    )
     # What a customer login may see besides the customer's projects.
     portal_budget = models.BooleanField("sieht Budgets", default=True)
     portal_entries = models.BooleanField("sieht Zeiteinträge", default=True)

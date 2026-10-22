@@ -1,8 +1,10 @@
 from django import forms
 from django.contrib.auth.forms import PasswordChangeForm, SetPasswordForm
+from django.db.models import Q
 
 from accounts.models import ApiToken, User
 from core.forms import StyledFormMixin
+from projects.models import Project
 
 
 class LoginForm(forms.Form):
@@ -54,10 +56,16 @@ class ApiTokenForm(StyledFormMixin, forms.ModelForm):
         fields = ["name"]
 
 
+class ProjectChoices(forms.ModelMultipleChoiceField):
+    def label_from_instance(self, project: Project) -> str:
+        return f"{project.customer.name} · {project.name}"
+
+
 class UserForm(StyledFormMixin, forms.ModelForm):
     """An administrator creates or edits a login for an employee or a customer."""
 
     PORTAL_FIELDS = ["portal_budget", "portal_entries", "portal_descriptions", "portal_invoices"]
+    BOOKING_FIELDS = ["bookable_customers", "bookable_projects"]
 
     class Meta:
         model = User
@@ -68,17 +76,26 @@ class UserForm(StyledFormMixin, forms.ModelForm):
             "email",
             "role",
             "customer",
+            "bookable_customers",
+            "bookable_projects",
             "portal_budget",
             "portal_entries",
             "portal_descriptions",
             "portal_invoices",
             "is_active",
         ]
-        labels = {"is_active": "aktiv"}
+        labels = {"is_active": "aktiv", "bookable_customers": "Kunden", "bookable_projects": "Einzelne Projekte"}
+        widgets = {
+            "bookable_customers": forms.CheckboxSelectMultiple,
+            "bookable_projects": forms.CheckboxSelectMultiple,
+        }
+        field_classes = {"bookable_projects": ProjectChoices}
         help_texts = {
             "username": "Damit meldet sich die Person an.",
             "customer": "Wessen Projekte, Zeiten und Rechnungen dieser Zugang sieht.",
             "is_active": "Deaktivierte Benutzer können sich nicht mehr anmelden.",
+            "bookable_customers": "Mit allen Projekten, auch künftigen.",
+            "bookable_projects": "Zusätzlich zu den Kunden oben.",
         }
 
     def __init__(self, *args, acting_user=None, **kwargs):
@@ -86,6 +103,18 @@ class UserForm(StyledFormMixin, forms.ModelForm):
         self.acting_user = acting_user
         self.fields["customer"].queryset = self.fields["customer"].queryset.filter(is_archived=False)
         self.fields["customer"].empty_label = "– kein Kunde –"
+        # Keep what is unlocked selectable even if it is archived or done by now.
+        unlocked = self.instance.pk or 0
+        customers = self.fields["bookable_customers"].queryset
+        self.fields["bookable_customers"].queryset = (
+            customers.filter(Q(is_archived=False) | Q(bookable_by=unlocked)).distinct().order_by("name")
+        )
+        self.fields["bookable_projects"].queryset = (
+            Project.objects.filter(~Q(status=Project.Status.DONE) | Q(bookable_by=unlocked))
+            .distinct()
+            .select_related("customer")
+            .order_by("customer__name", "name")
+        )
         if self.instance.pk is None:
             del self.fields["is_active"]
         # Descriptions belong to the time entries; static/js/app.js greys the box out without them.
@@ -101,6 +130,10 @@ class UserForm(StyledFormMixin, forms.ModelForm):
             # The customer access settings are hidden for other roles and not sent: keep what is stored.
             for name in self.PORTAL_FIELDS:
                 cleaned[name] = getattr(self.instance, name)
+        if role and role != User.Role.EMPLOYEE:
+            # Same for what an employee may book on.
+            for name in self.BOOKING_FIELDS:
+                cleaned[name] = getattr(self.instance, name).all() if self.instance.pk else []
         if not cleaned.get("portal_entries"):
             # The greyed-out box is not sent. Keep the stored choice so it is back when the entries are.
             cleaned["portal_descriptions"] = self.instance.portal_descriptions

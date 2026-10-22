@@ -292,6 +292,9 @@ def test_customer_downloads_the_invoice_pdf(client, customer_user, other_task, m
     assert response.content == b"%PDF-1.7" and response["Content-Type"] == "application/pdf"
     assert 'filename="Rechnung-RE0042.pdf"' in response["Content-Disposition"]
     assert requests[0].headers["Accept"] == "application/pdf"
+    # "Online ansehen" opens the same PDF in the browser.
+    response = client.get(reverse("portal:invoice_pdf", args=[own.pk]), {"ansehen": "1"})
+    assert response["Content-Disposition"].startswith("inline")
 
     # Drafts and other customers' invoices are not to be had.
     assert client.get(reverse("portal:invoice_pdf", args=[draft.pk])).status_code == 404
@@ -305,3 +308,117 @@ def test_customer_downloads_the_invoice_pdf(client, customer_user, other_task, m
     customer_user.portal_invoices = False
     customer_user.save()
     assert client.get(reverse("portal:invoice_pdf", args=[own.pk])).status_code == 403
+
+
+# What employees may book on
+
+
+def test_employee_books_only_on_unlocked_customers_and_projects(client, user, employee, task, other_task):
+    client.force_login(employee)
+    start_url = reverse("tracking:timer_start")
+
+    # Nothing unlocked yet.
+    form = client.get(start_url).text
+    assert task.name not in form and other_task.name not in form
+    assert client.post(start_url, {"task": task.pk}).status_code == 404
+
+    employee.bookable_customers.add(task.project.customer)
+    form = client.get(start_url).text
+    assert task.name in form and other_task.name not in form
+
+    employee.bookable_projects.add(other_task.project)
+    assert other_task.name in client.get(start_url).text
+    client.post(start_url, {"task": other_task.pk})
+    assert TimeEntry.objects.get(user=employee, ended_at__isnull=True).task == other_task
+
+
+def test_employee_entry_form_rejects_locked_tasks(client, employee, task):
+    client.force_login(employee)
+    now = timezone.localtime().replace(second=0, microsecond=0)
+    data = {
+        "task": task.pk,
+        "started_at": (now - timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M"),
+        "ended_at": now.strftime("%Y-%m-%dT%H:%M"),
+    }
+    response = client.post(reverse("tracking:create"), data)
+    assert response.status_code == 200 and not TimeEntry.objects.exists()
+
+    employee.bookable_customers.add(task.project.customer)
+    client.post(reverse("tracking:create"), data)
+    assert TimeEntry.objects.filter(user=employee, task=task).exists()
+
+
+def test_employee_agent_sees_only_unlocked_tasks(client, employee, task, other_task):
+    import json
+
+    employee.bookable_projects.add(task.project)
+    _, key = ApiToken.issue(employee, "Agent")
+
+    def call(tool, /, **arguments):
+        message = {"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": tool, "arguments": arguments}}
+        response = client.post(
+            "/mcp/", json.dumps(message), content_type="application/json", headers={"Authorization": f"Bearer {key}"}
+        )
+        return response.json()["result"]["content"][0]["text"]
+
+    assert [p["name"] for p in json.loads(call("list_projects"))] == ["Website"]
+    assert json.loads(call("find_tasks", query="Intern")) == []
+    assert "Keine offene Aufgabe" in call("start_timer", task_id=other_task.pk)
+    assert "Kein aktives Projekt" in call("create_task", project_id=other_task.project_id, name="Neu")
+
+
+def test_admin_unlocks_customers_and_projects(client, user, employee, task, other_task):
+    client.force_login(user)
+    url = reverse("users:edit", args=[employee.pk])
+    form = client.get(url).text
+    assert 'data-shown-for="role=employee">' in form and "Fremd AG · Geheim" in form
+
+    client.post(
+        url,
+        {
+            "username": employee.username,
+            "role": User.Role.EMPLOYEE,
+            "bookable_customers": [task.project.customer_id],
+            "bookable_projects": [other_task.project_id],
+            "is_active": "on",
+        },
+    )
+    assert list(employee.bookable_customers.all()) == [task.project.customer]
+    assert list(employee.bookable_projects.all()) == [other_task.project]
+    assert "1 Kunde, 1 Projekt" in client.get(reverse("users:list")).text
+
+    # Another role keeps the unlocks, they are just not used.
+    client.post(url, {"username": employee.username, "role": User.Role.ADMIN, "is_active": "on"})
+    assert employee.bookable_customers.exists()
+
+
+def test_portal_invoices_filter_by_status_and_date(client, customer_user):
+    def invoice(number, status, day):
+        return Invoice.objects.create(
+            customer=customer_user.customer,
+            period_start=day,
+            period_end=day,
+            voucher_date=day,
+            total_net=Decimal("100"),
+            status=status,
+            voucher_number=number,
+            lexware_id=uuid.uuid4(),
+        )
+
+    invoice("RE-ALT", Invoice.Status.PAID, date(2025, 3, 1))
+    current = invoice("RE-NEU", Invoice.Status.OPEN, date(2026, 10, 1))
+    client.force_login(customer_user)
+    url = reverse("portal:invoices")
+
+    text = client.get(url).text
+    assert "RE-ALT" in text and "RE-NEU" in text
+    text = client.get(url, {"status": "bezahlt"}).text
+    assert "RE-ALT" in text and "RE-NEU" not in text
+    text = client.get(url, {"von": "2026-01-01", "bis": "2026-12-31"}).text
+    assert "RE-ALT" not in text and "RE-NEU" in text
+    text = client.get(url, {"von": "2026-01-01", "bis": "2026-12-31", "status": "bezahlt"}).text
+    assert "Keine Rechnung passt zum Filter" in text
+    # Drafts cannot be picked.
+    assert "RE-NEU" in client.get(url, {"status": "entwurf"}).text
+
+    assert f"{reverse('portal:invoice_pdf', args=[current.pk])}?ansehen=1" in client.get(url).text

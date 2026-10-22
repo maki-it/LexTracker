@@ -35,7 +35,7 @@ async def dashboard(request: HttpRequest) -> HttpResponse:
         request,
         "core/dashboard.html",
         {
-            "tasks": [t async for t in open_tasks()],
+            "tasks": [t async for t in open_tasks(request.user)],
             "today_entries": today_entries,
             "today_total": sum((e.duration for e in today_entries), timedelta()),
             "filter_label": active_filter["label"],

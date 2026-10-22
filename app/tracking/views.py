@@ -45,9 +45,9 @@ async def timer(request: HttpRequest) -> HttpResponse:
 async def timer_start(request: HttpRequest) -> HttpResponse:
     """GET: the start form (opened in the dialog from the sidebar). POST: start the timer."""
     if request.method == "GET":
-        return render(request, "tracking/timer_start.html", {"tasks": [t async for t in open_tasks()]})
+        return render(request, "tracking/timer_start.html", {"tasks": [t async for t in open_tasks(request.user)]})
     try:
-        task = await Task.objects.aget(pk=int(request.POST.get("task", "")))
+        task = await open_tasks(request.user).aget(pk=int(request.POST.get("task", "")))
     except ValueError, Task.DoesNotExist:
         raise Http404 from None
     await sync_to_async(start_timer)(request.user, task, request.POST.get("description", "").strip())
@@ -155,7 +155,7 @@ async def entry_form(request: HttpRequest, pk: int | None = None) -> HttpRespons
     if not pk:
         now = timezone.localtime().replace(second=0, microsecond=0)
         initial = {"started_at": now - timedelta(hours=1), "ended_at": now, "task": request.GET.get("aufgabe")}
-    form = TimeEntryForm(request.POST or None, instance=entry, initial=initial)
+    form = TimeEntryForm(request.POST or None, instance=entry, initial=initial, user=request.user)
     if request.method == "POST" and await sync_to_async(form.is_valid)():
         entry = await sync_to_async(form.save)()
         messages.success(request, "Zeiteintrag gespeichert.")

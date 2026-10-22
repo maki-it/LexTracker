@@ -151,7 +151,7 @@ Unter **Benutzer** legst du Zugänge an. Danach zeigt die App einen Einladungsli
 | Rolle | Sieht und darf |
 | --- | --- |
 | Administrator | alles |
-| Mitarbeiter | Übersicht, Timer und Zeiten: bucht auf alle aktiven Projekte und sieht nur die eigenen Zeiten. Keine Projekte, Kunden, Abrechnung, Auswertungen oder Einstellungen. Kann einen API-Token für den MCP-Server erstellen. |
+| Mitarbeiter | Übersicht, Timer und Zeiten: bucht nur auf die Kunden (mit allen ihren Projekten) und einzelnen Projekte, die ein Admin unter **Benutzer** freischaltet, und sieht nur die eigenen Zeiten. Keine Projekte, Kunden, Abrechnung, Auswertungen oder Einstellungen. Kann einen API-Token für den MCP-Server erstellen. |
 | Kunde | nur lesend und nur die eigenen Daten: Projekte und je nach Einstellung Budgets, Zeiteinträge (mit oder ohne Beschreibung) und Rechnungen. Entwürfe und in Lexware gelöschte Rechnungen sieht er nie. |
 
 Was ein Kundenzugang sieht, stellst du pro Zugang beim Benutzer ein. Welche Seiten eine Rolle öffnen darf, steht in `app/core/access.py`.

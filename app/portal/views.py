@@ -5,6 +5,7 @@ from datetime import timedelta
 
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
+from django.db.models import Q
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
@@ -13,6 +14,7 @@ from django.views.decorators.http import require_GET
 
 from billing.models import Invoice
 from billing.periods import Period, period_containing
+from billing.views import STATUS_FILTERS
 from customers.models import Customer
 from lexware.client import LexwareError, client_from_settings
 from projects.models import Project
@@ -89,18 +91,38 @@ async def entries(request: HttpRequest) -> HttpResponse:
     return render(request, "portal/entries.html", context)
 
 
+# The status filters the customer can pick. Drafts and deleted invoices never show up here.
+INVOICE_STATUS_FILTERS = {key: STATUS_FILTERS[key] for key in ("offen", "ueberfaellig", "bezahlt", "storniert")}
+
+
 @require_GET
 async def invoices(request: HttpRequest) -> HttpResponse:
     user = request.user
     if not user.portal_invoices:
         raise PermissionDenied
-    rows = [
-        i
-        async for i in Invoice.objects.filter(customer_id=user.customer_id)
-        .exclude(status__in=HIDDEN_INVOICE_STATUSES)
-        .order_by("-period_end", "-created_at")
-    ]
-    return render(request, "portal/invoices.html", {"invoices": rows})
+    queryset = Invoice.objects.filter(customer_id=user.customer_id).exclude(status__in=HIDDEN_INVOICE_STATUSES)
+    status = request.GET.get("status", "")
+    if status in INVOICE_STATUS_FILTERS:
+        queryset = queryset.filter(status__in=INVOICE_STATUS_FILTERS[status][1])
+    else:
+        status = ""
+    today = timezone.localdate()
+    # All invoices unless a range is picked, by invoice date (the creation day for invoices without one).
+    date_range = selected_range(request.GET, today) if {"zeitraum", "von", "bis"} & set(request.GET) else None
+    if date_range:
+        span = (date_range.start, date_range.end)
+        queryset = queryset.filter(
+            Q(voucher_date__range=span) | Q(voucher_date__isnull=True, created_at__date__range=span)
+        )
+    rows = [i async for i in queryset.order_by("-period_end", "-created_at")]
+    context = {
+        "invoices": rows,
+        "status": status,
+        "status_filters": [(key, label) for key, (label, _) in INVOICE_STATUS_FILTERS.items()],
+        "range": date_range,
+        "presets": presets(today),
+    }
+    return render(request, "portal/invoices.html", context)
 
 
 @require_GET
@@ -125,5 +147,6 @@ async def invoice_pdf(request: HttpRequest, invoice_pk: int) -> HttpResponse:
         return redirect("portal:invoices")
     response = HttpResponse(pdf, content_type="application/pdf")
     name = f"Rechnung-{invoice.voucher_number or invoice.pk}.pdf"
-    response["Content-Disposition"] = content_disposition_header(True, name)
+    # ?ansehen=1 opens it in the browser instead of downloading it.
+    response["Content-Disposition"] = content_disposition_header(request.GET.get("ansehen") != "1", name)
     return response

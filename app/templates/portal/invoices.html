@@ -2,8 +2,34 @@
 {% load icons %}
 {% block title %}Rechnungen · LexTracker{% endblock %}
 {% block content %}
-<div>
-  <h1>Rechnungen</h1>
+<div class="page-header">
+  <div>
+    <h1>Rechnungen</h1>
+    <p class="page-subtitle">{% if range %}{{ range.start|date:date_format }} – {{ range.end|date:date_format }}{% else %}Alle Zeiträume{% endif %} · {{ invoices|length }} Rechnung{{ invoices|length|pluralize:"en" }}</p>
+  </div>
+</div>
+
+{# Status and range filters keep each other: every link carries the other one along. #}
+<div class="flex flex-col gap-3">
+  <nav aria-label="Status" class="flex flex-wrap gap-1.5">
+    <a href="?{% if range.key %}zeitraum={{ range.key }}{% elif range %}von={{ range.start|date:'Y-m-d' }}&bis={{ range.end|date:'Y-m-d' }}{% endif %}" class="pill{% if not status %} pill-active{% endif %}">Alle</a>
+    {% for key, label in status_filters %}
+    <a href="?status={{ key }}{% if range.key %}&zeitraum={{ range.key }}{% elif range %}&von={{ range.start|date:'Y-m-d' }}&bis={{ range.end|date:'Y-m-d' }}{% endif %}" class="pill{% if status == key %} pill-active{% endif %}">{{ label }}</a>
+    {% endfor %}
+  </nav>
+  <nav aria-label="Zeitraum" class="flex flex-wrap gap-1.5">
+    <a href="?{% if status %}status={{ status }}{% endif %}" class="pill{% if not range %} pill-active{% endif %}">Gesamt</a>
+    {% for preset in presets %}
+    <a href="?zeitraum={{ preset.key }}{% if status %}&status={{ status }}{% endif %}" class="pill{% if range and preset.key == range.key %} pill-active{% endif %}">{{ preset.label }}</a>
+    {% endfor %}
+  </nav>
+  <form method="get" class="flex flex-wrap items-end gap-3"
+        hx-get="{% url 'portal:invoices' %}" hx-trigger="change" hx-target="main" hx-select="main" hx-swap="outerHTML" hx-push-url="true">
+    {% if status %}<input type="hidden" name="status" value="{{ status }}">{% endif %}
+    <label class="field"><span>Rechnungsdatum von</span><input type="date" name="von" value="{{ range.start|date:'Y-m-d' }}" class="input"></label>
+    <label class="field"><span>bis</span><input type="date" name="bis" value="{{ range.end|date:'Y-m-d' }}" class="input"></label>
+    <noscript><button type="submit" class="btn">Anzeigen</button></noscript>
+  </form>
 </div>
 <div class="table-wrap">
   <table class="table">
@@ -28,10 +54,11 @@
           {% if invoice.due_date and invoice.status == "open" or invoice.due_date and invoice.status == "overdue" %}<span class="ml-1 text-[13px] text-muted">fällig {{ invoice.due_date|date:date_format }}</span>{% endif %}
         </td>
         <td class="text-right whitespace-nowrap font-semibold tabular-nums{% if invoice.status == 'voided' %} text-muted line-through{% endif %}">{{ invoice.total_net }} €</td>
-        <td class="text-right whitespace-nowrap">{% if invoice.lexware_id %}<a class="inline-flex items-center gap-1.5 hover:underline" href="{% url 'portal:invoice_pdf' invoice.pk %}">{% icon "download" size=14 %}PDF</a>{% endif %}</td>
+        <td class="text-right whitespace-nowrap">{% if invoice.lexware_id %}{% url 'portal:invoice_pdf' invoice.pk as pdf_url %}<a class="inline-flex items-center gap-1.5 hover:underline" href="{{ pdf_url }}?ansehen=1" target="_blank" rel="noopener">{% icon "external" size=14 %}Online ansehen</a>
+          <a class="ml-3 inline-flex items-center gap-1.5 hover:underline" href="{{ pdf_url }}">{% icon "download" size=14 %}PDF</a>{% endif %}</td>
       </tr>
       {% empty %}
-      <tr><td colspan="6" class="py-8 text-center text-muted">Noch keine Rechnungen.</td></tr>
+      <tr><td colspan="6" class="py-8 text-center text-muted">{% if status or range %}Keine Rechnung passt zum Filter.{% else %}Noch keine Rechnungen.{% endif %}</td></tr>
       {% endfor %}
     </tbody>
   </table>
