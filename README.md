@@ -138,7 +138,7 @@ Werkzeuge für den Agenten:
 | `add_time_entry` | Zeit nachtragen, mit Ende oder Dauer; gerundet wie eingestellt |
 | `list_time_entries` | Gebuchte Zeiten eines Zeitraums mit Summe |
 
-Ein Hinweis für den Agenten, etwa in der `CLAUDE.md` eines Projekts, sorgt dafür, dass er es auch tut: „Starte vor der Arbeit in LexTracker den Timer auf der passenden Aufgabe und stoppe ihn mit einer kurzen Zusammenfassung, wenn du fertig bist.“
+Ein Hinweis für den Agenten, etwa in der `CLAUDE.md` eines Projekts, sorgt dafür, dass er es auch tut. Fertige Beispiel-Prompts zum Kopieren (dauerhaft, einmalig im Chat, Zeit nachtragen) stehen im Konto unter **Beispiel-Prompts für deinen Agenten**.
 
 Der Server ist zustandslos und antwortet mit JSON, ohne Event-Stream. Ein widerrufener Token funktioniert sofort nicht mehr.
 

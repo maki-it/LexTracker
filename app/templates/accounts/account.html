@@ -42,6 +42,27 @@
       <span class="text-[13px]">Zum Beispiel in Claude Code: <code class="break-all">claude mcp add --transport http lextracker {{ mcp_url }} --header "Authorization: Bearer {{ new_key }}"</code></span>
     </div>
     {% endif %}
+    <details class="rounded-lg border border-line px-3 py-2.5 text-sm"{% if new_key %} open{% endif %}>
+      <summary class="cursor-pointer font-medium">Beispiel-Prompts für deinen Agenten</summary>
+      <div class="mt-3 flex flex-col gap-3">
+        <div class="flex flex-col gap-1">
+          <span class="text-muted">Dauerhaft, z. B. in der <code>CLAUDE.md</code> deines Projekts:</span>
+          <pre class="whitespace-pre-wrap rounded bg-surface-muted px-3 py-2 text-[13px] text-ink select-all">## Zeiterfassung
+Erfasse deine Arbeitszeit in LexTracker (MCP-Server „lextracker“):
+- Bevor du mit einer Aufgabe beginnst, suche mit find_tasks die passende Aufgabe im Projekt „PROJEKTNAME“. Gibt es keine passende, lege sie mit create_task an.
+- Starte dann mit start_timer den Timer und gib als Beschreibung kurz an, woran du arbeitest.
+- Wenn du fertig bist oder auf mich wartest, stoppe den Timer mit stop_timer und fasse in der Beschreibung in ein bis zwei Sätzen zusammen, was du erledigt hast.</pre>
+        </div>
+        <div class="flex flex-col gap-1">
+          <span class="text-muted">Einmalig im Chat:</span>
+          <pre class="whitespace-pre-wrap rounded bg-surface-muted px-3 py-2 text-[13px] text-ink select-all">Starte in LexTracker den Timer auf der passenden Aufgabe im Projekt „PROJEKTNAME“, bevor du loslegst, und stoppe ihn mit einer kurzen Zusammenfassung, wenn du fertig bist.</pre>
+        </div>
+        <div class="flex flex-col gap-1">
+          <span class="text-muted">Zeit nachtragen:</span>
+          <pre class="whitespace-pre-wrap rounded bg-surface-muted px-3 py-2 text-[13px] text-ink select-all">Trage in LexTracker für heute 9:00 bis 11:30 auf die Aufgabe „AUFGABE“ im Projekt „PROJEKTNAME“ ein: Abstimmung und Konzept für den Relaunch.</pre>
+        </div>
+      </div>
+    </details>
     {% if tokens %}
     <ul class="flex flex-col divide-y divide-line rounded-lg border border-line">
       {% for token in tokens %}

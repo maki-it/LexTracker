@@ -172,6 +172,7 @@ def test_create_and_revoke_token(client, user):
     assert key.startswith("lxt_") and key in response.text
     assert ApiToken.hash(key) == token.key_hash and token.name == "Laptop"
     assert "/mcp/" in response.text
+    assert "Beispiel-Prompts" in response.text and "start_timer" in response.text
 
     # The key is shown only once.
     assert key not in client.get(reverse("account:settings")).text
