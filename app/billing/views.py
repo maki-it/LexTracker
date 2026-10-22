@@ -1,3 +1,5 @@
+from collections import defaultdict
+from dataclasses import dataclass
 from datetime import date, timedelta
 
 from asgiref.sync import sync_to_async
@@ -10,10 +12,10 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
-from billing.calculation import active_agreement, build_draft
+from billing.calculation import active_agreement, build_draft, unbilled
 from billing.forms import BillingAgreementForm, PeriodForm
 from billing.models import BillingAgreement, Invoice
-from billing.periods import Period, recent_periods
+from billing.periods import Period, period_containing, recent_periods
 from billing.services import create_invoice
 from billing.sync import sync_and_record
 from core.models import AppSettings
@@ -146,16 +148,59 @@ def _invoice_list_url(request: HttpRequest) -> str:
     return f"{url}?{query}" if query and "//" not in query else url
 
 
-def _period_options(agreement: BillingAgreement | None, today: date):
-    period = agreement.period if agreement and agreement.kind == BillingAgreement.Kind.RETAINER else Period.MONTH
-    return recent_periods(today, period)
+MAX_PERIOD_OPTIONS = 8
+
+
+@dataclass(frozen=True)
+class PeriodOption:
+    start: date
+    end: date
+    label: str
+    open_time: timedelta
+
+    @property
+    def key(self) -> str:
+        return f"{self.start}/{self.end}"
+
+
+def _period_options(customer: Customer, agreement: BillingAgreement | None, today: date) -> list[PeriodOption]:
+    """Recent periods plus older ones with open time, newest first, each with its open time.
+
+    Without a retainer, "Alle offenen" comes first: the range from the first to the last open entry.
+    """
+    is_retainer = agreement is not None and agreement.kind == BillingAgreement.Kind.RETAINER
+    period = agreement.period if is_retainer else Period.MONTH
+    open_by_day: dict[date, timedelta] = defaultdict(timedelta)
+    for started_at, ended_at in unbilled(customer).values_list("started_at", "ended_at"):
+        open_by_day[timezone.localtime(started_at).date()] += ended_at - started_at
+
+    periods = recent_periods(today, period)
+    older = sorted({period_containing(day, period) for day in open_by_day} - set(periods), reverse=True)
+    periods = (periods + older)[:MAX_PERIOD_OPTIONS]
+
+    def option(start: date, end: date, label: str) -> PeriodOption:
+        open_time = sum((t for day, t in open_by_day.items() if start <= day <= end), timedelta())
+        return PeriodOption(start, end, label, open_time)
+
+    options = [option(p.start, p.end, p.label) for p in periods]
+    if open_by_day and not is_retainer:
+        options.insert(0, option(min(open_by_day), max(open_by_day), "Alle offenen"))
+    return options
+
+
+def _default_period(options: list[PeriodOption]) -> PeriodOption:
+    """The last completed period if it has open time, otherwise all open time, otherwise that period."""
+    periods = [o for o in options if o.label != "Alle offenen"]
+    last_completed = periods[1]
+    if last_completed.open_time:
+        return last_completed
+    return next((o for o in options if o.open_time), last_completed)
 
 
 def _selected_period(request: HttpRequest, options) -> tuple[PeriodForm, date | None, date | None]:
     data = request.POST if request.method == "POST" else request.GET
     if "start" not in data:
-        # Default: the last completed period.
-        default = options[1]
+        default = _default_period(options)
         data = {"start": default.start.isoformat(), "end": default.end.isoformat()}
     form = PeriodForm(data)
     if form.is_valid():
@@ -168,7 +213,7 @@ async def customer_billing(request: HttpRequest, pk: int) -> HttpResponse:
     customer = await _get_customer(pk)
     today = timezone.localdate()
     current = await sync_to_async(active_agreement)(customer, today, today)
-    options = _period_options(current, today)
+    options = await sync_to_async(_period_options)(customer, current, today)
     period_form, start, end = _selected_period(request, options)
     draft = await sync_to_async(build_draft)(customer, start, end) if start else None
     context = {
@@ -176,10 +221,14 @@ async def customer_billing(request: HttpRequest, pk: int) -> HttpResponse:
         "agreements": [a async for a in customer.billing_agreements.all()],
         "period_options": options,
         "period_form": period_form,
+        "selected_period": f"{start}/{end}",
         "draft": draft,
         "invoices": [i async for i in customer.invoices.annotate(entry_count=Count("time_entries"))[:10]],
     }
-    template = "billing/_preview.html" if request.htmx and request.htmx.target == "preview" else "billing/customer.html"
+    if request.htmx and request.htmx.target == "preview":
+        # The pills are swapped too, so the one matching the chosen dates is marked.
+        return render(request, "billing/_preview.html", {**context, "oob": True})
+    template = "billing/customer.html"
     return render(request, template, context)
 
 

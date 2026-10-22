@@ -1,4 +1,4 @@
-{% load timefmt %}
+{% load timefmt icons %}
 <section id="preview" class="flex flex-col gap-3">
   {% if draft %}
   <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -37,7 +37,28 @@
       <tbody>
         {% for line in draft.lines %}
         <tr>
-          <td>{{ line.name }}{% if line.description %}<div class="text-xs text-muted">{{ line.description }}</div>{% endif %}</td>
+          <td class="w-full">
+            {% if line.entries %}
+            <details class="group">
+              <summary class="flex cursor-pointer list-none items-start gap-1.5 [&::-webkit-details-marker]:hidden">
+                <span class="mt-0.5 inline-flex shrink-0 text-muted transition-transform group-open:rotate-90">{% icon "chevron-right" size=14 %}</span>
+                <span>{{ line.name }}{% if line.description %}<span class="block text-xs text-muted">{{ line.description }}</span>{% endif %}<span class="block text-xs text-muted">{{ line.entries|length }} Zeiteintr{{ line.entries|length|pluralize:"ag,äge" }}</span></span>
+              </summary>
+              <ul class="mt-2 ml-5 flex flex-col divide-y divide-line border-l border-line pl-3 text-[13px]">
+                {% for entry in line.entries %}
+                <li class="flex gap-3 py-1.5">
+                  <span class="w-24 shrink-0 tabular-nums text-muted">{{ entry.started_at|date:date_format }}</span>
+                  <span class="w-24 shrink-0 tabular-nums text-muted">{{ entry.started_at|time:"H:i" }}–{{ entry.ended_at|time:"H:i" }}</span>
+                  <span class="w-14 shrink-0 text-right font-medium tabular-nums">{{ entry.duration|hours:duration_format }} h</span>
+                  <span class="min-w-0 flex-1 text-muted">{{ entry.description|default:"–" }}</span>
+                </li>
+                {% endfor %}
+              </ul>
+            </details>
+            {% else %}
+            {{ line.name }}{% if line.description %}<div class="text-xs text-muted">{{ line.description }}</div>{% endif %}
+            {% endif %}
+          </td>
           <td class="text-right whitespace-nowrap tabular-nums">{{ line.quantity }} {{ line.unit }}</td>
           <td class="text-right whitespace-nowrap tabular-nums">{{ line.unit_price }} €</td>
           <td class="text-right whitespace-nowrap tabular-nums">{{ line.total }} €</td>
@@ -69,3 +90,4 @@
     {% endif %}
   </div>
 </section>
+{% if oob %}{% include "billing/_period_pills.html" %}{% endif %}
