@@ -32,13 +32,14 @@ LABEL org.opencontainers.image.title="LexTracker" \
       org.opencontainers.image.version="${VERSION}"
 
 RUN useradd --uid 1000 --create-home --shell /usr/sbin/nologin app \
-    && mkdir -p /data && chown app:app /data
+    && mkdir -p /data /backups && chown app:app /data /backups
 
 ENV PATH="/srv/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     APP_ENVIRONMENT=production \
     APP_DATA_DIR=/data \
+    APP_BACKUP_DIR=/backups \
     UVICORN_WORKERS=1 \
     FORWARDED_ALLOW_IPS=127.0.0.1
 
@@ -49,7 +50,7 @@ COPY --from=build /srv/staticfiles /srv/staticfiles
 COPY --from=build /srv/app /srv/app
 
 USER app
-VOLUME ["/data"]
+VOLUME ["/data", "/backups"]
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \

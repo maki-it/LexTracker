@@ -168,9 +168,10 @@ cp .env.example .env    # APP_ENVIRONMENT=production und APP_SECRET_KEY setzen
 docker compose up -d --build
 ```
 
-Die App lauscht auf Port 8000. Datenbank und alle Daten liegen im Volume `lextracker-data` (`/data` im Container).
-Neben der App startet ein zweiter Container `scheduler` aus demselben Image. Er führt wiederkehrende Aufgaben wie den automatischen Kundenimport und den Rechnungsabgleich aus und prüft dafür jede Minute, was fällig ist.
+Die App lauscht auf Port 8000 (über `APP_PORT` änderbar, z. B. `127.0.0.1:8000`, wenn nur ein Reverse Proxy auf demselben Server sie erreichen soll). Datenbank und alle Daten liegen im Volume `lextracker-data` (`/data` im Container), Backups im Volume `lextracker-backups` (`/backups`).
+Neben der App startet ein zweiter Container `scheduler` aus demselben Image, sobald die App gesund ist. Er führt wiederkehrende Aufgaben wie den automatischen Kundenimport, den Rechnungsabgleich und das tägliche Backup aus und prüft dafür jede Minute, was fällig ist. Sein Healthcheck schlägt an, wenn er länger als fünf Minuten nicht mehr geprüft hat.
 Vor jedem Start führt Compose über `pre_start`-Hooks die Migrationen aus und legt, falls `DJANGO_SUPERUSER_USERNAME` und `DJANGO_SUPERUSER_PASSWORD` gesetzt sind, das Admin-Konto an (sofern es noch nicht existiert). Schlägt ein Hook fehl, startet die App nicht. Dafür ist ein aktuelles Docker Compose nötig (getestet mit v5.6).
+Beide Container laufen ohne Root, mit schreibgeschütztem Dateisystem (beschreibbar sind nur `/data`, `/backups` und `/tmp`), ohne Linux-Capabilities und mit begrenzten Logs (5 × 10 MB).
 
 Hinter einem Reverse Proxy mit HTTPS (empfohlen) zusätzlich setzen:
 
@@ -182,5 +183,17 @@ FORWARDED_ALLOW_IPS=<IP des Proxys>
 
 Ohne HTTPS funktioniert der Login nur mit `APP_SECURE_COOKIES=false`.
 
-**Backup:** SQLite im WAL-Modus nicht einfach im laufenden Betrieb kopieren, sondern z. B.
-`docker compose exec app python -c "import sqlite3; sqlite3.connect('/data/db.sqlite3').backup(sqlite3.connect('/data/backup.sqlite3'))"`.
+**Backup:** Der Scheduler kopiert die Datenbank täglich ab `APP_BACKUP_TIME` (Standard 03:00) nach `/backups` und behält die neuesten `APP_BACKUP_KEEP` Kopien (Standard 14, `0` schaltet es ab). Er nutzt dafür die Backup-Funktion von SQLite, die auch im laufenden Betrieb eine stimmige Kopie liefert; die Datei einfach zu kopieren reicht im WAL-Modus nicht.
+Ein Backup sofort: `make docker-backup` (oder `docker compose exec scheduler python manage.py backup_database`).
+Damit die Backups auch außerhalb von Docker liegen, z. B. für ein Offsite-Backup, kannst du das Volume durch einen Ordner auf dem Server ersetzen. Er muss dem Benutzer mit der UID 1000 gehören:
+
+```yaml
+# compose.override.yaml, ersetzt das Volume für /backups
+services:
+  app:
+    volumes: ["/srv/backups/lextracker:/backups"]
+  scheduler:
+    volumes: ["/srv/backups/lextracker:/backups"]
+```
+
+Zum Wiederherstellen die App stoppen (`docker compose down`), die gewünschte Kopie als `/data/db.sqlite3` zurückspielen und dabei `db.sqlite3-wal` und `db.sqlite3-shm` löschen, dann wieder starten.
