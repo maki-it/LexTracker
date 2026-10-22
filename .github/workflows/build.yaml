@@ -1,4 +1,4 @@
-name: Build Container Image
+name: Release Image
 run-name: ${{ github.actor }} builds new container image
 on:
   release:

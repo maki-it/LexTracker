@@ -1,0 +1,32 @@
+{% load static tailwind_cli %}<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}LexTracker{% endblock %}</title>
+  {% tailwind_css %}
+  <script src="{% static 'js/htmx.min.js' %}" defer></script>
+</head>
+<body class="min-h-screen bg-base-200" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+  {% if user.is_authenticated %}
+  <nav class="navbar bg-base-100 shadow-sm px-4">
+    <div class="flex-1">
+      <a href="{% url 'core:dashboard' %}" class="text-xl font-semibold">LexTracker</a>
+    </div>
+    <div class="flex items-center gap-2">
+      {% if user.is_staff %}<a href="{% url 'admin:index' %}" class="btn btn-ghost btn-sm">Verwaltung</a>{% endif %}
+      <form method="post" action="{% url 'accounts:logout' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-ghost btn-sm">Abmelden</button>
+      </form>
+    </div>
+  </nav>
+  {% endif %}
+  <main class="container mx-auto max-w-5xl p-4">
+    {% for message in messages %}
+    <div role="alert" class="alert mb-4 {% if message.tags %}alert-{{ message.tags }}{% endif %}">{{ message }}</div>
+    {% endfor %}
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

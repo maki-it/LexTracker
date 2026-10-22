@@ -1,20 +1,44 @@
 [project]
 name = "lextracker"
 version = "0.1.0"
-description = "Project time tracker for Lexoffice / Lexware Office"
+description = "Zeiterfassung und Projektsteuerung mit Anbindung an Lexware Office"
 readme = "README.md"
-requires-python = ">=3.14.3"
+requires-python = ">=3.14"
 dependencies = [
-    "cookiecutter>=2.7.1",
-    "django-debug-toolbar>=6.2.0",
-    "django-tailwind[reload]>=4.4.2",
-    "django[argon2]>=6.0.3",
-    "httpx>=0.28.1",
-    "httpx-limiter[aiolimiter]",
-    "pydantic>=2.12.5",
-    "pydantic-settings>=2.13.1",
-    "uvicorn>=0.41.0",
+    "django[argon2]>=6.0",
+    "django-htmx>=1.29",
+    "django-tailwind-cli>=4.8",
+    "httpx>=0.28",
+    "pydantic-settings>=2.16",
+    "servestatic>=4.4",
+    "uvicorn[standard]>=0.54",
 ]
 
-[tool.uv.sources]
-httpx-limiter = { git = "https://github.com/Midnighter/httpx-limiter.git", rev = "69aba6f3c2a2ac7823f84ecde9a553a685f412c0" }
+[dependency-groups]
+dev = [
+    "pytest>=9.0",
+    "pytest-asyncio>=1.4",
+    "pytest-django>=4.14",
+    "ruff>=0.17",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings_test"
+pythonpath = ["app"]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+addopts = "--strict-markers"
+
+[tool.ruff]
+line-length = 120
+target-version = "py314"
+src = ["app", "tests"]
+extend-exclude = ["app/*/migrations"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "DJ", "ASYNC", "SIM", "RUF"]
+ignore = ["RUF001", "RUF012"]  # German text uses typographic dashes; Django Meta uses mutable class attributes

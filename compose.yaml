@@ -1,0 +1,18 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: lextracker:latest
+    container_name: lextracker
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file: .env
+    environment:
+      APP_ENVIRONMENT: production
+    volumes:
+      - lextracker-data:/data
+
+volumes:
+  lextracker-data:
