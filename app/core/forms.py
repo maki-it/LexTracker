@@ -19,4 +19,4 @@ class StyledFormMixin:
 class AppSettingsForm(StyledFormMixin, forms.ModelForm):
     class Meta:
         model = AppSettings
-        fields = ["default_hourly_rate", "invoice_tax_rate", "lexware_sync_interval"]
+        fields = ["default_hourly_rate", "lexware_sync_interval"]

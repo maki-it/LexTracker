@@ -116,13 +116,12 @@ def test_edit_keeps_data_when_lexware_fails(logged_in, monkeypatch, settings):
 def test_settings_page_saves_settings(logged_in):
     response = logged_in.post(
         reverse("core:settings"),
-        {"default_hourly_rate": "85", "invoice_tax_rate": "0", "lexware_sync_interval": "30"},
+        {"default_hourly_rate": "85", "lexware_sync_interval": "30"},
     )
 
     assert response.status_code == 302
     app_settings = AppSettings.load()
     assert app_settings.default_hourly_rate == Decimal("85")
-    assert app_settings.invoice_tax_rate == Decimal("0")
     assert app_settings.lexware_sync_interval == 30
 
 

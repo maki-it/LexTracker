@@ -6,6 +6,9 @@
   {% csrf_token %}
   <p class="text-sm text-muted">Diese Einstellungen gelten für alle Benutzer.</p>
   {% include "core/_form_fields.html" %}
+  <p class="text-sm text-muted">
+    Die Umsatzsteuer auf Rechnungen richtet sich nach deinem Lexware-Konto: als Kleinunternehmer ohne Umsatzsteuer, sonst mit 19 %.
+  </p>
   <div>
     <button type="submit" class="btn btn-primary">Speichern</button>
   </div>

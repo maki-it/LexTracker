@@ -35,5 +35,6 @@ async def create_invoice(client: LexwareClient, customer: Customer, start: date,
         raise LexwareError("Der Kunde ist nicht mit Lexware verknüpft. Importiere ihn zuerst aus Lexware.")
     if not draft.can_be_invoiced:
         raise LexwareError(" ".join(draft.problems) or "Für diesen Zeitraum gibt es nichts abzurechnen.")
-    lexware_id = await client.create_invoice(invoice_payload(draft, timezone.localdate()))
+    profile = await client.get_profile()
+    lexware_id = await client.create_invoice(invoice_payload(draft, timezone.localdate(), profile))
     return await sync_to_async(_record_invoice)(draft, lexware_id)

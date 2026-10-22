@@ -45,7 +45,6 @@ class Draft:
     start: date
     end: date
     agreement: BillingAgreement | None
-    tax_rate: Decimal = Decimal("19")
     # Used when neither task, project nor customer has a rate.
     fallback_rate: Decimal | None = None
     lines: list[Line] = field(default_factory=list)
@@ -122,7 +121,6 @@ def build_draft(customer: Customer, start: date, end: date) -> Draft:
         start,
         end,
         agreement,
-        tax_rate=app_settings.invoice_tax_rate,
         fallback_rate=app_settings.default_hourly_rate,
         entries=entries,
     )

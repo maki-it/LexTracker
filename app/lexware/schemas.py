@@ -97,6 +97,16 @@ class Contact(_Model):
         return person.phone_number if person else ""
 
 
+class Profile(_Model):
+    """The organization behind the API key. See https://developers.lexware.io/docs/#profile-endpoint"""
+
+    company_name: str = Field("", alias="companyName")
+    # How the organization enters prices by default: "net", "gross" or "vatfree".
+    tax_type: str = Field("net", alias="taxType")
+    # Small business under § 19 UStG: invoices carry no VAT.
+    small_business: bool = Field(False, alias="smallBusiness")
+
+
 class ContactPage(_Model):
     content: list[Contact]
     last: bool

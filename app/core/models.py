@@ -1,5 +1,3 @@
-from decimal import Decimal
-
 from django.db import models
 
 
@@ -21,13 +19,6 @@ class AppSettings(models.Model):
         null=True,
         blank=True,
         help_text="Gilt, wenn weder Aufgabe, Projekt noch Kunde einen Stundensatz haben.",
-    )
-    invoice_tax_rate = models.DecimalField(
-        "Umsatzsteuer auf Rechnungen (%)",
-        max_digits=4,
-        decimal_places=2,
-        default=Decimal("19"),
-        help_text="0 für Kleinunternehmer nach § 19 UStG.",
     )
     lexware_sync_interval = models.PositiveIntegerField(
         "Automatischer Kundenimport alle (Minuten)",

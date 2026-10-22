@@ -79,7 +79,7 @@ Pro Kunde legst du unter **Abrechnung** eine Vereinbarung an:
 
 Für einen gewählten Zeitraum zeigt die Vorschau alle noch nicht abgerechneten, abrechenbaren Zeiten als Rechnungspositionen.
 **Rechnungsentwurf in Lexware anlegen** erstellt daraus einen Entwurf (nicht finalisiert), den du in Lexware prüfst und abschließt. Die Zeiten gelten danach als abgerechnet und tauchen in keiner weiteren Rechnung auf.
-Der Kunde muss dafür mit einem Lexware-Kontakt verknüpft sein. Den Steuersatz der Positionen stellst du unter **Einstellungen** ein (Standard 19 %, für Kleinunternehmer 0).
+Der Kunde muss dafür mit einem Lexware-Kontakt verknüpft sein. Die Umsatzsteuer richtet sich nach deinem Lexware-Konto: Ist es als Kleinunternehmer (§ 19 UStG) eingerichtet, entsteht die Rechnung ohne Umsatzsteuer, sonst mit 19 %.
 
 ## Konto und Sicherheit
 

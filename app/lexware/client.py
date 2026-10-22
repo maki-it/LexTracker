@@ -8,7 +8,7 @@ from uuid import UUID
 
 import httpx
 
-from lexware.schemas import Contact, ContactPage
+from lexware.schemas import Contact, ContactPage, Profile
 
 logger = logging.getLogger(__name__)
 
@@ -100,6 +100,9 @@ class LexwareClient:
                 raise LexwareError(f"Lexware antwortete mit HTTP {response.status_code}: {_error_detail(response)}")
             return response.json()
         raise LexwareError("Lexware hat zu viele Anfragen abgelehnt (Rate-Limit).")
+
+    async def get_profile(self) -> Profile:
+        return Profile.model_validate(await self._request("GET", "profile"))
 
     async def create_invoice(self, payload: dict) -> UUID:
         """Create an invoice draft (not finalized) and return its ID."""
