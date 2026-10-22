@@ -34,7 +34,7 @@ async def _authenticate(request: HttpRequest):
     if scheme.lower() != "bearer" or not key.startswith(ApiToken.PREFIX):
         return None
     token = await ApiToken.objects.select_related("user").filter(key_hash=ApiToken.hash(key.strip())).afirst()
-    if token is None or not token.user.is_active:
+    if token is None or not token.user.is_active or token.user.is_customer:
         return None
     await ApiToken.objects.filter(pk=token.pk).aupdate(last_used_at=timezone.now())
     return token.user

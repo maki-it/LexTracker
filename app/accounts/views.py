@@ -4,10 +4,11 @@ from asgiref.sync import sync_to_async
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import aauthenticate, alogin, alogout, aupdate_session_auth_hash
+from django.contrib.auth.tokens import default_token_generator
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
-from django.utils.http import url_has_allowed_host_and_scheme
+from django.utils.http import url_has_allowed_host_and_scheme, urlencode, urlsafe_base64_decode
 from django.views.decorators.http import require_http_methods, require_POST
 
 from accounts import mfa
@@ -15,6 +16,7 @@ from accounts.forms import (
     ApiTokenForm,
     CodeForm,
     ConfirmPasswordForm,
+    InviteForm,
     LoginForm,
     PreferencesForm,
     StyledPasswordChangeForm,
@@ -38,7 +40,7 @@ async def login_view(request: HttpRequest) -> HttpResponse:
     if (await request.auser()).is_authenticated:
         return redirect(_safe_next(request))
 
-    form = LoginForm(request.POST or None)
+    form = LoginForm(request.POST or None, initial={"username": request.GET.get("username", "")})
     error = None
     if request.method == "POST" and form.is_valid():
         user = await aauthenticate(
@@ -173,3 +175,20 @@ async def mfa_manage(request: HttpRequest) -> HttpResponse:
         messages.success(request, "Zwei-Faktor-Anmeldung ist ausgeschaltet.")
         return redirect("account:settings")
     return render(request, "accounts/mfa_manage.html", {"form": form})
+
+
+@require_http_methods(["GET", "POST"])
+async def invite(request: HttpRequest, uidb64: str, token: str) -> HttpResponse:
+    """Set the first password from an invitation link (also works to reset a forgotten one)."""
+    try:
+        user = await User.objects.aget(pk=urlsafe_base64_decode(uidb64).decode(), is_active=True)
+    except User.DoesNotExist, ValueError, UnicodeDecodeError:
+        user = None
+    if user is None or not default_token_generator.check_token(user, token):
+        return render(request, "accounts/invite.html", {"invalid": True}, status=400)
+    form = InviteForm(user, request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        await sync_to_async(form.save)()
+        messages.success(request, "Passwort gesetzt. Melde dich jetzt an.")
+        return redirect(f"{reverse('accounts:login')}?{urlencode({'username': user.get_username()})}")
+    return render(request, "accounts/invite.html", {"form": form, "invited": user})

@@ -42,6 +42,25 @@ class User(AbstractUser):
         blank=True,
         related_name="users",
     )
+    # What a customer login may see besides the customer's projects.
+    portal_budget = models.BooleanField("sieht Budgets", default=True)
+    portal_entries = models.BooleanField("sieht Zeiteinträge", default=True)
+    portal_descriptions = models.BooleanField(
+        "sieht Beschreibungen der Zeiteinträge", default=True, help_text="Nur wirksam, wenn Zeiteinträge sichtbar sind."
+    )
+    portal_invoices = models.BooleanField("sieht Rechnungen", default=True)
+
+    @property
+    def is_admin(self) -> bool:
+        return self.role == self.Role.ADMIN
+
+    @property
+    def is_employee(self) -> bool:
+        return self.role == self.Role.EMPLOYEE
+
+    @property
+    def is_customer(self) -> bool:
+        return self.role == self.Role.CUSTOMER
 
     class Meta:
         verbose_name = "Benutzer"

@@ -20,20 +20,29 @@
         </a>
       </div>
 
+      {% if not user.is_customer %}
       <div hx-get="{% url 'tracking:timer' %}" hx-trigger="load" hx-swap="outerHTML"></div>
+      {% endif %}
 
       <nav aria-label="Hauptnavigation" class="-mx-1 flex gap-0.5 overflow-x-auto px-1 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0">
+        {% with active=request.resolver_match.view_name %}
+        {% if user.is_customer %}
+        <a href="{% url 'portal:overview' %}" class="nav-link{% if active == 'portal:overview' %} nav-link-active{% endif %}"{% if active == 'portal:overview' %} aria-current="page"{% endif %}>{% icon "dashboard" %}Übersicht</a>
+        {% if user.portal_entries %}<a href="{% url 'portal:entries' %}" class="nav-link{% if active == 'portal:entries' %} nav-link-active{% endif %}"{% if active == 'portal:entries' %} aria-current="page"{% endif %}>{% icon "clock" %}Zeiten</a>{% endif %}
+        {% if user.portal_invoices %}<a href="{% url 'portal:invoices' %}" class="nav-link{% if active == 'portal:invoices' %} nav-link-active{% endif %}"{% if active == 'portal:invoices' %} aria-current="page"{% endif %}>{% icon "receipt" %}Rechnungen</a>{% endif %}
+        {% else %}
         <a href="{% url 'core:dashboard' %}" class="nav-link{% if section == 'core' %} nav-link-active{% endif %}"{% if section == 'core' %} aria-current="page"{% endif %}>{% icon "dashboard" %}Übersicht</a>
         <a href="{% url 'tracking:list' %}" class="nav-link{% if section == 'tracking' %} nav-link-active{% endif %}"{% if section == 'tracking' %} aria-current="page"{% endif %}>{% icon "clock" %}Zeiten</a>
+        {% if user.is_admin %}
         <a href="{% url 'projects:list' %}" class="nav-link{% if section == 'projects' %} nav-link-active{% endif %}"{% if section == 'projects' %} aria-current="page"{% endif %}>{% icon "folder" %}Projekte{% if request.nav_counts.projects %}<span class="nav-count" title="Aktive Projekte">{{ request.nav_counts.projects }}</span>{% endif %}</a>
         <a href="{% url 'customers:list' %}" class="nav-link{% if section == 'customers' %} nav-link-active{% endif %}"{% if section == 'customers' %} aria-current="page"{% endif %}>{% icon "users" %}Kunden</a>
         <a href="{% url 'billing:overview' %}" class="nav-link{% if section == 'billing' %} nav-link-active{% endif %}"{% if section == 'billing' %} aria-current="page"{% endif %}>{% icon "receipt" %}Abrechnung{% if request.nav_counts.billable_customers %}<span class="nav-count nav-count-primary" title="Kunden mit offenen, abrechenbaren Zeiten">{{ request.nav_counts.billable_customers }}</span>{% endif %}</a>
         <a href="{% url 'reports:overview' %}" class="nav-link{% if section == 'reports' %} nav-link-active{% endif %}"{% if section == 'reports' %} aria-current="page"{% endif %}>{% icon "chart" %}Auswertungen</a>
-        {% if user.role == "admin" %}
-        {% with active=request.resolver_match.view_name %}
+        <a href="{% url 'users:list' %}" class="nav-link{% if section == 'users' %} nav-link-active{% endif %}"{% if section == 'users' %} aria-current="page"{% endif %}>{% icon "user-cog" %}Benutzer</a>
         <a href="{% url 'core:settings' %}" class="nav-link{% if active == 'core:settings' %} nav-link-active{% endif %}"{% if active == 'core:settings' %} aria-current="page"{% endif %}>{% icon "settings" %}Einstellungen</a>
-        {% endwith %}
         {% endif %}
+        {% endif %}
+        {% endwith %}
       </nav>
 
       <div class="flex items-center gap-2.5 border-t border-line pt-3 lg:mt-auto">

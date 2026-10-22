@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Einladung · LexTracker{% endblock %}
+{% block content %}
+<div>
+  <p class="breadcrumb"><a href="{% url 'users:list' %}">Benutzer</a></p>
+  <h1>Einladung für {{ edited.get_full_name|default:edited.get_username }}</h1>
+</div>
+<div class="card flex max-w-2xl flex-col gap-4">
+  <p>Schick diesen Link an {% if edited.email %}<a href="mailto:{{ edited.email }}">{{ edited.email }}</a>{% else %}die Person{% endif %}. Damit legt sie ihr Passwort fest und meldet sich dann als <strong>{{ edited.get_username }}</strong> an.</p>
+  <code class="break-all rounded bg-surface-muted px-3 py-2 text-[13px] text-ink select-all">{{ url }}</code>
+  <p class="text-[13px] text-muted">Der Link gilt eine Woche und nur einmal. Mit demselben Knopf in der Benutzerliste kannst du jederzeit einen neuen erzeugen, z. B. wenn jemand sein Passwort vergessen hat.</p>
+  <div class="flex gap-2 border-t border-line pt-4">
+    <a href="{% url 'users:list' %}" class="btn">Zur Benutzerliste</a>
+  </div>
+</div>
+{% endblock %}

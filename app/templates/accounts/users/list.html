@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load icons dialogs %}
+{% block title %}Benutzer · LexTracker{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Benutzer</h1>
+    <p class="page-subtitle">Zugänge für Mitarbeiter und Kunden</p>
+  </div>
+  <a {% dialog_link "users:create" %} class="btn btn-primary">{% icon "plus" size=14 %}Neuer Benutzer</a>
+</div>
+<div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Rolle</th>
+        <th>Status</th>
+        <th>Zuletzt angemeldet</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      <tr>
+        <td class="w-full">
+          <div class="font-medium">{{ u.get_full_name|default:u.get_username }}</div>
+          <div class="text-[13px] text-muted">{{ u.get_username }}{% if u.email %} · {{ u.email }}{% endif %}</div>
+        </td>
+        <td class="whitespace-nowrap">
+          <span class="badge{% if u.is_admin %} badge-primary{% endif %}">{{ u.get_role_display }}</span>
+          {% if u.customer %}<div class="mt-1 text-[13px] text-muted">{{ u.customer.name }}</div>{% endif %}
+        </td>
+        <td class="whitespace-nowrap">
+          {% if not u.is_active %}<span class="badge">deaktiviert</span>
+          {% elif not u.has_usable_password %}<span class="badge badge-warning">eingeladen</span>
+          {% else %}<span class="badge badge-success">aktiv</span>{% endif %}
+        </td>
+        <td class="whitespace-nowrap text-muted">{% if u.last_login %}{{ u.last_login|date:datetime_format }} Uhr{% else %}noch nie{% endif %}</td>
+        <td class="whitespace-nowrap text-right">
+          {% if u.is_active and u != user %}<a href="{% url 'users:invite' u.pk %}" class="btn btn-ghost btn-sm" title="Link, mit dem die Person ein Passwort festlegt">Einladungslink</a>{% endif %}
+          <a {% dialog_link "users:edit" u.pk %} class="btn btn-ghost btn-sm btn-icon size-8" title="Bearbeiten" aria-label="Benutzer bearbeiten">{% icon "pencil" %}</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

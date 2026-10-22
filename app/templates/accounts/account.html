@@ -27,6 +27,7 @@
     {% endif %}
   </section>
 
+  {% if not user.is_customer %}
   <section class="card flex flex-col gap-4" id="api-tokens">
     <div>
       <h2>KI-Agenten und API-Tokens</h2>
@@ -89,5 +90,6 @@ Erfasse deine Arbeitszeit in LexTracker (MCP-Server „lextracker“):
       <button type="submit" class="btn btn-primary">Token erstellen</button>
     </form>
   </section>
+  {% endif %}
 </div>
 {% endblock %}
