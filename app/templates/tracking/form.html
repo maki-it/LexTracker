@@ -1,11 +1,15 @@
 {% extends "base.html" %}
+{% load icons %}
 {% block title %}{% if entry %}Zeiteintrag bearbeiten{% else %}Zeit erfassen{% endif %} · LexTracker{% endblock %}
 {% block content %}
-<h1>{% if entry %}Zeiteintrag bearbeiten{% else %}Zeit erfassen{% endif %}</h1>
+<div>
+  <p class="breadcrumb"><a href="{% url 'tracking:list' %}">Zeiten</a></p>
+  <h1>{% if entry %}Zeiteintrag bearbeiten{% else %}Zeit erfassen{% endif %}</h1>
+</div>
 <form method="post" class="card flex max-w-2xl flex-col gap-4">
   {% csrf_token %}
   {% include "core/_form_fields.html" %}
-  <div class="flex gap-2">
+  <div class="flex gap-2 border-t border-line pt-4">
     <button type="submit" class="btn btn-primary">Speichern</button>
     <a href="{% url 'tracking:list' %}" class="btn btn-ghost">Abbrechen</a>
   </div>
@@ -13,7 +17,7 @@
 {% if entry %}
 <form method="post" action="{% url 'tracking:delete' entry.pk %}" class="max-w-2xl" onsubmit="return confirm('Diesen Zeiteintrag wirklich löschen?')">
   {% csrf_token %}
-  <button type="submit" class="btn btn-sm text-danger">Eintrag löschen</button>
+  <button type="submit" class="btn btn-sm btn-ghost btn-danger">{% icon "trash" size=14 %}Eintrag löschen</button>
 </form>
 {% endif %}
 {% endblock %}

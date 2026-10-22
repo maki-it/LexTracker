@@ -1,11 +1,14 @@
 {% extends "base.html" %}
 {% block title %}{% if project %}{{ project.name }} bearbeiten{% else %}Neues Projekt{% endif %} · LexTracker{% endblock %}
 {% block content %}
-<h1>{% if project %}Projekt bearbeiten{% else %}Neues Projekt{% endif %}</h1>
+<div>
+  <p class="breadcrumb"><a href="{% url 'projects:list' %}">Projekte</a>{% if project %} / <a href="{% url 'projects:detail' project.pk %}">{{ project.name }}</a>{% endif %}</p>
+  <h1>{% if project %}Projekt bearbeiten{% else %}Neues Projekt{% endif %}</h1>
+</div>
 <form method="post" class="card flex max-w-2xl flex-col gap-4">
   {% csrf_token %}
   {% include "core/_form_fields.html" %}
-  <div class="flex gap-2">
+  <div class="flex gap-2 border-t border-line pt-4">
     <button type="submit" class="btn btn-primary">Speichern</button>
     <a href="{% if project %}{% url 'projects:detail' project.pk %}{% else %}{% url 'projects:list' %}{% endif %}" class="btn btn-ghost">Abbrechen</a>
   </div>

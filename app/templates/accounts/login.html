@@ -1,9 +1,13 @@
 {% extends "base.html" %}
 {% block title %}Anmelden · LexTracker{% endblock %}
-{% block content %}
-<div class="flex justify-center pt-12">
-  <form method="post" class="card flex w-full max-w-sm flex-col gap-4">
-    <h1>Anmelden</h1>
+{% block public_content %}
+<div class="flex w-full max-w-sm flex-col gap-6">
+  <div class="flex items-center justify-center gap-2.5 text-lg font-semibold">
+    <span class="flex size-8 items-center justify-center rounded-lg bg-primary font-bold text-on-primary">L</span>
+    LexTracker
+  </div>
+  <form method="post" class="card flex flex-col gap-4 p-6">
+    <h1 class="text-lg">Anmelden</h1>
     {% csrf_token %}
     <input type="hidden" name="next" value="{{ next }}">
     {% if error %}<div role="alert" class="alert alert-error">{{ error }}</div>{% endif %}
@@ -15,7 +19,7 @@
       <span>{{ form.password.label }}</span>
       <input type="password" name="password" class="input" autocomplete="current-password" required>
     </label>
-    <button type="submit" class="btn btn-primary">Anmelden</button>
+    <button type="submit" class="btn btn-primary mt-1">Anmelden</button>
   </form>
 </div>
 {% endblock %}

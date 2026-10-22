@@ -1,13 +1,23 @@
-{# Running-timer badge. Reloads itself every minute and whenever a timer starts or stops. #}
-<div id="nav-timer" hx-get="{% url 'tracking:timer' %}" hx-trigger="every 60s, timer-changed from:body" hx-swap="outerHTML">
+{# Timer card in the sidebar. Reloads itself every minute and whenever a timer starts or stops. #}
+{% load timefmt icons %}
+<div id="nav-timer" hx-get="{% url 'tracking:timer' %}" hx-trigger="every 60s, timer-changed from:body" hx-swap="outerHTML"
+     class="flex items-center gap-3 rounded-xl border border-line bg-surface p-3 lg:flex-col lg:items-stretch lg:gap-2">
   {% if running_entry %}
-  <form hx-post="{% url 'tracking:timer_stop' %}" hx-target="#nav-timer" hx-swap="outerHTML" method="post" action="{% url 'tracking:timer_stop' %}"
-        class="flex items-center gap-2 rounded-md border border-success/40 bg-success/10 py-1 pr-1 pl-3 text-sm">
+  <div class="min-w-0 flex-1">
+    <div class="flex items-center gap-2 text-xs text-muted"><span class="dot animate-pulse bg-success"></span>Läuft seit {{ running_entry.started_at|time:"H:i" }}</div>
+    <div class="text-[22px] font-semibold tracking-tight tabular-nums">{{ running_entry.duration|hours }} h</div>
+    <div class="truncate font-medium" title="{{ running_entry.task.name }}">{{ running_entry.task.name }}</div>
+    <div class="truncate text-xs text-muted" title="{{ running_entry.task.project.customer.name }} · {{ running_entry.task.project.name }}">{{ running_entry.task.project.customer.name }} · {{ running_entry.task.project.name }}</div>
+  </div>
+  <form hx-post="{% url 'tracking:timer_stop' %}" hx-target="#nav-timer" hx-swap="outerHTML" method="post" action="{% url 'tracking:timer_stop' %}">
     {% csrf_token %}
-    <span class="size-2 animate-pulse rounded-full bg-success"></span>
-    <span class="max-w-56 truncate" title="{{ running_entry.task.project.customer.name }} · {{ running_entry.task.project.name }}">{{ running_entry.task.name }}</span>
-    <span class="font-medium tabular-nums">{% load timefmt %}{{ running_entry.duration|hours }}</span>
-    <button type="submit" class="btn btn-sm">Stopp</button>
+    <button type="submit" class="btn btn-danger w-full">{% icon "stop" size=14 %}Stoppen</button>
   </form>
+  {% else %}
+  <div class="min-w-0 flex-1">
+    <div class="text-xs text-muted">Kein Timer aktiv</div>
+    <div class="text-[22px] font-semibold tracking-tight text-muted tabular-nums">0:00 h</div>
+  </div>
+  <a href="{% url 'core:dashboard' %}" class="btn w-auto lg:w-full">{% icon "play" size=14 %}Timer starten</a>
   {% endif %}
 </div>

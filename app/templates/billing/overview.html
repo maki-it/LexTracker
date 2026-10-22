@@ -2,30 +2,37 @@
 {% load timefmt %}
 {% block title %}Abrechnung · LexTracker{% endblock %}
 {% block content %}
-<h1>Abrechnung</h1>
-<div class="card overflow-x-auto p-0">
-  <table class="w-full text-left text-sm">
-    <thead class="border-b border-line text-muted">
+<div class="page-header">
+  <div>
+    <h1>Abrechnung</h1>
+    <p class="page-subtitle">Offene Zeiten je Kunde und zuletzt erstellte Rechnungsentwürfe</p>
+  </div>
+</div>
+<div class="table-wrap">
+  <table class="table">
+    <thead>
       <tr>
-        <th class="px-4 py-3 font-medium">Kunde</th>
-        <th class="px-4 py-3 text-right font-medium">Noch nicht abgerechnet</th>
-        <th class="px-4 py-3"></th>
+        <th>Kunde</th>
+        <th class="text-right">Noch nicht abgerechnet</th>
+        <th></th>
       </tr>
     </thead>
     <tbody>
       {% for customer in customers %}
-      <tr class="border-b border-line last:border-0">
-        <td class="px-4 py-3 font-medium">{{ customer.name }}</td>
-        <td class="px-4 py-3 text-right tabular-nums">{% if customer.unbilled %}{{ customer.unbilled|hours }} h{% else %}–{% endif %}</td>
-        <td class="px-4 py-3 text-right"><a class="btn btn-sm" href="{% url 'billing:customer' customer.pk %}">Abrechnen</a></td>
+      <tr>
+        <td class="w-full font-medium">{{ customer.name }}</td>
+        <td class="text-right whitespace-nowrap tabular-nums{% if customer.unbilled %} font-semibold{% else %} text-muted{% endif %}">{% if customer.unbilled %}{{ customer.unbilled|hours }} h{% else %}–{% endif %}</td>
+        <td class="text-right"><a class="btn btn-sm{% if customer.unbilled %} btn-primary{% endif %}" href="{% url 'billing:customer' customer.pk %}">Abrechnen</a></td>
       </tr>
       {% empty %}
-      <tr><td colspan="3" class="px-4 py-8 text-center text-muted">Noch keine Kunden.</td></tr>
+      <tr><td colspan="3" class="py-10 text-center text-muted">Noch keine Kunden.</td></tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
 
-<h2>Letzte Rechnungen</h2>
-{% include "billing/_invoices.html" %}
+<section class="flex flex-col gap-3">
+  <h2>Letzte Rechnungen</h2>
+  {% include "billing/_invoices.html" %}
+</section>
 {% endblock %}

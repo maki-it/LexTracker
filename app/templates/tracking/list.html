@@ -1,44 +1,60 @@
 {% extends "base.html" %}
-{% load timefmt %}
+{% load timefmt icons %}
 {% block title %}Zeiten · LexTracker{% endblock %}
 {% block content %}
-<div class="flex flex-wrap items-center justify-between gap-4">
+<div class="page-header">
   <div>
     <h1>Zeiten</h1>
-    <p class="text-sm text-muted">KW {{ monday|date:"W" }} · {{ monday|date:"d.m." }} – {{ sunday|date:"d.m.Y" }} · <span class="font-medium text-ink tabular-nums">{{ week_total|hours }} h</span></p>
+    <p class="page-subtitle">KW {{ monday|date:"W" }} · {{ monday|date:"d.m." }} – {{ sunday|date:"d.m.Y" }} · <strong class="font-semibold text-ink tabular-nums">{{ week_total|hours }} h</strong> erfasst</p>
   </div>
-  <div class="flex items-center gap-2">
-    <a href="?woche={{ prev_week }}" class="btn btn-ghost btn-sm" aria-label="Vorherige Woche">←</a>
-    <a href="{% url 'tracking:list' %}" class="btn btn-ghost btn-sm">Diese Woche</a>
-    <a href="?woche={{ next_week }}" class="btn btn-ghost btn-sm" aria-label="Nächste Woche">→</a>
-    <a href="{% url 'tracking:create' %}" class="btn btn-primary btn-sm">+ Zeit erfassen</a>
+  <div class="toolbar">
+    <div class="btn-group">
+      <a href="?woche={{ prev_week }}" class="btn btn-icon" aria-label="Vorherige Woche">{% icon "chevron-left" %}</a>
+      <a href="{% url 'tracking:list' %}" class="btn">Diese Woche</a>
+      <a href="?woche={{ next_week }}" class="btn btn-icon" aria-label="Nächste Woche">{% icon "chevron-right" %}</a>
+    </div>
+    <a href="{% url 'tracking:create' %}" class="btn btn-primary">{% icon "plus" %}Zeit erfassen</a>
   </div>
 </div>
 
-{% for day in days %}
+<div class="grid grid-cols-7 gap-1.5 sm:gap-2">
+  {% for day in days %}
+  <div class="flex flex-col gap-1.5 rounded-lg border p-2 sm:p-2.5 {% if day.is_today %}border-primary/40 bg-primary-soft{% else %}border-line bg-surface{% endif %}">
+    <div class="text-xs text-muted">{{ day.date|date:"D" }} <span class="max-sm:hidden">{{ day.date|date:"d." }}</span></div>
+    <div class="font-semibold tabular-nums max-sm:text-xs">{{ day.total|hours }}</div>
+    <div class="progress h-1"><div class="progress-bar" style="width: {{ day.share }}%"></div></div>
+  </div>
+  {% endfor %}
+</div>
+
+{% for day in days reversed %}
 {% if day.entries %}
-<section class="card flex flex-col gap-0 p-0">
-  <div class="flex items-center justify-between border-b border-line px-4 py-3">
-    <h2 class="text-base">{{ day.date|date:"l, d.m." }}</h2>
+<section class="row-list">
+  <div class="row-list-header">
+    <h2>{{ day.date|date:"l, d.m." }}</h2>
     <span class="font-semibold tabular-nums">{{ day.total|hours }} h</span>
   </div>
   {% for entry in day.entries %}
-  <div class="flex items-center justify-between gap-4 border-b border-line px-4 py-3 text-sm last:border-0">
-    <div class="min-w-0">
-      <div class="font-medium">{{ entry.task.name }}{% if entry.is_running %} <span class="text-success">(läuft)</span>{% endif %}{% if not entry.is_billable %} <span class="text-xs text-muted">(nicht abrechenbar)</span>{% endif %}</div>
-      <div class="truncate text-muted">{{ entry.task.project.customer.name }} · {{ entry.task.project.name }}{% if entry.description %} – {{ entry.description }}{% endif %}</div>
+  <div class="row">
+    <span class="dot{% if not entry.is_billable %} bg-line{% endif %}"></span>
+    <div class="min-w-0 flex-[1_1_16rem]">
+      <div class="font-medium">{{ entry.task.name }}</div>
+      <div class="truncate text-[13px] text-muted">{{ entry.task.project.customer.name }} · {{ entry.task.project.name }}{% if entry.description %} – {{ entry.description }}{% endif %}</div>
     </div>
-    <div class="flex shrink-0 items-center gap-3">
-      <div class="text-right tabular-nums">
-        <div>{{ entry.started_at|time:"H:i" }}–{% if entry.ended_at %}{{ entry.ended_at|time:"H:i" }}{% else %}…{% endif %}</div>
-        <div class="font-medium">{{ entry.duration|hours }}</div>
-      </div>
-      {% if not entry.is_running %}<a href="{% url 'tracking:edit' entry.pk %}" class="btn btn-ghost btn-sm">Bearbeiten</a>{% endif %}
+    <div class="ml-auto flex items-center gap-3 sm:gap-4">
+      {% if entry.is_running %}<span class="badge badge-success">läuft</span>{% elif not entry.is_billable %}<span class="badge">nicht abrechenbar</span>{% endif %}
+      <span class="text-right text-muted tabular-nums sm:w-28">{{ entry.started_at|time:"H:i" }} – {% if entry.ended_at %}{{ entry.ended_at|time:"H:i" }}{% else %}…{% endif %}</span>
+      <span class="w-12 text-right font-semibold tabular-nums">{{ entry.duration|hours }}</span>
+      {% if entry.is_running %}
+      <span class="w-8"></span>
+      {% else %}
+      <a href="{% url 'tracking:edit' entry.pk %}" class="btn btn-ghost btn-sm btn-icon size-8" title="Bearbeiten" aria-label="Eintrag bearbeiten">{% icon "pencil" %}</a>
+      {% endif %}
     </div>
   </div>
   {% endfor %}
 </section>
 {% endif %}
 {% endfor %}
-{% if not week_total %}<p class="card text-center text-muted">In dieser Woche ist noch nichts erfasst.</p>{% endif %}
+{% if not week_total %}<p class="empty">In dieser Woche ist noch nichts erfasst.</p>{% endif %}
 {% endblock %}

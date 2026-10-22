@@ -1,4 +1,4 @@
-{% load static tailwind_cli %}<!doctype html>
+{% load static tailwind_cli icons %}<!doctype html>
 <html lang="de">
 <head>
   <meta charset="utf-8">
@@ -10,30 +10,48 @@
 <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
   {% if user.is_authenticated %}
   {% with section=request.resolver_match.app_name %}
-  <nav class="flex flex-wrap items-center justify-between gap-4 border-b border-line bg-surface px-6 py-3">
-    <div class="flex flex-wrap items-center gap-1">
-      <a href="{% url 'core:dashboard' %}" class="mr-3 text-lg font-semibold">LexTracker</a>
-      <a href="{% url 'tracking:list' %}" class="btn btn-ghost btn-sm{% if section == 'tracking' %} bg-surface-muted{% endif %}">Zeiten</a>
-      <a href="{% url 'projects:list' %}" class="btn btn-ghost btn-sm{% if section == 'projects' %} bg-surface-muted{% endif %}">Projekte</a>
-      <a href="{% url 'customers:list' %}" class="btn btn-ghost btn-sm{% if section == 'customers' %} bg-surface-muted{% endif %}">Kunden</a>
-      <a href="{% url 'billing:overview' %}" class="btn btn-ghost btn-sm{% if section == 'billing' %} bg-surface-muted{% endif %}">Abrechnung</a>
-    </div>
-    <div class="flex items-center gap-2">
+  <div class="lg:flex">
+    <aside class="sidebar">
+      <div class="flex items-center justify-between gap-3">
+        <a href="{% url 'core:dashboard' %}" class="flex items-center gap-2.5 px-1.5 py-1 text-[15px] font-semibold text-ink no-underline">
+          <span class="flex size-7 items-center justify-center rounded-md bg-primary text-sm font-bold text-on-primary">L</span>
+          LexTracker
+        </a>
+      </div>
+
       <div hx-get="{% url 'tracking:timer' %}" hx-trigger="load" hx-swap="outerHTML"></div>
-      {% if user.is_staff %}<a href="{% url 'admin:index' %}" class="btn btn-ghost btn-sm">Verwaltung</a>{% endif %}
-      <form method="post" action="{% url 'accounts:logout' %}">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-ghost btn-sm">Abmelden</button>
-      </form>
-    </div>
-  </nav>
+
+      <nav aria-label="Hauptnavigation" class="-mx-1 flex gap-0.5 overflow-x-auto px-1 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0">
+        <a href="{% url 'core:dashboard' %}" class="nav-link{% if section == 'core' %} nav-link-active{% endif %}"{% if section == 'core' %} aria-current="page"{% endif %}>{% icon "dashboard" %}Übersicht</a>
+        <a href="{% url 'tracking:list' %}" class="nav-link{% if section == 'tracking' %} nav-link-active{% endif %}"{% if section == 'tracking' %} aria-current="page"{% endif %}>{% icon "clock" %}Zeiten</a>
+        <a href="{% url 'projects:list' %}" class="nav-link{% if section == 'projects' %} nav-link-active{% endif %}"{% if section == 'projects' %} aria-current="page"{% endif %}>{% icon "folder" %}Projekte</a>
+        <a href="{% url 'customers:list' %}" class="nav-link{% if section == 'customers' %} nav-link-active{% endif %}"{% if section == 'customers' %} aria-current="page"{% endif %}>{% icon "users" %}Kunden</a>
+        <a href="{% url 'billing:overview' %}" class="nav-link{% if section == 'billing' %} nav-link-active{% endif %}"{% if section == 'billing' %} aria-current="page"{% endif %}>{% icon "receipt" %}Abrechnung</a>
+      </nav>
+
+      <div class="flex items-center gap-2.5 border-t border-line pt-3 lg:mt-auto">
+        <span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-line text-xs font-semibold uppercase">{{ user.get_username|first }}</span>
+        <span class="min-w-0 flex-1 truncate font-medium">{{ user.get_full_name|default:user.get_username }}</span>
+        {% if user.is_staff %}<a href="{% url 'admin:index' %}" class="btn btn-ghost btn-sm btn-icon" title="Verwaltung" aria-label="Verwaltung">{% icon "settings" %}</a>{% endif %}
+        <form method="post" action="{% url 'accounts:logout' %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-ghost btn-sm btn-icon" title="Abmelden" aria-label="Abmelden">{% icon "logout" %}</button>
+        </form>
+      </div>
+    </aside>
+
+    <main class="mx-auto flex w-full max-w-6xl min-w-0 flex-col gap-6 px-4 py-6 sm:px-8 lg:py-8">
+      {% for message in messages %}
+      <div role="alert" class="alert{% if message.tags %} alert-{{ message.tags }}{% endif %}">{{ message }}</div>
+      {% endfor %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
   {% endwith %}
-  {% endif %}
-  <main class="mx-auto flex max-w-5xl flex-col gap-4 px-4 py-6">
-    {% for message in messages %}
-    <div role="alert" class="alert{% if message.tags %} alert-{{ message.tags }}{% endif %}">{{ message }}</div>
-    {% endfor %}
-    {% block content %}{% endblock %}
+  {% else %}
+  <main class="flex min-h-dvh flex-col items-center justify-center bg-sidebar px-4 py-10">
+    {% block public_content %}{% endblock %}
   </main>
+  {% endif %}
 </body>
 </html>
