@@ -60,6 +60,20 @@ document.addEventListener("htmx:load", (event) => {
 });
 document.addEventListener("DOMContentLoaded", () => document.querySelectorAll("form").forEach(syncDependentCheckboxes));
 
+// An element with data-shown-for="<name>=<value>" is shown only while the field <name> of its form has
+// that value, e.g. the customer access settings only for the role "customer". Hidden, its fields are not sent.
+function syncShownFor(form) {
+  for (const element of form.querySelectorAll("[data-shown-for]")) {
+    const [name, value] = element.dataset.shownFor.split("=");
+    const field = form.elements[name];
+    if (!field) continue;
+    element.hidden = element.disabled = field.value !== value;
+  }
+}
+document.addEventListener("change", (event) => {
+  if (event.target.form) syncShownFor(event.target.form);
+});
+
 // Menu button of the top bar on phones: shows or hides the navigation.
 document.addEventListener("click", (event) => {
   const toggle = event.target.closest("[data-nav-toggle]");

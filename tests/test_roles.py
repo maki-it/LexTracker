@@ -236,3 +236,22 @@ def test_descriptions_need_the_entries(client, user, customer_user):
     customer_user.save()
     save_without_entries()
     assert not customer_user.portal_descriptions
+
+
+def test_customer_access_settings_only_for_customers(client, user, employee, customer_user):
+    client.force_login(user)
+    form = client.get(reverse("users:edit", args=[employee.pk])).text
+    assert re.search(r'data-shown-for="role=customer"\s+hidden disabled', form)
+    form = client.get(reverse("users:edit", args=[customer_user.pk])).text
+    assert 'data-shown-for="role=customer">' in form
+
+    # Turning a customer into an employee sends no settings: they are kept for the case it turns back.
+    customer_user.portal_invoices = False
+    customer_user.save()
+    client.post(
+        reverse("users:edit", args=[customer_user.pk]),
+        {"username": customer_user.username, "role": User.Role.EMPLOYEE, "is_active": "on"},
+    )
+    customer_user.refresh_from_db()
+    assert customer_user.role == User.Role.EMPLOYEE and customer_user.customer is None
+    assert customer_user.portal_entries and not customer_user.portal_invoices
