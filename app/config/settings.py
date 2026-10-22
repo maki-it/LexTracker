@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "lexware",
     "billing",
     "reports",
+    "mcpserver",
 ]
 
 # All middleware is async-capable, so Django never has to run the whole request in a thread.

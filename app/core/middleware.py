@@ -5,7 +5,8 @@ from django.contrib.auth.views import redirect_to_login
 from django.http import HttpRequest, HttpResponse
 from django.utils.decorators import async_only_middleware
 
-PUBLIC_PREFIXES = ("/accounts/login/", "/health/", "/admin/", "/static/")
+# /mcp/ checks its own API token.
+PUBLIC_PREFIXES = ("/accounts/login/", "/health/", "/admin/", "/static/", "/mcp/")
 
 
 @async_only_middleware

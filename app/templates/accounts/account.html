@@ -26,5 +26,47 @@
     <div><a href="{% url 'account:mfa_setup' %}" class="btn btn-primary">Einrichten</a></div>
     {% endif %}
   </section>
+
+  <section class="card flex flex-col gap-4" id="api-tokens">
+    <div>
+      <h2>KI-Agenten und API-Tokens</h2>
+      <p class="mt-1 text-sm text-muted">
+        Mit einem Token kann ein KI-Agent über den MCP-Server Zeiten für dich erfassen: Projekte und Aufgaben finden, Timer starten und stoppen, Zeiten nachtragen.
+        Der Agent handelt dabei als du. MCP-Adresse: <code class="text-ink">{{ mcp_url }}</code>
+      </p>
+    </div>
+    {% if new_key %}
+    <div role="alert" class="alert alert-success flex flex-col gap-2">
+      <span class="font-medium">Neuer Token. Kopiere ihn jetzt, er wird nur dieses eine Mal angezeigt.</span>
+      <code class="break-all rounded bg-surface px-2 py-1 text-ink select-all">{{ new_key }}</code>
+      <span class="text-[13px]">Zum Beispiel in Claude Code: <code class="break-all">claude mcp add --transport http lextracker {{ mcp_url }} --header "Authorization: Bearer {{ new_key }}"</code></span>
+    </div>
+    {% endif %}
+    {% if tokens %}
+    <ul class="flex flex-col divide-y divide-line rounded-lg border border-line">
+      {% for token in tokens %}
+      <li class="flex flex-wrap items-center gap-3 px-3 py-2.5">
+        <div class="min-w-0 flex-1">
+          <div class="font-medium">{{ token.name }}</div>
+          <div class="text-[13px] text-muted"><code>{{ token.hint }}…</code> · erstellt {{ token.created_at|date:date_format }} · {% if token.last_used_at %}zuletzt benutzt {{ token.last_used_at|date:datetime_format }} Uhr{% else %}noch nicht benutzt{% endif %}</div>
+        </div>
+        <form method="post" action="{% url 'account:token_revoke' token.pk %}" onsubmit="return confirm('Diesen Token widerrufen?')">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-sm btn-danger">Widerrufen</button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    <form method="post" action="{% url 'account:token_create' %}#api-tokens" class="flex flex-wrap items-end gap-3">
+      {% csrf_token %}
+      <label class="field min-w-0 flex-1">
+        <span>{{ token_form.name.label }}</span>
+        {{ token_form.name }}
+        {% for error in token_form.name.errors %}<span class="text-sm text-danger">{{ error }}</span>{% endfor %}
+      </label>
+      <button type="submit" class="btn btn-primary">Token erstellen</button>
+    </form>
+  </section>
 </div>
 {% endblock %}
