@@ -6,8 +6,10 @@ from django.core.exceptions import PermissionDenied
 from django.db import connection
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
+from django.templatetags.static import static
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_http_methods
+from django.views.generic import RedirectView
 
 from accounts.models import User
 from core.forms import AppSettingsForm
@@ -87,3 +89,17 @@ async def app_settings(request: HttpRequest) -> HttpResponse:
         },
     ]
     return render(request, "core/settings.html", {"form": form, "sync_jobs": sync_jobs})
+
+
+class FaviconView(RedirectView):
+    """Redirect /favicon.ico to the static file.
+
+    The URL is looked up per request: in production it carries a hash from the
+    staticfiles manifest, which does not exist yet while the Docker image runs
+    collectstatic.
+    """
+
+    permanent = True
+
+    def get_redirect_url(self, *args, **kwargs) -> str:
+        return static("img/favicon.ico")
