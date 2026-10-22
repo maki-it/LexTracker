@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% load timefmt %}
+{% block title %}Zeiten · LexTracker{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Zeiten</h1>
+    <p class="page-subtitle">{{ range.start|date:date_format }} – {{ range.end|date:date_format }} · {{ total|hours:duration_format }} h</p>
+  </div>
+</div>
+
+<div class="flex flex-col gap-3">
+  <nav aria-label="Zeitraum" class="flex flex-wrap gap-1.5">
+    {% for preset in presets %}
+    <a href="?zeitraum={{ preset.key }}{% if project_id %}&projekt={{ project_id }}{% endif %}" class="pill{% if preset.key == range.key %} pill-active{% endif %}">{{ preset.label }}</a>
+    {% endfor %}
+  </nav>
+  <form method="get" class="flex flex-wrap items-end gap-3"
+        hx-get="{% url 'portal:entries' %}" hx-trigger="change" hx-target="main" hx-select="main" hx-swap="outerHTML" hx-push-url="true">
+    <label class="field"><span>Von</span><input type="date" name="von" value="{{ range.start|date:'Y-m-d' }}" class="input"></label>
+    <label class="field"><span>Bis</span><input type="date" name="bis" value="{{ range.end|date:'Y-m-d' }}" class="input"></label>
+    <label class="field min-w-56"><span>Projekt</span>
+      <select name="projekt" class="input">
+        <option value="">Alle Projekte</option>
+        {% for p in projects %}<option value="{{ p.pk }}"{% if p.pk == project_id %} selected{% endif %}>{{ p.name }}</option>{% endfor %}
+      </select>
+    </label>
+    <noscript><button type="submit" class="btn">Anzeigen</button></noscript>
+  </form>
+</div>
+
+<div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Datum</th>
+        <th>Projekt · Aufgabe</th>
+        {% if user.portal_descriptions %}<th>Beschreibung</th>{% endif %}
+        <th class="text-right">Dauer</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for entry in entries %}
+      <tr>
+        <td class="whitespace-nowrap tabular-nums text-muted">{{ entry.started_at|date:date_format }}</td>
+        <td class="whitespace-nowrap">{{ entry.task.project.name }} · {{ entry.task.name }}</td>
+        {% if user.portal_descriptions %}<td class="w-full">{{ entry.description|default:"–" }}</td>{% endif %}
+        <td class="text-right whitespace-nowrap tabular-nums">
+          {{ entry.duration|hours:duration_format }} h
+          {% if not entry.is_billable or not entry.task.is_billable %}<div><span class="badge">nicht berechnet</span></div>{% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4" class="py-8 text-center text-muted">In diesem Zeitraum wurde keine Zeit gebucht.</td></tr>
+      {% endfor %}
+    </tbody>
+    {% if entries %}
+    <tfoot>
+      <tr><td colspan="{% if user.portal_descriptions %}3{% else %}2{% endif %}" class="text-right">Summe</td><td class="text-right whitespace-nowrap tabular-nums">{{ total|hours:duration_format }} h</td></tr>
+    </tfoot>
+    {% endif %}
+  </table>
+</div>
+{% endblock %}

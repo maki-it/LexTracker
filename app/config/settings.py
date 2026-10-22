@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "billing",
     "reports",
     "mcpserver",
+    "portal",
 ]
 
 # All middleware is async-capable, so Django never has to run the whole request in a thread.
@@ -56,9 +57,13 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django_htmx.middleware.HtmxMiddleware",
     "core.middleware.LoginRequiredMiddleware",
+    "core.access.RoleAccessMiddleware",
     "core.nav.NavCountsMiddleware",
     "core.dialogs.DialogMiddleware",
 ]
+
+# Invitation links (accounts.user_views.invite_url) are valid for a week.
+PASSWORD_RESET_TIMEOUT = 7 * 24 * 60 * 60
 
 ROOT_URLCONF = "config.urls"
 ASGI_APPLICATION = "config.asgi.application"

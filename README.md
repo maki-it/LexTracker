@@ -12,7 +12,7 @@ Zeiterfassung und Projektsteuerung mit Anbindung an die [Lexware Office Public A
 4. **Abrechnung** ✓: Abrechnung nach Stundensatz oder als Retainer (z. B. 20 Stunden pro Quartal zum Festpreis, Rest nach Stundensatz), Vorschau und Rechnungsentwürfe in Lexware.
 5. **Auswertungen** ✓: Stunden, Umsatz, Budgets und Retainer, CSV-Export.
 6. **MCP-Server** ✓: KI-Agenten erfassen Zeiten über das Model Context Protocol.
-7. **Später**: Zugänge für Mitarbeiter und Kunden.
+7. **Zugänge** ✓: Mitarbeiter und Kunden mit eigenen Rechten, Einladung per Link.
 
 ## Technik
 
@@ -39,6 +39,7 @@ app/
   billing/     Abrechnungsvereinbarungen, Berechnung und Rechnungen
   reports/     Auswertungen und CSV-Export
   mcpserver/   MCP-Server für KI-Agenten
+  portal/      Kundenportal (nur lesen)
   templates/   HTML-Templates
   assets/      Tailwind-Quelle mit Farben und eigenen Komponenten
   static/      Statische Dateien (htmx, gebautes CSS)
@@ -141,6 +142,18 @@ Werkzeuge für den Agenten:
 Ein Hinweis für den Agenten, etwa in der `CLAUDE.md` eines Projekts, sorgt dafür, dass er es auch tut. Fertige Beispiel-Prompts zum Kopieren (dauerhaft, einmalig im Chat, Zeit nachtragen) stehen im Konto unter **Beispiel-Prompts für deinen Agenten**.
 
 Der Server ist zustandslos und antwortet mit JSON, ohne Event-Stream. Ein widerrufener Token funktioniert sofort nicht mehr.
+
+## Benutzer und Rechte
+
+Unter **Benutzer** legst du Zugänge an. Danach zeigt die App einen Einladungslink, den du der Person schickst. Damit legt sie ihr Passwort fest. Der Link gilt eine Woche und nur einmal; über **Einladungslink** in der Liste erzeugst du jederzeit einen neuen, auch wenn jemand sein Passwort vergessen hat.
+
+| Rolle | Sieht und darf |
+| --- | --- |
+| Administrator | alles |
+| Mitarbeiter | Übersicht, Timer und Zeiten: bucht auf alle aktiven Projekte und sieht nur die eigenen Zeiten. Keine Projekte, Kunden, Abrechnung, Auswertungen oder Einstellungen. Kann einen API-Token für den MCP-Server erstellen. |
+| Kunde | nur lesend und nur die eigenen Daten: Projekte und je nach Einstellung Budgets, Zeiteinträge (mit oder ohne Beschreibung) und Rechnungen. Entwürfe und in Lexware gelöschte Rechnungen sieht er nie. |
+
+Was ein Kundenzugang sieht, stellst du pro Zugang beim Benutzer ein. Welche Seiten eine Rolle öffnen darf, steht in `app/core/access.py`.
 
 ## Konto und Sicherheit
 

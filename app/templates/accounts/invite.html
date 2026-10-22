@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Passwort festlegen · LexTracker{% endblock %}
+{% block public_content %}
+<div class="flex w-full max-w-sm flex-col gap-6">
+  <div class="flex items-center justify-center gap-2.5 text-lg font-semibold">
+    <span class="flex size-8 items-center justify-center rounded-lg bg-primary font-bold text-on-primary">L</span>
+    LexTracker
+  </div>
+  {% if invalid %}
+  <div class="card flex flex-col gap-3 p-6">
+    <h1 class="text-lg">Link ungültig</h1>
+    <p class="text-muted">Dieser Link ist abgelaufen oder wurde schon benutzt. Bitte frag nach einem neuen Link.</p>
+    <a href="{% url 'accounts:login' %}" class="btn">Zur Anmeldung</a>
+  </div>
+  {% else %}
+  <form method="post" class="card flex flex-col gap-4 p-6">
+    <div>
+      <h1 class="text-lg">Willkommen{% if invited.first_name %}, {{ invited.first_name }}{% endif %}</h1>
+      <p class="mt-1 text-sm text-muted">Lege ein Passwort für deinen Benutzernamen <strong class="text-ink">{{ invited.get_username }}</strong> fest.</p>
+    </div>
+    {% csrf_token %}
+    {% include "core/_form_fields.html" %}
+    <button type="submit" class="btn btn-primary mt-1">Passwort festlegen</button>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

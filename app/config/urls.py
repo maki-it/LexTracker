@@ -8,11 +8,13 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("accounts/", include("accounts.urls")),
     path("konto/", include("accounts.account_urls")),
+    path("benutzer/", include("accounts.user_urls")),
     path("kunden/", include("customers.urls")),
     path("projekte/", include("projects.urls")),
     path("zeiten/", include("tracking.urls")),
     path("abrechnung/", include("billing.urls")),
     path("auswertungen/", include("reports.urls")),
     path("mcp/", include("mcpserver.urls")),
+    path("portal/", include("portal.urls")),
     path("", include("core.urls")),
 ]

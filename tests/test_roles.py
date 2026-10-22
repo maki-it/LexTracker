@@ -1,0 +1,207 @@
+import re
+import uuid
+from datetime import date, timedelta
+from decimal import Decimal
+
+import pytest
+from django.urls import reverse
+from django.utils import timezone
+
+from accounts.models import ApiToken, User
+from billing.models import Invoice
+from customers.models import Customer
+from projects.models import Project, Task
+from tracking.models import TimeEntry
+
+pytestmark = pytest.mark.django_db
+
+
+def entry(user, task, description="", hours=1, days_ago=0, billable=True):
+    start = timezone.now() - timedelta(days=days_ago, hours=hours + 1)
+    return TimeEntry.objects.create(
+        user=user,
+        task=task,
+        started_at=start,
+        ended_at=start + timedelta(hours=hours),
+        description=description,
+        is_billable=billable,
+    )
+
+
+@pytest.fixture
+def employee(db):
+    return User.objects.create_user(username="mia", password="geheim-123", role=User.Role.EMPLOYEE)
+
+
+@pytest.fixture
+def customer_user(task):
+    return User.objects.create_user(
+        username="acme", password="geheim-123", role=User.Role.CUSTOMER, customer=task.project.customer
+    )
+
+
+@pytest.fixture
+def other_task(db):
+    customer = Customer.objects.create(name="Fremd AG")
+    return Task.objects.create(project=Project.objects.create(customer=customer, name="Geheim"), name="Intern")
+
+
+# Employees
+
+
+@pytest.mark.parametrize(
+    ("url", "status"),
+    [
+        ("core:dashboard", 200),
+        ("tracking:list", 200),
+        ("account:settings", 200),
+        ("projects:list", 403),
+        ("customers:list", 403),
+        ("billing:overview", 403),
+        ("reports:overview", 403),
+        ("users:list", 403),
+        ("core:settings", 403),
+    ],
+)
+def test_employee_access(client, employee, task, url, status):
+    client.force_login(employee)
+    assert client.get(reverse(url)).status_code == status
+
+
+def test_employee_sidebar_and_own_time_only(client, employee, user, task):
+    entry(user, task, "Kims Arbeit")
+    entry(employee, task, "Mias Arbeit")
+    client.force_login(employee)
+
+    response = client.get(reverse("tracking:list"))
+    assert "Mias Arbeit" in response.text and "Kims Arbeit" not in response.text
+    assert "Abrechnung" not in response.text and "Benutzer" not in response.text
+
+
+# Customers
+
+
+def test_customer_is_sent_to_the_portal(client, customer_user):
+    client.force_login(customer_user)
+    assert client.get("/").url == reverse("portal:overview")
+    for url in ("tracking:list", "projects:list", "billing:overview", "users:list"):
+        assert client.get(reverse(url)).status_code == 403
+
+
+def test_portal_shows_only_the_own_customer(client, customer_user, user, task, other_task):
+    task.project.budget_hours = Decimal("10")
+    task.project.save()
+    entry(user, task, "Startseite gestaltet", hours=2)
+    entry(user, task, "Kaffee", billable=False)
+    entry(user, other_task, "Streng geheim")
+    client.force_login(customer_user)
+
+    overview = client.get(reverse("portal:overview")).text
+    assert "Website" in overview and "Geheim" not in overview
+    assert "30 % von 10 h" in overview
+
+    entries = client.get(reverse("portal:entries")).text
+    assert "Startseite gestaltet" in entries and "Streng geheim" not in entries
+    assert "nicht berechnet" in entries
+
+
+def test_portal_permissions_can_be_narrowed(client, customer_user, user, task):
+    task.project.budget_hours = Decimal("10")
+    task.project.save()
+    entry(user, task, "Startseite gestaltet")
+    customer_user.portal_budget = False
+    customer_user.portal_descriptions = False
+    customer_user.portal_invoices = False
+    customer_user.save()
+    client.force_login(customer_user)
+
+    overview = client.get(reverse("portal:overview")).text
+    assert "Budget" not in overview and "Rechnungen" not in overview
+    assert "Startseite gestaltet" not in client.get(reverse("portal:entries")).text
+    assert client.get(reverse("portal:invoices")).status_code == 403
+
+    customer_user.portal_entries = False
+    customer_user.save()
+    assert client.get(reverse("portal:entries")).status_code == 403
+
+
+def test_portal_hides_draft_and_deleted_invoices(client, customer_user, task):
+    customer = task.project.customer
+    for number, status in [
+        ("RE1", Invoice.Status.PAID),
+        ("RE2", Invoice.Status.DRAFT),
+        ("RE3", Invoice.Status.DELETED),
+    ]:
+        Invoice.objects.create(
+            customer=customer,
+            period_start=date(2026, 9, 1),
+            period_end=date(2026, 9, 30),
+            total_net=Decimal("100"),
+            status=status,
+            voucher_number=number,
+            lexware_id=uuid.uuid4(),
+        )
+    client.force_login(customer_user)
+
+    response = client.get(reverse("portal:invoices")).text
+    assert "RE1" in response and "RE2" not in response and "RE3" not in response
+
+
+def test_customer_has_no_api_tokens(client, customer_user):
+    client.force_login(customer_user)
+    assert "API-Tokens" not in client.get(reverse("account:settings")).text
+    assert client.post(reverse("account:token_create"), {"name": "x"}).status_code == 403
+
+    _, key = ApiToken.issue(customer_user, "alt")
+    client.logout()
+    response = client.post("/mcp/", "{}", content_type="application/json", headers={"Authorization": f"Bearer {key}"})
+    assert response.status_code == 401
+
+
+# User management
+
+
+def test_admin_invites_a_user(client, user, task):
+    client.force_login(user)
+
+    response = client.post(
+        reverse("users:create"),
+        {"username": "mia", "first_name": "Mia", "role": User.Role.EMPLOYEE, "portal_entries": "on"},
+    )
+    mia = User.objects.get(username="mia")
+    assert response.url == reverse("users:invite", args=[mia.pk])
+    assert not mia.has_usable_password()
+
+    link = re.search(r"http://testserver(/accounts/einladung/[^<\s]+)", client.get(response.url).text).group(1)
+    client.logout()
+
+    assert "Passwort festlegen" in client.get(link).text
+    response = client.post(link, {"new_password1": "Sehr-sicher-42", "new_password2": "Sehr-sicher-42"})
+    assert response.url.startswith(reverse("accounts:login"))
+    mia.refresh_from_db()
+    assert mia.check_password("Sehr-sicher-42")
+
+    # The link works only once.
+    assert client.get(link).status_code == 400
+
+
+def test_customer_login_needs_a_customer(client, user):
+    client.force_login(user)
+    response = client.post(reverse("users:create"), {"username": "kunde", "role": User.Role.CUSTOMER})
+    assert "braucht einen Kunden" in response.text
+    assert not User.objects.filter(username="kunde").exists()
+
+
+def test_admin_cannot_lock_themself_out(client, user):
+    client.force_login(user)
+    response = client.post(
+        reverse("users:edit", args=[user.pk]), {"username": user.username, "role": User.Role.EMPLOYEE}
+    )
+    assert "Administratorrolle" in response.text and "nicht selbst deaktivieren" in response.text
+    user.refresh_from_db()
+    assert user.is_admin and user.is_active
+
+
+def test_health_check_stays_open_for_everyone(client, customer_user):
+    client.force_login(customer_user)
+    assert client.get(reverse("core:health")).status_code == 200

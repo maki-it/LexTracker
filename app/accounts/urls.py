@@ -8,4 +8,5 @@ urlpatterns = [
     path("login/", views.login_view, name="login"),
     path("login/code/", views.login_code, name="login_code"),
     path("logout/", views.logout_view, name="logout"),
+    path("einladung/<uidb64>/<token>/", views.invite, name="invite"),
 ]

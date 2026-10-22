@@ -1,5 +1,5 @@
 from django import forms
-from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth.forms import PasswordChangeForm, SetPasswordForm
 
 from accounts.models import ApiToken, User
 from core.forms import StyledFormMixin
@@ -52,3 +52,58 @@ class ApiTokenForm(StyledFormMixin, forms.ModelForm):
     class Meta:
         model = ApiToken
         fields = ["name"]
+
+
+class UserForm(StyledFormMixin, forms.ModelForm):
+    """An administrator creates or edits a login for an employee or a customer."""
+
+    PORTAL_FIELDS = ["portal_budget", "portal_entries", "portal_descriptions", "portal_invoices"]
+
+    class Meta:
+        model = User
+        fields = [
+            "username",
+            "first_name",
+            "last_name",
+            "email",
+            "role",
+            "customer",
+            "portal_budget",
+            "portal_entries",
+            "portal_descriptions",
+            "portal_invoices",
+            "is_active",
+        ]
+        labels = {"is_active": "aktiv"}
+        help_texts = {
+            "username": "Damit meldet sich die Person an.",
+            "customer": "Nur für Kunden: wessen Projekte, Zeiten und Rechnungen sie sieht.",
+            "is_active": "Deaktivierte Benutzer können sich nicht mehr anmelden.",
+        }
+
+    def __init__(self, *args, acting_user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.acting_user = acting_user
+        self.fields["customer"].queryset = self.fields["customer"].queryset.filter(is_archived=False)
+        self.fields["customer"].empty_label = "– kein Kunde –"
+        if self.instance.pk is None:
+            del self.fields["is_active"]
+
+    def clean(self):
+        cleaned = super().clean()
+        role = cleaned.get("role")
+        if role == User.Role.CUSTOMER and not cleaned.get("customer"):
+            self.add_error("customer", "Ein Kundenzugang braucht einen Kunden.")
+        elif role and role != User.Role.CUSTOMER:
+            cleaned["customer"] = None
+        if self.instance.pk and self.instance == self.acting_user:
+            # Do not lock yourself out.
+            if role != User.Role.ADMIN:
+                self.add_error("role", "Du kannst dir selbst die Administratorrolle nicht nehmen.")
+            if cleaned.get("is_active") is False:
+                self.add_error("is_active", "Du kannst dich nicht selbst deaktivieren.")
+        return cleaned
+
+
+class InviteForm(StyledFormMixin, SetPasswordForm):
+    pass
