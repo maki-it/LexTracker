@@ -205,3 +205,23 @@ def test_admin_cannot_lock_themself_out(client, user):
 def test_health_check_stays_open_for_everyone(client, customer_user):
     client.force_login(customer_user)
     assert client.get(reverse("core:health")).status_code == 200
+
+
+def test_descriptions_need_the_entries(client, user, customer_user):
+    client.force_login(user)
+    form = client.get(reverse("users:edit", args=[customer_user.pk])).text
+    assert 'data-requires="portal_entries"' in form
+
+    # Sent without the browser's help, e.g. with scripts off: the server applies the rule too.
+    client.post(
+        reverse("users:edit", args=[customer_user.pk]),
+        {
+            "username": customer_user.username,
+            "role": User.Role.CUSTOMER,
+            "customer": customer_user.customer_id,
+            "portal_descriptions": "on",
+            "is_active": "on",
+        },
+    )
+    customer_user.refresh_from_db()
+    assert not customer_user.portal_entries and not customer_user.portal_descriptions

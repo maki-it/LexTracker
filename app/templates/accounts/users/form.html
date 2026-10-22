@@ -21,7 +21,7 @@
     {% include "core/_field.html" with field=form.customer %}
     <p class="text-[13px] text-muted">Projekte sieht jeder Kundenzugang. Was er darüber hinaus sieht:</p>
     {% for field in form %}{% if field.name in form.PORTAL_FIELDS %}
-    <label class="flex items-center gap-2 text-sm font-medium">{{ field }} {{ field.label }}</label>
+    <label class="flex items-center gap-2 text-sm font-medium{% if field.name == 'portal_descriptions' %} ml-6{% endif %}">{{ field }} {{ field.label }}</label>
     {% endif %}{% endfor %}
   </fieldset>
   {% if form.is_active %}
