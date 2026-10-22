@@ -62,7 +62,7 @@ Den automatischen Kundenimport startest du lokal bei Bedarf mit `make scheduler`
 
 Den API-Schlüssel erstellst du in Lexware Office unter *Erweiterungen > Public API* und trägst ihn als `APP_LEXWARE_API_KEY` ein.
 
-**Import:** Kontakte mit Kundenrolle werden automatisch importiert, standardmäßig stündlich. Das Intervall stellst du unter **Einstellungen** ein (0 schaltet den automatischen Import ab). Der Button **Aus Lexware importieren** auf der Kundenseite startet den Import sofort, auf der Kommandozeile geht das mit `uv run app/manage.py sync_lexware_customers` (im Container `docker compose exec app python manage.py sync_lexware_customers`).
+**Import:** Kontakte mit Kundenrolle werden automatisch importiert, standardmäßig stündlich. Unter **Einstellungen** stellst du für den Kundenimport und den Abgleich des Rechnungsstatus getrennt ein, wie oft sie laufen (aus, alle 15 Minuten bis wöchentlich) und optional in welchem Zeitfenster (z. B. 07:00 bis 19:00, auch über Mitternacht). Bei „täglich“ oder „wöchentlich“ bestimmt „ab“ die Uhrzeit. Der Button **Aus Lexware importieren** auf der Kundenseite startet den Import sofort, auf der Kommandozeile geht das mit `uv run app/manage.py sync_lexware_customers` (im Container `docker compose exec app python manage.py sync_lexware_customers`).
 Der Import legt neue Kunden an und aktualisiert Name, Kundennummer, E-Mail, Telefon und Archiv-Status, wenn sich der Kontakt in Lexware geändert hat (erkannt an der Versionsnummer).
 
 **Bearbeiten:** Ein Klick auf den Kundennamen öffnet das Formular. Änderungen an Name, E-Mail und Telefon speichert LexTracker auch im Lexware-Kontakt; der Kontakt wird dafür frisch geladen, damit in Lexware geänderte andere Felder erhalten bleiben. Stundensatz und Notizen gibt es nur hier.
@@ -90,7 +90,7 @@ Für einen gewählten Zeitraum zeigt die Vorschau alle noch nicht abgerechneten,
 Der Kunde muss dafür mit einem Lexware-Kontakt verknüpft sein. Die Umsatzsteuer richtet sich nach deinem Lexware-Konto: Ist es als Kleinunternehmer (§ 19 UStG) eingerichtet, entsteht die Rechnung ohne Umsatzsteuer, sonst mit 19 %.
 
 Der Reiter **Rechnungen** listet alle Rechnungen mit Nummer, Status (Entwurf, offen, überfällig, bezahlt, storniert) und Fälligkeit, filterbar nach Status und durchsuchbar nach Kunde oder Nummer.
-Den Status holt der Scheduler im eingestellten Intervall aus der Belegliste von Lexware; **Status aktualisieren** gleicht sofort ab.
+Den Status holt der Scheduler nach dem eingestellten Zeitplan aus der Belegliste von Lexware; **Status aktualisieren** gleicht sofort ab.
 Löschst du einen Entwurf in Lexware, wird die Rechnung hier als gelöscht markiert und ihre Zeiten sind wieder offen. Bei einer stornierten Rechnung gibst du die Zeiten mit **Zeiten freigeben** selbst wieder frei, falls du sie neu abrechnen willst.
 
 ## Konto und Sicherheit
@@ -107,7 +107,7 @@ docker compose up -d --build
 ```
 
 Die App lauscht auf Port 8000. Datenbank und alle Daten liegen im Volume `lextracker-data` (`/data` im Container).
-Neben der App startet ein zweiter Container `scheduler` aus demselben Image. Er führt wiederkehrende Aufgaben wie den automatischen Kundenimport aus.
+Neben der App startet ein zweiter Container `scheduler` aus demselben Image. Er führt wiederkehrende Aufgaben wie den automatischen Kundenimport und den Rechnungsabgleich aus und prüft dafür jede Minute, was fällig ist.
 Vor jedem Start führt Compose über `pre_start`-Hooks die Migrationen aus und legt, falls `DJANGO_SUPERUSER_USERNAME` und `DJANGO_SUPERUSER_PASSWORD` gesetzt sind, das Admin-Konto an (sofern es noch nicht existiert). Schlägt ein Hook fehl, startet die App nicht. Dafür ist ein aktuelles Docker Compose nötig (getestet mit v5.6).
 
 Hinter einem Reverse Proxy mit HTTPS (empfohlen) zusätzlich setzen:

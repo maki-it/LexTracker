@@ -9,7 +9,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from core.models import AppSettings
-from core.scheduler import sync_lexware_if_due
+from core.scheduler import run_due_jobs
 from customers.lexware import apply_to_contact
 from customers.models import Customer
 from tests.lexware_fakes import contact, fake_client, page, serve_pages
@@ -116,7 +116,15 @@ def test_edit_keeps_data_when_lexware_fails(logged_in, monkeypatch, settings):
 def test_settings_page_saves_settings(logged_in):
     response = logged_in.post(
         reverse("core:settings"),
-        {"default_hourly_rate": "85", "time_rounding": "15", "lexware_sync_interval": "30"},
+        {
+            "default_hourly_rate": "85",
+            "time_rounding": "15",
+            "lexware_sync_interval": "30",
+            "lexware_sync_from": "07:00",
+            "lexware_sync_until": "19:00",
+            "invoice_sync_interval": "1440",
+            "invoice_sync_from": "06:00",
+        },
     )
 
     assert response.status_code == 302
@@ -124,6 +132,9 @@ def test_settings_page_saves_settings(logged_in):
     assert app_settings.default_hourly_rate == Decimal("85")
     assert app_settings.lexware_sync_interval == 30
     assert app_settings.time_rounding == 15
+    assert str(app_settings.lexware_sync_from) == "07:00:00"
+    assert app_settings.invoice_sync_interval == 1440
+    assert app_settings.invoice_sync_until is None
 
 
 def test_settings_page_is_for_admins_only(client, user):
@@ -141,17 +152,17 @@ async def test_scheduler_imports_when_due(monkeypatch, settings):
     monkeypatch.setattr("customers.sync.client_from_settings", lambda: fake_client(handler))
     now = timezone.now()
 
-    assert await sync_lexware_if_due(now) is True
+    assert "customer import" in await run_due_jobs(now)
     assert await Customer.objects.acount() == 1
     app_settings = await AppSettings.aload()
     assert app_settings.lexware_sync_status == "1 neu, 0 aktualisiert, 0 unverändert."
 
     # Not again before the interval (60 minutes by default) has passed.
-    assert await sync_lexware_if_due(now + timedelta(minutes=30)) is False
-    assert await sync_lexware_if_due(now + timedelta(minutes=61)) is True
+    assert "customer import" not in await run_due_jobs(now + timedelta(minutes=30))
+    assert "customer import" in await run_due_jobs(now + timedelta(minutes=61))
 
     await AppSettings.objects.filter(pk=1).aupdate(lexware_sync_interval=0)
-    assert await sync_lexware_if_due(now + timedelta(days=1)) is False
+    assert "customer import" not in await run_due_jobs(now + timedelta(days=1))
     assert len(handler.requests) == 2
 
 
@@ -160,7 +171,7 @@ async def test_scheduler_records_failures(monkeypatch, settings):
     settings.LEXWARE_API_KEY = "test-key"
     monkeypatch.setattr("customers.sync.client_from_settings", lambda: fake_client(lambda request: httpx.Response(401)))
 
-    assert await sync_lexware_if_due(timezone.now()) is True
+    assert "customer import" in await run_due_jobs(timezone.now())
 
     app_settings = await AppSettings.aload()
     assert app_settings.lexware_sync_failed
