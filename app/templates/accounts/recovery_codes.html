@@ -1,7 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Wiederherstellungscodes · LexTracker{% endblock %}
 {% block content %}
-<h1>Wiederherstellungscodes</h1>
+<div>
+  <p class="breadcrumb"><a href="{% url 'account:settings' %}">Konto</a></p>
+  <h1>Wiederherstellungscodes</h1>
+</div>
 <div class="card flex max-w-2xl flex-col gap-4">
   <div role="alert" class="alert alert-warning">
     Speichere diese Codes jetzt an einem sicheren Ort, zum Beispiel in deinem Passwort-Manager. Sie werden nur dieses eine Mal angezeigt.

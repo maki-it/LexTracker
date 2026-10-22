@@ -18,7 +18,7 @@ Zeiterfassung und Projektsteuerung mit Anbindung an die [Lexware Office Public A
 | --- | --- | --- |
 | Backend | Django 6, async Views, ASGI mit uvicorn | Login, Benutzer, Admin und Migrationen sind eingebaut; async Views blockieren sich nicht gegenseitig, z. B. bei langsamen API-Aufrufen an Lexware. |
 | Oberfläche | Server-gerenderte Templates + [htmx](https://htmx.org) | Interaktive Seiten ohne eigenes JavaScript. |
-| Styling | Tailwind CSS 4 über [django-tailwind-cli](https://github.com/django-commons/django-tailwind-cli), eigene Komponenten | Nutzt das Standalone-CLI, also kein Node.js nötig. Farben und Komponenten (`.btn`, `.card`, `.input` …) stehen in `app/assets/tailwind.css`; Hell- und Dunkelmodus folgen der Systemeinstellung. |
+| Styling | Tailwind CSS 4 über [django-tailwind-cli](https://github.com/django-commons/django-tailwind-cli), eigene Komponenten | Nutzt das Standalone-CLI, also kein Node.js nötig. Farben und Komponenten (`.btn`, `.card`, `.table`, `.badge` …) stehen in `app/assets/tailwind.css`, Icons kommen über `{% icon "name" %}` (`core/templatetags/icons.py`). Schrift ist Inter, selbst gehostet statt über Google Fonts. Hell- und Dunkelmodus folgen der Systemeinstellung. |
 | Datenbank | SQLite (WAL-Modus) | Kein extra DB-Server. WAL erlaubt Lesen während geschrieben wird; das reicht für wenige Benutzer locker. |
 | Statische Dateien | [ServeStatic](https://github.com/Archmonger/ServeStatic) | Liefert CSS/JS async, komprimiert und mit Cache-Headern aus. |
 | Pakete | [uv](https://docs.astral.sh/uv/) | Schnell, mit Lockfile. |

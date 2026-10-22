@@ -1,38 +1,41 @@
 {% extends "base.html" %}
-{% load timefmt %}
+{% load timefmt icons %}
 {% block title %}Projekte · LexTracker{% endblock %}
 {% block content %}
-<div class="flex flex-wrap items-center justify-between gap-4">
-  <h1>Projekte</h1>
-  <div class="flex items-center gap-2">
-    <a href="?abgeschlossen={% if show_done %}0{% else %}1{% endif %}" class="btn btn-ghost btn-sm">
+<div class="page-header">
+  <div>
+    <h1>Projekte</h1>
+    <p class="page-subtitle">{{ projects|length }} {% if show_done %}Projekte{% else %}laufende Projekte{% endif %}</p>
+  </div>
+  <div class="toolbar">
+    <a href="?abgeschlossen={% if show_done %}0{% else %}1{% endif %}" class="btn">
       {% if show_done %}Abgeschlossene ausblenden{% else %}Abgeschlossene anzeigen{% endif %}
     </a>
-    <a href="{% url 'projects:create' %}" class="btn btn-primary btn-sm">+ Neues Projekt</a>
+    <a href="{% url 'projects:create' %}" class="btn btn-primary">{% icon "plus" %}Neues Projekt</a>
   </div>
 </div>
-<div class="card overflow-x-auto p-0">
-  <table class="w-full text-left text-sm">
-    <thead class="border-b border-line text-muted">
+<div class="table-wrap">
+  <table class="table">
+    <thead>
       <tr>
-        <th class="px-4 py-3 font-medium">Projekt</th>
-        <th class="px-4 py-3 font-medium">Kunde</th>
-        <th class="px-4 py-3 font-medium">Status</th>
-        <th class="px-4 py-3 text-right font-medium">Gebucht</th>
-        <th class="px-4 py-3 text-right font-medium">Budget</th>
+        <th>Projekt</th>
+        <th>Kunde</th>
+        <th>Status</th>
+        <th class="text-right">Gebucht</th>
+        <th class="text-right">Budget</th>
       </tr>
     </thead>
     <tbody>
       {% for project in projects %}
-      <tr class="border-b border-line last:border-0">
-        <td class="px-4 py-3 font-medium"><a class="text-primary hover:underline" href="{% url 'projects:detail' project.pk %}">{{ project.name }}</a></td>
-        <td class="px-4 py-3">{{ project.customer.name }}</td>
-        <td class="px-4 py-3">{{ project.get_status_display }}</td>
-        <td class="px-4 py-3 text-right tabular-nums">{{ project.booked|hours }} h</td>
-        <td class="px-4 py-3 text-right tabular-nums">{% if project.budget_hours is not None %}{{ project.budget_hours }} h{% else %}–{% endif %}</td>
+      <tr>
+        <td class="font-medium"><a class="text-ink hover:text-primary-ink hover:underline" href="{% url 'projects:detail' project.pk %}">{{ project.name }}</a></td>
+        <td class="text-muted">{{ project.customer.name }}</td>
+        <td><span class="badge{% if project.status == 'active' %} badge-primary{% elif project.status == 'done' %} badge-success{% endif %}">{{ project.get_status_display }}</span></td>
+        <td class="text-right tabular-nums">{{ project.booked|hours }} h</td>
+        <td class="text-right text-muted tabular-nums">{% if project.budget_hours is not None %}{{ project.budget_hours }} h{% else %}–{% endif %}</td>
       </tr>
       {% empty %}
-      <tr><td colspan="5" class="px-4 py-8 text-center text-muted">Noch keine Projekte.</td></tr>
+      <tr><td colspan="5" class="py-10 text-center text-muted">Noch keine Projekte.</td></tr>
       {% endfor %}
     </tbody>
   </table>

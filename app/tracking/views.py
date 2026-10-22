@@ -89,6 +89,12 @@ async def entry_list(request: HttpRequest) -> HttpResponse:
             (e for e in entries if timezone.localtime(e.started_at).date() == day), key=lambda e: e.started_at
         )
         days.append({"date": day, "entries": day_entries, "total": sum((e.duration for e in day_entries), timedelta())})
+    # Bar length per day in the week strip, relative to the longest day.
+    longest = max(d["total"] for d in days) or timedelta(hours=1)
+    today = timezone.localdate()
+    for d in days:
+        d["share"] = round(d["total"] / longest * 100)
+        d["is_today"] = d["date"] == today
 
     return render(
         request,

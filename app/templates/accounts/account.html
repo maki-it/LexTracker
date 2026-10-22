@@ -2,12 +2,12 @@
 {% block title %}Konto · LexTracker{% endblock %}
 {% block content %}
 <h1>Konto</h1>
-<div class="grid max-w-2xl gap-4">
+<div class="grid max-w-2xl gap-6">
   <form method="post" class="card flex flex-col gap-4">
     {% csrf_token %}
     <h2>Profil und Anzeige</h2>
     {% include "core/_form_fields.html" %}
-    <div><button type="submit" class="btn btn-primary">Speichern</button></div>
+    <div class="border-t border-line pt-4"><button type="submit" class="btn btn-primary">Speichern</button></div>
   </form>
 
   <section class="card flex flex-col gap-3">

@@ -1,7 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Zwei-Faktor-Anmeldung einrichten · LexTracker{% endblock %}
 {% block content %}
-<h1>Zwei-Faktor-Anmeldung einrichten</h1>
+<div>
+  <p class="breadcrumb"><a href="{% url 'account:settings' %}">Konto</a></p>
+  <h1>Zwei-Faktor-Anmeldung einrichten</h1>
+</div>
 <form method="post" class="card flex max-w-2xl flex-col gap-4">
   {% csrf_token %}
   <ol class="flex list-decimal flex-col gap-2 pl-5 text-sm">
@@ -20,7 +23,7 @@
     {{ form.code }}
   </label>
   {% for error in form.code.errors %}<p class="-mt-3 text-sm text-danger">{{ error }}</p>{% endfor %}
-  <div class="flex gap-2">
+  <div class="flex gap-2 border-t border-line pt-4">
     <button type="submit" class="btn btn-primary">Einschalten</button>
     <a href="{% url 'account:settings' %}" class="btn btn-ghost">Abbrechen</a>
   </div>

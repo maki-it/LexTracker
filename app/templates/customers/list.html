@@ -1,16 +1,21 @@
 {% extends "base.html" %}
+{% load icons %}
 {% block title %}Kunden · LexTracker{% endblock %}
 {% block content %}
-<div class="flex flex-wrap items-center justify-between gap-4">
-  <h1>Kunden</h1>
-  <div class="flex items-center gap-2">
-    <a href="?archiviert={% if show_archived %}0{% else %}1{% endif %}" class="btn btn-ghost btn-sm">
+<div class="page-header">
+  <div>
+    <h1>Kunden</h1>
+    <p class="page-subtitle">Kontakte mit Kundenrolle aus Lexware Office</p>
+  </div>
+  <div class="toolbar">
+    <a href="?archiviert={% if show_archived %}0{% else %}1{% endif %}" class="btn">
       {% if show_archived %}Archivierte ausblenden{% else %}Archivierte anzeigen{% endif %}
     </a>
     {% if lexware_configured %}
-    <button class="btn btn-primary btn-sm"
+    <button class="btn btn-primary"
             hx-post="{% url 'customers:import' %}{% if show_archived %}?archiviert=1{% endif %}"
             hx-target="#customer-table" hx-swap="outerHTML" hx-disabled-elt="this">
+      {% icon "download" %}
       <span class="htmx-indicator-hide">Aus Lexware importieren</span>
       <span class="htmx-indicator">Importiere …</span>
     </button>
