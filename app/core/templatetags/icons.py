@@ -21,6 +21,7 @@ ICONS = {
     "stop": '<rect x="6" y="6" width="12" height="12" rx="2"/>',
     "plus": '<path d="M12 5v14M5 12h14"/>',
     "pencil": '<path d="M4 20h4L19 9l-4-4L4 16z"/>',
+    "chart": '<path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/>',
     "archive": '<rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11h14V8"/><path d="M10 12h4"/>',
     "x": '<path d="M6 6l12 12M18 6 6 18"/>',
     "chevron-left": '<path d="m15 18-6-6 6-6"/>',

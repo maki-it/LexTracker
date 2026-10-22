@@ -12,5 +12,6 @@ urlpatterns = [
     path("projekte/", include("projects.urls")),
     path("zeiten/", include("tracking.urls")),
     path("abrechnung/", include("billing.urls")),
+    path("auswertungen/", include("reports.urls")),
     path("", include("core.urls")),
 ]
