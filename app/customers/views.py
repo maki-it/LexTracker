@@ -1,23 +1,41 @@
 from asgiref.sync import sync_to_async
 from django.conf import settings
 from django.contrib import messages
+from django.db.models import Q
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from core.models import AppSettings
+from core.shortcuts import arender
 from customers.forms import CustomerForm
 from customers.lexware import LEXWARE_FIELDS, push_to_lexware
-from customers.models import Customer
+from customers.models import Category, Customer
 from customers.sync import sync_and_record
 from lexware.client import LexwareError, client_from_settings
 
 
 async def _customer_list_context(request: HttpRequest) -> dict:
     show_archived = request.GET.get("archiviert") == "1"
-    customers = Customer.objects.all() if show_archived else Customer.objects.filter(is_archived=False)
+    query = request.GET.get("q", "").strip()
+    category = request.GET.get("kategorie", "")
+    customers = Customer.objects.prefetch_related("categories")
+    if not show_archived:
+        customers = customers.filter(is_archived=False)
+    if query:
+        customers = customers.filter(
+            Q(name__icontains=query)
+            | Q(customer_number__icontains=query)
+            | Q(email__icontains=query)
+            | Q(notes__icontains=query)
+        )
+    if category.isdigit():
+        customers = customers.filter(categories=int(category))
     return {
         "customers": [c async for c in customers],
+        "categories": [c async for c in Category.objects.all()],
+        "query": query,
+        "category": int(category) if category.isdigit() else None,
         "show_archived": show_archived,
         "lexware_configured": bool(settings.LEXWARE_API_KEY),
         "app_settings": await AppSettings.aload(),
@@ -49,7 +67,7 @@ async def customer_edit(request: HttpRequest, pk: int) -> HttpResponse:
     except Customer.DoesNotExist as exc:
         raise Http404 from exc
 
-    form = CustomerForm(request.POST or None, instance=customer)
+    form = await sync_to_async(CustomerForm)(request.POST or None, instance=customer)
     if request.method == "POST" and await sync_to_async(form.is_valid)():
         try:
             if customer.lexware_id and any(f in LEXWARE_FIELDS for f in form.changed_data):
@@ -59,9 +77,10 @@ async def customer_edit(request: HttpRequest, pk: int) -> HttpResponse:
             form.add_error(None, f"Die Änderung konnte nicht in Lexware gespeichert werden: {exc}")
         else:
             await customer.asave()
+            await sync_to_async(form.save_categories)()
             messages.success(request, f"{customer.name} gespeichert.")
             return redirect("customers:list")
-    return render(
+    return await arender(
         request,
         "customers/edit.html",
         {"form": form, "customer": customer, "lexware_fields": LEXWARE_FIELDS},

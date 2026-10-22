@@ -111,6 +111,19 @@
     @apply mb-1 text-[13px] text-muted;
   }
 
+  /* Tabs under a page header: <nav class="tabs"><a class="tab tab-active">…</a></nav> */
+  .tabs {
+    @apply -mt-2 flex gap-5 border-b border-line;
+  }
+
+  .tab {
+    @apply -mb-px inline-flex items-center gap-2 border-b-2 border-transparent pb-2.5 text-sm font-medium text-muted no-underline hover:text-ink;
+  }
+
+  .tab-active {
+    @apply border-primary text-ink;
+  }
+
   .toolbar {
     @apply flex flex-wrap items-center gap-2;
   }
@@ -231,6 +244,10 @@
 
   .badge-warning {
     @apply bg-warning-soft text-warning;
+  }
+
+  .badge-danger {
+    @apply bg-danger-soft text-danger;
   }
 
   .pill {

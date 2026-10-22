@@ -9,7 +9,16 @@ from customers.models import Customer
 from lexware.client import LexwareClient, LexwareError, client_from_settings
 
 # Fields that Lexware owns. Everything else (rates, notes) is only edited here.
-SYNCED_FIELDS = ["name", "customer_number", "email", "phone", "is_archived", "lexware_version", "lexware_synced_at"]
+SYNCED_FIELDS = [
+    "name",
+    "customer_number",
+    "email",
+    "phone",
+    "is_archived",
+    "lexware_deleted",
+    "lexware_version",
+    "lexware_synced_at",
+]
 
 
 @dataclass
@@ -17,6 +26,7 @@ class SyncResult:
     created: int = 0
     updated: int = 0
     unchanged: int = 0
+    removed: int = 0
 
     @property
     def total(self) -> int:
@@ -24,7 +34,10 @@ class SyncResult:
 
     @property
     def summary(self) -> str:
-        return f"{self.created} neu, {self.updated} aktualisiert, {self.unchanged} unverändert."
+        summary = f"{self.created} neu, {self.updated} aktualisiert, {self.unchanged} unverändert"
+        if self.removed:
+            summary += f", {self.removed} in Lexware nicht mehr vorhanden (archiviert)"
+        return summary + "."
 
 
 async def sync_customers(client: LexwareClient) -> SyncResult:
@@ -44,13 +57,14 @@ async def sync_customers(client: LexwareClient) -> SyncResult:
             "email": contact.email,
             "phone": contact.phone,
             "is_archived": contact.archived,
+            "lexware_deleted": False,
             "lexware_version": contact.version,
             "lexware_synced_at": now,
         }
         customer = existing.get(contact.id)
         if customer is None:
             to_create.append(Customer(lexware_id=contact.id, **values))
-        elif customer.lexware_version != contact.version:
+        elif customer.lexware_version != contact.version or customer.lexware_deleted:
             for field, value in values.items():
                 setattr(customer, field, value)
             customer.updated_at = now  # bulk_update skips auto_now
@@ -67,6 +81,12 @@ async def sync_customers(client: LexwareClient) -> SyncResult:
         )
     if to_update:
         await Customer.objects.abulk_update(to_update, [*SYNCED_FIELDS, "updated_at"])
+    # The import has seen every customer contact, so the rest are gone from Lexware.
+    result.removed = await (
+        Customer.objects.filter(lexware_id__isnull=False, lexware_deleted=False)
+        .exclude(lexware_id__in=seen)
+        .aupdate(lexware_deleted=True, is_archived=True, updated_at=now)
+    )
     result.created, result.updated = len(to_create), len(to_update)
     return result
 

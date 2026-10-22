@@ -31,7 +31,7 @@
 <section id="today" class="row-list" hx-get="{% url 'core:dashboard' %}" hx-select="#today" hx-swap="outerHTML" hx-trigger="timer-changed from:body">
   <div class="row-list-header">
     <h2>Heute</h2>
-    <span class="font-semibold tabular-nums">{{ today_total|hours }} h</span>
+    <span class="font-semibold tabular-nums">{{ today_total|hours:duration_format }} h</span>
   </div>
   {% for entry in today_entries %}
   <div class="row">
@@ -43,7 +43,7 @@
     <div class="ml-auto flex items-center gap-3 sm:gap-4">
       {% if entry.is_running %}<span class="badge badge-success">läuft</span>{% endif %}
       <span class="text-right text-muted tabular-nums sm:w-28">{{ entry.started_at|time:"H:i" }} – {% if entry.ended_at %}{{ entry.ended_at|time:"H:i" }}{% else %}…{% endif %}</span>
-      <span class="w-12 text-right font-semibold tabular-nums">{{ entry.duration|hours }}</span>
+      <span class="w-12 text-right font-semibold tabular-nums">{{ entry.duration|hours:duration_format }}</span>
     </div>
   </div>
   {% empty %}

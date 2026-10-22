@@ -20,15 +20,39 @@ class AppSettings(models.Model):
         blank=True,
         help_text="Gilt, wenn weder Aufgabe, Projekt noch Kunde einen Stundensatz haben.",
     )
+
+    class Rounding(models.IntegerChoices):
+        EXACT = 0, "exakt (keine Rundung)"
+        FIVE = 5, "jede angefangenen 5 Minuten"
+        SIX = 6, "jede angefangenen 6 Minuten (Zehntelstunde)"
+        TEN = 10, "jede angefangenen 10 Minuten"
+        FIFTEEN = 15, "jede angefangene Viertelstunde"
+        THIRTY = 30, "jede angefangene halbe Stunde"
+        SIXTY = 60, "jede angefangene Stunde"
+
+    time_rounding = models.PositiveSmallIntegerField(
+        "Zeiten runden auf",
+        choices=Rounding,
+        default=Rounding.EXACT,
+        help_text="Beim Stoppen des Timers und beim Speichern eines Eintrags wird das Ende aufgerundet. "
+        "Bestehende Einträge bleiben, wie sie sind.",
+    )
     lexware_sync_interval = models.PositiveIntegerField(
-        "Automatischer Kundenimport alle (Minuten)",
+        "Automatischer Abgleich mit Lexware alle (Minuten)",
         default=60,
-        help_text="0 schaltet den automatischen Import ab.",
+        help_text="Importiert Kunden und aktualisiert den Status der Rechnungen. 0 schaltet den Abgleich ab.",
     )
     # Written by the import, not on the settings page.
     lexware_synced_at = models.DateTimeField("letzter Kundenimport", null=True, blank=True, editable=False)
     lexware_sync_status = models.CharField("Ergebnis des letzten Imports", max_length=500, blank=True, editable=False)
     lexware_sync_failed = models.BooleanField("letzter Import fehlgeschlagen", default=False, editable=False)
+    invoices_synced_at = models.DateTimeField("letzter Abgleich der Rechnungen", null=True, blank=True, editable=False)
+    invoices_sync_status = models.CharField(
+        "Ergebnis des letzten Rechnungsabgleichs", max_length=500, blank=True, editable=False
+    )
+    invoices_sync_failed = models.BooleanField(
+        "letzter Rechnungsabgleich fehlgeschlagen", default=False, editable=False
+    )
 
     class Meta:
         verbose_name = verbose_name_plural = "Einstellungen"

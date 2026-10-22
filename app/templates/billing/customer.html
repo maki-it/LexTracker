@@ -61,7 +61,10 @@
 {% include "billing/_preview.html" %}
 
 <section class="flex flex-col gap-3">
-  <h2>Rechnungen</h2>
+  <div class="flex items-center justify-between gap-4">
+    <h2>Rechnungen</h2>
+    <a href="{% url 'billing:invoices' %}?q={{ customer.name|urlencode }}" class="text-sm hover:underline">Alle Rechnungen des Kunden</a>
+  </div>
   {% include "billing/_invoices.html" %}
 </section>
 {% endblock %}

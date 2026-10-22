@@ -31,7 +31,14 @@ def mfa_user(user):
 def test_preferences_change_theme_and_date_format(logged_in, user):
     response = logged_in.post(
         reverse("account:settings"),
-        {"first_name": "Kim", "last_name": "", "email": "", "theme": "dark", "date_format": "Y-m-d"},
+        {
+            "first_name": "Kim",
+            "last_name": "",
+            "email": "",
+            "theme": "dark",
+            "date_format": "Y-m-d",
+            "duration_format": "decimal",
+        },
     )
     assert response.status_code == 302
 

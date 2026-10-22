@@ -1,0 +1,237 @@
+import uuid
+from datetime import date, datetime, timedelta
+from decimal import Decimal
+
+import httpx
+import pytest
+from django.urls import reverse
+from django.utils import timezone
+
+from billing.models import Invoice
+from billing.sync import sync_and_record, sync_invoices
+from core.models import AppSettings
+from customers.models import Customer
+from projects.models import Project, Task
+from tests.lexware_fakes import fake_client
+from tracking.models import TimeEntry
+
+pytestmark = pytest.mark.django_db(transaction=True)
+
+
+def voucher(invoice: Invoice, status: str, **extra) -> dict:
+    return {"id": str(invoice.lexware_id), "voucherType": "invoice", "voucherStatus": status, **extra}
+
+
+def voucher_list(*vouchers: dict):
+    """A Lexware fake: the voucher list, plus GET /invoices/{id} answering 404 for ids not in ``known``."""
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        if request.url.path.endswith("/voucherlist"):
+            return httpx.Response(200, json={"content": list(vouchers), "number": 0, "totalPages": 1, "last": True})
+        invoice_id = request.url.path.rsplit("/", 1)[1]
+        if invoice_id in handler.known:
+            return httpx.Response(200, json={"id": invoice_id, **handler.known[invoice_id]})
+        return httpx.Response(404, json={"message": "not found"})
+
+    handler.requests = requests
+    handler.known = {}
+    return handler
+
+
+@pytest.fixture
+def billed():
+    """An invoice draft with one billed time entry."""
+    from accounts.models import User
+
+    user = User.objects.create_user(username="kim", password="geheim-123")
+    customer = Customer.objects.create(name="ACME GmbH", lexware_id=uuid.uuid4())
+    task = Task.objects.create(project=Project.objects.create(customer=customer, name="Website"), name="Entwicklung")
+    invoice = Invoice.objects.create(
+        customer=customer,
+        period_start=date(2026, 10, 1),
+        period_end=date(2026, 10, 31),
+        total_net=Decimal("200.00"),
+        lexware_id=uuid.uuid4(),
+    )
+    start = timezone.now() - timedelta(days=3)
+    entry = TimeEntry.objects.create(
+        user=user, task=task, started_at=start, ended_at=start + timedelta(hours=2), invoice=invoice
+    )
+    return user, invoice, entry
+
+
+async def test_status_and_number_come_from_lexware(billed):
+    _, invoice, _ = billed
+    handler = voucher_list(voucher(invoice, "open", voucherNumber="RE0042", dueDate="2099-11-15T00:00:00.000+01:00"))
+
+    async with fake_client(handler) as client:
+        result = await sync_invoices(client)
+
+    await invoice.arefresh_from_db()
+    assert invoice.status == Invoice.Status.OPEN
+    assert invoice.voucher_number == "RE0042"
+    assert invoice.due_date == date(2099, 11, 15)
+    assert "/v1/invoices/" not in str(handler.requests[-1].url)
+    assert handler.requests[0].url.params["voucherStatus"] == "any"
+    assert result.changed == 1
+    assert "draft" not in invoice.lexware_url and "/view/" in invoice.lexware_url
+
+
+async def test_open_invoice_past_due_date_is_overdue(billed):
+    _, invoice, _ = billed
+    handler = voucher_list(voucher(invoice, "open", dueDate="2020-01-15T00:00:00.000+01:00"))
+
+    async with fake_client(handler) as client:
+        await sync_invoices(client)
+
+    await invoice.arefresh_from_db()
+    assert invoice.status == Invoice.Status.OVERDUE
+
+
+async def test_deleted_draft_releases_its_time(billed):
+    _, invoice, entry = billed
+    handler = voucher_list()
+
+    async with fake_client(handler) as client:
+        result = await sync_invoices(client)
+
+    await invoice.arefresh_from_db()
+    await entry.arefresh_from_db()
+    assert invoice.status == Invoice.Status.DELETED
+    assert invoice.lexware_url == ""
+    assert entry.invoice_id is None
+    assert result.deleted == 1
+    assert "wieder freigegeben" in result.summary
+
+    # Deleted invoices are final and not asked about again.
+    async with fake_client(handler) as client:
+        await sync_invoices(client)
+    assert len(handler.requests) == 2
+
+
+async def test_invoice_missing_from_list_but_still_there_is_not_deleted(billed):
+    # For example an archived invoice: the voucher list may leave it out.
+    _, invoice, entry = billed
+    handler = voucher_list()
+    handler.known[str(invoice.lexware_id)] = {"voucherStatus": "paid", "voucherNumber": "RE0007"}
+
+    async with fake_client(handler) as client:
+        await sync_invoices(client)
+
+    await invoice.arefresh_from_db()
+    await entry.arefresh_from_db()
+    assert invoice.status == Invoice.Status.PAID
+    assert invoice.voucher_number == "RE0007"
+    assert entry.invoice_id == invoice.pk
+
+
+async def test_final_invoices_are_not_synced(billed):
+    _, invoice, _ = billed
+    await Invoice.objects.filter(pk=invoice.pk).aupdate(status=Invoice.Status.PAID)
+    handler = voucher_list()
+
+    async with fake_client(handler) as client:
+        await sync_invoices(client)
+
+    assert handler.requests == []
+
+
+async def test_sync_is_recorded(billed, monkeypatch):
+    _, invoice, _ = billed
+    handler = voucher_list(voucher(invoice, "draft"))
+    monkeypatch.setattr("billing.sync.client_from_settings", lambda: fake_client(handler))
+
+    await sync_and_record()
+
+    app_settings = await AppSettings.aload()
+    assert app_settings.invoices_synced_at
+    assert app_settings.invoices_sync_status == "0 geändert, 1 unverändert."
+
+
+# Views
+
+
+@pytest.fixture
+def logged_in(client, billed):
+    client.force_login(billed[0])
+    return client
+
+
+def test_invoice_list_filters_by_status(logged_in, billed):
+    _, invoice, _ = billed
+    other = Invoice.objects.create(
+        customer=invoice.customer,
+        period_start=date(2026, 9, 1),
+        period_end=date(2026, 9, 30),
+        total_net=Decimal("80.00"),
+        status=Invoice.Status.PAID,
+        voucher_number="RE0001",
+    )
+    url = reverse("billing:invoices")
+
+    response = logged_in.get(url)
+    assert "RE0001" in response.text and "200,00 €" in response.text
+    assert "Entwürfe" in response.text and "Bezahlt" in response.text
+
+    response = logged_in.get(url, {"status": "bezahlt"})
+    assert "RE0001" in response.text and "200,00 €" not in response.text
+
+    response = logged_in.get(url, {"status": "entwurf"})
+    assert "RE0001" not in response.text and "200,00 €" in response.text
+
+    response = logged_in.get(url, {"q": "RE0001"})
+    assert "RE0001" in response.text and "200,00 €" not in response.text
+    assert other.lexware_url == ""
+
+
+def test_overview_lists_only_customers_with_open_time(logged_in, billed):
+    entry = billed[2]
+    Customer.objects.create(name="Ohne Zeiten AG")
+    url = reverse("billing:overview")
+
+    # The only entry is billed, so nothing is open.
+    response = logged_in.get(url)
+    assert "Kein Kunde hat offene Zeiten" in response.text
+    assert "Ohne Zeiten AG" in logged_in.get(url, {"alle": "1"}).text
+
+    TimeEntry.objects.filter(pk=entry.pk).update(invoice=None)
+    response = logged_in.get(url)
+    assert "ACME GmbH" in response.text and "Ohne Zeiten AG" not in response.text
+
+
+def test_voided_invoice_time_can_be_released(logged_in, billed):
+    _, invoice, entry = billed
+    url = reverse("billing:invoice_release", args=[invoice.pk])
+
+    # Only voided invoices.
+    assert logged_in.post(url).status_code == 404
+
+    Invoice.objects.filter(pk=invoice.pk).update(status=Invoice.Status.VOIDED)
+    assert "Zeiten freigeben" in logged_in.get(reverse("billing:invoices")).text
+    response = logged_in.post(url, {"return_query": "status=storniert"})
+    assert response.url == reverse("billing:invoices") + "?status=storniert"
+    entry.refresh_from_db()
+    assert entry.invoice_id is None
+    assert "Zeiten freigeben" not in logged_in.get(reverse("billing:invoices")).text
+
+
+def test_manual_sync_button(logged_in, billed, monkeypatch, settings):
+    settings.LEXWARE_API_KEY = "test-key"
+    _, invoice, _ = billed
+    handler = voucher_list(voucher(invoice, "open", voucherNumber="RE0042"))
+    monkeypatch.setattr("billing.sync.client_from_settings", lambda: fake_client(handler))
+
+    response = logged_in.post(reverse("billing:invoice_sync"), follow=True)
+
+    assert "Rechnungsstatus abgeglichen: 1 geändert" in response.text
+    assert "RE0042" in response.text
+
+
+def test_due_dates_without_time_zone_are_accepted(billed):
+    from billing.sync import _due_date
+    from lexware.schemas import Voucher
+
+    v = Voucher.model_validate({"id": str(uuid.uuid4()), "voucherStatus": "open", "dueDate": "2026-11-01T00:00:00"})
+    assert _due_date(v) == datetime(2026, 11, 1).date()

@@ -3,7 +3,7 @@
   <div role="alert" class="alert alert-error">{{ error }}</div>
   {% elif result %}
   <div role="alert" class="alert alert-success">
-    Import abgeschlossen: {{ result.created }} neu, {{ result.updated }} aktualisiert, {{ result.unchanged }} unverändert.
+    Import abgeschlossen: {{ result.summary }}
   </div>
   {% endif %}
   {% if app_settings.lexware_synced_at %}
@@ -30,14 +30,15 @@
           <td class="text-muted tabular-nums">{{ customer.customer_number|default:"–" }}</td>
           <td class="font-medium">
             <a class="hover:underline" href="{% url 'customers:edit' customer.pk %}">{{ customer.name }}</a>
-            {% if customer.is_archived %}<span class="badge ml-2">archiviert</span>{% endif %}
+            {% if customer.lexware_deleted %}<span class="badge badge-warning ml-2">in Lexware gelöscht</span>{% elif customer.is_archived %}<span class="badge ml-2">archiviert</span>{% endif %}
+            {% for c in customer.categories.all %}<span class="badge ml-1.5">{{ c.name }}</span>{% endfor %}
           </td>
           <td>{% if customer.email %}<a class="hover:underline" href="mailto:{{ customer.email }}">{{ customer.email }}</a>{% else %}<span class="text-muted">–</span>{% endif %}</td>
           <td class="whitespace-nowrap">{{ customer.phone|default:"–" }}</td>
           <td class="text-right tabular-nums">{% if customer.default_hourly_rate is not None %}{{ customer.default_hourly_rate }} €{% else %}<span class="text-muted">–</span>{% endif %}</td>
         </tr>
         {% empty %}
-        <tr><td colspan="5" class="py-10 text-center text-muted">Noch keine Kunden. Importiere sie aus Lexware Office.</td></tr>
+        <tr><td colspan="5" class="py-10 text-center text-muted">{% if query or category %}Keine Kunden gefunden.{% else %}Noch keine Kunden. Importiere sie aus Lexware Office.{% endif %}</td></tr>
         {% endfor %}
       </tbody>
     </table>

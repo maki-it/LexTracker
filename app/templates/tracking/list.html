@@ -5,7 +5,7 @@
 <div class="page-header">
   <div>
     <h1>Zeiten</h1>
-    <p class="page-subtitle">KW {{ monday|date:"W" }} · {{ monday|date:"d.m." }} – {{ sunday|date:date_format }} · <strong class="font-semibold text-ink tabular-nums">{{ week_total|hours }} h</strong> erfasst</p>
+    <p class="page-subtitle">KW {{ monday|date:"W" }} · {{ monday|date:"d.m." }} – {{ sunday|date:date_format }} · <strong class="font-semibold text-ink tabular-nums">{{ week_total|hours:duration_format }} h</strong> erfasst</p>
   </div>
   <div class="toolbar">
     <div class="btn-group">
@@ -21,7 +21,7 @@
   {% for day in days %}
   <div class="flex flex-col gap-1.5 rounded-lg border p-2 sm:p-2.5 {% if day.is_today %}border-primary/40 bg-primary-soft{% else %}border-line bg-surface{% endif %}">
     <div class="text-xs text-muted">{{ day.date|date:"D" }} <span class="max-sm:hidden">{{ day.date|date:"d." }}</span></div>
-    <div class="font-semibold tabular-nums max-sm:text-xs">{{ day.total|hours }}</div>
+    <div class="font-semibold tabular-nums max-sm:text-xs">{{ day.total|hours:duration_format }}</div>
     <div class="progress h-1"><div class="progress-bar" style="width: {{ day.share }}%"></div></div>
   </div>
   {% endfor %}
@@ -32,7 +32,7 @@
 <section class="row-list">
   <div class="row-list-header">
     <h2>{{ day.date|date:"l, d.m." }}</h2>
-    <span class="font-semibold tabular-nums">{{ day.total|hours }} h</span>
+    <span class="font-semibold tabular-nums">{{ day.total|hours:duration_format }} h</span>
   </div>
   {% for entry in day.entries %}
   <div class="row">
@@ -44,7 +44,7 @@
     <div class="ml-auto flex items-center gap-3 sm:gap-4">
       {% if entry.is_running %}<span class="badge badge-success">läuft</span>{% elif not entry.is_billable %}<span class="badge">nicht abrechenbar</span>{% endif %}
       <span class="text-right text-muted tabular-nums sm:w-28">{{ entry.started_at|time:"H:i" }} – {% if entry.ended_at %}{{ entry.ended_at|time:"H:i" }}{% else %}…{% endif %}</span>
-      <span class="w-12 text-right font-semibold tabular-nums">{{ entry.duration|hours }}</span>
+      <span class="w-12 text-right font-semibold tabular-nums">{{ entry.duration|hours:duration_format }}</span>
       {% if entry.is_running %}
       <span class="w-8"></span>
       {% else %}

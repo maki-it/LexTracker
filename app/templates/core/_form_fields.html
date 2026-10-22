@@ -3,7 +3,14 @@
 {% endfor %}
 {% for field in form.hidden_fields %}{{ field }}{% endfor %}
 {% for field in form.visible_fields %}
-{% if field.widget_type == "checkbox" %}
+{% if field.widget_type == "checkboxselectmultiple" %}
+<fieldset class="field">
+  <legend class="mb-1">{{ field.label }}</legend>
+  <div class="flex flex-wrap gap-x-4 gap-y-2">
+    {% for option in field %}<label class="flex items-center gap-2 text-sm font-normal">{{ option.tag }} {{ option.choice_label }}</label>{% endfor %}
+  </div>
+</fieldset>
+{% elif field.widget_type == "checkbox" %}
 <label class="flex items-center gap-2 text-sm font-medium">{{ field }} {{ field.label }}</label>
 {% else %}
 <label class="field">

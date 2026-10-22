@@ -8,8 +8,9 @@ from datetime import datetime, timedelta
 from django.conf import settings
 from django.utils import timezone
 
+from billing import sync as invoice_sync
 from core.models import AppSettings
-from customers.sync import sync_and_record
+from customers import sync as customer_sync
 from lexware.client import LexwareError
 
 logger = logging.getLogger(__name__)
@@ -18,8 +19,8 @@ logger = logging.getLogger(__name__)
 CHECK_INTERVAL = 60
 
 
-async def import_customers_if_due(now: datetime) -> bool:
-    """Import customers from Lexware if the interval set on the settings page has passed."""
+async def sync_lexware_if_due(now: datetime) -> bool:
+    """Import customers and update invoice statuses if the interval set on the settings page has passed."""
     app_settings = await AppSettings.aload()
     interval = app_settings.lexware_sync_interval
     if not interval or not settings.LEXWARE_API_KEY:
@@ -27,12 +28,15 @@ async def import_customers_if_due(now: datetime) -> bool:
     last = app_settings.lexware_synced_at
     if last and now - last < timedelta(minutes=interval):
         return False
-    try:
-        result = await sync_and_record()
-    except LexwareError as exc:
-        logger.warning("Automatic customer import failed: %s", exc)
-    else:
-        logger.info("Automatic customer import: %s", result.summary)
+    # Customers first: an invoice sync failure must not stop the import, and the other way round.
+    jobs = (("customer import", customer_sync.sync_and_record), ("invoice sync", invoice_sync.sync_and_record))
+    for name, job in jobs:
+        try:
+            result = await job()
+        except LexwareError as exc:
+            logger.warning("Automatic %s failed: %s", name, exc)
+        else:
+            logger.info("Automatic %s: %s", name, result.summary)
     return True
 
 
@@ -40,7 +44,7 @@ async def run(stop: asyncio.Event) -> None:
     logger.info("Scheduler started")
     while not stop.is_set():
         try:
-            await import_customers_if_due(timezone.now())
+            await sync_lexware_if_due(timezone.now())
         except Exception:
             # Keep running: a broken job must not stop the others or the next attempt.
             logger.exception("Scheduled job failed")

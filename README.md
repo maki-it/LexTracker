@@ -67,8 +67,16 @@ Der Import legt neue Kunden an und aktualisiert Name, Kundennummer, E-Mail, Tele
 
 **Bearbeiten:** Ein Klick auf den Kundennamen öffnet das Formular. Änderungen an Name, E-Mail und Telefon speichert LexTracker auch im Lexware-Kontakt; der Kontakt wird dafür frisch geladen, damit in Lexware geänderte andere Felder erhalten bleiben. Stundensatz und Notizen gibt es nur hier.
 Kundennummer und Archiv-Status pflegst du weiter in Lexware.
+**Kategorien** für Kunden (z. B. „Stammkunde“) vergibst du im Formular; Lexware liefert über die API keine. Auf der Kundenseite filterst du danach und suchst nach Name, Nummer, E-Mail oder Notiz.
+
+**Gelöschte Kontakte:** Taucht ein Kunde beim Import nicht mehr auf (in Lexware gelöscht oder ohne Kundenrolle), wird er archiviert und als „in Lexware gelöscht“ markiert, aber nicht gelöscht, weil Zeiten und Rechnungen an ihm hängen. Kommt der Kontakt zurück, wird die Markierung entfernt.
 
 Der Client hält das Rate-Limit der API ein (2 Anfragen pro Sekunde) und wiederholt Anfragen, die mit HTTP 429 abgelehnt werden.
+
+## Zeiterfassung
+
+Unter **Einstellungen** legst du fest, ob Zeiten exakt oder auf jede angefangene Zeiteinheit (z. B. Viertelstunde) aufgerundet werden. Gerundet wird beim Stoppen des Timers und beim Speichern eines Eintrags, indem das Ende verschoben wird; so sind Anzeige, Summen und Abrechnung immer gleich. Bestehende Einträge bleiben unverändert.
+Ob Dauern als `2:45` oder als Dezimalstunden `2,75` angezeigt werden, stellt jeder im Konto ein. Abgerechnet wird immer in Dezimalstunden (z. B. 2,75 Stunden × 80 €).
 
 ## Abrechnung
 
@@ -80,6 +88,10 @@ Pro Kunde legst du unter **Abrechnung** eine Vereinbarung an:
 Für einen gewählten Zeitraum zeigt die Vorschau alle noch nicht abgerechneten, abrechenbaren Zeiten als Rechnungspositionen.
 **Rechnungsentwurf in Lexware anlegen** erstellt daraus einen Entwurf (nicht finalisiert), den du in Lexware prüfst und abschließt. Die Zeiten gelten danach als abgerechnet und tauchen in keiner weiteren Rechnung auf.
 Der Kunde muss dafür mit einem Lexware-Kontakt verknüpft sein. Die Umsatzsteuer richtet sich nach deinem Lexware-Konto: Ist es als Kleinunternehmer (§ 19 UStG) eingerichtet, entsteht die Rechnung ohne Umsatzsteuer, sonst mit 19 %.
+
+Der Reiter **Rechnungen** listet alle Rechnungen mit Nummer, Status (Entwurf, offen, überfällig, bezahlt, storniert) und Fälligkeit, filterbar nach Status und durchsuchbar nach Kunde oder Nummer.
+Den Status holt der Scheduler im eingestellten Intervall aus der Belegliste von Lexware; **Status aktualisieren** gleicht sofort ab.
+Löschst du einen Entwurf in Lexware, wird die Rechnung hier als gelöscht markiert und ihre Zeiten sind wieder offen. Bei einer stornierten Rechnung gibst du die Zeiten mit **Zeiten freigeben** selbst wieder frei, falls du sie neu abrechnen willst.
 
 ## Konto und Sicherheit
 
