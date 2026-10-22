@@ -1,12 +1,12 @@
-{% load timefmt %}
-<section id="tasks" class="flex flex-col gap-4">
+{% load timefmt icons %}
+<section id="tasks" class="flex flex-col gap-3">
   <h2>Aufgaben</h2>
-  <div class="card overflow-x-auto p-0">
-    <table class="w-full text-left text-sm">
+  <div class="table-wrap">
+    <table class="table">
       <tbody>
         {% for task in tasks %}
-        <tr class="border-b border-line last:border-0{% if task.status == 'done' %} text-muted{% endif %}">
-          <td class="px-4 py-3">
+        <tr{% if task.status == 'done' %} class="text-muted"{% endif %}>
+          <td class="w-full">
             <div class="font-medium">{{ task.name }}</div>
             <div class="text-xs text-muted">
               {% if not task.is_billable %}nicht abrechenbar · {% endif %}
@@ -14,23 +14,23 @@
               {{ task.booked|hours }} h gebucht{% if task.estimated_hours is not None %} von {{ task.estimated_hours }} h geschätzt{% endif %}
             </div>
           </td>
-          <td class="px-4 py-3">
-            <select name="status" class="input py-1 text-sm" aria-label="Status"
+          <td>
+            <select name="status" class="input h-8 w-36 text-[13px]" aria-label="Status"
                     hx-post="{% url 'projects:task_status' project.pk task.pk %}" hx-target="#tasks" hx-swap="outerHTML">
               {% for value, label in status_choices %}
               <option value="{{ value }}"{% if task.status == value %} selected{% endif %}>{{ label }}</option>
               {% endfor %}
             </select>
           </td>
-          <td class="px-4 py-3">
-            <div class="flex justify-end gap-2">
+          <td>
+            <div class="flex justify-end gap-1.5">
               {% if task.status != 'done' %}{% include "tracking/_start_button.html" %}{% endif %}
-              <a href="{% url 'tracking:create' %}?aufgabe={{ task.pk }}" class="btn btn-ghost btn-sm" title="Zeit nachtragen">+ Zeit</a>
+              <a href="{% url 'tracking:create' %}?aufgabe={{ task.pk }}" class="btn btn-ghost btn-sm" title="Zeit nachtragen">{% icon "plus" size=14 %}Zeit</a>
             </div>
           </td>
         </tr>
         {% empty %}
-        <tr><td class="px-4 py-6 text-center text-muted">Noch keine Aufgaben.</td></tr>
+        <tr><td class="py-8 text-center text-muted">Noch keine Aufgaben.</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -48,7 +48,7 @@
     </div>
     {% for field in form %}{% for error in field.errors %}<p class="text-sm text-danger">{{ field.label }}: {{ error }}</p>{% endfor %}{% endfor %}
     <div class="flex flex-wrap items-center justify-between gap-4">
-      <label class="flex items-center gap-2 text-sm font-medium">{{ form.is_billable }} {{ form.is_billable.label }}</label>
+      <label class="flex items-center gap-2 text-[13px] font-medium">{{ form.is_billable }} {{ form.is_billable.label }}</label>
       <button type="submit" class="btn btn-primary">Hinzufügen</button>
     </div>
     {% endwith %}

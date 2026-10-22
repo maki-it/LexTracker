@@ -1,22 +1,34 @@
 {% extends "base.html" %}
-{% load timefmt %}
+{% load timefmt icons %}
 {% block title %}{{ project.name }} · LexTracker{% endblock %}
 {% block content %}
-<div class="flex flex-wrap items-start justify-between gap-4">
+<div class="page-header">
   <div>
-    <p class="text-sm text-muted">{{ project.customer.name }}</p>
-    <h1>{{ project.name }}</h1>
+    <p class="breadcrumb"><a href="{% url 'projects:list' %}">Projekte</a> / {{ project.customer.name }}</p>
+    <div class="flex flex-wrap items-center gap-3">
+      <h1>{{ project.name }}</h1>
+      <span class="badge{% if project.status == 'active' %} badge-primary{% elif project.status == 'done' %} badge-success{% endif %}">{{ project.get_status_display }}</span>
+    </div>
   </div>
-  <a href="{% url 'projects:edit' project.pk %}" class="btn btn-sm">Bearbeiten</a>
+  <a href="{% url 'projects:edit' project.pk %}" class="btn">{% icon "pencil" size=14 %}Bearbeiten</a>
 </div>
 
-<section class="card grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
-  <div><div class="text-muted">Status</div><div class="font-medium">{{ project.get_status_display }}</div></div>
-  <div><div class="text-muted">Gebucht</div><div class="font-medium tabular-nums">{{ booked|hours }} h{% if project.budget_hours is not None %} von {{ project.budget_hours }} h{% endif %}</div></div>
-  <div><div class="text-muted">Stundensatz</div><div class="font-medium">{% if project.hourly_rate is not None %}{{ project.hourly_rate }} €{% elif project.customer.default_hourly_rate is not None %}{{ project.customer.default_hourly_rate }} € (Kunde){% else %}–{% endif %}</div></div>
-  <div><div class="text-muted">Zeitraum</div><div class="font-medium">{{ project.start_date|date:"d.m.Y"|default:"–" }} – {{ project.end_date|date:"d.m.Y"|default:"offen" }}</div></div>
-  {% if project.description %}<p class="col-span-full whitespace-pre-line">{{ project.description }}</p>{% endif %}
-</section>
+<div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+  <div class="stat">
+    <span class="stat-label">Gebucht</span>
+    <span class="stat-value">{{ booked|hours }}{% if project.budget_hours is not None %} / {{ project.budget_hours }}{% endif %} h</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">Stundensatz</span>
+    <span class="stat-value">{% if project.hourly_rate is not None %}{{ project.hourly_rate }} €{% elif project.customer.default_hourly_rate is not None %}{{ project.customer.default_hourly_rate }} €{% else %}–{% endif %}</span>
+    {% if project.hourly_rate is None and project.customer.default_hourly_rate is not None %}<span class="text-xs text-muted">vom Kunden</span>{% endif %}
+  </div>
+  <div class="stat">
+    <span class="stat-label">Zeitraum</span>
+    <span class="stat-value text-base">{{ project.start_date|date:"d.m.Y"|default:"–" }} – {{ project.end_date|date:"d.m.Y"|default:"offen" }}</span>
+  </div>
+</div>
+{% if project.description %}<p class="max-w-3xl whitespace-pre-line text-muted">{{ project.description }}</p>{% endif %}
 
 {% include "projects/_tasks.html" %}
 {% endblock %}

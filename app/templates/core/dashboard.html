@@ -1,47 +1,54 @@
 {% extends "base.html" %}
-{% load timefmt %}
+{% load timefmt icons %}
 {% block title %}Übersicht · LexTracker{% endblock %}
 {% block content %}
-<h1>Hallo {{ user.first_name|default:user.username }}</h1>
+<div class="page-header">
+  <div>
+    <h1>Hallo {{ user.first_name|default:user.username }}</h1>
+    <p class="page-subtitle">{% now "l, j. F Y" %}</p>
+  </div>
+</div>
 
 <section class="card flex flex-col gap-3">
   <h2>Timer starten</h2>
   {% if tasks %}
   <form method="post" action="{% url 'tracking:timer_start' %}" hx-post="{% url 'tracking:timer_start' %}" hx-swap="none"
-        class="flex flex-col gap-2 sm:flex-row">
+        class="flex flex-col gap-2 md:flex-row">
     {% csrf_token %}
-    <select name="task" class="input sm:max-w-sm" required>
+    <select name="task" class="input md:max-w-sm" required aria-label="Aufgabe">
       {% for task in tasks %}
       <option value="{{ task.pk }}">{{ task.project.customer.name }} · {{ task.project.name }} · {{ task.name }}</option>
       {% endfor %}
     </select>
-    <input type="text" name="description" class="input" placeholder="Was machst du gerade? (optional)">
-    <button type="submit" class="btn btn-primary shrink-0">▶ Starten</button>
+    <input type="text" name="description" class="input" placeholder="Was machst du gerade? (optional)" aria-label="Beschreibung">
+    <button type="submit" class="btn btn-primary">{% icon "play" size=14 %}Starten</button>
   </form>
   {% else %}
-  <p class="text-muted">Noch keine offenen Aufgaben. <a class="text-primary hover:underline" href="{% url 'projects:create' %}">Lege ein Projekt an</a> und füge Aufgaben hinzu.</p>
+  <p class="text-muted">Noch keine offenen Aufgaben. <a class="hover:underline" href="{% url 'projects:create' %}">Lege ein Projekt an</a> und füge Aufgaben hinzu.</p>
   {% endif %}
 </section>
 
-<section id="today" class="card flex flex-col gap-3" hx-get="{% url 'core:dashboard' %}" hx-select="#today" hx-swap="outerHTML" hx-trigger="timer-changed from:body">
-  <div class="flex items-center justify-between">
+<section id="today" class="row-list" hx-get="{% url 'core:dashboard' %}" hx-select="#today" hx-swap="outerHTML" hx-trigger="timer-changed from:body">
+  <div class="row-list-header">
     <h2>Heute</h2>
     <span class="font-semibold tabular-nums">{{ today_total|hours }} h</span>
   </div>
   {% for entry in today_entries %}
-  <div class="flex items-center justify-between gap-4 border-t border-line pt-3 text-sm">
-    <div>
-      <div class="font-medium">{{ entry.task.name }}{% if entry.is_running %} <span class="text-success">(läuft)</span>{% endif %}</div>
-      <div class="text-muted">{{ entry.task.project.customer.name }} · {{ entry.task.project.name }}{% if entry.description %} – {{ entry.description }}{% endif %}</div>
+  <div class="row">
+    <span class="dot{% if not entry.is_billable %} bg-line{% endif %}"></span>
+    <div class="min-w-0 flex-[1_1_16rem]">
+      <div class="font-medium">{{ entry.task.name }}</div>
+      <div class="truncate text-[13px] text-muted">{{ entry.task.project.customer.name }} · {{ entry.task.project.name }}{% if entry.description %} – {{ entry.description }}{% endif %}</div>
     </div>
-    <div class="text-right tabular-nums">
-      <div>{{ entry.started_at|time:"H:i" }}–{% if entry.ended_at %}{{ entry.ended_at|time:"H:i" }}{% else %}…{% endif %}</div>
-      <div class="font-medium">{{ entry.duration|hours }}</div>
+    <div class="ml-auto flex items-center gap-3 sm:gap-4">
+      {% if entry.is_running %}<span class="badge badge-success">läuft</span>{% endif %}
+      <span class="text-right text-muted tabular-nums sm:w-28">{{ entry.started_at|time:"H:i" }} – {% if entry.ended_at %}{{ entry.ended_at|time:"H:i" }}{% else %}…{% endif %}</span>
+      <span class="w-12 text-right font-semibold tabular-nums">{{ entry.duration|hours }}</span>
     </div>
   </div>
   {% empty %}
-  <p class="text-muted">Heute noch nichts erfasst.</p>
+  <p class="px-1 py-4 text-muted">Heute noch nichts erfasst.</p>
   {% endfor %}
-  <a href="{% url 'tracking:create' %}" class="btn btn-sm self-start">+ Zeit nachtragen</a>
+  <div class="pt-3"><a href="{% url 'tracking:create' %}" class="btn btn-sm">{% icon "plus" size=14 %}Zeit nachtragen</a></div>
 </section>
 {% endblock %}
