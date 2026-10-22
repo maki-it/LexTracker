@@ -17,17 +17,21 @@
   {% if user.is_authenticated %}
   {% with section=request.resolver_match.app_name %}
   <div class="lg:flex">
-    <aside class="sidebar">
-      <div class="flex items-center justify-between gap-3">
-        <a href="{% url 'core:dashboard' %}" class="flex items-center gap-2.5 px-1.5 py-1 text-[15px] font-semibold text-ink no-underline">
-          {% logo 28 %}
-          LexTracker
-        </a>
-      </div>
+    {# On phones this is a slim top bar (logo, timer, menu button); the menu button opens nav and user row. #}
+    <aside class="sidebar group" id="sidebar">
+      <a href="{% url 'core:dashboard' %}" class="mr-auto flex items-center gap-2.5 px-1.5 py-1 text-[15px] font-semibold text-ink no-underline">
+        {% logo 28 %}
+        LexTracker
+      </a>
 
       <div hx-get="{% url 'tracking:timer' %}" hx-trigger="load" hx-swap="outerHTML"></div>
 
-      <nav aria-label="Hauptnavigation" class="-mx-1 flex gap-0.5 overflow-x-auto px-1 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0">
+      <button type="button" class="btn btn-ghost btn-icon lg:hidden" data-nav-toggle aria-controls="sidebar-nav" aria-expanded="false" aria-label="Menü">
+        <span class="group-data-open:hidden">{% icon "menu" size=20 %}</span>
+        <span class="hidden group-data-open:inline">{% icon "x" size=20 %}</span>
+      </button>
+
+      <nav id="sidebar-nav" aria-label="Hauptnavigation" class="sidebar-nav">
         <a href="{% url 'core:dashboard' %}" class="nav-link{% if section == 'core' %} nav-link-active{% endif %}"{% if section == 'core' %} aria-current="page"{% endif %}>{% icon "dashboard" %}Übersicht</a>
         <a href="{% url 'tracking:list' %}" class="nav-link{% if section == 'tracking' %} nav-link-active{% endif %}"{% if section == 'tracking' %} aria-current="page"{% endif %}>{% icon "clock" %}Zeiten</a>
         <a href="{% url 'projects:list' %}" class="nav-link{% if section == 'projects' %} nav-link-active{% endif %}"{% if section == 'projects' %} aria-current="page"{% endif %}>{% icon "folder" %}Projekte{% if request.nav_counts.projects %}<span class="nav-count" title="Aktive Projekte">{{ request.nav_counts.projects }}</span>{% endif %}</a>
@@ -41,7 +45,7 @@
         {% endif %}
       </nav>
 
-      <div class="flex items-center gap-2.5 border-t border-line pt-3 lg:mt-auto">
+      <div class="sidebar-user">
         <span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-line text-xs font-semibold uppercase">{{ user.get_username|first }}</span>
         <a href="{% url 'account:settings' %}" class="min-w-0 flex-1 truncate font-medium text-ink no-underline hover:underline" title="Konto">{{ user.get_full_name|default:user.get_username }}</a>
         {% if user.is_staff %}<a href="{% url 'admin:index' %}" class="btn btn-ghost btn-sm btn-icon" title="Verwaltung" aria-label="Verwaltung">{% icon "shield" %}</a>{% endif %}

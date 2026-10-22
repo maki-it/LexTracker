@@ -87,8 +87,17 @@
 /* Own components, so templates stay short. */
 @layer components {
   /* Layout */
+  /* Phones: sticky top bar that wraps the opened menu below it. Desktop: fixed-height side column. */
   .sidebar {
-    @apply flex flex-col gap-4 border-b border-line bg-sidebar p-3 lg:sticky lg:top-0 lg:h-dvh lg:w-60 lg:shrink-0 lg:gap-5 lg:overflow-y-auto lg:border-r lg:border-b-0;
+    @apply sticky top-0 z-30 flex flex-wrap items-center gap-2 border-b border-line bg-sidebar px-3 py-2 lg:h-dvh lg:w-60 lg:shrink-0 lg:flex-col lg:flex-nowrap lg:items-stretch lg:gap-5 lg:overflow-y-auto lg:border-r lg:border-b-0 lg:p-3;
+  }
+
+  .sidebar-nav {
+    @apply hidden w-full grid-cols-2 gap-0.5 pt-1 group-data-open:grid lg:flex lg:flex-col lg:pt-0;
+  }
+
+  .sidebar-user {
+    @apply hidden w-full items-center gap-2.5 border-t border-line pt-3 pb-1 group-data-open:flex lg:mt-auto lg:flex lg:pb-0;
   }
 
   .nav-link {

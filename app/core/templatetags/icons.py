@@ -19,6 +19,7 @@ ICONS = {
     "logout": '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>',
     "play": '<path d="M7 4.5v15l12-7.5z"/>',
     "stop": '<rect x="6" y="6" width="12" height="12" rx="2"/>',
+    "menu": '<path d="M4 6h16M4 12h16M4 18h16"/>',
     "plus": '<path d="M12 5v14M5 12h14"/>',
     "pencil": '<path d="M4 20h4L19 9l-4-4L4 16z"/>',
     "chart": '<path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/>',
