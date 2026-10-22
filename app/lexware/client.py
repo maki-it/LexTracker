@@ -8,7 +8,7 @@ from uuid import UUID
 
 import httpx
 
-from lexware.schemas import Contact, ContactPage
+from lexware.schemas import Contact, ContactPage, Profile
 
 logger = logging.getLogger(__name__)
 
@@ -101,10 +101,25 @@ class LexwareClient:
             return response.json()
         raise LexwareError("Lexware hat zu viele Anfragen abgelehnt (Rate-Limit).")
 
+    async def get_profile(self) -> Profile:
+        return Profile.model_validate(await self._request("GET", "profile"))
+
     async def create_invoice(self, payload: dict) -> UUID:
         """Create an invoice draft (not finalized) and return its ID."""
         data = await self._request("POST", "invoices", json=payload)
         return UUID(data["id"])
+
+    async def get_contact(self, contact_id: UUID) -> dict:
+        """The full contact as Lexware returns it, so it can be changed and sent back."""
+        return await self._request("GET", f"contacts/{contact_id}")
+
+    async def update_contact(self, contact_id: UUID, contact: dict) -> int:
+        """Replace the contact and return its new version.
+
+        ``contact`` must carry the current ``version``, otherwise Lexware rejects the change.
+        """
+        data = await self._request("PUT", f"contacts/{contact_id}", json=contact)
+        return data["version"]
 
     async def iter_customers(self) -> AsyncIterator[Contact]:
         """Yield every contact that has the customer role, page by page."""

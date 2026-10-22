@@ -13,7 +13,9 @@ from billing.lexware import invoice_payload
 from billing.models import BillingAgreement, Invoice
 from billing.periods import Period, period_containing, periods_between, recent_periods
 from billing.services import create_invoice
+from core.models import AppSettings
 from lexware.client import LexwareClient, LexwareError
+from lexware.schemas import Profile
 from projects.models import Task
 from tracking.models import TimeEntry
 
@@ -142,27 +144,50 @@ def test_retainer_overage_falls_back_to_normal_rate(user, task, customer):
     assert draft.lines[1].unit_price == Decimal("100.00")
 
 
+def test_global_settings_give_fallback_rate(user, task, customer):
+    customer.default_hourly_rate = None
+    customer.save()
+    AppSettings.objects.create(pk=1, default_hourly_rate=Decimal("80.00"))
+    work(user, task, "2026-10-05", 1)
+
+    draft = build_draft(customer, date(2026, 10, 1), date(2026, 10, 31))
+
+    assert draft.lines[0].unit_price == Decimal("80.00")
+
+
 # Lexware
 
 
-def test_invoice_payload(user, task, customer, settings):
-    settings.INVOICE_TAX_RATE = Decimal("19")
+def test_invoice_payload(user, task, customer):
     work(user, task, "2026-10-05", 2)
     draft = build_draft(customer, date(2026, 10, 1), date(2026, 10, 31))
 
-    payload = invoice_payload(draft, date(2026, 11, 3))
+    payload = invoice_payload(draft, date(2026, 11, 3), Profile())
 
     assert payload["address"] == {"contactId": str(customer.lexware_id)}
     assert payload["voucherDate"].startswith("2026-11-03T00:00:00.000+")
     assert payload["shippingConditions"]["shippingType"] == "serviceperiod"
     assert payload["lineItems"][0]["quantity"] == 2.0
     assert payload["lineItems"][0]["unitPrice"] == {"currency": "EUR", "netAmount": 100.0, "taxRatePercentage": 19.0}
+    assert payload["taxConditions"] == {"taxType": "net"}
+
+
+def test_invoice_payload_for_small_business(user, task, customer):
+    work(user, task, "2026-10-05", 2)
+    draft = build_draft(customer, date(2026, 10, 1), date(2026, 10, 31))
+
+    payload = invoice_payload(draft, date(2026, 11, 3), Profile(smallBusiness=True, taxType="vatfree"))
+
+    assert payload["taxConditions"] == {"taxType": "vatfree"}
+    assert payload["lineItems"][0]["unitPrice"]["taxRatePercentage"] == 0.0
 
 
 def fake_lexware(requests: list):
     lexware_id = uuid.uuid4()
 
     def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("/profile"):
+            return httpx.Response(200, json={"companyName": "Maki IT", "taxType": "net", "smallBusiness": False})
         requests.append(request)
         return httpx.Response(201, json={"id": str(lexware_id), "version": 1})
 

@@ -1,5 +1,5 @@
 {% load static tailwind_cli icons %}<!doctype html>
-<html lang="de">
+<html lang="de" data-theme="{{ theme }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -27,12 +27,17 @@
         <a href="{% url 'projects:list' %}" class="nav-link{% if section == 'projects' %} nav-link-active{% endif %}"{% if section == 'projects' %} aria-current="page"{% endif %}>{% icon "folder" %}Projekte</a>
         <a href="{% url 'customers:list' %}" class="nav-link{% if section == 'customers' %} nav-link-active{% endif %}"{% if section == 'customers' %} aria-current="page"{% endif %}>{% icon "users" %}Kunden</a>
         <a href="{% url 'billing:overview' %}" class="nav-link{% if section == 'billing' %} nav-link-active{% endif %}"{% if section == 'billing' %} aria-current="page"{% endif %}>{% icon "receipt" %}Abrechnung</a>
+        {% if user.role == "admin" %}
+        {% with active=request.resolver_match.view_name %}
+        <a href="{% url 'core:settings' %}" class="nav-link{% if active == 'core:settings' %} nav-link-active{% endif %}"{% if active == 'core:settings' %} aria-current="page"{% endif %}>{% icon "settings" %}Einstellungen</a>
+        {% endwith %}
+        {% endif %}
       </nav>
 
       <div class="flex items-center gap-2.5 border-t border-line pt-3 lg:mt-auto">
         <span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-line text-xs font-semibold uppercase">{{ user.get_username|first }}</span>
-        <span class="min-w-0 flex-1 truncate font-medium">{{ user.get_full_name|default:user.get_username }}</span>
-        {% if user.is_staff %}<a href="{% url 'admin:index' %}" class="btn btn-ghost btn-sm btn-icon" title="Verwaltung" aria-label="Verwaltung">{% icon "settings" %}</a>{% endif %}
+        <a href="{% url 'account:settings' %}" class="min-w-0 flex-1 truncate font-medium text-ink no-underline hover:underline" title="Konto">{{ user.get_full_name|default:user.get_username }}</a>
+        {% if user.is_staff %}<a href="{% url 'admin:index' %}" class="btn btn-ghost btn-sm btn-icon" title="Verwaltung" aria-label="Verwaltung">{% icon "shield" %}</a>{% endif %}
         <form method="post" action="{% url 'accounts:logout' %}">
           {% csrf_token %}
           <button type="submit" class="btn btn-ghost btn-sm btn-icon" title="Abmelden" aria-label="Abmelden">{% icon "logout" %}</button>

@@ -4,7 +4,7 @@
   <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
     <div class="stat">
       <span class="stat-label">Zeitraum</span>
-      <span class="stat-value text-base">{{ draft.start|date:"d.m.Y" }} – {{ draft.end|date:"d.m.Y" }}</span>
+      <span class="stat-value text-base">{{ draft.start|date:date_format }} – {{ draft.end|date:date_format }}</span>
     </div>
     <div class="stat">
       <span class="stat-label">Offene Zeiten</span>

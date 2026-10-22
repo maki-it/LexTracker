@@ -2,8 +2,8 @@ import asyncio
 
 from django.core.management.base import BaseCommand, CommandError
 
-from customers.sync import sync_customers
-from lexware.client import LexwareError, client_from_settings
+from customers.sync import sync_and_record
+from lexware.client import LexwareError
 
 
 class Command(BaseCommand):
@@ -11,13 +11,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         try:
-            result = asyncio.run(self._sync())
+            result = asyncio.run(sync_and_record())
         except LexwareError as exc:
             raise CommandError(str(exc)) from exc
-        self.stdout.write(
-            self.style.SUCCESS(f"{result.created} neu, {result.updated} aktualisiert, {result.unchanged} unverändert.")
-        )
-
-    async def _sync(self):
-        async with client_from_settings() as client:
-            return await sync_customers(client)
+        self.stdout.write(self.style.SUCCESS(result.summary))

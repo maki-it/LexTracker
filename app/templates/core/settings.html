@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Einstellungen · LexTracker{% endblock %}
+{% block content %}
+<h1>Einstellungen</h1>
+<form method="post" class="card flex max-w-2xl flex-col gap-4">
+  {% csrf_token %}
+  <p class="text-sm text-muted">Diese Einstellungen gelten für alle Benutzer.</p>
+  {% include "core/_form_fields.html" %}
+  <p class="text-sm text-muted">
+    Die Umsatzsteuer auf Rechnungen richtet sich nach deinem Lexware-Konto: als Kleinunternehmer ohne Umsatzsteuer, sonst mit 19 %.
+  </p>
+  <div class="border-t border-line pt-4">
+    <button type="submit" class="btn btn-primary">Speichern</button>
+  </div>
+</form>
+{% endblock %}

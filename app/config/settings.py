@@ -29,6 +29,9 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django_htmx",
+    "django_otp",
+    "django_otp.plugins.otp_totp",
+    "django_otp.plugins.otp_static",
     "django_tailwind_cli",
     "core",
     "accounts",
@@ -66,6 +69,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "accounts.context_processors.preferences",
             ],
         },
     },
@@ -98,6 +102,8 @@ AUTH_USER_MODEL = "accounts.User"
 LOGIN_URL = "accounts:login"
 LOGIN_REDIRECT_URL = "core:dashboard"
 LOGOUT_REDIRECT_URL = "accounts:login"
+# Name shown for the account in authenticator apps.
+OTP_TOTP_ISSUER = "LexTracker"
 
 PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.Argon2PasswordHasher",
@@ -138,7 +144,6 @@ TAILWIND_CLI_DIST_CSS = "css/tailwind.css"
 
 LEXWARE_API_KEY = env.lexware_api_key.get_secret_value()
 LEXWARE_BASE_URL = env.lexware_base_url
-INVOICE_TAX_RATE = env.invoice_tax_rate
 
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"

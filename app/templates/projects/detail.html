@@ -25,7 +25,7 @@
   </div>
   <div class="stat">
     <span class="stat-label">Zeitraum</span>
-    <span class="stat-value text-base">{{ project.start_date|date:"d.m.Y"|default:"–" }} – {{ project.end_date|date:"d.m.Y"|default:"offen" }}</span>
+    <span class="stat-value text-base">{{ project.start_date|date:date_format|default:"–" }} – {{ project.end_date|date:date_format|default:"offen" }}</span>
   </div>
 </div>
 {% if project.description %}<p class="max-w-3xl whitespace-pre-line text-muted">{{ project.description }}</p>{% endif %}

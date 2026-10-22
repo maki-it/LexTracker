@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Zwei-Faktor-Anmeldung · LexTracker{% endblock %}
+{% block content %}
+<div>
+  <p class="breadcrumb"><a href="{% url 'account:settings' %}">Konto</a></p>
+  <h1>Zwei-Faktor-Anmeldung</h1>
+</div>
+<form method="post" class="card flex max-w-2xl flex-col gap-4">
+  {% csrf_token %}
+  <p class="text-sm text-muted">Bestätige mit deinem Passwort. Neue Wiederherstellungscodes ersetzen die alten.</p>
+  {% include "core/_form_fields.html" %}
+  <div class="flex flex-wrap gap-2 border-t border-line pt-4">
+    <button type="submit" name="action" value="codes" class="btn btn-primary">Neue Wiederherstellungscodes</button>
+    <button type="submit" name="action" value="disable" class="btn">Ausschalten</button>
+    <a href="{% url 'account:settings' %}" class="btn btn-ghost">Abbrechen</a>
+  </div>
+</form>
+{% endblock %}

@@ -28,8 +28,8 @@ Zeiterfassung und Projektsteuerung mit Anbindung an die [Lexware Office Public A
 ```
 app/
   config/      Einstellungen (aus Umgebungsvariablen), URLs, ASGI
-  core/        Basis-Modelle, Middleware, Übersicht, Health-Check
-  accounts/    Benutzer mit Rolle (Admin, Mitarbeiter, Kunde) und Login
+  core/        Basis-Modelle, Einstellungen, Middleware, Übersicht, Health-Check, Scheduler
+  accounts/    Benutzer mit Rolle (Admin, Mitarbeiter, Kunde), Login mit Zwei-Faktor, Kontoeinstellungen
   customers/   Kunden (mit Verknüpfung zum Lexware-Kontakt) und Import aus Lexware
   lexware/     Async Client für die Lexware Office Public API
   projects/    Projekte und Aufgaben
@@ -55,29 +55,37 @@ make run         # http://localhost:8000
 ```
 
 Während du an Templates arbeitest, hält `make css-watch` in einem zweiten Terminal das Stylesheet aktuell.
+Den automatischen Kundenimport startest du lokal bei Bedarf mit `make scheduler`.
 `make test` startet die Tests, `make lint` prüft den Code-Stil. `make help` zeigt alle Befehle.
 
 ## Lexware Office
 
 Den API-Schlüssel erstellst du in Lexware Office unter *Erweiterungen > Public API* und trägst ihn als `APP_LEXWARE_API_KEY` ein.
-Danach importiert der Button **Aus Lexware importieren** auf der Kundenseite alle Kontakte mit Kundenrolle.
-Auf der Kommandozeile geht das auch: `uv run app/manage.py sync_lexware_customers`
-(im Container `docker compose exec app python manage.py sync_lexware_customers`).
 
+**Import:** Kontakte mit Kundenrolle werden automatisch importiert, standardmäßig stündlich. Das Intervall stellst du unter **Einstellungen** ein (0 schaltet den automatischen Import ab). Der Button **Aus Lexware importieren** auf der Kundenseite startet den Import sofort, auf der Kommandozeile geht das mit `uv run app/manage.py sync_lexware_customers` (im Container `docker compose exec app python manage.py sync_lexware_customers`).
 Der Import legt neue Kunden an und aktualisiert Name, Kundennummer, E-Mail, Telefon und Archiv-Status, wenn sich der Kontakt in Lexware geändert hat (erkannt an der Versionsnummer).
-Felder, die es nur hier gibt, etwa Stundensatz und Notizen, bleiben unberührt.
+
+**Bearbeiten:** Ein Klick auf den Kundennamen öffnet das Formular. Änderungen an Name, E-Mail und Telefon speichert LexTracker auch im Lexware-Kontakt; der Kontakt wird dafür frisch geladen, damit in Lexware geänderte andere Felder erhalten bleiben. Stundensatz und Notizen gibt es nur hier.
+Kundennummer und Archiv-Status pflegst du weiter in Lexware.
+
 Der Client hält das Rate-Limit der API ein (2 Anfragen pro Sekunde) und wiederholt Anfragen, die mit HTTP 429 abgelehnt werden.
 
 ## Abrechnung
 
 Pro Kunde legst du unter **Abrechnung** eine Vereinbarung an:
 
-- **Stundensatz**: Jede abrechenbare Stunde kostet den Satz der Aufgabe, sonst des Projekts, sonst des Kunden.
+- **Stundensatz**: Jede abrechenbare Stunde kostet den Satz der Aufgabe, sonst des Projekts, sonst des Kunden, sonst den Standard-Stundensatz aus den Einstellungen.
 - **Retainer**: Ein Festpreis pro Monat, Quartal oder Jahr enthält ein Stundenkontingent. Stunden darüber hinaus kosten den Mehrstundensatz der Vereinbarung oder, wenn keiner gesetzt ist, den normalen Satz. Nicht genutzte Stunden verfallen am Ende des Zeitraums.
 
 Für einen gewählten Zeitraum zeigt die Vorschau alle noch nicht abgerechneten, abrechenbaren Zeiten als Rechnungspositionen.
 **Rechnungsentwurf in Lexware anlegen** erstellt daraus einen Entwurf (nicht finalisiert), den du in Lexware prüfst und abschließt. Die Zeiten gelten danach als abgerechnet und tauchen in keiner weiteren Rechnung auf.
-Der Kunde muss dafür mit einem Lexware-Kontakt verknüpft sein. Den Steuersatz der Positionen legt `APP_INVOICE_TAX_RATE` fest (Standard 19, für Kleinunternehmer 0).
+Der Kunde muss dafür mit einem Lexware-Kontakt verknüpft sein. Die Umsatzsteuer richtet sich nach deinem Lexware-Konto: Ist es als Kleinunternehmer (§ 19 UStG) eingerichtet, entsteht die Rechnung ohne Umsatzsteuer, sonst mit 19 %.
+
+## Konto und Sicherheit
+
+Unter deinem Namen oben rechts stellst du Darstellung (hell, dunkel oder wie das System) und Datumsformat ein und änderst dein Passwort.
+Dort schaltest du auch die **Zwei-Faktor-Anmeldung** mit einer Authenticator-App ein (TOTP, über [django-otp](https://django-otp-official.readthedocs.io/)). Dabei entstehen zehn Wiederherstellungscodes, die je einmal statt des App-Codes funktionieren.
+Auch die Verwaltung unter `/admin/` meldet über diese Anmeldung an, damit der zweite Faktor dort nicht umgangen wird.
 
 ## Betrieb mit Docker
 
@@ -87,6 +95,7 @@ docker compose up -d --build
 ```
 
 Die App lauscht auf Port 8000. Datenbank und alle Daten liegen im Volume `lextracker-data` (`/data` im Container).
+Neben der App startet ein zweiter Container `scheduler` aus demselben Image. Er führt wiederkehrende Aufgaben wie den automatischen Kundenimport aus.
 Vor jedem Start führt Compose über `pre_start`-Hooks die Migrationen aus und legt, falls `DJANGO_SUPERUSER_USERNAME` und `DJANGO_SUPERUSER_PASSWORD` gesetzt sind, das Admin-Konto an (sofern es noch nicht existiert). Schlägt ein Hook fehl, startet die App nicht. Dafür ist ein aktuelles Docker Compose nötig (getestet mit v5.6).
 
 Hinter einem Reverse Proxy mit HTTPS (empfohlen) zusätzlich setzen:

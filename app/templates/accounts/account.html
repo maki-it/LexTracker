@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Konto · LexTracker{% endblock %}
+{% block content %}
+<h1>Konto</h1>
+<div class="grid max-w-2xl gap-6">
+  <form method="post" class="card flex flex-col gap-4">
+    {% csrf_token %}
+    <h2>Profil und Anzeige</h2>
+    {% include "core/_form_fields.html" %}
+    <div class="border-t border-line pt-4"><button type="submit" class="btn btn-primary">Speichern</button></div>
+  </form>
+
+  <section class="card flex flex-col gap-3">
+    <h2>Passwort</h2>
+    <p class="text-sm text-muted">Nach dem Ändern bleibst du hier angemeldet, andere Geräte werden abgemeldet.</p>
+    <div><a href="{% url 'account:password' %}" class="btn">Passwort ändern</a></div>
+  </section>
+
+  <section class="card flex flex-col gap-3">
+    <h2>Zwei-Faktor-Anmeldung</h2>
+    {% if has_mfa %}
+    <p class="text-sm"><span class="font-medium text-success">Eingeschaltet.</span> Beim Anmelden fragt LexTracker nach dem Code aus deiner Authenticator-App.</p>
+    <div><a href="{% url 'account:mfa_manage' %}" class="btn">Verwalten</a></div>
+    {% else %}
+    <p class="text-sm text-muted">Schütze dein Konto zusätzlich mit einem Code aus einer Authenticator-App wie 1Password, Bitwarden, Google Authenticator oder Microsoft Authenticator.</p>
+    <div><a href="{% url 'account:mfa_setup' %}" class="btn btn-primary">Einrichten</a></div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

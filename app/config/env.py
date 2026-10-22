@@ -1,6 +1,5 @@
 """Typed configuration loaded from environment variables (prefix ``APP_``) or a ``.env`` file."""
 
-from decimal import Decimal
 from functools import lru_cache
 from pathlib import Path
 from typing import Annotated, Literal
@@ -35,8 +34,6 @@ class Env(BaseSettings):
     # Lexware Office Public API, used from step 2 on.
     lexware_api_key: SecretStr = SecretStr("")
     lexware_base_url: str = "https://api.lexware.io/v1/"
-    # VAT rate in percent for invoice line items, e.g. 0 for small businesses (§ 19 UStG).
-    invoice_tax_rate: Decimal = Decimal("19")
 
     @property
     def debug(self) -> bool:

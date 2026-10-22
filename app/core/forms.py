@@ -1,5 +1,7 @@
 from django import forms
 
+from core.models import AppSettings
+
 
 class StyledFormMixin:
     """Give every widget the app's input styling."""
@@ -12,3 +14,9 @@ class StyledFormMixin:
                 widget.attrs.setdefault("class", "size-4 accent-primary")
             else:
                 widget.attrs.setdefault("class", "input")
+
+
+class AppSettingsForm(StyledFormMixin, forms.ModelForm):
+    class Meta:
+        model = AppSettings
+        fields = ["default_hourly_rate", "lexware_sync_interval"]

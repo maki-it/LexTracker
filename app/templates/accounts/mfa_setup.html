@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Zwei-Faktor-Anmeldung einrichten · LexTracker{% endblock %}
+{% block content %}
+<div>
+  <p class="breadcrumb"><a href="{% url 'account:settings' %}">Konto</a></p>
+  <h1>Zwei-Faktor-Anmeldung einrichten</h1>
+</div>
+<form method="post" class="card flex max-w-2xl flex-col gap-4">
+  {% csrf_token %}
+  <ol class="flex list-decimal flex-col gap-2 pl-5 text-sm">
+    <li>Scanne den QR-Code mit deiner Authenticator-App.</li>
+    <li>Gib den sechsstelligen Code ein, den die App anzeigt.</li>
+  </ol>
+  <div class="flex flex-wrap items-center gap-6">
+    <div class="w-48 shrink-0 overflow-hidden rounded-md bg-white [&>svg]:h-auto [&>svg]:w-full">{{ qr_code|safe }}</div>
+    <div class="flex flex-col gap-1 text-sm">
+      <span class="text-muted">Kein Scanner? Gib diesen Schlüssel von Hand ein:</span>
+      <code class="font-mono text-base tracking-wide break-all">{{ secret }}</code>
+    </div>
+  </div>
+  <label class="field max-w-xs">
+    <span>{{ form.code.label }}</span>
+    {{ form.code }}
+  </label>
+  {% for error in form.code.errors %}<p class="-mt-3 text-sm text-danger">{{ error }}</p>{% endfor %}
+  <div class="flex gap-2 border-t border-line pt-4">
+    <button type="submit" class="btn btn-primary">Einschalten</button>
+    <a href="{% url 'account:settings' %}" class="btn btn-ghost">Abbrechen</a>
+  </div>
+</form>
+{% endblock %}

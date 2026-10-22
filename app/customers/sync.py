@@ -4,8 +4,9 @@ from dataclasses import dataclass
 
 from django.utils import timezone
 
+from core.models import AppSettings
 from customers.models import Customer
-from lexware.client import LexwareClient
+from lexware.client import LexwareClient, LexwareError, client_from_settings
 
 # Fields that Lexware owns. Everything else (rates, notes) is only edited here.
 SYNCED_FIELDS = ["name", "customer_number", "email", "phone", "is_archived", "lexware_version", "lexware_synced_at"]
@@ -20,6 +21,10 @@ class SyncResult:
     @property
     def total(self) -> int:
         return self.created + self.updated + self.unchanged
+
+    @property
+    def summary(self) -> str:
+        return f"{self.created} neu, {self.updated} aktualisiert, {self.unchanged} unverändert."
 
 
 async def sync_customers(client: LexwareClient) -> SyncResult:
@@ -63,4 +68,24 @@ async def sync_customers(client: LexwareClient) -> SyncResult:
     if to_update:
         await Customer.objects.abulk_update(to_update, [*SYNCED_FIELDS, "updated_at"])
     result.created, result.updated = len(to_create), len(to_update)
+    return result
+
+
+async def _record(status: str, *, failed: bool) -> None:
+    # Update only these columns, so a settings change saved at the same time is kept.
+    await AppSettings.aload()
+    await AppSettings.objects.filter(pk=1).aupdate(
+        lexware_synced_at=timezone.now(), lexware_sync_status=status[:500], lexware_sync_failed=failed
+    )
+
+
+async def sync_and_record() -> SyncResult:
+    """Run the import with the configured API key and remember its outcome."""
+    try:
+        async with client_from_settings() as client:
+            result = await sync_customers(client)
+    except LexwareError as exc:
+        await _record(str(exc), failed=True)
+        raise
+    await _record(result.summary, failed=False)
     return result

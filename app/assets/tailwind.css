@@ -1,8 +1,18 @@
 @import "tailwindcss";
 @source "../";
 
-/* Light and dark mode follow the system setting. */
-@custom-variant dark (@media (prefers-color-scheme: dark));
+/* Light and dark mode follow the system setting, unless the account settings pick one
+   (data-theme="light" or "dark" on <html>). */
+@custom-variant dark {
+  :root[data-theme="dark"] & {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) & {
+      @slot;
+    }
+  }
+}
 
 /* Inter, served from our own static files (no Google Fonts request). Licence: static/fonts/Inter-LICENSE.txt */
 @font-face {
@@ -43,6 +53,14 @@
 @layer base {
   :root {
     color-scheme: light dark;
+  }
+
+  :root[data-theme="light"] {
+    color-scheme: light;
+  }
+
+  :root[data-theme="dark"] {
+    color-scheme: dark;
   }
 
   body {

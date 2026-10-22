@@ -5,7 +5,7 @@
       {% for invoice in invoices %}
       <tr>
         <td class="font-medium">{{ invoice.customer.name }}</td>
-        <td class="whitespace-nowrap text-muted tabular-nums">{{ invoice.period_start|date:"d.m.Y" }} – {{ invoice.period_end|date:"d.m.Y" }}</td>
+        <td class="whitespace-nowrap text-muted tabular-nums">{{ invoice.period_start|date:date_format }} – {{ invoice.period_end|date:date_format }}</td>
         <td class="text-right whitespace-nowrap font-semibold tabular-nums">{{ invoice.total_net }} € <span class="font-normal text-muted">netto</span></td>
         <td class="text-right whitespace-nowrap">{% if invoice.lexware_url %}<a class="inline-flex items-center gap-1.5 hover:underline" href="{{ invoice.lexware_url }}" target="_blank" rel="noopener">In Lexware öffnen{% icon "external" size=14 %}</a>{% endif %}</td>
       </tr>
