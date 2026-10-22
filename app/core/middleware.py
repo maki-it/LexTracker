@@ -6,7 +6,15 @@ from django.http import HttpRequest, HttpResponse
 from django.utils.decorators import async_only_middleware
 
 # /mcp/ checks its own API token.
-PUBLIC_PREFIXES = ("/accounts/login/", "/health/", "/admin/", "/static/", "/mcp/", "/favicon.ico")
+PUBLIC_PREFIXES = (
+    "/accounts/login/",
+    "/accounts/einladung/",
+    "/health/",
+    "/admin/",
+    "/static/",
+    "/mcp/",
+    "/favicon.ico",
+)
 
 
 @async_only_middleware

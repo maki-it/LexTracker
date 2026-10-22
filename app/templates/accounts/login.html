@@ -11,6 +11,7 @@
     <h1 class="text-lg">Anmelden</h1>
     {% csrf_token %}
     <input type="hidden" name="next" value="{{ next }}">
+    {% for message in messages %}<div role="alert" class="alert{% if message.tags %} alert-{{ message.tags }}{% endif %}">{{ message }}</div>{% endfor %}
     {% if error %}<div role="alert" class="alert alert-error">{{ error }}</div>{% endif %}
     <label class="field">
       <span>{{ form.username.label }}</span>

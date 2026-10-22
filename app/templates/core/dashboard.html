@@ -24,7 +24,7 @@
     <button type="submit" class="btn btn-primary">{% icon "play" size=14 %}Starten</button>
   </form>
   {% else %}
-  <p class="text-muted">Noch keine offenen Aufgaben. <a class="hover:underline" href="{% url 'projects:create' %}">Lege ein Projekt an</a> und füge Aufgaben hinzu.</p>
+  <p class="text-muted">Noch keine offenen Aufgaben. {% if user.is_admin %}<a class="hover:underline" href="{% url 'projects:create' %}">Lege ein Projekt an</a> und füge Aufgaben hinzu.{% else %}Sobald ein Projekt mit Aufgaben angelegt ist, kannst du hier Zeit buchen.{% endif %}</p>
   {% endif %}
 </section>
 

@@ -1,9 +1,13 @@
+import re
 import uuid
 from decimal import Decimal
+from urllib.parse import unquote
 
 import pytest
 from django.urls import reverse
+from django.utils import timezone
 
+from core.models import AppSettings
 from customers.models import Customer
 from customers.sync import sync_customers
 from tests.lexware_fakes import contact, fake_client, page, serve_pages
@@ -65,6 +69,24 @@ def test_import_view_shows_result(client, user, monkeypatch, settings):
     assert response.status_code == 200
     assert "1 neu" in response.text
     assert "ACME GmbH" in response.text
+    # The filter counts are part of the swapped list, so they change with the import.
+    assert 'id="customer-list"' in response.text
+    assert re.search(r"Aktiv<span[^>]*>1</span>", response.text)
+
+
+@pytest.mark.django_db
+def test_customer_list_reloads_only_after_an_import(client, user):
+    client.force_login(user)
+    url = reverse("customers:list")
+    marker = re.search(r"seit=([^\"]*)\"", client.get(url).text).group(1)
+
+    assert client.get(url, {"seit": unquote(marker)}).status_code == 204
+
+    app_settings = AppSettings.load()
+    app_settings.lexware_synced_at = timezone.now()
+    app_settings.save()
+    response = client.get(url, {"seit": unquote(marker)})
+    assert response.status_code == 200 and 'id="customer-list"' in response.text
 
 
 @pytest.mark.django_db

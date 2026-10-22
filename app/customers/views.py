@@ -53,6 +53,7 @@ async def _customer_list_context(request: HttpRequest) -> dict:
         customers = customers.filter(is_archived=True)
 
     ansicht = "" if view == "aktiv" else view
+    app_settings = await AppSettings.aload()
     return {
         "customers": [c async for c in customers.order_by("is_archived", "name")],
         "query": query,
@@ -70,18 +71,27 @@ async def _customer_list_context(request: HttpRequest) -> dict:
         "list_query": _query_string(ansicht=ansicht, q=query, kategorie=category),
         "ansicht": ansicht,
         "lexware_configured": bool(settings.LEXWARE_API_KEY),
-        "app_settings": await AppSettings.aload(),
+        "app_settings": app_settings,
+        "synced_marker": _synced_marker(app_settings),
     }
+
+
+def _synced_marker(app_settings: AppSettings) -> str:
+    synced_at = app_settings.lexware_synced_at
+    return synced_at.isoformat() if synced_at else ""
 
 
 @require_GET
 async def customer_list(request: HttpRequest) -> HttpResponse:
+    # The list asks every 30 seconds with the time of the import it shows. Nothing new: no content, htmx keeps it.
+    if "seit" in request.GET and request.GET["seit"] == _synced_marker(await AppSettings.aload()):
+        return HttpResponse(status=204)
     return render(request, "customers/list.html", await _customer_list_context(request))
 
 
 @require_POST
 async def import_from_lexware(request: HttpRequest) -> HttpResponse:
-    """Run the import and return the refreshed customer table (htmx swaps it in)."""
+    """Run the import and return the refreshed customer list (htmx swaps it in)."""
     result, error = None, None
     try:
         result = await sync_and_record()
@@ -89,7 +99,7 @@ async def import_from_lexware(request: HttpRequest) -> HttpResponse:
         error = str(exc)
 
     context = await _customer_list_context(request)
-    return render(request, "customers/_table.html", {**context, "result": result, "error": error})
+    return render(request, "customers/list.html", {**context, "result": result, "error": error})
 
 
 @require_http_methods(["GET", "POST"])

@@ -23,12 +23,16 @@ async def nav_counts() -> dict[str, int]:
     }
 
 
+SKIPPED = ("/static/", "/mcp/")
+
+
 @async_only_middleware
 def NavCountsMiddleware(get_response: Callable[[HttpRequest], Awaitable[HttpResponse]]):
-    """Count for full pages only. htmx requests swap parts of a page and never render the sidebar."""
+    """Count for administrators and full pages only. htmx requests never render the sidebar."""
 
     async def middleware(request: HttpRequest) -> HttpResponse:
-        if request.user.is_authenticated and not request.htmx and not request.path.startswith(("/static/", "/mcp/")):
+        user = request.user
+        if user.is_authenticated and user.is_admin and not request.htmx and not request.path.startswith(SKIPPED):
             request.nav_counts = await nav_counts()
         return await get_response(request)
 
