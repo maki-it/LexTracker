@@ -133,6 +133,11 @@ def test_retainer_overage_billed_at_overage_rate(user, task, customer):
     assert overage.unit_price == Decimal("110.00")
     assert draft.total == Decimal("2075.00")
 
+    # The preview lists the time behind each line; the split entry appears in both.
+    included, extra = draft.lines[0].entries, overage.entries
+    assert [e.duration for e in included] == [timedelta(hours=8), timedelta(hours=8), timedelta(hours=4)]
+    assert [e.duration for e in extra] == [timedelta(hours=2.5)]
+
 
 def test_retainer_overage_falls_back_to_normal_rate(user, task, customer):
     retainer(customer, included_hours=Decimal("1"))
@@ -270,3 +275,53 @@ def test_agreements_must_not_overlap(logged_in, customer):
 
     logged_in.post(url, {"kind": "hourly", "period": "month", "valid_from": "2026-07-01"})
     assert customer.billing_agreements.count() == 2
+
+
+def test_preview_lists_the_entries_of_a_line(logged_in, user, task, customer):
+    entry = work(user, task, "2026-10-05", 1.5)
+    entry.description = "Startseite gestaltet"
+    entry.save()
+
+    response = logged_in.get(
+        reverse("billing:customer", args=[customer.pk]), {"start": "2026-10-01", "end": "2026-10-31"}
+    )
+    assert "Startseite gestaltet" in response.text and "09:00–10:30" in response.text
+
+
+def test_period_options_mark_open_time_and_span_months(logged_in, user, task, customer, monkeypatch):
+    monkeypatch.setattr("billing.views.timezone.localdate", lambda *a: date(2026, 10, 22))
+    work(user, task, "2026-01-30", 2)
+    work(user, task, "2026-02-01", 1)
+    url = reverse("billing:customer", args=[customer.pk])
+
+    response = logged_in.get(url)
+    options = {o.label: o for o in response.context["period_options"]}
+    # Recent months without time are shown but have no open time; old months with time are added.
+    assert options["09/2026"].open_time == timedelta(0)
+    assert options["01/2026"].open_time == timedelta(hours=2)
+    everything = options["Alle offenen"]
+    assert (everything.start, everything.end, everything.open_time) == (
+        date(2026, 1, 30),
+        date(2026, 2, 1),
+        timedelta(hours=3),
+    )
+    # September has no open time, so all open time is preselected.
+    assert response.context["draft"].total == Decimal("300.00")
+    assert "pill-muted" in response.text
+
+    # Changing the dates also swaps the pills, so the matching one is marked.
+    response = logged_in.get(
+        url, {"start": "2026-01-30", "end": "2026-02-01"}, headers={"HX-Request": "true", "HX-Target": "preview"}
+    )
+    assert 'id="period-pills"' in response.text and 'hx-swap-oob="true"' in response.text
+    assert "300,00 €" in response.text
+
+
+def test_sidebar_counts(logged_in, user, task, customer):
+    response = logged_in.get(reverse("core:dashboard"))
+    assert response.wsgi_request.nav_counts == {"projects": 1, "billable_customers": 0}
+
+    work(user, task, "2026-10-05", 2)
+    response = logged_in.get(reverse("core:dashboard"))
+    assert response.wsgi_request.nav_counts["billable_customers"] == 1
+    assert 'title="Kunden mit offenen, abrechenbaren Zeiten">1<' in response.text

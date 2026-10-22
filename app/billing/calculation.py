@@ -33,6 +33,8 @@ class Line:
     unit: str
     unit_price: Decimal
     description: str = ""
+    # The time behind the line, shown in the preview. Not sent to Lexware.
+    entries: list[TimeEntry] = field(default_factory=list)
 
     @property
     def total(self) -> Decimal:
@@ -64,15 +66,22 @@ class Draft:
         return bool(self.lines) and not self.problems
 
 
+def unbilled(customer: Customer):
+    """The customer's finished, billable time that has not been billed yet."""
+    return TimeEntry.objects.filter(
+        task__project__customer=customer,
+        is_billable=True,
+        task__is_billable=True,
+        invoice__isnull=True,
+        ended_at__isnull=False,
+    )
+
+
 def unbilled_entries(customer: Customer, start: date, end: date) -> list[TimeEntry]:
     tz = timezone.get_current_timezone()
     return list(
-        TimeEntry.objects.filter(
-            task__project__customer=customer,
-            is_billable=True,
-            task__is_billable=True,
-            invoice__isnull=True,
-            ended_at__isnull=False,
+        unbilled(customer)
+        .filter(
             started_at__gte=datetime.combine(start, time.min, tzinfo=tz),
             started_at__lt=datetime.combine(end + timedelta(days=1), time.min, tzinfo=tz),
         )
@@ -92,7 +101,7 @@ def active_agreement(customer: Customer, start: date, end: date) -> BillingAgree
 
 def _hourly_lines(entries: list[TimeEntry], draft: Draft, label_prefix: str = "", rate: Decimal | None = None):
     """Group entries by project, task and rate into lines of hours."""
-    groups: dict[tuple, timedelta] = defaultdict(timedelta)
+    groups: dict[tuple, list[TimeEntry]] = defaultdict(list)
     for entry in entries:
         entry_rate = next(
             (r for r in (rate, entry.task.effective_hourly_rate, draft.fallback_rate) if r is not None), None
@@ -102,9 +111,19 @@ def _hourly_lines(entries: list[TimeEntry], draft: Draft, label_prefix: str = ""
             if problem not in draft.problems:
                 draft.problems.append(problem)
             continue
-        groups[(entry.task.project.name, entry.task.name, entry_rate)] += entry.duration
-    for (project, task, entry_rate), duration in groups.items():
-        draft.lines.append(Line(f"{label_prefix}{project} · {task}", to_hours(duration), "Stunden", entry_rate))
+        groups[(entry.task.project.name, entry.task.name, entry_rate)].append(entry)
+    for (project, task, entry_rate), group in groups.items():
+        duration = sum((e.duration for e in group), timedelta())
+        draft.lines.append(
+            Line(f"{label_prefix}{project} · {task}", to_hours(duration), "Stunden", entry_rate, entries=group)
+        )
+
+
+def _part(entry: TimeEntry, duration: timedelta) -> TimeEntry:
+    """An unsaved copy of ``entry`` that lasts ``duration``, for splitting it between lines."""
+    part = TimeEntry(task=entry.task, started_at=entry.started_at, description=entry.description)
+    part.ended_at = entry.started_at + duration
+    return part
 
 
 def _period_key(day: date, periods):
@@ -138,25 +157,25 @@ def build_draft(customer: Customer, start: date, end: date) -> Draft:
         by_period[_period_key(timezone.localtime(entry.started_at).date(), periods)].append(entry)
 
     for period in periods:
-        draft.lines.append(
-            Line(
-                f"Retainer {period.label}",
-                Decimal("1"),
-                "Pauschale",
-                agreement.fixed_price,
-                description=f"Enthält {_german_number(agreement.included_hours)} Stunden.",
-            )
+        retainer = Line(
+            f"Retainer {period.label}",
+            Decimal("1"),
+            "Pauschale",
+            agreement.fixed_price,
+            description=f"Enthält {_german_number(agreement.included_hours)} Stunden.",
         )
+        draft.lines.append(retainer)
         remaining = included
         overage: list[TimeEntry] = []
         for entry in by_period[period]:
             if entry.duration <= remaining:
                 remaining -= entry.duration
+                retainer.entries.append(entry)
                 continue
             # Split the entry: the part beyond the remaining contingent is billed extra.
-            extra = TimeEntry(task=entry.task, started_at=entry.started_at)
-            extra.ended_at = entry.started_at + (entry.duration - remaining)
+            if remaining:
+                retainer.entries.append(_part(entry, remaining))
+            overage.append(_part(entry, entry.duration - remaining))
             remaining = timedelta()
-            overage.append(extra)
         _hourly_lines(overage, draft, label_prefix=f"Mehrstunden {period.label}: ", rate=agreement.overage_rate)
     return draft
