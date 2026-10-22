@@ -10,6 +10,7 @@ from django.utils import timezone
 
 from billing.models import BillingAgreement
 from billing.periods import periods_between
+from core.models import AppSettings
 from customers.models import Customer
 from tracking.models import TimeEntry
 
@@ -44,6 +45,9 @@ class Draft:
     start: date
     end: date
     agreement: BillingAgreement | None
+    tax_rate: Decimal = Decimal("19")
+    # Used when neither task, project nor customer has a rate.
+    fallback_rate: Decimal | None = None
     lines: list[Line] = field(default_factory=list)
     entries: list[TimeEntry] = field(default_factory=list)
     problems: list[str] = field(default_factory=list)
@@ -91,7 +95,9 @@ def _hourly_lines(entries: list[TimeEntry], draft: Draft, label_prefix: str = ""
     """Group entries by project, task and rate into lines of hours."""
     groups: dict[tuple, timedelta] = defaultdict(timedelta)
     for entry in entries:
-        entry_rate = rate if rate is not None else entry.task.effective_hourly_rate
+        entry_rate = next(
+            (r for r in (rate, entry.task.effective_hourly_rate, draft.fallback_rate) if r is not None), None
+        )
         if entry_rate is None:
             problem = f"Für „{entry.task.project.name} · {entry.task.name}“ ist kein Stundensatz hinterlegt."
             if problem not in draft.problems:
@@ -110,7 +116,16 @@ def build_draft(customer: Customer, start: date, end: date) -> Draft:
     """Calculate the invoice for ``customer`` and the period from ``start`` to ``end`` (inclusive)."""
     agreement = active_agreement(customer, start, end)
     entries = unbilled_entries(customer, start, end)
-    draft = Draft(customer, start, end, agreement, entries=entries)
+    app_settings = AppSettings.load()
+    draft = Draft(
+        customer,
+        start,
+        end,
+        agreement,
+        tax_rate=app_settings.invoice_tax_rate,
+        fallback_rate=app_settings.default_hourly_rate,
+        entries=entries,
+    )
 
     if agreement is None or agreement.kind == BillingAgreement.Kind.HOURLY:
         _hourly_lines(entries, draft)

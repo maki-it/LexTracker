@@ -20,6 +20,7 @@
     </div>
     <div class="flex items-center gap-2">
       <div hx-get="{% url 'tracking:timer' %}" hx-trigger="load" hx-swap="outerHTML"></div>
+      {% if user.role == "admin" %}<a href="{% url 'core:settings' %}" class="btn btn-ghost btn-sm{% if request.resolver_match.url_name == 'settings' %} bg-surface-muted{% endif %}">Einstellungen</a>{% endif %}
       {% if user.is_staff %}<a href="{% url 'admin:index' %}" class="btn btn-ghost btn-sm">Verwaltung</a>{% endif %}
       <form method="post" action="{% url 'accounts:logout' %}">
         {% csrf_token %}

@@ -138,7 +138,6 @@ TAILWIND_CLI_DIST_CSS = "css/tailwind.css"
 
 LEXWARE_API_KEY = env.lexware_api_key.get_secret_value()
 LEXWARE_BASE_URL = env.lexware_base_url
-INVOICE_TAX_RATE = env.invoice_tax_rate
 
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"

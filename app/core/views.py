@@ -1,12 +1,17 @@
 from datetime import datetime, time, timedelta
 
 from asgiref.sync import sync_to_async
+from django.contrib import messages
+from django.core.exceptions import PermissionDenied
 from django.db import connection
 from django.http import HttpRequest, HttpResponse, JsonResponse
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.utils import timezone
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_http_methods
 
+from accounts.models import User
+from core.forms import AppSettingsForm
+from core.models import AppSettings
 from tracking.forms import open_tasks
 from tracking.models import TimeEntry
 
@@ -44,3 +49,16 @@ async def health(request: HttpRequest) -> JsonResponse:
     except Exception:
         ok = False
     return JsonResponse({"status": "ok" if ok else "error"}, status=200 if ok else 503)
+
+
+@require_http_methods(["GET", "POST"])
+async def app_settings(request: HttpRequest) -> HttpResponse:
+    if request.user.role != User.Role.ADMIN:
+        raise PermissionDenied
+    form = AppSettingsForm(request.POST or None, instance=await AppSettings.aload())
+    if request.method == "POST" and await sync_to_async(form.is_valid)():
+        # Save only the fields on the page; the import writes its status columns itself.
+        await form.instance.asave(update_fields=list(form.fields))
+        messages.success(request, "Einstellungen gespeichert.")
+        return redirect("core:settings")
+    return render(request, "core/settings.html", {"form": form})

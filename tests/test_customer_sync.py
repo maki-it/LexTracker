@@ -56,7 +56,7 @@ async def test_skips_unchanged_customers():
 def test_import_view_shows_result(client, user, monkeypatch, settings):
     settings.LEXWARE_API_KEY = "test-key"
     monkeypatch.setattr(
-        "customers.views.client_from_settings", lambda: fake_client(serve_pages(page([contact("ACME GmbH")])))
+        "customers.sync.client_from_settings", lambda: fake_client(serve_pages(page([contact("ACME GmbH")])))
     )
     client.force_login(user)
 

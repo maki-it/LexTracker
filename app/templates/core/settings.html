@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Einstellungen · LexTracker{% endblock %}
+{% block content %}
+<h1>Einstellungen</h1>
+<form method="post" class="card flex max-w-2xl flex-col gap-4">
+  {% csrf_token %}
+  <p class="text-sm text-muted">Diese Einstellungen gelten für alle Benutzer.</p>
+  {% include "core/_form_fields.html" %}
+  <div>
+    <button type="submit" class="btn btn-primary">Speichern</button>
+  </div>
+</form>
+{% endblock %}

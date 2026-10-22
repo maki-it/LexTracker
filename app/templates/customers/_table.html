@@ -6,6 +6,13 @@
     Import abgeschlossen: {{ result.created }} neu, {{ result.updated }} aktualisiert, {{ result.unchanged }} unverändert.
   </div>
   {% endif %}
+  {% if app_settings.lexware_synced_at %}
+  <p class="text-sm {% if app_settings.lexware_sync_failed %}text-danger{% else %}text-muted{% endif %}">
+    Letzter Import {{ app_settings.lexware_synced_at|date:"d.m.Y, H:i" }} Uhr:
+    {% if app_settings.lexware_sync_failed %}fehlgeschlagen ({{ app_settings.lexware_sync_status }}){% else %}{{ app_settings.lexware_sync_status }}{% endif %}
+    {% if app_settings.lexware_sync_interval %}· automatisch alle {{ app_settings.lexware_sync_interval }} Minuten{% endif %}
+  </p>
+  {% endif %}
   <div class="card overflow-x-auto p-0">
     <table class="w-full text-left text-sm">
       <thead class="border-b border-line text-muted">
@@ -22,7 +29,7 @@
         <tr class="border-b border-line last:border-0{% if customer.is_archived %} text-muted{% endif %}">
           <td class="px-4 py-3 tabular-nums">{{ customer.customer_number|default:"–" }}</td>
           <td class="px-4 py-3 font-medium">
-            {{ customer.name }}
+            <a class="hover:text-primary hover:underline" href="{% url 'customers:edit' customer.pk %}">{{ customer.name }}</a>
             {% if customer.is_archived %}<span class="ml-2 text-xs">(archiviert)</span>{% endif %}
           </td>
           <td class="px-4 py-3">{% if customer.email %}<a class="text-primary hover:underline" href="mailto:{{ customer.email }}">{{ customer.email }}</a>{% else %}–{% endif %}</td>

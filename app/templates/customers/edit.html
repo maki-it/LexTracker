@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ customer.name }} · LexTracker{% endblock %}
+{% block content %}
+<div>
+  <p class="text-sm text-muted">Kunden{% if customer.customer_number %} · Nr. {{ customer.customer_number }}{% endif %}</p>
+  <h1>{{ customer.name }}</h1>
+</div>
+<form method="post" class="card flex max-w-2xl flex-col gap-4">
+  {% csrf_token %}
+  {% if customer.lexware_id %}
+  <p class="text-sm text-muted">
+    Name, E-Mail und Telefon gehören zum Kontakt in Lexware Office. Änderungen daran werden beim Speichern auch dort gespeichert.
+    {% if customer.lexware_synced_at %}Zuletzt abgeglichen {{ customer.lexware_synced_at|date:"d.m.Y, H:i" }} Uhr.{% endif %}
+  </p>
+  {% endif %}
+  {% include "core/_form_fields.html" %}
+  <div class="flex gap-2">
+    <button type="submit" class="btn btn-primary">Speichern</button>
+    <a href="{% url 'customers:list' %}" class="btn btn-ghost">Abbrechen</a>
+  </div>
+</form>
+{% endblock %}

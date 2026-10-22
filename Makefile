@@ -1,6 +1,6 @@
 MANAGE = uv run app/manage.py
 
-.PHONY: help install run css css-watch migrate makemigrations superuser test lint format docker-up docker-down docker-logs
+.PHONY: help install run scheduler css css-watch migrate makemigrations superuser test lint format docker-up docker-down docker-logs
 
 help: ## Show available commands
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  %-16s %s\n", $$1, $$2}'
@@ -11,6 +11,9 @@ install: ## Install dependencies and create .env if missing
 
 run: ## Start the dev server (uvicorn, auto-reload)
 	cd app && uv run uvicorn config.asgi:application --reload --port 8000
+
+scheduler: ## Run recurring jobs such as the automatic customer import
+	$(MANAGE) run_scheduler
 
 css: ## Build the Tailwind stylesheet once
 	$(MANAGE) tailwind build

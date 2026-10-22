@@ -2,7 +2,6 @@
 
 from datetime import date, datetime, time
 
-from django.conf import settings
 from django.utils import timezone
 
 from billing.calculation import Draft
@@ -27,7 +26,7 @@ def invoice_payload(draft: Draft, voucher_date: date) -> dict:
                 "unitPrice": {
                     "currency": "EUR",
                     "netAmount": float(line.unit_price),
-                    "taxRatePercentage": float(settings.INVOICE_TAX_RATE),
+                    "taxRatePercentage": float(draft.tax_rate),
                 },
             }
             for line in draft.lines

@@ -13,6 +13,7 @@ from billing.lexware import invoice_payload
 from billing.models import BillingAgreement, Invoice
 from billing.periods import Period, period_containing, periods_between, recent_periods
 from billing.services import create_invoice
+from core.models import AppSettings
 from lexware.client import LexwareClient, LexwareError
 from projects.models import Task
 from tracking.models import TimeEntry
@@ -142,11 +143,22 @@ def test_retainer_overage_falls_back_to_normal_rate(user, task, customer):
     assert draft.lines[1].unit_price == Decimal("100.00")
 
 
+def test_global_settings_give_fallback_rate_and_tax_rate(user, task, customer):
+    customer.default_hourly_rate = None
+    customer.save()
+    AppSettings.objects.create(pk=1, default_hourly_rate=Decimal("80.00"), invoice_tax_rate=Decimal("0"))
+    work(user, task, "2026-10-05", 1)
+
+    draft = build_draft(customer, date(2026, 10, 1), date(2026, 10, 31))
+
+    assert draft.lines[0].unit_price == Decimal("80.00")
+    assert invoice_payload(draft, date(2026, 11, 3))["lineItems"][0]["unitPrice"]["taxRatePercentage"] == 0.0
+
+
 # Lexware
 
 
-def test_invoice_payload(user, task, customer, settings):
-    settings.INVOICE_TAX_RATE = Decimal("19")
+def test_invoice_payload(user, task, customer):
     work(user, task, "2026-10-05", 2)
     draft = build_draft(customer, date(2026, 10, 1), date(2026, 10, 31))
 
