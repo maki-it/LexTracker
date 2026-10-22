@@ -7,12 +7,10 @@
   {% tailwind_css %}
   <script src="{% static 'js/htmx.min.js' %}" defer></script>
 </head>
-<body class="min-h-screen bg-base-200" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+<body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
   {% if user.is_authenticated %}
-  <nav class="navbar bg-base-100 shadow-sm px-4">
-    <div class="flex-1">
-      <a href="{% url 'core:dashboard' %}" class="text-xl font-semibold">LexTracker</a>
-    </div>
+  <nav class="flex items-center justify-between gap-4 border-b border-line bg-surface px-6 py-3">
+    <a href="{% url 'core:dashboard' %}" class="text-lg font-semibold">LexTracker</a>
     <div class="flex items-center gap-2">
       {% if user.is_staff %}<a href="{% url 'admin:index' %}" class="btn btn-ghost btn-sm">Verwaltung</a>{% endif %}
       <form method="post" action="{% url 'accounts:logout' %}">
@@ -22,9 +20,9 @@
     </div>
   </nav>
   {% endif %}
-  <main class="container mx-auto max-w-5xl p-4">
+  <main class="mx-auto flex max-w-5xl flex-col gap-4 px-4 py-6">
     {% for message in messages %}
-    <div role="alert" class="alert mb-4 {% if message.tags %}alert-{{ message.tags }}{% endif %}">{{ message }}</div>
+    <div role="alert" class="alert{% if message.tags %} alert-{{ message.tags }}{% endif %}">{{ message }}</div>
     {% endfor %}
     {% block content %}{% endblock %}
   </main>

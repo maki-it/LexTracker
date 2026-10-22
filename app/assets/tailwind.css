@@ -1,5 +1,92 @@
 @import "tailwindcss";
 @source "../";
-@plugin "daisyui" {
-  themes: light --default, dark --prefersdark;
+
+/* Light and dark mode follow the system setting. */
+@custom-variant dark (@media (prefers-color-scheme: dark));
+
+/* Design tokens. Use them as Tailwind classes, e.g. bg-surface, text-muted, border-line. */
+@theme {
+  --color-canvas: light-dark(#f5f6f8, #111318);
+  --color-surface: light-dark(#ffffff, #1b1e25);
+  --color-surface-muted: light-dark(#eef0f3, #242832);
+  --color-line: light-dark(#dde1e6, #2f3440);
+  --color-ink: light-dark(#1b1f27, #e6e8ec);
+  --color-muted: light-dark(#5d6573, #9aa2b1);
+
+  --color-primary: light-dark(#2f5bd3, #6d8ff0);
+  --color-primary-hover: light-dark(#2549ad, #8aa6f4);
+  --color-on-primary: light-dark(#ffffff, #0d1426);
+
+  --color-success: light-dark(#1f7a4d, #4cc38a);
+  --color-warning: light-dark(#9a6200, #e8b04b);
+  --color-danger: light-dark(#c0362c, #f0776d);
+}
+
+@layer base {
+  :root {
+    color-scheme: light dark;
+  }
+
+  body {
+    @apply min-h-dvh bg-canvas text-ink antialiased;
+  }
+
+  h1 {
+    @apply text-2xl font-semibold;
+  }
+
+  h2 {
+    @apply text-lg font-semibold;
+  }
+
+  :focus-visible {
+    @apply outline-3 outline-offset-2 outline-primary/45;
+  }
+}
+
+/* Own components, so templates stay short. */
+@layer components {
+  .card {
+    @apply rounded-xl border border-line bg-surface p-6 shadow-sm;
+  }
+
+  .btn {
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-md border border-line bg-surface px-4 py-2 font-medium transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .btn-primary {
+    @apply border-primary bg-primary text-on-primary hover:border-primary-hover hover:bg-primary-hover;
+  }
+
+  .btn-ghost {
+    @apply border-transparent bg-transparent;
+  }
+
+  .btn-sm {
+    @apply px-3 py-1 text-sm;
+  }
+
+  .field {
+    @apply flex flex-col gap-1 text-sm font-medium;
+  }
+
+  .input {
+    @apply w-full rounded-md border border-line bg-surface px-3 py-2 text-base font-normal focus:border-primary focus:outline-3 focus:outline-offset-0 focus:outline-primary/45;
+  }
+
+  .alert {
+    @apply rounded-md border border-l-4 border-primary/40 border-l-primary bg-primary/10 px-4 py-3;
+  }
+
+  .alert-success {
+    @apply border-success/40 border-l-success bg-success/10;
+  }
+
+  .alert-warning {
+    @apply border-warning/40 border-l-warning bg-warning/10;
+  }
+
+  .alert-error {
+    @apply border-danger/40 border-l-danger bg-danger/10;
+  }
 }

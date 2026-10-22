@@ -129,9 +129,8 @@ STORAGES = {
 }
 SERVESTATIC_USE_FINDERS = SERVESTATIC_AUTOREFRESH = not IS_PRODUCTION
 
-# tailwind-cli-extra is the Tailwind standalone CLI with daisyUI bundled, so no Node.js is needed.
-TAILWIND_CLI_USE_DAISY_UI = True
-TAILWIND_CLI_VERSION = "2.10.34"
+# Tailwind's standalone CLI, so no Node.js is needed. Components live in assets/tailwind.css.
+TAILWIND_CLI_VERSION = "4.3.3"
 TAILWIND_CLI_SRC_CSS = "assets/tailwind.css"
 TAILWIND_CLI_DIST_CSS = "css/tailwind.css"
 
