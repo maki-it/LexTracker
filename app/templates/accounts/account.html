@@ -1,9 +1,9 @@
-{% extends "base.html" %}
+{% extends layout %}
 {% block title %}Konto · LexTracker{% endblock %}
 {% block content %}
 <h1>Konto</h1>
 <div class="grid max-w-2xl gap-6">
-  <form method="post" class="card flex flex-col gap-4">
+  <form method="post" action="{% url 'account:settings' %}" class="card flex flex-col gap-4">
     {% csrf_token %}
     <h2>Profil und Anzeige</h2>
     {% include "core/_form_fields.html" %}

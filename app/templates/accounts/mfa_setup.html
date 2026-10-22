@@ -1,11 +1,11 @@
-{% extends "base.html" %}
+{% extends layout %}
 {% block title %}Zwei-Faktor-Anmeldung einrichten · LexTracker{% endblock %}
 {% block content %}
 <div>
   <p class="breadcrumb"><a href="{% url 'account:settings' %}">Konto</a></p>
   <h1>Zwei-Faktor-Anmeldung einrichten</h1>
 </div>
-<form method="post" class="card flex max-w-2xl flex-col gap-4">
+<form method="post" action="{{ request.get_full_path }}" class="card flex max-w-2xl flex-col gap-4">
   {% csrf_token %}
   <ol class="flex list-decimal flex-col gap-2 pl-5 text-sm">
     <li>Scanne den QR-Code mit deiner Authenticator-App.</li>
