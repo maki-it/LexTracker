@@ -1,0 +1,38 @@
+<div id="customer-table" class="flex flex-col gap-4">
+  {% if error %}
+  <div role="alert" class="alert alert-error">{{ error }}</div>
+  {% elif result %}
+  <div role="alert" class="alert alert-success">
+    Import abgeschlossen: {{ result.created }} neu, {{ result.updated }} aktualisiert, {{ result.unchanged }} unverändert.
+  </div>
+  {% endif %}
+  <div class="card overflow-x-auto p-0">
+    <table class="w-full text-left text-sm">
+      <thead class="border-b border-line text-muted">
+        <tr>
+          <th class="px-4 py-3 font-medium">Nr.</th>
+          <th class="px-4 py-3 font-medium">Name</th>
+          <th class="px-4 py-3 font-medium">E-Mail</th>
+          <th class="px-4 py-3 font-medium">Telefon</th>
+          <th class="px-4 py-3 text-right font-medium">Stundensatz</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for customer in customers %}
+        <tr class="border-b border-line last:border-0{% if customer.is_archived %} text-muted{% endif %}">
+          <td class="px-4 py-3 tabular-nums">{{ customer.customer_number|default:"–" }}</td>
+          <td class="px-4 py-3 font-medium">
+            {{ customer.name }}
+            {% if customer.is_archived %}<span class="ml-2 text-xs">(archiviert)</span>{% endif %}
+          </td>
+          <td class="px-4 py-3">{% if customer.email %}<a class="text-primary hover:underline" href="mailto:{{ customer.email }}">{{ customer.email }}</a>{% else %}–{% endif %}</td>
+          <td class="px-4 py-3">{{ customer.phone|default:"–" }}</td>
+          <td class="px-4 py-3 text-right tabular-nums">{% if customer.default_hourly_rate is not None %}{{ customer.default_hourly_rate }} €{% else %}–{% endif %}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="px-4 py-8 text-center text-muted">Noch keine Kunden. Importiere sie aus Lexware Office.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>

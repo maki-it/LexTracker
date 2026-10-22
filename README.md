@@ -6,8 +6,8 @@ Zeiterfassung und Projektsteuerung mit Anbindung an die [Lexware Office Public A
 
 ## Stand und Fahrplan
 
-1. **Fundament** (dieser Stand): Projektgerüst, Login, Datenmodell für Kunden, Projekte, Aufgaben und Zeiteinträge, Docker, Tests, CI.
-2. **Lexware-Anbindung**: Kunden aus Lexware Office importieren und abgleichen.
+1. **Fundament** ✓: Projektgerüst, Login, Datenmodell für Kunden, Projekte, Aufgaben und Zeiteinträge, Docker, Tests, CI.
+2. **Lexware-Anbindung** ✓: Kunden aus Lexware Office importieren und abgleichen.
 3. **Projekte und Zeiterfassung**: Projekte und Aufgaben anlegen, Zeiten per Timer oder manuell buchen.
 4. **Später**: Abrechnungsmodelle (z. B. Stundenkontingent pro Quartal zum Festpreis, Rest nach Stundensatz), Rechnungen über Lexware, Dashboards, Zugänge für Mitarbeiter und Kunden.
 
@@ -29,7 +29,8 @@ app/
   config/      Einstellungen (aus Umgebungsvariablen), URLs, ASGI
   core/        Basis-Modelle, Middleware, Übersicht, Health-Check
   accounts/    Benutzer mit Rolle (Admin, Mitarbeiter, Kunde) und Login
-  customers/   Kunden (mit Verknüpfung zum Lexware-Kontakt)
+  customers/   Kunden (mit Verknüpfung zum Lexware-Kontakt) und Import aus Lexware
+  lexware/     Async Client für die Lexware Office Public API
   projects/    Projekte und Aufgaben
   tracking/    Zeiteinträge (ein Eintrag ohne Ende ist ein laufender Timer)
   templates/   HTML-Templates
@@ -53,6 +54,17 @@ make run         # http://localhost:8000
 
 Während du an Templates arbeitest, hält `make css-watch` in einem zweiten Terminal das Stylesheet aktuell.
 `make test` startet die Tests, `make lint` prüft den Code-Stil. `make help` zeigt alle Befehle.
+
+## Lexware Office
+
+Den API-Schlüssel erstellst du in Lexware Office unter *Erweiterungen > Public API* und trägst ihn als `APP_LEXWARE_API_KEY` ein.
+Danach importiert der Button **Aus Lexware importieren** auf der Kundenseite alle Kontakte mit Kundenrolle.
+Auf der Kommandozeile geht das auch: `uv run app/manage.py sync_lexware_customers`
+(im Container `docker compose exec app python manage.py sync_lexware_customers`).
+
+Der Import legt neue Kunden an und aktualisiert Name, Kundennummer, E-Mail, Telefon und Archiv-Status, wenn sich der Kontakt in Lexware geändert hat (erkannt an der Versionsnummer).
+Felder, die es nur hier gibt, etwa Stundensatz und Notizen, bleiben unberührt.
+Der Client hält das Rate-Limit der API ein (2 Anfragen pro Sekunde) und wiederholt Anfragen, die mit HTTP 429 abgelehnt werden.
 
 ## Betrieb mit Docker
 
