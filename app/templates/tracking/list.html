@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% load timefmt %}
+{% block title %}Zeiten · LexTracker{% endblock %}
+{% block content %}
+<div class="flex flex-wrap items-center justify-between gap-4">
+  <div>
+    <h1>Zeiten</h1>
+    <p class="text-sm text-muted">KW {{ monday|date:"W" }} · {{ monday|date:"d.m." }} – {{ sunday|date:"d.m.Y" }} · <span class="font-medium text-ink tabular-nums">{{ week_total|hours }} h</span></p>
+  </div>
+  <div class="flex items-center gap-2">
+    <a href="?woche={{ prev_week }}" class="btn btn-ghost btn-sm" aria-label="Vorherige Woche">←</a>
+    <a href="{% url 'tracking:list' %}" class="btn btn-ghost btn-sm">Diese Woche</a>
+    <a href="?woche={{ next_week }}" class="btn btn-ghost btn-sm" aria-label="Nächste Woche">→</a>
+    <a href="{% url 'tracking:create' %}" class="btn btn-primary btn-sm">+ Zeit erfassen</a>
+  </div>
+</div>
+
+{% for day in days %}
+{% if day.entries %}
+<section class="card flex flex-col gap-0 p-0">
+  <div class="flex items-center justify-between border-b border-line px-4 py-3">
+    <h2 class="text-base">{{ day.date|date:"l, d.m." }}</h2>
+    <span class="font-semibold tabular-nums">{{ day.total|hours }} h</span>
+  </div>
+  {% for entry in day.entries %}
+  <div class="flex items-center justify-between gap-4 border-b border-line px-4 py-3 text-sm last:border-0">
+    <div class="min-w-0">
+      <div class="font-medium">{{ entry.task.name }}{% if entry.is_running %} <span class="text-success">(läuft)</span>{% endif %}{% if not entry.is_billable %} <span class="text-xs text-muted">(nicht abrechenbar)</span>{% endif %}</div>
+      <div class="truncate text-muted">{{ entry.task.project.customer.name }} · {{ entry.task.project.name }}{% if entry.description %} – {{ entry.description }}{% endif %}</div>
+    </div>
+    <div class="flex shrink-0 items-center gap-3">
+      <div class="text-right tabular-nums">
+        <div>{{ entry.started_at|time:"H:i" }}–{% if entry.ended_at %}{{ entry.ended_at|time:"H:i" }}{% else %}…{% endif %}</div>
+        <div class="font-medium">{{ entry.duration|hours }}</div>
+      </div>
+      {% if not entry.is_running %}<a href="{% url 'tracking:edit' entry.pk %}" class="btn btn-ghost btn-sm">Bearbeiten</a>{% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</section>
+{% endif %}
+{% endfor %}
+{% if not week_total %}<p class="card text-center text-muted">In dieser Woche ist noch nichts erfasst.</p>{% endif %}
+{% endblock %}

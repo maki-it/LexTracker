@@ -9,12 +9,16 @@
 </head>
 <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
   {% if user.is_authenticated %}
-  <nav class="flex items-center justify-between gap-4 border-b border-line bg-surface px-6 py-3">
-    <div class="flex items-center gap-4">
-      <a href="{% url 'core:dashboard' %}" class="text-lg font-semibold">LexTracker</a>
-      <a href="{% url 'customers:list' %}" class="btn btn-ghost btn-sm">Kunden</a>
+  {% with section=request.resolver_match.app_name %}
+  <nav class="flex flex-wrap items-center justify-between gap-4 border-b border-line bg-surface px-6 py-3">
+    <div class="flex flex-wrap items-center gap-1">
+      <a href="{% url 'core:dashboard' %}" class="mr-3 text-lg font-semibold">LexTracker</a>
+      <a href="{% url 'tracking:list' %}" class="btn btn-ghost btn-sm{% if section == 'tracking' %} bg-surface-muted{% endif %}">Zeiten</a>
+      <a href="{% url 'projects:list' %}" class="btn btn-ghost btn-sm{% if section == 'projects' %} bg-surface-muted{% endif %}">Projekte</a>
+      <a href="{% url 'customers:list' %}" class="btn btn-ghost btn-sm{% if section == 'customers' %} bg-surface-muted{% endif %}">Kunden</a>
     </div>
     <div class="flex items-center gap-2">
+      <div hx-get="{% url 'tracking:timer' %}" hx-trigger="load" hx-swap="outerHTML"></div>
       {% if user.is_staff %}<a href="{% url 'admin:index' %}" class="btn btn-ghost btn-sm">Verwaltung</a>{% endif %}
       <form method="post" action="{% url 'accounts:logout' %}">
         {% csrf_token %}
@@ -22,6 +26,7 @@
       </form>
     </div>
   </nav>
+  {% endwith %}
   {% endif %}
   <main class="mx-auto flex max-w-5xl flex-col gap-4 px-4 py-6">
     {% for message in messages %}

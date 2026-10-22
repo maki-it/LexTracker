@@ -1,0 +1,7 @@
+{# Start a timer on `task`. Expects `task` in the context. #}
+<form method="post" action="{% url 'tracking:timer_start' %}" hx-post="{% url 'tracking:timer_start' %}" hx-swap="none">
+  {% csrf_token %}
+  <input type="hidden" name="task" value="{{ task.pk }}">
+  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+  <button type="submit" class="btn btn-sm" title="Timer starten">▶ Start</button>
+</form>

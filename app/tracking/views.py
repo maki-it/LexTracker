@@ -1,0 +1,140 @@
+from datetime import date, datetime, time, timedelta
+
+from asgiref.sync import sync_to_async
+from django.contrib import messages
+from django.http import Http404, HttpRequest, HttpResponse
+from django.shortcuts import redirect, render
+from django.urls import reverse
+from django.utils import timezone
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
+
+from core.shortcuts import arender
+from projects.models import Task
+from tracking.forms import TimeEntryForm
+from tracking.models import TimeEntry
+from tracking.services import start_timer, stop_timer
+
+TIMER_CHANGED = "timer-changed"
+
+
+def _entries(user):
+    return TimeEntry.objects.filter(user=user).select_related("task", "task__project", "task__project__customer")
+
+
+async def _running_entry(user) -> TimeEntry | None:
+    return await _entries(user).filter(ended_at__isnull=True).afirst()
+
+
+def _timer_response(request: HttpRequest, entry: TimeEntry | None) -> HttpResponse:
+    response = render(request, "tracking/_timer.html", {"running_entry": entry})
+    # Lets other parts of the page (e.g. today's entries) reload themselves.
+    response["HX-Trigger"] = TIMER_CHANGED
+    return response
+
+
+@require_GET
+async def timer(request: HttpRequest) -> HttpResponse:
+    """The running-timer badge in the navigation bar."""
+    return render(request, "tracking/_timer.html", {"running_entry": await _running_entry(request.user)})
+
+
+@require_POST
+async def timer_start(request: HttpRequest) -> HttpResponse:
+    try:
+        task = await Task.objects.aget(pk=int(request.POST.get("task", "")))
+    except ValueError, Task.DoesNotExist:
+        raise Http404 from None
+    await sync_to_async(start_timer)(request.user, task, request.POST.get("description", "").strip())
+    if not request.htmx:
+        return redirect(request.POST.get("next") or "core:dashboard")
+    return _timer_response(request, await _running_entry(request.user))
+
+
+@require_POST
+async def timer_stop(request: HttpRequest) -> HttpResponse:
+    await sync_to_async(stop_timer)(request.user)
+    if not request.htmx:
+        return redirect(request.POST.get("next") or "core:dashboard")
+    return _timer_response(request, None)
+
+
+def _parse_week(value: str | None) -> date:
+    """Monday of the ISO week given as "2026-W43", or of the current week."""
+    try:
+        year, week = value.split("-W")
+        return date.fromisocalendar(int(year), int(week), 1)
+    except AttributeError, ValueError:
+        today = timezone.localdate()
+        return today - timedelta(days=today.weekday())
+
+
+def _week_param(monday: date) -> str:
+    year, week, _ = monday.isocalendar()
+    return f"{year}-W{week:02d}"
+
+
+@require_GET
+async def entry_list(request: HttpRequest) -> HttpResponse:
+    monday = _parse_week(request.GET.get("woche"))
+    tz = timezone.get_current_timezone()
+    start = datetime.combine(monday, time.min, tzinfo=tz)
+    entries = [
+        e async for e in _entries(request.user).filter(started_at__gte=start, started_at__lt=start + timedelta(days=7))
+    ]
+
+    days = []
+    for offset in range(7):
+        day = monday + timedelta(days=offset)
+        day_entries = sorted(
+            (e for e in entries if timezone.localtime(e.started_at).date() == day), key=lambda e: e.started_at
+        )
+        days.append({"date": day, "entries": day_entries, "total": sum((e.duration for e in day_entries), timedelta())})
+
+    return render(
+        request,
+        "tracking/list.html",
+        {
+            "days": days,
+            "monday": monday,
+            "sunday": monday + timedelta(days=6),
+            "week_total": sum((d["total"] for d in days), timedelta()),
+            "prev_week": _week_param(monday - timedelta(days=7)),
+            "next_week": _week_param(monday + timedelta(days=7)),
+            "this_week": _week_param(monday),
+        },
+    )
+
+
+async def _get_entry(request: HttpRequest, pk: int) -> TimeEntry:
+    try:
+        return await _entries(request.user).aget(pk=pk)
+    except TimeEntry.DoesNotExist as exc:
+        raise Http404 from exc
+
+
+def _back_to_week(entry: TimeEntry) -> str:
+    return f"{reverse('tracking:list')}?woche={_week_param(timezone.localtime(entry.started_at).date())}"
+
+
+@require_http_methods(["GET", "POST"])
+async def entry_form(request: HttpRequest, pk: int | None = None) -> HttpResponse:
+    entry = await _get_entry(request, pk) if pk else TimeEntry(user=request.user)
+    initial = None
+    if not pk:
+        now = timezone.localtime().replace(second=0, microsecond=0)
+        initial = {"started_at": now - timedelta(hours=1), "ended_at": now, "task": request.GET.get("aufgabe")}
+    form = TimeEntryForm(request.POST or None, instance=entry, initial=initial)
+    if request.method == "POST" and await sync_to_async(form.is_valid)():
+        entry = await sync_to_async(form.save)()
+        messages.success(request, "Zeiteintrag gespeichert.")
+        return redirect(_back_to_week(entry))
+    return await arender(request, "tracking/form.html", {"form": form, "entry": entry if pk else None})
+
+
+@require_POST
+async def entry_delete(request: HttpRequest, pk: int) -> HttpResponse:
+    entry = await _get_entry(request, pk)
+    back = _back_to_week(entry)
+    await entry.adelete()
+    messages.success(request, "Zeiteintrag gelöscht.")
+    return redirect(back)
