@@ -1,103 +1,48 @@
-APP_DIR=app
+MANAGE = uv run app/manage.py
 
-.PHONY: help
-help: ## Show this help message
-	@echo "Available commands:"
-	@echo ""
-	@echo "Development:"
-	@echo "  make install          - Install dependencies using uv"
-	@echo "  make run              - Run development server with uvicorn"
-	@echo "  make migrate          - Run database migrations"
-	@echo "  make makemigrations   - Create new migrations"
-	@echo "  make tailwind-start   - Start Tailwind CSS in watch mode"
-	@echo "  make tailwind-build   - Build Tailwind CSS for production"
-	@echo "  make manage <cmd>     - Run Django management command"
-	@echo ""
-	@echo "Docker:"
-	@echo "  make docker-build     - Build Docker image"
-	@echo "  make docker-run       - Start application with docker compose"
-	@echo "  make docker-stop      - Stop docker compose containers"
-	@echo "  make docker-logs      - View container logs"
-	@echo "  make docker-shell     - Open shell in running container"
-	@echo "  make docker-rebuild   - Rebuild and restart containers"
+.PHONY: help install run css css-watch migrate makemigrations superuser test lint format docker-up docker-down docker-logs
 
-.PHONY: install
-install:
-	@echo "🚀 Creating virtual environment using uv"
-	@uv sync
-#	@uv run pre-commit install
+help: ## Show available commands
+	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  %-16s %s\n", $$1, $$2}'
 
-#.PHONY: check
-#check: ## Run code quality tools.
-#	@echo "🚀 Checking lock file consistency with 'pyproject.toml'"
-#	@uv lock --locked
-#	@echo "🚀 Linting code: Running pre-commit"
-#	@uv run pre-commit run -a
-#	@echo "🚀 Static type checking: Running mypy"
-#	@uv run mypy
-#	@echo "🚀 Checking for obsolete dependencies: Running deptry"
-#	@uv run deptry .
+install: ## Install dependencies and create .env if missing
+	uv sync
+	@test -f .env || cp .env.example .env
 
-.PHONY: venv
-env venv: # Create a virtual environment if it doesn't exist
-	@test -d .venv || uv venv
-	@. .venv/bin/activate
+run: ## Start the dev server (uvicorn, auto-reload)
+	cd app && uv run uvicorn config.asgi:application --reload --port 8000
 
-.PHONY: run
-run:
-	@cd $(APP_DIR) && \
-	uv run ./manage.py collectstatic --noinput && \
-	uv run uvicorn lextracker.asgi:application --reload --timeout-graceful-shutdown 3
+css: ## Build the Tailwind stylesheet once
+	$(MANAGE) tailwind build
 
-manage:
-	@cd $(APP_DIR) && uv run ./manage.py $(filter-out $@,$(MAKECMDGOALS))
+css-watch: ## Rebuild the Tailwind stylesheet on template changes
+	$(MANAGE) tailwind watch
 
-makemigrations:
-	@cd $(APP_DIR) && uv run ./manage.py makemigrations
+migrate: ## Apply database migrations
+	$(MANAGE) migrate
 
-migrate:
-	@cd $(APP_DIR) && uv run ./manage.py migrate
+makemigrations: ## Create migrations for model changes
+	$(MANAGE) makemigrations
 
-tailwind-start:
-	@cd $(APP_DIR) && uv run ./manage.py tailwind start
+superuser: ## Create an admin account
+	$(MANAGE) createsuperuser
 
-tailwind-build:
-	@cd $(APP_DIR) && uv run ./manage.py tailwind build
+test: ## Run the test suite
+	uv run pytest
 
-# Docker targets
-.PHONY: docker-build
-docker-build:
-	@echo "🐳 Building Docker image..."
-	@docker build -f docker/Dockerfile -t lextracker:latest \
-		--build-arg VERSION=$$(git describe --tags --always 2>/dev/null || echo "dev") \
-		--build-arg REVISION=$$(git rev-parse HEAD 2>/dev/null || echo "unknown") \
-		--build-arg BUILDTIME=$$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
-		.
+lint: ## Check code style
+	uv run ruff check .
+	uv run ruff format --check .
 
-.PHONY: docker-run
-docker-run:
-	@echo "🐳 Running Docker container..."
-	@docker compose up -d
+format: ## Fix code style
+	uv run ruff check --fix .
+	uv run ruff format .
 
-.PHONY: docker-stop
-docker-stop:
-	@echo "🐳 Stopping Docker container..."
-	@docker compose down
+docker-up: ## Build and start the container
+	docker compose up -d --build
 
-.PHONY: docker-logs
-docker-logs:
-	@docker compose logs -f
+docker-down: ## Stop the container
+	docker compose down
 
-.PHONY: docker-shell
-docker-shell:
-	@docker exec -it lextracker /bin/bash
-
-.PHONY: docker-rebuild
-docker-rebuild:
-	@echo "🐳 Rebuilding and restarting Docker container..."
-	@docker compose up -d --build
-
-# Workaround to pass arguments to manage command
-# https://stackoverflow.com/a/6273809
-%:
-	@:
+docker-logs: ## Follow the container logs
+	docker compose logs -f

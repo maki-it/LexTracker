@@ -1,0 +1,51 @@
+from datetime import timedelta
+
+from django.conf import settings
+from django.db import models
+from django.utils import timezone
+
+from core.models import TimeStampedModel
+
+
+class TimeEntry(TimeStampedModel):
+    """A block of worked time. An entry without ``ended_at`` is a running timer."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, verbose_name="Benutzer", on_delete=models.PROTECT, related_name="time_entries"
+    )
+    task = models.ForeignKey(
+        "projects.Task", verbose_name="Aufgabe", on_delete=models.PROTECT, related_name="time_entries"
+    )
+    started_at = models.DateTimeField("Beginn", default=timezone.now)
+    ended_at = models.DateTimeField("Ende", null=True, blank=True)
+    description = models.TextField("Beschreibung", blank=True)
+    is_billable = models.BooleanField("abrechenbar", default=True)
+
+    class Meta:
+        verbose_name = "Zeiteintrag"
+        verbose_name_plural = "Zeiteinträge"
+        ordering = ["-started_at"]
+        indexes = [
+            models.Index(fields=["user", "-started_at"]),
+            models.Index(fields=["task", "started_at"]),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(ended_at__isnull=True) | models.Q(ended_at__gt=models.F("started_at")),
+                name="time_entry_ends_after_start",
+            ),
+            models.UniqueConstraint(
+                fields=["user"], condition=models.Q(ended_at__isnull=True), name="one_running_timer_per_user"
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.task_id} – {self.started_at:%d.%m.%Y %H:%M}"
+
+    @property
+    def is_running(self) -> bool:
+        return self.ended_at is None
+
+    @property
+    def duration(self) -> timedelta:
+        return (self.ended_at or timezone.now()) - self.started_at

@@ -1,0 +1,38 @@
+# Values come from the .env file next to this file (see .env.example).
+# They are listed under `environment` instead of using `env_file`, because the
+# pre_start hooks only receive the service's `environment`, not its `env_file`.
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: lextracker:latest
+    container_name: lextracker
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      APP_ENVIRONMENT: production
+      APP_SECRET_KEY: ${APP_SECRET_KEY:?set APP_SECRET_KEY in .env}
+      APP_ALLOWED_HOSTS: ${APP_ALLOWED_HOSTS:-localhost,127.0.0.1}
+      APP_CSRF_TRUSTED_ORIGINS: ${APP_CSRF_TRUSTED_ORIGINS:-}
+      APP_SECURE_COOKIES: ${APP_SECURE_COOKIES:-true}
+      APP_TIME_ZONE: ${APP_TIME_ZONE:-Europe/Berlin}
+      APP_LOG_LEVEL: ${APP_LOG_LEVEL:-info}
+      APP_LEXWARE_API_KEY: ${APP_LEXWARE_API_KEY:-}
+      FORWARDED_ALLOW_IPS: ${FORWARDED_ALLOW_IPS:-127.0.0.1}
+      UVICORN_WORKERS: ${UVICORN_WORKERS:-1}
+      DJANGO_SUPERUSER_USERNAME: ${DJANGO_SUPERUSER_USERNAME:-}
+      DJANGO_SUPERUSER_PASSWORD: ${DJANGO_SUPERUSER_PASSWORD:-}
+      DJANGO_SUPERUSER_EMAIL: ${DJANGO_SUPERUSER_EMAIL:-}
+    volumes:
+      - lextracker-data:/data
+    # Each hook runs in a one-off container with the same image, environment and volumes
+    # before the app starts. If a hook fails, the app does not start.
+    # Needs a recent Docker Compose (tested with v5.6).
+    pre_start:
+      - command: ["python", "manage.py", "migrate", "--noinput"]
+      - command: ["python", "manage.py", "ensure_superuser"]
+
+volumes:
+  lextracker-data:

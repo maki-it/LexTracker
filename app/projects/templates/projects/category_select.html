@@ -1,9 +1,0 @@
-{% for category in categories %}
-  {% if category.id == selected_category.id %}
-    <option value="{{ category.id }}" data-chargeable="{{ category.is_chargeable|lower }}" selected>{{ category }}</option>
-  {% else %}
-    <option value="{{ category.id }}" data-chargeable="{{ category.is_chargeable|lower }}">{{ category }}</option>
-  {% endif %}
-{% empty %}
-  <option disabled selected>No options available</option>
-{% endfor %}

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Übersicht · LexTracker{% endblock %}
+{% block content %}
+<h1>Hallo {{ user.first_name|default:user.username }}</h1>
+<section class="card flex flex-col gap-2">
+  <h2>Laufender Timer</h2>
+  {% if running_entry %}
+  <p>
+    <strong>{{ running_entry.task.name }}</strong>
+    ({{ running_entry.task.project.customer.name }} · {{ running_entry.task.project.name }})
+    seit {{ running_entry.started_at|time:"H:i" }} Uhr
+  </p>
+  {% else %}
+  <p class="text-muted">Gerade läuft kein Timer.</p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Anmelden · LexTracker{% endblock %}
+{% block content %}
+<div class="flex justify-center pt-12">
+  <form method="post" class="card flex w-full max-w-sm flex-col gap-4">
+    <h1>Anmelden</h1>
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ next }}">
+    {% if error %}<div role="alert" class="alert alert-error">{{ error }}</div>{% endif %}
+    <label class="field">
+      <span>{{ form.username.label }}</span>
+      <input type="text" name="username" value="{{ form.username.value|default:'' }}" class="input" autocomplete="username" required autofocus>
+    </label>
+    <label class="field">
+      <span>{{ form.password.label }}</span>
+      <input type="password" name="password" class="input" autocomplete="current-password" required>
+    </label>
+    <button type="submit" class="btn btn-primary">Anmelden</button>
+  </form>
+</div>
+{% endblock %}

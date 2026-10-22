@@ -1,113 +1,61 @@
-# Multi-stage build for LexTracker Django application
-FROM python:3.14-slim as base
+# syntax=docker/dockerfile:1
 
-# Set environment variables
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    UV_SYSTEM_PYTHON=1
+FROM python:3.14-slim AS build
 
-WORKDIR /app
+COPY --from=ghcr.io/astral-sh/uv:0.9 /uv /bin/uv
+ENV UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    UV_PYTHON_DOWNLOADS=never
 
-####################
-# Build stage - Install Node.js and build frontend assets
-####################
-FROM base AS frontend-builder
+WORKDIR /srv
 
-# Install Node.js
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    curl \
-    ca-certificates && \
-    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    apt-get install -y nodejs && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-# Copy frontend source files
-COPY app/frontend/static_src/package*.json /app/frontend/static_src/
-COPY app/frontend/static_src/ /app/frontend/static_src/
-
-# Install npm dependencies and build Tailwind CSS
-WORKDIR /app/frontend/static_src
-RUN npm ci && \
-    npm run build
-
-####################
-# Python dependencies stage
-####################
-FROM base AS python-deps
-
-# Install uv and git (needed for git dependencies)
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
-
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends git && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-# Copy dependency files
 COPY pyproject.toml uv.lock ./
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev
 
-# Install Python dependencies
-RUN uv sync --frozen --no-dev --no-install-project
+COPY app ./app
 
-####################
-# Final runtime stage
-####################
-FROM base AS runtime
+# Build the stylesheet with the standalone Tailwind CLI and collect all static files.
+# The secret is a throwaway value, only needed so the settings load.
+RUN APP_ENVIRONMENT=production APP_SECRET_KEY=build-only APP_DATA_DIR=/tmp/data \
+    sh -c "cd app && /srv/.venv/bin/python manage.py tailwind build \
+      && /srv/.venv/bin/python manage.py collectstatic --noinput" \
+    && rm -rf app/.django_tailwind_cli
+
+
+FROM python:3.14-slim AS runtime
 
 ARG VERSION=dev
-ARG BUILDTIME=""
-ARG REVISION=""
-
 LABEL org.opencontainers.image.title="LexTracker" \
-      org.opencontainers.image.description="Project time tracker for Lexoffice / Lexware Office" \
+      org.opencontainers.image.description="Zeiterfassung und Projektsteuerung mit Anbindung an Lexware Office" \
+      org.opencontainers.image.source="https://github.com/maki-it/LexTracker" \
       org.opencontainers.image.version="${VERSION}"
 
-# Install runtime dependencies
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    libpq5 \
-    && apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+RUN useradd --uid 1000 --create-home --shell /usr/sbin/nologin app \
+    && mkdir -p /data && chown app:app /data
 
-# Create non-root user
-RUN useradd -m -u 1000 appuser && \
-    chown -R appuser:appuser /app
-
-# Copy Python virtual environment from python-deps stage
-COPY --from=python-deps --chown=appuser:appuser /app/.venv /app/.venv
-
-# Copy built frontend assets from frontend-builder stage
-COPY --from=frontend-builder --chown=appuser:appuser /app/frontend/static/css/dist /app/app/frontend/static/css/dist
-
-# Copy application code
-COPY --chown=appuser:appuser app/ /app/app/
-COPY --chown=appuser:appuser docker/docker-entrypoint.sh /app/
-
-# Set environment variables
-ENV PATH="/app/.venv/bin:$PATH" \
+ENV PATH="/srv/.venv/bin:$PATH" \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
     APP_ENVIRONMENT=production \
-    APP_LOGLEVEL=info \
-    DJANGO_SETTINGS_MODULE=lextracker.settings
+    APP_DATA_DIR=/data \
+    UVICORN_WORKERS=1 \
+    FORWARDED_ALLOW_IPS=127.0.0.1
 
-WORKDIR /app/app
+WORKDIR /srv/app
 
-USER appuser
+COPY --from=build /srv/.venv /srv/.venv
+COPY --from=build /srv/staticfiles /srv/staticfiles
+COPY --from=build /srv/app /srv/app
 
-EXPOSE 8080
+USER app
+VOLUME ["/data"]
+EXPOSE 8000
 
-# Create data and staticfiles directories with proper permissions
-RUN mkdir -p /app/app/data /app/app/staticfiles && \
-    chmod +x /app/docker-entrypoint.sh && \
-    chown -R appuser:appuser /app/app/data /app/app/staticfiles && \
-    # Set dummy environment variables to run collectstatic during build \
-    APP_SECRET_KEY= LEXOFFICE_API_TOKEN= python manage.py collectstatic --noinput --clear -v2
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+    CMD ["python", "-c", "import urllib.request,sys; sys.exit(urllib.request.urlopen('http://127.0.0.1:8000/health/', timeout=4).status != 200)"]
 
-ENTRYPOINT ["/app/docker-entrypoint.sh"]
-CMD ["uvicorn", "lextracker.asgi:application", "--host", "0.0.0.0", "--port", "8080"]
-
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD python -c "import socket; s=socket.socket(); s.settimeout(3); s.connect(('127.0.0.1', 8080)); s.close()" || exit 1
-
-STOPSIGNAL SIGTERM
+# Migrations run as a pre_start hook in compose.yaml. Worker count and trusted proxy IPs
+# come from UVICORN_WORKERS and FORWARDED_ALLOW_IPS.
+CMD ["uvicorn", "config.asgi:application", "--host", "0.0.0.0", "--port", "8000", \
+     "--proxy-headers", "--lifespan", "off", "--no-server-header"]
