@@ -1,0 +1,13 @@
+{# Running-timer badge. Reloads itself every minute and whenever a timer starts or stops. #}
+<div id="nav-timer" hx-get="{% url 'tracking:timer' %}" hx-trigger="every 60s, timer-changed from:body" hx-swap="outerHTML">
+  {% if running_entry %}
+  <form hx-post="{% url 'tracking:timer_stop' %}" hx-target="#nav-timer" hx-swap="outerHTML" method="post" action="{% url 'tracking:timer_stop' %}"
+        class="flex items-center gap-2 rounded-md border border-success/40 bg-success/10 py-1 pr-1 pl-3 text-sm">
+    {% csrf_token %}
+    <span class="size-2 animate-pulse rounded-full bg-success"></span>
+    <span class="max-w-56 truncate" title="{{ running_entry.task.project.customer.name }} · {{ running_entry.task.project.name }}">{{ running_entry.task.name }}</span>
+    <span class="font-medium tabular-nums">{% load timefmt %}{{ running_entry.duration|hours }}</span>
+    <button type="submit" class="btn btn-sm">Stopp</button>
+  </form>
+  {% endif %}
+</div>

@@ -8,7 +8,7 @@ Zeiterfassung und Projektsteuerung mit Anbindung an die [Lexware Office Public A
 
 1. **Fundament** ✓: Projektgerüst, Login, Datenmodell für Kunden, Projekte, Aufgaben und Zeiteinträge, Docker, Tests, CI.
 2. **Lexware-Anbindung** ✓: Kunden aus Lexware Office importieren und abgleichen.
-3. **Projekte und Zeiterfassung**: Projekte und Aufgaben anlegen, Zeiten per Timer oder manuell buchen.
+3. **Projekte und Zeiterfassung** ✓: Projekte und Aufgaben anlegen, Zeiten per Timer oder manuell buchen, Wochenübersicht.
 4. **Später**: Abrechnungsmodelle (z. B. Stundenkontingent pro Quartal zum Festpreis, Rest nach Stundensatz), Rechnungen über Lexware, Dashboards, Zugänge für Mitarbeiter und Kunden.
 
 ## Technik

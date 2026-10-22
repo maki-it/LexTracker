@@ -1,17 +1,47 @@
 {% extends "base.html" %}
+{% load timefmt %}
 {% block title %}Übersicht · LexTracker{% endblock %}
 {% block content %}
 <h1>Hallo {{ user.first_name|default:user.username }}</h1>
-<section class="card flex flex-col gap-2">
-  <h2>Laufender Timer</h2>
-  {% if running_entry %}
-  <p>
-    <strong>{{ running_entry.task.name }}</strong>
-    ({{ running_entry.task.project.customer.name }} · {{ running_entry.task.project.name }})
-    seit {{ running_entry.started_at|time:"H:i" }} Uhr
-  </p>
+
+<section class="card flex flex-col gap-3">
+  <h2>Timer starten</h2>
+  {% if tasks %}
+  <form method="post" action="{% url 'tracking:timer_start' %}" hx-post="{% url 'tracking:timer_start' %}" hx-swap="none"
+        class="flex flex-col gap-2 sm:flex-row">
+    {% csrf_token %}
+    <select name="task" class="input sm:max-w-sm" required>
+      {% for task in tasks %}
+      <option value="{{ task.pk }}">{{ task.project.customer.name }} · {{ task.project.name }} · {{ task.name }}</option>
+      {% endfor %}
+    </select>
+    <input type="text" name="description" class="input" placeholder="Was machst du gerade? (optional)">
+    <button type="submit" class="btn btn-primary shrink-0">▶ Starten</button>
+  </form>
   {% else %}
-  <p class="text-muted">Gerade läuft kein Timer.</p>
+  <p class="text-muted">Noch keine offenen Aufgaben. <a class="text-primary hover:underline" href="{% url 'projects:create' %}">Lege ein Projekt an</a> und füge Aufgaben hinzu.</p>
   {% endif %}
+</section>
+
+<section id="today" class="card flex flex-col gap-3" hx-get="{% url 'core:dashboard' %}" hx-select="#today" hx-swap="outerHTML" hx-trigger="timer-changed from:body">
+  <div class="flex items-center justify-between">
+    <h2>Heute</h2>
+    <span class="font-semibold tabular-nums">{{ today_total|hours }} h</span>
+  </div>
+  {% for entry in today_entries %}
+  <div class="flex items-center justify-between gap-4 border-t border-line pt-3 text-sm">
+    <div>
+      <div class="font-medium">{{ entry.task.name }}{% if entry.is_running %} <span class="text-success">(läuft)</span>{% endif %}</div>
+      <div class="text-muted">{{ entry.task.project.customer.name }} · {{ entry.task.project.name }}{% if entry.description %} – {{ entry.description }}{% endif %}</div>
+    </div>
+    <div class="text-right tabular-nums">
+      <div>{{ entry.started_at|time:"H:i" }}–{% if entry.ended_at %}{{ entry.ended_at|time:"H:i" }}{% else %}…{% endif %}</div>
+      <div class="font-medium">{{ entry.duration|hours }}</div>
+    </div>
+  </div>
+  {% empty %}
+  <p class="text-muted">Heute noch nichts erfasst.</p>
+  {% endfor %}
+  <a href="{% url 'tracking:create' %}" class="btn btn-sm self-start">+ Zeit nachtragen</a>
 </section>
 {% endblock %}

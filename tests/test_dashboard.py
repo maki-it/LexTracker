@@ -5,7 +5,7 @@ from tracking.models import TimeEntry
 
 
 @pytest.mark.django_db(transaction=True)
-async def test_dashboard_shows_running_timer(async_client, user, task):
+async def test_dashboard_lists_todays_entries(async_client, user, task):
     await TimeEntry.objects.acreate(user=user, task=task)
     await async_client.aforce_login(user)
 

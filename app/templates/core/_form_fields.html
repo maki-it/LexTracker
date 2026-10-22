@@ -1,0 +1,16 @@
+{% for error in form.non_field_errors %}
+<div role="alert" class="alert alert-error">{{ error }}</div>
+{% endfor %}
+{% for field in form.hidden_fields %}{{ field }}{% endfor %}
+{% for field in form.visible_fields %}
+{% if field.widget_type == "checkbox" %}
+<label class="flex items-center gap-2 text-sm font-medium">{{ field }} {{ field.label }}</label>
+{% else %}
+<label class="field">
+  <span>{{ field.label }}{% if not field.field.required %} <span class="font-normal text-muted">(optional)</span>{% endif %}</span>
+  {{ field }}
+  {% if field.help_text %}<span class="font-normal text-muted">{{ field.help_text }}</span>{% endif %}
+</label>
+{% endif %}
+{% for error in field.errors %}<p class="-mt-3 text-sm text-danger">{{ error }}</p>{% endfor %}
+{% endfor %}
