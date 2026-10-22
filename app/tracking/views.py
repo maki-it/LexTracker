@@ -1,4 +1,5 @@
 from datetime import date, datetime, time, timedelta
+from urllib.parse import urlencode
 
 from asgiref.sync import sync_to_async
 from django.contrib import messages
@@ -8,10 +9,12 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
+from core.dialogs import in_dialog
 from core.shortcuts import arender
 from projects.models import Task
-from tracking.forms import TimeEntryForm
+from tracking.forms import TimeEntryForm, open_tasks
 from tracking.models import TimeEntry
+from tracking.queries import entry_filter
 from tracking.services import start_timer, stop_timer
 
 TIMER_CHANGED = "timer-changed"
@@ -38,8 +41,11 @@ async def timer(request: HttpRequest) -> HttpResponse:
     return render(request, "tracking/_timer.html", {"running_entry": await _running_entry(request.user)})
 
 
-@require_POST
+@require_http_methods(["GET", "POST"])
 async def timer_start(request: HttpRequest) -> HttpResponse:
+    """GET: the start form (opened in the dialog from the sidebar). POST: start the timer."""
+    if request.method == "GET":
+        return render(request, "tracking/timer_start.html", {"tasks": [t async for t in open_tasks()]})
     try:
         task = await Task.objects.aget(pk=int(request.POST.get("task", "")))
     except ValueError, Task.DoesNotExist:
@@ -47,6 +53,12 @@ async def timer_start(request: HttpRequest) -> HttpResponse:
     await sync_to_async(start_timer)(request.user, task, request.POST.get("description", "").strip())
     if not request.htmx:
         return redirect(request.POST.get("next") or "core:dashboard")
+    if in_dialog(request):
+        # The sidebar timer and today's entries reload themselves; the dialog closes.
+        response = HttpResponse()
+        response["HX-Trigger"] = f"{TIMER_CHANGED}, close-dialog"
+        response["HX-Reswap"] = "none"
+        return response
     return _timer_response(request, await _running_entry(request.user))
 
 
@@ -56,6 +68,12 @@ async def timer_stop(request: HttpRequest) -> HttpResponse:
     if not request.htmx:
         return redirect(request.POST.get("next") or "core:dashboard")
     return _timer_response(request, None)
+
+
+def _filter_query(request: HttpRequest) -> str:
+    """``&kunde=…`` or ``&projekt=…`` of the current filter, to append to other links."""
+    params = {k: request.GET[k] for k in ("kunde", "projekt") if request.GET.get(k, "").isdigit()}
+    return f"&{urlencode(params)}" if params else ""
 
 
 def _parse_week(value: str | None) -> date:
@@ -78,8 +96,12 @@ async def entry_list(request: HttpRequest) -> HttpResponse:
     monday = _parse_week(request.GET.get("woche"))
     tz = timezone.get_current_timezone()
     start = datetime.combine(monday, time.min, tzinfo=tz)
+    active_filter = await entry_filter(request)
     entries = [
-        e async for e in _entries(request.user).filter(started_at__gte=start, started_at__lt=start + timedelta(days=7))
+        e
+        async for e in _entries(request.user).filter(
+            started_at__gte=start, started_at__lt=start + timedelta(days=7), **active_filter["filters"]
+        )
     ]
 
     days = []
@@ -107,6 +129,10 @@ async def entry_list(request: HttpRequest) -> HttpResponse:
             "prev_week": _week_param(monday - timedelta(days=7)),
             "next_week": _week_param(monday + timedelta(days=7)),
             "this_week": _week_param(monday),
+            "filter_label": active_filter["label"],
+            # Filter links keep the week; the week links keep the filter.
+            "filter_base": f"woche={_week_param(monday)}&",
+            "filter_query": _filter_query(request),
         },
     )
 

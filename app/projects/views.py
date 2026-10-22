@@ -7,9 +7,11 @@ from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
+from core.dialogs import navigate
 from core.shortcuts import arender
 from projects.forms import ProjectForm, TaskEditForm, TaskForm
 from projects.models import Project, Task
+from tracking.models import TimeEntry
 from tracking.queries import booked_time
 
 
@@ -43,8 +45,26 @@ async def project_form(request: HttpRequest, pk: int | None = None) -> HttpRespo
     if request.method == "POST" and await sync_to_async(form.is_valid)():
         project = await sync_to_async(form.save)()
         messages.success(request, f"Projekt „{project.name}“ gespeichert.")
+        if pk:
+            return redirect("projects:detail", pk=project.pk)
+        return navigate("projects:detail", pk=project.pk)
+    has_entries = project and await TimeEntry.objects.filter(task__project=project).aexists()
+    return await arender(request, "projects/form.html", {"form": form, "project": project, "has_entries": has_entries})
+
+
+@require_POST
+async def project_delete(request: HttpRequest, pk: int) -> HttpResponse:
+    project = await _get_project(pk)
+    # Booked time must not disappear with its project; such projects can be closed instead.
+    if await TimeEntry.objects.filter(task__project=project).aexists():
+        messages.error(
+            request,
+            f"„{project.name}“ hat gebuchte Zeiten und kann nicht gelöscht werden. Setze es auf abgeschlossen.",
+        )
         return redirect("projects:detail", pk=project.pk)
-    return await arender(request, "projects/form.html", {"form": form, "project": project})
+    await project.adelete()
+    messages.success(request, f"Projekt „{project.name}“ gelöscht.")
+    return navigate("projects:list")
 
 
 async def _task_context(project: Project, task_form: TaskForm | None = None) -> dict:

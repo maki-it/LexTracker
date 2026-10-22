@@ -6,6 +6,7 @@
   <title>{% block title %}LexTracker{% endblock %}</title>
   {% tailwind_css %}
   <script src="{% static 'js/htmx.min.js' %}" defer></script>
+  <script src="{% static 'js/app.js' %}" defer></script>
 </head>
 <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
   {% if user.is_authenticated %}
@@ -53,6 +54,13 @@
     </main>
   </div>
   {% endwith %}
+  {# Edit forms open in here, see core/dialogs.py. Esc, the X and a click beside it close it. #}
+  <dialog id="dialog" class="dialog" aria-label="Bearbeiten">
+    <form method="dialog" class="dialog-close">
+      <button type="submit" class="btn btn-ghost btn-sm btn-icon" aria-label="Schließen" title="Schließen">{% icon "x" %}</button>
+    </form>
+    <div id="dialog-body" hx-boost="true" hx-target="#dialog-body" hx-swap="innerHTML" hx-push-url="false"></div>
+  </dialog>
   {% else %}
   <main class="flex min-h-dvh flex-col items-center justify-center bg-sidebar px-4 py-10">
     {% block public_content %}{% endblock %}

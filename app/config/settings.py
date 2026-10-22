@@ -54,6 +54,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django_htmx.middleware.HtmxMiddleware",
     "core.middleware.LoginRequiredMiddleware",
+    "core.dialogs.DialogMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -70,6 +71,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "accounts.context_processors.preferences",
+                "core.dialogs.layout",
             ],
         },
     },

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load icons %}
+{% load icons dialogs %}
 {% block title %}Abrechnung {{ customer.name }} · LexTracker{% endblock %}
 {% block content %}
 <div>
@@ -10,7 +10,7 @@
 <section class="flex flex-col gap-3">
   <div class="flex items-center justify-between gap-4">
     <h2>Abrechnungsvereinbarung</h2>
-    <a href="{% url 'billing:agreement_create' customer.pk %}" class="btn btn-sm">{% icon "plus" size=14 %}Neue Vereinbarung</a>
+    <a {% dialog_link "billing:agreement_create" customer.pk %} class="btn btn-sm">{% icon "plus" size=14 %}Neue Vereinbarung</a>
   </div>
   {% if agreements %}
   <div class="table-wrap">
@@ -28,7 +28,7 @@
               {% if agreement.kind == "retainer" %} · Mehrstunden {% if agreement.overage_rate is not None %}zu {{ agreement.overage_rate }} €/h{% else %}zum normalen Stundensatz{% endif %}{% endif %}
             </div>
           </td>
-          <td><a href="{% url 'billing:agreement_edit' customer.pk agreement.pk %}" class="btn btn-ghost btn-sm btn-icon size-8" title="Bearbeiten" aria-label="Vereinbarung bearbeiten">{% icon "pencil" %}</a></td>
+          <td><a {% dialog_link "billing:agreement_edit" customer.pk agreement.pk %} class="btn btn-ghost btn-sm btn-icon size-8" title="Bearbeiten" aria-label="Vereinbarung bearbeiten">{% icon "pencil" %}</a></td>
         </tr>
         {% endfor %}
       </tbody>

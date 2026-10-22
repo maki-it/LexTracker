@@ -1,7 +1,9 @@
+from urllib.parse import urlencode
+
 from asgiref.sync import sync_to_async
 from django.conf import settings
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
@@ -14,14 +16,23 @@ from customers.models import Category, Customer
 from customers.sync import sync_and_record
 from lexware.client import LexwareError, client_from_settings
 
+# The archive filter on the customer list: key in the URL, label.
+VIEWS = {"aktiv": "Aktiv", "archiviert": "Archiviert", "alle": "Alle"}
+
+
+def _query_string(**params) -> str:
+    return urlencode({k: v for k, v in params.items() if v})
+
 
 async def _customer_list_context(request: HttpRequest) -> dict:
-    show_archived = request.GET.get("archiviert") == "1"
+    view = request.GET.get("ansicht", "aktiv")
+    if view not in VIEWS:
+        view = "aktiv"
     query = request.GET.get("q", "").strip()
     category = request.GET.get("kategorie", "")
+    category = int(category) if category.isdigit() else None
+
     customers = Customer.objects.prefetch_related("categories")
-    if not show_archived:
-        customers = customers.filter(is_archived=False)
     if query:
         customers = customers.filter(
             Q(name__icontains=query)
@@ -29,14 +40,35 @@ async def _customer_list_context(request: HttpRequest) -> dict:
             | Q(email__icontains=query)
             | Q(notes__icontains=query)
         )
-    if category.isdigit():
-        customers = customers.filter(categories=int(category))
+    if category:
+        customers = customers.filter(categories=category)
+    counts = await customers.aaggregate(
+        aktiv=Count("pk", filter=Q(is_archived=False), distinct=True),
+        archiviert=Count("pk", filter=Q(is_archived=True), distinct=True),
+        alle=Count("pk", distinct=True),
+    )
+    if view == "aktiv":
+        customers = customers.filter(is_archived=False)
+    elif view == "archiviert":
+        customers = customers.filter(is_archived=True)
+
+    ansicht = "" if view == "aktiv" else view
     return {
-        "customers": [c async for c in customers],
-        "categories": [c async for c in Category.objects.all()],
+        "customers": [c async for c in customers.order_by("is_archived", "name")],
         "query": query,
-        "category": int(category) if category.isdigit() else None,
-        "show_archived": show_archived,
+        "category": category,
+        "view": view,
+        # Links keep the other filters.
+        "view_links": [
+            (key, label, counts[key], _query_string(ansicht="" if key == "aktiv" else key, q=query, kategorie=category))
+            for key, label in VIEWS.items()
+        ],
+        "category_links": [
+            (c, _query_string(ansicht=ansicht, q=query, kategorie=c.pk)) async for c in Category.objects.all()
+        ],
+        "all_categories_link": _query_string(ansicht=ansicht, q=query),
+        "list_query": _query_string(ansicht=ansicht, q=query, kategorie=category),
+        "ansicht": ansicht,
         "lexware_configured": bool(settings.LEXWARE_API_KEY),
         "app_settings": await AppSettings.aload(),
     }

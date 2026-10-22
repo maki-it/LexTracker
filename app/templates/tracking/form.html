@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends layout %}
 {% load icons %}
 {% block title %}{% if entry %}Zeiteintrag bearbeiten{% else %}Zeit erfassen{% endif %} · LexTracker{% endblock %}
 {% block content %}
@@ -6,12 +6,12 @@
   <p class="breadcrumb"><a href="{% url 'tracking:list' %}">Zeiten</a></p>
   <h1>{% if entry %}Zeiteintrag bearbeiten{% else %}Zeit erfassen{% endif %}</h1>
 </div>
-<form method="post" class="card flex max-w-2xl flex-col gap-4">
+<form method="post" action="{{ request.get_full_path }}" class="card flex max-w-2xl flex-col gap-4">
   {% csrf_token %}
   {% include "core/_form_fields.html" %}
   <div class="flex gap-2 border-t border-line pt-4">
     <button type="submit" class="btn btn-primary">Speichern</button>
-    <a href="{% url 'tracking:list' %}" class="btn btn-ghost">Abbrechen</a>
+    <a href="{% url 'tracking:list' %}" class="btn btn-ghost" data-close-dialog>Abbrechen</a>
   </div>
 </form>
 {% if entry %}

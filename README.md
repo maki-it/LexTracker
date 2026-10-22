@@ -78,6 +78,11 @@ Der Client hält das Rate-Limit der API ein (2 Anfragen pro Sekunde) und wiederh
 Unter **Einstellungen** legst du fest, ob Zeiten exakt oder auf jede angefangene Zeiteinheit (z. B. Viertelstunde) aufgerundet werden. Gerundet wird beim Stoppen des Timers und beim Speichern eines Eintrags, indem das Ende verschoben wird; so sind Anzeige, Summen und Abrechnung immer gleich. Bestehende Einträge bleiben unverändert.
 Ob Dauern als `2:45` oder als Dezimalstunden `2,75` angezeigt werden, stellt jeder im Konto ein. Abgerechnet wird immer in Dezimalstunden (z. B. 2,75 Stunden × 80 €).
 
+## Bedienung
+
+Bearbeiten-Masken (Zeiteinträge, Projekte, Aufgaben, Kunden, Abrechnungsvereinbarungen) und **Timer starten** in der Seitenleiste öffnen sich als Dialog über der aktuellen Seite. Nach dem Speichern lädt die Seite dahinter neu; Esc, das X oder ein Klick daneben schließt den Dialog. Jeder dieser Links funktioniert auch als eigene Seite (z. B. in einem neuen Tab).
+In der Übersicht und unter **Zeiten** filtert ein Klick auf Kunde oder Projekt eines Eintrags die Liste. Projekte ohne gebuchte Zeiten lassen sich in ihrer Bearbeiten-Maske löschen.
+
 ## Abrechnung
 
 Pro Kunde legst du unter **Abrechnung** eine Vereinbarung an:

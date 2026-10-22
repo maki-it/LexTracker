@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends layout %}
 {% load icons %}
 {% block title %}{{ task.name }} bearbeiten · LexTracker{% endblock %}
 {% block content %}
@@ -6,12 +6,12 @@
   <p class="breadcrumb"><a href="{% url 'projects:list' %}">Projekte</a> / <a href="{% url 'projects:detail' project.pk %}">{{ project.name }}</a></p>
   <h1>Aufgabe bearbeiten</h1>
 </div>
-<form method="post" class="card flex max-w-2xl flex-col gap-4">
+<form method="post" action="{{ request.get_full_path }}" class="card flex max-w-2xl flex-col gap-4">
   {% csrf_token %}
   {% include "core/_form_fields.html" %}
   <div class="flex gap-2 border-t border-line pt-4">
     <button type="submit" class="btn btn-primary">Speichern</button>
-    <a href="{% url 'projects:detail' project.pk %}" class="btn btn-ghost">Abbrechen</a>
+    <a href="{% url 'projects:detail' project.pk %}" class="btn btn-ghost" data-close-dialog>Abbrechen</a>
   </div>
 </form>
 <section class="card flex max-w-2xl flex-col gap-3">
