@@ -88,10 +88,16 @@ class LexwareClient:
             self._last_request = time.monotonic()
 
     async def _request(self, method: str, path: str, params: dict | None = None, json: dict | None = None) -> dict:
+        return (await self._send(method, path, params=params, json=json)).json()
+
+    async def _send(
+        self, method: str, path: str, *, params: dict | None = None, json: dict | None = None, accept: str | None = None
+    ) -> httpx.Response:
+        headers = {"Accept": accept} if accept else None
         for attempt in range(MAX_RETRIES + 1):
             await self._wait_for_slot()
             try:
-                response = await self._http.request(method, path, params=params, json=json)
+                response = await self._http.request(method, path, params=params, json=json, headers=headers)
             except httpx.HTTPError as exc:
                 raise LexwareError(f"Lexware ist nicht erreichbar: {exc}") from exc
 
@@ -106,7 +112,7 @@ class LexwareClient:
                 raise LexwareNotFound(f"Lexware kennt {path} nicht (HTTP 404).")
             if response.is_error:
                 raise LexwareError(f"Lexware antwortete mit HTTP {response.status_code}: {_error_detail(response)}")
-            return response.json()
+            return response
         raise LexwareError("Lexware hat zu viele Anfragen abgelehnt (Rate-Limit).")
 
     async def get_profile(self) -> Profile:
@@ -120,6 +126,11 @@ class LexwareClient:
     async def get_invoice(self, invoice_id: UUID) -> dict:
         """The invoice as Lexware returns it. Raises LexwareNotFound if it was deleted."""
         return await self._request("GET", f"invoices/{invoice_id}")
+
+    async def get_invoice_pdf(self, invoice_id: UUID) -> bytes:
+        """The finalized invoice as PDF. Drafts have none."""
+        response = await self._send("GET", f"invoices/{invoice_id}/file", accept="application/pdf")
+        return response.content
 
     async def iter_invoices(self, *, created_from: date | None = None) -> AsyncIterator[Voucher]:
         """Yield the invoices in the voucher list, in every status, page by page."""

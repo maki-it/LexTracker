@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load icons %}
 {% block title %}Rechnungen · LexTracker{% endblock %}
 {% block content %}
 <div>
@@ -13,6 +14,7 @@
         <th>Leistungszeitraum</th>
         <th>Status</th>
         <th class="text-right">Netto</th>
+        <th></th>
       </tr>
     </thead>
     <tbody>
@@ -26,9 +28,10 @@
           {% if invoice.due_date and invoice.status == "open" or invoice.due_date and invoice.status == "overdue" %}<span class="ml-1 text-[13px] text-muted">fällig {{ invoice.due_date|date:date_format }}</span>{% endif %}
         </td>
         <td class="text-right whitespace-nowrap font-semibold tabular-nums{% if invoice.status == 'voided' %} text-muted line-through{% endif %}">{{ invoice.total_net }} €</td>
+        <td class="text-right whitespace-nowrap">{% if invoice.lexware_id %}<a class="inline-flex items-center gap-1.5 hover:underline" href="{% url 'portal:invoice_pdf' invoice.pk %}">{% icon "download" size=14 %}PDF</a>{% endif %}</td>
       </tr>
       {% empty %}
-      <tr><td colspan="5" class="py-8 text-center text-muted">Noch keine Rechnungen.</td></tr>
+      <tr><td colspan="6" class="py-8 text-center text-muted">Noch keine Rechnungen.</td></tr>
       {% endfor %}
     </tbody>
   </table>
