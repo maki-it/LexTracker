@@ -1,4 +1,4 @@
-{% load static tailwind_cli icons %}<!doctype html>
+{% load static tailwind_cli icons dialogs %}<!doctype html>
 <html lang="de" data-theme="{{ theme }}">
 <head>
   <meta charset="utf-8">
@@ -24,7 +24,9 @@
         LexTracker
       </a>
 
-      {% if not user.is_customer %}
+      {% if request.nav_timer %}
+      {% include "tracking/_timer.html" with running_entry=request.nav_timer.running_entry %}
+      {% elif not user.is_customer %}
       <div hx-get="{% url 'tracking:timer' %}" hx-trigger="load" hx-swap="outerHTML"></div>
       {% endif %}
 
@@ -56,7 +58,7 @@
 
       <div class="sidebar-user">
         <span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-line text-xs font-semibold uppercase">{{ user.get_username|first }}</span>
-        <a href="{% url 'account:settings' %}" class="min-w-0 flex-1 truncate font-medium text-ink no-underline hover:underline" title="Konto">{{ user.get_full_name|default:user.get_username }}</a>
+        <a {% dialog_link "account:settings" %} class="min-w-0 flex-1 truncate font-medium text-ink no-underline hover:underline" title="Konto">{{ user.get_full_name|default:user.get_username }}</a>
         {% if user.is_staff %}<a href="{% url 'admin:index' %}" class="btn btn-ghost btn-sm btn-icon" title="Verwaltung" aria-label="Verwaltung">{% icon "shield" %}</a>{% endif %}
         <form method="post" action="{% url 'accounts:logout' %}">
           {% csrf_token %}

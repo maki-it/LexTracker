@@ -77,7 +77,7 @@ class UserForm(StyledFormMixin, forms.ModelForm):
         labels = {"is_active": "aktiv"}
         help_texts = {
             "username": "Damit meldet sich die Person an.",
-            "customer": "Nur für Kunden: wessen Projekte, Zeiten und Rechnungen sie sieht.",
+            "customer": "Wessen Projekte, Zeiten und Rechnungen dieser Zugang sieht.",
             "is_active": "Deaktivierte Benutzer können sich nicht mehr anmelden.",
         }
 
@@ -98,6 +98,9 @@ class UserForm(StyledFormMixin, forms.ModelForm):
             self.add_error("customer", "Ein Kundenzugang braucht einen Kunden.")
         elif role and role != User.Role.CUSTOMER:
             cleaned["customer"] = None
+            # The customer access settings are hidden for other roles and not sent: keep what is stored.
+            for name in self.PORTAL_FIELDS:
+                cleaned[name] = getattr(self.instance, name)
         if not cleaned.get("portal_entries"):
             # The greyed-out box is not sent. Keep the stored choice so it is back when the entries are.
             cleaned["portal_descriptions"] = self.instance.portal_descriptions

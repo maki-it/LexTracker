@@ -1,20 +1,26 @@
 """The read-only portal for customer logins. Everything is limited to the user's customer."""
 
+import logging
 from datetime import timedelta
 
+from django.contrib import messages
 from django.core.exceptions import PermissionDenied
-from django.http import HttpRequest, HttpResponse
-from django.shortcuts import render
+from django.http import Http404, HttpRequest, HttpResponse
+from django.shortcuts import redirect, render
 from django.utils import timezone
+from django.utils.http import content_disposition_header
 from django.views.decorators.http import require_GET
 
 from billing.models import Invoice
 from billing.periods import Period, period_containing
 from customers.models import Customer
+from lexware.client import LexwareError, client_from_settings
 from projects.models import Project
 from reports.ranges import presets, selected_range
 from tracking.models import TimeEntry
 from tracking.queries import booked_time
+
+logger = logging.getLogger(__name__)
 
 # Drafts may still change and deleted invoices were never sent.
 HIDDEN_INVOICE_STATUSES = [Invoice.Status.DRAFT, Invoice.Status.DELETED]
@@ -92,6 +98,32 @@ async def invoices(request: HttpRequest) -> HttpResponse:
         i
         async for i in Invoice.objects.filter(customer_id=user.customer_id)
         .exclude(status__in=HIDDEN_INVOICE_STATUSES)
-        .order_by("-period_end")
+        .order_by("-period_end", "-created_at")
     ]
     return render(request, "portal/invoices.html", {"invoices": rows})
+
+
+@require_GET
+async def invoice_pdf(request: HttpRequest, invoice_pk: int) -> HttpResponse:
+    """The invoice PDF, fetched from Lexware on each download."""
+    user = request.user
+    if not user.portal_invoices:
+        raise PermissionDenied
+    invoice = await (
+        Invoice.objects.filter(customer_id=user.customer_id, pk=invoice_pk, lexware_id__isnull=False)
+        .exclude(status__in=HIDDEN_INVOICE_STATUSES)
+        .afirst()
+    )
+    if invoice is None:
+        raise Http404
+    try:
+        async with client_from_settings() as client:
+            pdf = await client.get_invoice_pdf(invoice.lexware_id)
+    except LexwareError:
+        logger.exception("Invoice PDF %s could not be fetched", invoice.lexware_id)
+        messages.error(request, "Die Rechnung kann gerade nicht heruntergeladen werden. Bitte versuche es später.")
+        return redirect("portal:invoices")
+    response = HttpResponse(pdf, content_type="application/pdf")
+    name = f"Rechnung-{invoice.voucher_number or invoice.pk}.pdf"
+    response["Content-Disposition"] = content_disposition_header(True, name)
+    return response

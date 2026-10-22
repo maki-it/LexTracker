@@ -140,6 +140,8 @@ def test_portal_hides_draft_and_deleted_invoices(client, customer_user, task):
             status=status,
             voucher_number=number,
             lexware_id=uuid.uuid4(),
+            # Invoices written directly in Lexware show up like the others.
+            origin=Invoice.Origin.LEXWARE if number == "RE1" else Invoice.Origin.APP,
         )
     client.force_login(customer_user)
 
@@ -234,3 +236,72 @@ def test_descriptions_need_the_entries(client, user, customer_user):
     customer_user.save()
     save_without_entries()
     assert not customer_user.portal_descriptions
+
+
+def test_customer_access_settings_only_for_customers(client, user, employee, customer_user):
+    client.force_login(user)
+    form = client.get(reverse("users:edit", args=[employee.pk])).text
+    assert re.search(r'data-shown-for="role=customer"\s+hidden disabled', form)
+    form = client.get(reverse("users:edit", args=[customer_user.pk])).text
+    assert 'data-shown-for="role=customer">' in form
+
+    # Turning a customer into an employee sends no settings: they are kept for the case it turns back.
+    customer_user.portal_invoices = False
+    customer_user.save()
+    client.post(
+        reverse("users:edit", args=[customer_user.pk]),
+        {"username": customer_user.username, "role": User.Role.EMPLOYEE, "is_active": "on"},
+    )
+    customer_user.refresh_from_db()
+    assert customer_user.role == User.Role.EMPLOYEE and customer_user.customer is None
+    assert customer_user.portal_entries and not customer_user.portal_invoices
+
+
+def test_customer_downloads_the_invoice_pdf(client, customer_user, other_task, monkeypatch):
+    import httpx
+
+    from tests.lexware_fakes import fake_client
+
+    def invoice(customer, number, status=Invoice.Status.OPEN):
+        return Invoice.objects.create(
+            customer=customer,
+            period_start=date(2026, 9, 1),
+            period_end=date(2026, 9, 30),
+            total_net=Decimal("100"),
+            status=status,
+            voucher_number=number,
+            lexware_id=uuid.uuid4(),
+        )
+
+    own = invoice(customer_user.customer, "RE0042")
+    draft = invoice(customer_user.customer, "", Invoice.Status.DRAFT)
+    foreign = invoice(other_task.project.customer, "RE0043")
+    requests = []
+
+    def handler(request):
+        requests.append(request)
+        if request.url.path.endswith(f"/invoices/{own.lexware_id}/file"):
+            return httpx.Response(200, content=b"%PDF-1.7", headers={"Content-Type": "application/pdf"})
+        return httpx.Response(500)
+
+    monkeypatch.setattr("portal.views.client_from_settings", lambda: fake_client(handler))
+    client.force_login(customer_user)
+
+    assert reverse("portal:invoice_pdf", args=[own.pk]) in client.get(reverse("portal:invoices")).text
+    response = client.get(reverse("portal:invoice_pdf", args=[own.pk]))
+    assert response.content == b"%PDF-1.7" and response["Content-Type"] == "application/pdf"
+    assert 'filename="Rechnung-RE0042.pdf"' in response["Content-Disposition"]
+    assert requests[0].headers["Accept"] == "application/pdf"
+
+    # Drafts and other customers' invoices are not to be had.
+    assert client.get(reverse("portal:invoice_pdf", args=[draft.pk])).status_code == 404
+    assert client.get(reverse("portal:invoice_pdf", args=[foreign.pk])).status_code == 404
+
+    # Lexware failing ends on the list with a message.
+    Invoice.objects.filter(pk=own.pk).update(lexware_id=uuid.uuid4())
+    response = client.get(reverse("portal:invoice_pdf", args=[own.pk]), follow=True)
+    assert "kann gerade nicht heruntergeladen werden" in response.text
+
+    customer_user.portal_invoices = False
+    customer_user.save()
+    assert client.get(reverse("portal:invoice_pdf", args=[own.pk])).status_code == 403

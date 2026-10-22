@@ -56,7 +56,11 @@ class BillingAgreement(TimeStampedModel):
 
 
 class Invoice(TimeStampedModel):
-    """An invoice created in Lexware Office for a customer and period."""
+    """An invoice in Lexware Office for a customer and period, created here or taken over from Lexware."""
+
+    class Origin(models.TextChoices):
+        APP = "app", "LexTracker"
+        LEXWARE = "lexware", "Lexware Office"
 
     class Status(models.TextChoices):
         # The voucher statuses Lexware uses for invoices, plus "deleted" for drafts deleted there.
@@ -75,7 +79,10 @@ class Invoice(TimeStampedModel):
     period_start = models.DateField("Leistungszeitraum von")
     period_end = models.DateField("Leistungszeitraum bis")
     total_net = models.DecimalField("Summe netto", max_digits=12, decimal_places=2)
-    lexware_id = models.UUIDField("Lexware-ID", null=True, blank=True, editable=False)
+    lexware_id = models.UUIDField("Lexware-ID", unique=True, null=True, blank=True, editable=False)
+    # Invoices written directly in Lexware are taken over by billing.sync. They have no time entries.
+    origin = models.CharField("erstellt in", max_length=20, choices=Origin, default=Origin.APP)
+    voucher_date = models.DateField("Rechnungsdatum", null=True, blank=True)
     # Kept up to date from Lexware by billing.sync.
     status = models.CharField("Status", max_length=20, choices=Status, default=Status.DRAFT)
     voucher_number = models.CharField("Rechnungsnummer", max_length=50, blank=True)

@@ -121,7 +121,9 @@ class Voucher(_Model):
     id: UUID
     voucher_status: str = Field(alias="voucherStatus")
     voucher_number: str | None = Field(None, alias="voucherNumber")
+    voucher_date: datetime | None = Field(None, alias="voucherDate")
     due_date: datetime | None = Field(None, alias="dueDate")
+    contact_id: UUID | None = Field(None, alias="contactId")
     open_amount: float | None = Field(None, alias="openAmount")
 
 

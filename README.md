@@ -100,6 +100,7 @@ Für einen gewählten Zeitraum zeigt die Vorschau alle noch nicht abgerechneten,
 Der Kunde muss dafür mit einem Lexware-Kontakt verknüpft sein. Die Umsatzsteuer richtet sich nach deinem Lexware-Konto: Ist es als Kleinunternehmer (§ 19 UStG) eingerichtet, entsteht die Rechnung ohne Umsatzsteuer, sonst mit 19 %.
 
 Der Reiter **Rechnungen** listet alle Rechnungen mit Nummer, Status (Entwurf, offen, überfällig, bezahlt, storniert) und Fälligkeit, filterbar nach Status und durchsuchbar nach Kunde oder Nummer.
+Der Rechnungsabgleich übernimmt auch Rechnungen, die du direkt in Lexware für einen importierten Kunden schreibst, mit Datum, Leistungszeitraum, Nettosumme und Status. Sie sind mit „in Lexware erstellt“ markiert, haben keine Zeiteinträge, erscheinen im Kundenzugang und zählen in den Auswertungen zum Umsatz. Löschst du eine solche Rechnung in Lexware, verschwindet sie auch hier.
 Den Status holt der Scheduler nach dem eingestellten Zeitplan aus der Belegliste von Lexware; **Status aktualisieren** gleicht sofort ab.
 Löschst du einen Entwurf in Lexware, wird die Rechnung hier als gelöscht markiert und ihre Zeiten sind wieder offen. Bei einer stornierten Rechnung gibst du die Zeiten mit **Zeiten freigeben** selbst wieder frei, falls du sie neu abrechnen willst.
 

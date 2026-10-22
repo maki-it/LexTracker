@@ -1,4 +1,4 @@
-"""Numbers shown next to the links in the sidebar."""
+"""What the sidebar shows besides its links: the running timer and the numbers next to the links."""
 
 from collections.abc import Awaitable, Callable
 
@@ -23,17 +23,28 @@ async def nav_counts() -> dict[str, int]:
     }
 
 
+async def running_entry(user) -> TimeEntry | None:
+    entries = TimeEntry.objects.filter(user=user, ended_at__isnull=True)
+    return await entries.select_related("task__project__customer").afirst()
+
+
 SKIPPED = ("/static/", "/mcp/")
 
 
 @async_only_middleware
 def NavCountsMiddleware(get_response: Callable[[HttpRequest], Awaitable[HttpResponse]]):
-    """Count for administrators and full pages only. htmx requests never render the sidebar."""
+    """Full pages only, since htmx requests never render the sidebar.
+
+    The timer is rendered with the page instead of being loaded after it, so the sidebar does not jump.
+    """
 
     async def middleware(request: HttpRequest) -> HttpResponse:
         user = request.user
-        if user.is_authenticated and user.is_admin and not request.htmx and not request.path.startswith(SKIPPED):
-            request.nav_counts = await nav_counts()
+        if user.is_authenticated and not request.htmx and not request.path.startswith(SKIPPED):
+            if not user.is_customer:
+                request.nav_timer = {"running_entry": await running_entry(user)}
+            if user.is_admin:
+                request.nav_counts = await nav_counts()
         return await get_response(request)
 
     return middleware

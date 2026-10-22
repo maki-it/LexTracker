@@ -14,12 +14,16 @@ from tracking.models import TimeEntry
 
 @transaction.atomic
 def _record_invoice(draft: Draft, lexware_id) -> Invoice:
-    invoice = Invoice.objects.create(
-        customer=draft.customer,
-        period_start=draft.start,
-        period_end=draft.end,
-        total_net=draft.total,
+    # update_or_create: the invoice sync may have taken the new draft over from Lexware in the meantime.
+    invoice, _ = Invoice.objects.update_or_create(
         lexware_id=lexware_id,
+        defaults={
+            "customer": draft.customer,
+            "origin": Invoice.Origin.APP,
+            "period_start": draft.start,
+            "period_end": draft.end,
+            "total_net": draft.total,
+        },
     )
     TimeEntry.objects.filter(pk__in=[e.pk for e in draft.entries], invoice__isnull=True).update(invoice=invoice)
     return invoice

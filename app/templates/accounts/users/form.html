@@ -16,7 +16,7 @@
   {% include "core/_field.html" with field=form.email %}
   {% include "core/_field.html" with field=form.role %}
   <p class="-mt-2 text-[13px] text-muted">Mitarbeiter buchen Zeiten auf alle aktiven Projekte und sehen nur ihre eigenen. Kunden sehen nur ihre eigenen Daten und können nichts ändern.</p>
-  <fieldset class="flex flex-col gap-3 rounded-lg border border-line p-4">
+  <fieldset class="flex flex-col gap-3 rounded-lg border border-line p-4" data-shown-for="role=customer"{% if form.role.value != "customer" %} hidden disabled{% endif %}>
     <legend class="px-1 font-medium">Kundenzugang</legend>
     {% include "core/_field.html" with field=form.customer %}
     <p class="text-[13px] text-muted">Projekte sieht jeder Kundenzugang. Was er darüber hinaus sieht:</p>

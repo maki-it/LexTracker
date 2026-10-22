@@ -105,10 +105,10 @@ async def test_deleted_draft_releases_its_time(billed):
     assert result.deleted == 1
     assert "wieder freigegeben" in result.summary
 
-    # Deleted invoices are final and not asked about again.
+    # Deleted invoices are final and not asked about again: only the list is fetched.
     async with fake_client(handler) as client:
         await sync_invoices(client)
-    assert len(handler.requests) == 2
+    assert len(handler.requests) == 3 and handler.requests[-1].url.path.endswith("/voucherlist")
 
 
 async def test_invoice_missing_from_list_but_still_there_is_not_deleted(billed):
@@ -130,12 +130,64 @@ async def test_invoice_missing_from_list_but_still_there_is_not_deleted(billed):
 async def test_final_invoices_are_not_synced(billed):
     _, invoice, _ = billed
     await Invoice.objects.filter(pk=invoice.pk).aupdate(status=Invoice.Status.PAID)
-    handler = voucher_list()
+    handler = voucher_list(voucher(invoice, "voided"))
 
     async with fake_client(handler) as client:
-        await sync_invoices(client)
+        result = await sync_invoices(client)
 
-    assert handler.requests == []
+    await invoice.arefresh_from_db()
+    assert invoice.status == Invoice.Status.PAID
+    # Neither updated nor looked up, nor taken over a second time.
+    assert len(handler.requests) == 1 and result.imported == 0
+
+
+async def test_invoices_written_in_lexware_are_taken_over(billed):
+    _, invoice, _ = billed
+    customer = await Customer.objects.aget(pk=invoice.customer_id)
+    lexware_id, stranger_id = str(uuid.uuid4()), str(uuid.uuid4())
+    handler = voucher_list(
+        voucher(invoice, "draft"),
+        {
+            "id": lexware_id,
+            "voucherType": "invoice",
+            "voucherStatus": "open",
+            "voucherNumber": "RE0100",
+            "voucherDate": "2026-09-30T00:00:00.000+02:00",
+            "dueDate": "2099-10-14T00:00:00.000+02:00",
+            "contactId": str(customer.lexware_id),
+        },
+        # A contact LexTracker does not know.
+        {"id": stranger_id, "voucherType": "invoice", "voucherStatus": "open", "contactId": str(uuid.uuid4())},
+    )
+    handler.known[lexware_id] = {
+        "voucherDate": "2026-09-30T00:00:00.000+02:00",
+        "totalPrice": {"totalNetAmount": 450.5},
+        "shippingConditions": {
+            "shippingType": "serviceperiod",
+            "shippingDate": "2026-09-01T00:00:00.000+02:00",
+            "shippingEndDate": "2026-09-30T00:00:00.000+02:00",
+        },
+    }
+
+    async with fake_client(handler) as client:
+        result = await sync_invoices(client)
+
+    taken = await Invoice.objects.aget(lexware_id=lexware_id)
+    assert taken.origin == Invoice.Origin.LEXWARE and taken.customer_id == customer.pk
+    assert taken.voucher_number == "RE0100" and taken.status == Invoice.Status.OPEN
+    assert taken.total_net == Decimal("450.50")
+    assert (taken.period_start, taken.period_end) == (date(2026, 9, 1), date(2026, 9, 30))
+    assert taken.voucher_date == date(2026, 9, 30) and taken.due_date == date(2099, 10, 14)
+    assert result.imported == 1 and "1 aus Lexware übernommen" in result.summary
+    assert not await Invoice.objects.filter(lexware_id=stranger_id).aexists()
+
+    # Next time it is only updated. Once gone from Lexware it is removed, as it was never ours.
+    async with fake_client(handler) as client:
+        assert (await sync_invoices(client)).imported == 0
+    del handler.known[lexware_id]
+    async with fake_client(voucher_list(voucher(invoice, "draft"))) as client:
+        await sync_invoices(client)
+    assert not await Invoice.objects.filter(lexware_id=lexware_id).aexists()
 
 
 async def test_sync_is_recorded(billed, monkeypatch):
