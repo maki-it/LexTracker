@@ -140,6 +140,8 @@ def test_portal_hides_draft_and_deleted_invoices(client, customer_user, task):
             status=status,
             voucher_number=number,
             lexware_id=uuid.uuid4(),
+            # Invoices written directly in Lexware show up like the others.
+            origin=Invoice.Origin.LEXWARE if number == "RE1" else Invoice.Origin.APP,
         )
     client.force_login(customer_user)
 

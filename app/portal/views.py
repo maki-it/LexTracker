@@ -92,6 +92,6 @@ async def invoices(request: HttpRequest) -> HttpResponse:
         i
         async for i in Invoice.objects.filter(customer_id=user.customer_id)
         .exclude(status__in=HIDDEN_INVOICE_STATUSES)
-        .order_by("-period_end")
+        .order_by("-period_end", "-created_at")
     ]
     return render(request, "portal/invoices.html", {"invoices": rows})

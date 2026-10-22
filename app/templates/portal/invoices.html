@@ -9,6 +9,7 @@
     <thead>
       <tr>
         <th>Nummer</th>
+        <th>Datum</th>
         <th>Leistungszeitraum</th>
         <th>Status</th>
         <th class="text-right">Netto</th>
@@ -18,6 +19,7 @@
       {% for invoice in invoices %}
       <tr>
         <td class="whitespace-nowrap tabular-nums">{{ invoice.voucher_number|default:"–" }}</td>
+        <td class="whitespace-nowrap tabular-nums">{{ invoice.voucher_date|default:invoice.created_at|date:date_format }}</td>
         <td class="whitespace-nowrap text-muted tabular-nums">{{ invoice.period_start|date:date_format }} – {{ invoice.period_end|date:date_format }}</td>
         <td class="w-full whitespace-nowrap">
           <span class="badge {{ invoice.status_badge }}">{{ invoice.get_status_display }}</span>
@@ -26,7 +28,7 @@
         <td class="text-right whitespace-nowrap font-semibold tabular-nums{% if invoice.status == 'voided' %} text-muted line-through{% endif %}">{{ invoice.total_net }} €</td>
       </tr>
       {% empty %}
-      <tr><td colspan="4" class="py-8 text-center text-muted">Noch keine Rechnungen.</td></tr>
+      <tr><td colspan="5" class="py-8 text-center text-muted">Noch keine Rechnungen.</td></tr>
       {% endfor %}
     </tbody>
   </table>
