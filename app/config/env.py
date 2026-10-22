@@ -1,5 +1,6 @@
 """Typed configuration loaded from environment variables (prefix ``APP_``) or a ``.env`` file."""
 
+from datetime import time
 from functools import lru_cache
 from pathlib import Path
 from typing import Annotated, Literal
@@ -34,6 +35,10 @@ class Env(BaseSettings):
     # Lexware Office Public API, used from step 2 on.
     lexware_api_key: SecretStr = SecretStr("")
     lexware_base_url: str = "https://api.lexware.io/v1/"
+    # Daily copy of the database, made by the scheduler from this local time on. 0 keeps none.
+    backup_keep: int = Field(14, ge=0)
+    backup_time: time = time(3)
+    backup_dir: Path | None = None
 
     @property
     def debug(self) -> bool:

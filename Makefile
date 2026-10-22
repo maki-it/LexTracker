@@ -1,6 +1,6 @@
 MANAGE = uv run app/manage.py
 
-.PHONY: help install run scheduler css css-watch migrate makemigrations superuser test lint format docker-up docker-down docker-logs
+.PHONY: help install run scheduler css css-watch migrate makemigrations superuser test lint format backup docker-up docker-down docker-logs docker-backup
 
 help: ## Show available commands
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  %-16s %s\n", $$1, $$2}'
@@ -30,6 +30,9 @@ makemigrations: ## Create migrations for model changes
 superuser: ## Create an admin account
 	$(MANAGE) createsuperuser
 
+backup: ## Copy the database into the backup folder
+	$(MANAGE) backup_database
+
 test: ## Run the test suite
 	uv run pytest
 
@@ -49,3 +52,6 @@ docker-down: ## Stop the container
 
 docker-logs: ## Follow the container logs
 	docker compose logs -f
+
+docker-backup: ## Make a database backup in the running container
+	docker compose exec scheduler python manage.py backup_database

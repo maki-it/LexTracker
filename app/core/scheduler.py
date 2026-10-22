@@ -2,15 +2,19 @@
 
 import asyncio
 import logging
+import tempfile
 from collections.abc import Awaitable, Callable
 from contextlib import suppress
 from dataclasses import dataclass
 from datetime import datetime, time, timedelta
+from pathlib import Path
 
+from asgiref.sync import sync_to_async
 from django.conf import settings
 from django.utils import timezone
 
 from billing import sync as invoice_sync
+from core import backup
 from core.models import AppSettings
 from customers import sync as customer_sync
 from lexware.client import LexwareError
@@ -19,6 +23,9 @@ logger = logging.getLogger(__name__)
 
 # How often the scheduler looks for due jobs. Settings changes apply within this time.
 CHECK_INTERVAL = 60
+
+# Touched on every check. The container's health check looks at its age.
+HEARTBEAT = Path(tempfile.gettempdir()) / "lextracker-scheduler.heartbeat"
 
 
 @dataclass(frozen=True)
@@ -99,11 +106,19 @@ async def run_due_jobs(now: datetime) -> list[str]:
 async def run(stop: asyncio.Event) -> None:
     logger.info("Scheduler started")
     while not stop.is_set():
+        HEARTBEAT.touch()
+        now = timezone.now()
         try:
-            await run_due_jobs(timezone.now())
+            await run_due_jobs(now)
         except Exception:
             # Keep running: a broken job must not stop the others or the next attempt.
             logger.exception("Scheduled job failed")
+        try:
+            if backup.is_due(now):
+                path = await sync_to_async(backup.create_backup)(now)
+                logger.info("Database backup written to %s", path)
+        except Exception:
+            logger.exception("Database backup failed")
         with suppress(TimeoutError):
             await asyncio.wait_for(stop.wait(), CHECK_INTERVAL)
     logger.info("Scheduler stopped")

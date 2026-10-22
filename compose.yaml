@@ -10,25 +10,48 @@ x-environment: &environment
   APP_TIME_ZONE: ${APP_TIME_ZONE:-Europe/Berlin}
   APP_LOG_LEVEL: ${APP_LOG_LEVEL:-info}
   APP_LEXWARE_API_KEY: ${APP_LEXWARE_API_KEY:-}
+  APP_BACKUP_KEEP: ${APP_BACKUP_KEEP:-14}
+  APP_BACKUP_TIME: ${APP_BACKUP_TIME:-03:00}
+  APP_BACKUP_DIR: /backups
   FORWARDED_ALLOW_IPS: ${FORWARDED_ALLOW_IPS:-127.0.0.1}
   UVICORN_WORKERS: ${UVICORN_WORKERS:-1}
   DJANGO_SUPERUSER_USERNAME: ${DJANGO_SUPERUSER_USERNAME:-}
   DJANGO_SUPERUSER_PASSWORD: ${DJANGO_SUPERUSER_PASSWORD:-}
   DJANGO_SUPERUSER_EMAIL: ${DJANGO_SUPERUSER_EMAIL:-}
 
+# Shared by both services: same image, settings, data and hardening.
+x-service: &service
+  build:
+    context: .
+    dockerfile: docker/Dockerfile
+  image: lextracker:latest
+  restart: unless-stopped
+  init: true
+  environment: *environment
+  volumes:
+    - lextracker-data:/data
+    - lextracker-backups:/backups
+  # The app writes only to /data, /backups and /tmp.
+  read_only: true
+  tmpfs:
+    - /tmp
+  cap_drop: [ALL]
+  security_opt:
+    - no-new-privileges:true
+  logging:
+    driver: json-file
+    options:
+      max-size: 10m
+      max-file: "5"
+
 services:
   app:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile
-    image: lextracker:latest
+    <<: *service
     container_name: lextracker
-    restart: unless-stopped
+    # Set APP_PORT=127.0.0.1:8000 when a reverse proxy on the same host is the only way in.
     ports:
-      - "8000:8000"
-    environment: *environment
-    volumes:
-      - lextracker-data:/data
+      - "${APP_PORT:-8000}:8000"
+    stop_grace_period: 30s
     # Each hook runs in a one-off container with the same image, environment and volumes
     # before the app starts. If a hook fails, the app does not start.
     # Needs a recent Docker Compose (tested with v5.6).
@@ -36,24 +59,24 @@ services:
       - command: ["python", "manage.py", "migrate", "--noinput"]
       - command: ["python", "manage.py", "ensure_superuser"]
 
-  # Runs recurring jobs such as the automatic customer import (interval on the settings page).
+  # Runs recurring jobs: the automatic customer import, the invoice sync (both set on the settings
+  # page) and the daily database backup.
   scheduler:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile
-    image: lextracker:latest
+    <<: *service
     container_name: lextracker-scheduler
-    restart: unless-stopped
     command: ["python", "manage.py", "run_scheduler"]
-    environment: *environment
-    volumes:
-      - lextracker-data:/data
+    # The scheduler touches this file on every check, once a minute.
     healthcheck:
-      disable: true
+      test: ["CMD", "python", "-c", "import os, sys, time; sys.exit(time.time() - os.path.getmtime('/tmp/lextracker-scheduler.heartbeat') > 300)"]
+      interval: 60s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
     depends_on:
-      # Starts after the app, so its pre_start hooks have migrated the database.
+      # Starts once the app answers, so its pre_start hooks have migrated the database.
       app:
-        condition: service_started
+        condition: service_healthy
 
 volumes:
   lextracker-data:
+  lextracker-backups:
