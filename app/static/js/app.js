@@ -34,3 +34,23 @@ document.addEventListener(
 
 // The server can close the dialog with the response header "HX-Trigger: close-dialog".
 document.body.addEventListener("close-dialog", () => document.getElementById("dialog").close());
+
+// A checkbox with data-requires="<name>" only counts when the checkbox <name> in the same form is ticked,
+// e.g. descriptions of time entries need the entries. Otherwise it is unticked and greyed out.
+// The server applies the same rule, see accounts/forms.py.
+function syncDependentCheckboxes(form) {
+  for (const box of form.querySelectorAll("input[data-requires]")) {
+    const parent = form.elements[box.dataset.requires];
+    if (!parent) continue;
+    box.disabled = !parent.checked;
+    if (!parent.checked) box.checked = false;
+    box.closest("label")?.classList.toggle("opacity-50", !parent.checked);
+  }
+}
+document.addEventListener("change", (event) => {
+  if (event.target.form) syncDependentCheckboxes(event.target.form);
+});
+document.addEventListener("htmx:load", (event) => {
+  for (const form of event.detail.elt.querySelectorAll?.("form") ?? []) syncDependentCheckboxes(form);
+});
+document.addEventListener("DOMContentLoaded", () => document.querySelectorAll("form").forEach(syncDependentCheckboxes));

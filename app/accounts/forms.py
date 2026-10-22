@@ -88,6 +88,8 @@ class UserForm(StyledFormMixin, forms.ModelForm):
         self.fields["customer"].empty_label = "– kein Kunde –"
         if self.instance.pk is None:
             del self.fields["is_active"]
+        # Descriptions belong to the time entries; static/js/app.js greys the box out without them.
+        self.fields["portal_descriptions"].widget.attrs["data-requires"] = "portal_entries"
 
     def clean(self):
         cleaned = super().clean()
@@ -96,6 +98,8 @@ class UserForm(StyledFormMixin, forms.ModelForm):
             self.add_error("customer", "Ein Kundenzugang braucht einen Kunden.")
         elif role and role != User.Role.CUSTOMER:
             cleaned["customer"] = None
+        if not cleaned.get("portal_entries"):
+            cleaned["portal_descriptions"] = False
         if self.instance.pk and self.instance == self.acting_user:
             # Do not lock yourself out.
             if role != User.Role.ADMIN:
