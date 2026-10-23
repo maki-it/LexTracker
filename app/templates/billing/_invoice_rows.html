@@ -11,7 +11,6 @@
   </td>
   <td class="text-right whitespace-nowrap font-semibold tabular-nums{% if invoice.status == 'deleted' or invoice.status == 'voided' %} text-muted line-through{% endif %}">{{ invoice.total_net }} €</td>
   <td class="text-right whitespace-nowrap">
-    {% if not invoice.lexware_url and invoice.status == "deleted" %}<span class="text-[13px] text-muted">Zeiten wieder offen</span>{% endif %}
     {% if invoice.status == "voided" and invoice.entry_count %}
     <form method="post" action="{% url 'billing:invoice_release' invoice.pk %}" class="inline">
       {% csrf_token %}

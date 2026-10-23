@@ -361,3 +361,30 @@ def test_due_dates_without_time_zone_are_accepted(billed):
 
     v = Voucher.model_validate({"id": str(uuid.uuid4()), "voucherStatus": "open", "dueDate": "2026-11-01T00:00:00"})
     assert _due_date(v) == datetime(2026, 11, 1).date()
+
+
+def test_deleted_draft_is_labelled_as_a_draft_with_its_time_hint_in_the_status_cell(logged_in, billed):
+    _, invoice, _ = billed
+    other = dict(customer=invoice.customer, period_start=date(2026, 9, 1), period_end=date(2026, 9, 30))
+    Invoice.objects.filter(pk=invoice.pk).update(status=Invoice.Status.DELETED)
+    Invoice.objects.create(**other, total_net=Decimal("10.00"), status=Invoice.Status.VOIDED, voucher_number="RE-V")
+    Invoice.objects.create(**other, total_net=Decimal("20.00"), status=Invoice.Status.DELETED, voucher_number="RE-SENT")
+
+    text = logged_in.get(reverse("billing:invoices")).text
+    rows = {row.split("</tr>")[0] for row in text.split("<tr>")[2:]}
+    deleted_draft = next(r for r in rows if "Entwurf gelöscht" in r)
+    voided = next(r for r in rows if "RE-V" in r)
+    deleted_sent = next(r for r in rows if "RE-SENT" in r)
+
+    # The draft says so in its badge, and the hint sits in the status cell, not in an extra column.
+    assert "Entwurf gelöscht" in deleted_draft and "In Lexware gelöscht" not in deleted_draft.replace(
+        'title="In Lexware gelöscht"', ""
+    )
+    assert deleted_draft.count("Zeiten wieder offen") == 1
+    assert deleted_draft.index("Zeiten wieder offen") < deleted_draft.index("line-through")
+    # A voided invoice stays apart: its own label and color, no "time open" hint.
+    assert "Storniert" in voided and "badge-warning" in voided and "Zeiten wieder offen" not in voided
+    # Deleted after it got a number: no draft label, but time is open again too.
+    assert "Entwurf gelöscht" not in deleted_sent and ">In Lexware gelöscht<" in deleted_sent
+    assert "Zeiten wieder offen" in deleted_sent
+    assert "badge-warning" not in deleted_draft and "badge-warning" not in deleted_sent
