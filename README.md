@@ -190,7 +190,7 @@ FORWARDED_ALLOW_IPS=<IP des Proxys>
 
 Ohne HTTPS funktioniert der Login nur mit `APP_SECURE_COOKIES=false`.
 
-**Backup:** Der Scheduler kopiert die Datenbank täglich ab `APP_BACKUP_TIME` (Standard 03:00) nach `/backups` und behält die neuesten `APP_BACKUP_KEEP` Kopien (Standard 14, `0` schaltet es ab). Er nutzt dafür die Backup-Funktion von SQLite, die auch im laufenden Betrieb eine stimmige Kopie liefert; die Datei einfach zu kopieren reicht im WAL-Modus nicht.
+**Backup:** Der Scheduler kopiert die Datenbank täglich nach `/backups`. Ob, ab welcher Uhrzeit (Standard 03:00) und wie viele Kopien er behält (Standard 14), stellst du unter Einstellungen → Datensicherung ein; dort steht auch, wann die letzte Sicherung lief. Nur der Zielordner kommt aus der Umgebung (`APP_BACKUP_DIR`, in Docker fest `/backups`, ohne Docker `data/backups`). Der Scheduler nutzt dafür die Backup-Funktion von SQLite, die auch im laufenden Betrieb eine stimmige Kopie liefert; die Datei einfach zu kopieren reicht im WAL-Modus nicht.
 Ein Backup sofort: `make docker-backup` (oder `docker compose exec scheduler python manage.py backup_database`).
 Damit die Backups auch außerhalb von Docker liegen, z. B. für ein Offsite-Backup, kannst du das Volume durch einen Ordner auf dem Server ersetzen. Er muss dem Benutzer mit der UID 1000 gehören:
 
