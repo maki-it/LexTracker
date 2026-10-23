@@ -276,6 +276,42 @@ def test_invoice_with_a_single_service_date_shows_only_that_date(logged_in, bill
     assert "01.10.2026 – 31.10.2026" in text
 
 
+def test_invoice_list_shows_due_date_and_days_overdue_below_the_badge(logged_in, billed):
+    _, invoice, _ = billed
+    today = timezone.localdate()
+
+    def make(number, status, due_date, origin=Invoice.Origin.APP):
+        return Invoice.objects.create(
+            customer=invoice.customer,
+            period_start=date(2026, 9, 1),
+            period_end=date(2026, 9, 30),
+            total_net=Decimal("10.00"),
+            status=status,
+            voucher_number=number,
+            due_date=due_date,
+            origin=origin,
+        )
+
+    make("RE-OPEN", Invoice.Status.OPEN, date(2031, 3, 5))
+    make("RE-LATE", Invoice.Status.OVERDUE, today - timedelta(days=3), origin=Invoice.Origin.LEXWARE)
+    make("RE-PAID", Invoice.Status.PAID, date(2031, 4, 6))
+
+    text = logged_in.get(reverse("billing:invoices")).text
+    assert "Fällig 05.03.2031" in text and "seit" not in text.split("Fällig 05.03.2031")[1].split("</span>")[0]
+    assert f"Fällig {(today - timedelta(days=3)):%d.%m.%Y} · seit 3 Tagen" in text
+    # Paid invoices need no due date; the Lexware origin is a symbol with a tooltip, not running text.
+    assert "06.04.2031" not in text
+    assert text.count("In Lexware Office erstellt") == 2  # tooltip and screen reader text of the one invoice
+
+
+def test_days_overdue_counts_only_for_overdue_invoices():
+    today = timezone.localdate()
+    overdue = Invoice(status=Invoice.Status.OVERDUE, due_date=today - timedelta(days=1))
+    assert overdue.days_overdue == 1
+    assert Invoice(status=Invoice.Status.OVERDUE, due_date=None).days_overdue == 0
+    assert Invoice(status=Invoice.Status.OPEN, due_date=today - timedelta(days=5)).days_overdue == 0
+
+
 def test_overview_lists_only_customers_with_open_time(logged_in, billed):
     entry = billed[2]
     Customer.objects.create(name="Ohne Zeiten AG")

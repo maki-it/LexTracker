@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 from core.models import TimeStampedModel
 
@@ -108,6 +109,18 @@ class Invoice(TimeStampedModel):
             return ""
         action = "edit" if self.status == self.Status.DRAFT else "view"
         return f"https://app.lexware.de/permalink/invoices/{action}/{self.lexware_id}"
+
+    @property
+    def shows_due_date(self) -> bool:
+        """Whether the due date is worth showing: only while the invoice still waits for its payment."""
+        return bool(self.due_date) and self.status in (self.Status.OPEN, self.Status.OVERDUE)
+
+    @property
+    def days_overdue(self) -> int:
+        """Days since the due date, 0 if the invoice is not overdue."""
+        if self.status != self.Status.OVERDUE or not self.due_date:
+            return 0
+        return max((timezone.localdate() - self.due_date).days, 0)
 
     @property
     def status_badge(self) -> str:
