@@ -131,6 +131,7 @@ class UserForm(StyledFormMixin, forms.ModelForm):
         self.acting_user = acting_user
         self.fields["customer"].queryset = self.fields["customer"].queryset.filter(is_archived=False)
         self.fields["customer"].empty_label = "– kein Kunde –"
+        self.fields["customer"].widget.attrs["data-searchable"] = ""
         # Keep what is unlocked selectable even if it is archived or done by now.
         unlocked = self.instance.pk or 0
         customers = self.fields["bookable_customers"].queryset
