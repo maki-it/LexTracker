@@ -9,7 +9,13 @@
   <p>Schick diesen Link an {% if edited.email %}<a href="mailto:{{ edited.email }}">{{ edited.email }}</a>{% else %}die Person{% endif %}. Damit legt sie ihr Passwort fest und meldet sich dann als <strong>{{ edited.get_username }}</strong> an.</p>
   <code class="break-all rounded bg-surface-muted px-3 py-2 text-[13px] text-ink select-all">{{ url }}</code>
   <p class="text-[13px] text-muted">Der Link gilt eine Woche und nur einmal. Mit demselben Knopf in der Benutzerliste kannst du jederzeit einen neuen erzeugen, z. B. wenn jemand sein Passwort vergessen hat.</p>
-  <div class="flex gap-2 border-t border-line pt-4">
+  <div class="flex flex-wrap gap-2 border-t border-line pt-4">
+    {% if can_send %}
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-primary">Per E-Mail an {{ edited.email }} schicken</button>
+    </form>
+    {% endif %}
     <a href="{% url 'users:list' %}" class="btn">Zur Benutzerliste</a>
   </div>
 </div>

@@ -1,0 +1,7 @@
+{% extends "mail/_base.html" %}
+{% block content %}
+<p style="margin:0 0 12px;font-size:18px;font-weight:600">Willkommen bei LexTracker</p>
+<p style="margin:0">Hallo{% if invited.first_name %} {{ invited.first_name }}{% endif %}, {% if inviter %}{{ inviter }} hat{% else %}du hast{% endif %} dir einen Zugang eingerichtet. Dein Benutzername ist <strong>{{ invited.get_username }}</strong>.</p>
+{% include "mail/_button.html" with label="Passwort festlegen" %}
+<p style="margin:16px 0 0;font-size:13px;color:#71717a">Der Link gilt {{ days }} Tage und nur einmal. Danach meldest du dich mit Benutzername und Passwort an.</p>
+{% endblock %}

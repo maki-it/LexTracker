@@ -17,15 +17,11 @@
 
 <section class="card flex flex-col gap-3">
   <h2>Timer starten</h2>
-  {% if tasks %}
+  {% if last_task %}
   <form method="post" action="{% url 'tracking:timer_start' %}" hx-post="{% url 'tracking:timer_start' %}" hx-swap="none"
         class="flex flex-col gap-2 md:flex-row">
     {% csrf_token %}
-    <select name="task" class="input md:max-w-sm" required aria-label="Aufgabe">
-      {% for task in tasks %}
-      <option value="{{ task.pk }}">{{ task.project.customer.name }} · {{ task.project.name }} · {{ task.name }}</option>
-      {% endfor %}
-    </select>
+    <div class="md:w-96 md:shrink-0">{% include "tracking/_task_search.html" with name="task" task=last_task label="Aufgabe" %}</div>
     <input type="text" name="description" class="input" placeholder="Was machst du gerade? (optional)" aria-label="Beschreibung">
     <button type="submit" class="btn btn-primary">{% icon "play" size=14 %}Starten</button>
   </form>

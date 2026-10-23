@@ -76,9 +76,11 @@ class OutgoingMail(models.Model):
         LOGIN_LINK = "login_link", "Anmeldelink"
         WEEKLY_REPORT = "weekly_report", "Wochenbericht"
         TIMER_REMINDER = "timer_reminder", "Erinnerung an laufenden Timer"
+        INVITATION = "invitation", "Einladung"
+        INVOICE_OVERDUE = "invoice_overdue", "Hinweis auf überfällige Rechnung"
 
     # Their links sign in or set a password, so their text is not kept once it no longer needs sending.
-    SECRET_KINDS = (Kind.PASSWORD_RESET, Kind.LOGIN_LINK)
+    SECRET_KINDS = (Kind.PASSWORD_RESET, Kind.LOGIN_LINK, Kind.INVITATION)
 
     kind = models.CharField("Art", max_length=30, choices=Kind)
     user = models.ForeignKey(

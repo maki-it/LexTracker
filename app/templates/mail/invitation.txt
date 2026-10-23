@@ -1,0 +1,8 @@
+{% autoescape off %}Hallo{% if invited.first_name %} {{ invited.first_name }}{% endif %},
+
+{% if inviter %}{{ inviter }} hat{% else %}du hast{% endif %} dir einen Zugang zu LexTracker eingerichtet. Dein Benutzername ist „{{ invited.get_username }}“. Über diesen Link legst du dein Passwort fest:
+
+{{ url }}
+
+Der Link gilt {{ days }} Tage und nur einmal. Danach meldest du dich mit Benutzername und Passwort an.
+{% endautoescape %}

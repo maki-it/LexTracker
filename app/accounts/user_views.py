@@ -1,27 +1,18 @@
-"""User management for administrators: employees and customer logins, invited by a link."""
+"""User management for administrators: employees and customer logins, invited by a link or by e-mail."""
 
 from asgiref.sync import sync_to_async
 from django.contrib import messages
-from django.contrib.auth.tokens import default_token_generator
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
-from django.urls import reverse
-from django.utils.encoding import force_bytes
-from django.utils.http import urlsafe_base64_encode
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
+from accounts import links
 from accounts.forms import UserForm
 from accounts.models import User
 from core.dialogs import navigate
+from core.models import AppSettings
 from core.shortcuts import arender
 from tracking.models import TimeEntry
-
-
-def invite_url(request: HttpRequest, user: User) -> str:
-    """A link to set a password. It stops working once a password is set, or after a week."""
-    uid = urlsafe_base64_encode(force_bytes(user.pk))
-    token = default_token_generator.make_token(user)
-    return request.build_absolute_uri(reverse("accounts:invite", args=[uid, token]))
 
 
 async def _get_user(pk: int) -> User:
@@ -51,6 +42,9 @@ async def user_form(request: HttpRequest, pk: int | None = None) -> HttpResponse
         if user.pk is None:
             user.set_unusable_password()
             await sync_to_async(form.save)()
+            if (await AppSettings.aload()).invite_by_mail and await links.can_send_invitation(user):
+                await links.send_invitation(request, user)
+                messages.success(request, f"Einladung an {user.email} ist unterwegs.")
             return navigate("users:invite", pk=user.pk)
         await sync_to_async(form.save)()
         messages.success(request, f"{user.get_username()} gespeichert.")
@@ -79,10 +73,16 @@ async def user_delete(request: HttpRequest, pk: int) -> HttpResponse:
     return redirect("users:list")
 
 
-@require_GET
+@require_http_methods(["GET", "POST"])
 async def invite_link(request: HttpRequest, pk: int) -> HttpResponse:
     user = await _get_user(pk)
     if not user.is_active:
         messages.error(request, "Der Benutzer ist deaktiviert. Aktiviere ihn zuerst.")
         return redirect("users:list")
-    return render(request, "accounts/users/invite.html", {"edited": user, "url": invite_url(request, user)})
+    can_send = await links.can_send_invitation(user)
+    if request.method == "POST" and can_send:
+        await links.send_invitation(request, user)
+        messages.success(request, f"Einladung an {user.email} ist unterwegs.")
+        return redirect("users:invite", pk=user.pk)
+    context = {"edited": user, "url": await links.invite_url(request, user), "can_send": can_send}
+    return render(request, "accounts/users/invite.html", context)

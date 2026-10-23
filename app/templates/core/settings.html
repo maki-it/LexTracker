@@ -113,6 +113,18 @@
     </p>
     {% include "core/_field.html" with field=form.timer_reminder_hours %}
     <p class="-mt-2 text-[13px] text-muted">Abschalten kann jeder beides für sich unter Konto.</p>
+    <div class="grid gap-3 sm:grid-cols-[2fr_1fr]">
+      {% include "core/_field.html" with field=form.overdue_notice %}
+      {% include "core/_field.html" with field=form.overdue_notice_days %}
+    </div>
+    <p class="-mt-2 text-[13px] text-muted">
+      Gilt für Rechnungen, die laut Lexware überfällig sind, und nur, solange der Rechnungsstatus abgeglichen wird.
+      Rechnungen, die schon länger als eine Woche über diese Frist sind, bekommen keinen Hinweis mehr.
+    </p>
+    <label class="flex flex-col gap-1 text-sm">
+      <span class="flex items-center gap-2 font-medium">{{ form.invite_by_mail }} {{ form.invite_by_mail.label }}</span>
+      <span class="text-muted">{{ form.invite_by_mail.help_text }}</span>
+    </label>
   </section>
 
   <section class="card flex flex-col gap-5">

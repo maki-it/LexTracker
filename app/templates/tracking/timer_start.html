@@ -3,17 +3,13 @@
 {% block title %}Timer starten · LexTracker{% endblock %}
 {% block content %}
 <h1>Timer starten</h1>
-{% if tasks %}
+{% if last_task %}
 <form method="post" action="{% url 'tracking:timer_start' %}" class="card flex max-w-2xl flex-col gap-4">
   {% csrf_token %}
   <input type="hidden" name="next" value="{% url 'core:dashboard' %}">
   <label class="field">
     <span>Aufgabe</span>
-    <select name="task" class="input" required autofocus>
-      {% for task in tasks %}
-      <option value="{{ task.pk }}">{{ task.project.customer.name }} · {{ task.project.name }} · {{ task.name }}</option>
-      {% endfor %}
-    </select>
+    {% include "tracking/_task_search.html" with name="task" task=last_task autofocus=True %}
   </label>
   <label class="field">
     <span>Beschreibung <span class="font-normal text-muted">(optional)</span></span>

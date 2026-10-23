@@ -132,6 +132,8 @@ def test_settings_page_saves_settings(logged_in):
             "weekly_report_weekday": "0",
             "weekly_report_time": "07:00",
             "timer_reminder_hours": "10",
+            "overdue_notice": "admins",
+            "overdue_notice_days": "3",
         },
     )
 

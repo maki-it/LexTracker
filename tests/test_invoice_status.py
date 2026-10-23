@@ -81,13 +81,14 @@ async def test_status_and_number_come_from_lexware(billed):
 
 async def test_open_invoice_past_due_date_is_overdue(billed):
     _, invoice, _ = billed
-    handler = voucher_list(voucher(invoice, "open", dueDate="2020-01-15T00:00:00.000+01:00"))
+    handler = voucher_list(voucher(invoice, "open", dueDate="2020-01-15T00:00:00.000+01:00", openAmount=238.1))
 
     async with fake_client(handler) as client:
         await sync_invoices(client)
 
     await invoice.arefresh_from_db()
     assert invoice.status == Invoice.Status.OVERDUE
+    assert invoice.open_amount == Decimal("238.10")
 
 
 async def test_deleted_draft_releases_its_time(billed):
