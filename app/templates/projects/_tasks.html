@@ -1,4 +1,4 @@
-{% load timefmt icons dialogs %}
+{% load timefmt icons dialogs markdown %}
 <section id="tasks" class="flex flex-col gap-3">
   <h2>Aufgaben</h2>
   <div class="table-wrap">
@@ -8,6 +8,7 @@
         <tr{% if task.status == 'done' %} class="text-muted"{% endif %}>
           <td class="w-full">
             <div class="font-medium">{{ task.name }}</div>
+            {% if task.description %}<div class="mt-0.5 max-w-2xl text-[13px] text-muted">{{ task.description|markdown }}</div>{% endif %}
             <div class="text-xs text-muted">
               {% if not task.is_billable %}nicht abrechenbar · {% endif %}
               {% if task.hourly_rate is not None %}{{ task.hourly_rate }} €/h · {% endif %}

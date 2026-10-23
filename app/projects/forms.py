@@ -1,7 +1,7 @@
 from django import forms
 from django.db import transaction
 
-from core.forms import StyledFormMixin
+from core.forms import MARKDOWN_HELP, StyledFormMixin
 from customers.models import Customer
 from projects.models import Project, Task, TaskTemplate
 
@@ -15,6 +15,7 @@ class ProjectForm(StyledFormMixin, forms.ModelForm):
             "start_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
             "end_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
         }
+        help_texts = {"description": MARKDOWN_HELP}
 
     templates = forms.ModelMultipleChoiceField(
         label="Aufgaben aus Vorlagen",
@@ -56,6 +57,7 @@ class TaskEditForm(StyledFormMixin, forms.ModelForm):
         model = Task
         fields = ["name", "status", "description", "hourly_rate", "estimated_hours", "is_billable"]
         widgets = {"description": forms.Textarea(attrs={"rows": 3})}
+        help_texts = {"description": MARKDOWN_HELP}
 
 
 class TaskTemplateForm(StyledFormMixin, forms.ModelForm):
@@ -63,3 +65,4 @@ class TaskTemplateForm(StyledFormMixin, forms.ModelForm):
         model = TaskTemplate
         fields = ["name", "description", "hourly_rate", "estimated_hours", "is_billable"]
         widgets = {"description": forms.Textarea(attrs={"rows": 3})}
+        help_texts = {"description": MARKDOWN_HELP}

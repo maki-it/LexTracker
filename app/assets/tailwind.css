@@ -343,6 +343,31 @@
     @apply border-danger/25 bg-danger-soft text-danger;
   }
 
+  /* Text rendered from Markdown by the |markdown template filter. */
+  .markdown {
+    @apply space-y-2 break-words;
+  }
+
+  .markdown a {
+    @apply underline underline-offset-2 hover:text-primary-hover;
+  }
+
+  .markdown strong {
+    @apply font-semibold text-ink;
+  }
+
+  .markdown ul {
+    @apply list-disc pl-5;
+  }
+
+  .markdown ol {
+    @apply list-decimal pl-5;
+  }
+
+  .markdown code {
+    @apply rounded bg-surface-muted px-1 py-0.5 font-mono text-[0.9em];
+  }
+
   .empty {
     @apply rounded-xl border border-dashed border-line px-4 py-10 text-center text-muted;
   }
