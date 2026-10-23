@@ -2,6 +2,7 @@ from datetime import time
 
 import pytest
 from asgiref.sync import async_to_sync
+from django.core.management import call_command
 from django.urls import reverse
 
 from accounts.models import User
@@ -9,6 +10,7 @@ from core.models import AppSettings
 from customers.sync import SyncResult
 from lexware import credentials
 from lexware.schemas import Profile
+from setup.code import setup_code, setup_path
 
 pytestmark = pytest.mark.django_db
 
@@ -20,6 +22,14 @@ ACCOUNT = {
     "password1": "ein-langes-passwort-42",
     "password2": "ein-langes-passwort-42",
 }
+
+
+@pytest.fixture
+def unlocked(client):
+    """A browser that opened the setup link from the log."""
+    response = client.get(setup_path())
+    assert response.url == reverse("setup:account")
+    return client
 
 
 @pytest.fixture
@@ -41,7 +51,7 @@ def test_health_stays_reachable(client):
     assert client.get(reverse("core:health")).status_code == 200
 
 
-def test_setup_creates_admin_and_logs_in(client, settings, accept_key):
+def test_setup_creates_admin_and_logs_in(unlocked, client, settings, accept_key):
     settings.LEXWARE_API_KEY = ""
     assert "Admin-Konto" in client.get(reverse("setup:account")).text
 
@@ -55,7 +65,7 @@ def test_setup_creates_admin_and_logs_in(client, settings, accept_key):
     assert "Lexware Office verbinden" in client.get(response.url).text
 
 
-def test_full_setup_ends_on_start_page(client, settings, accept_key, monkeypatch):
+def test_full_setup_ends_on_start_page(unlocked, client, settings, accept_key, monkeypatch):
     settings.LEXWARE_API_KEY = ""
     imported = []
 
@@ -86,7 +96,7 @@ def test_full_setup_ends_on_start_page(client, settings, accept_key, monkeypatch
     assert "Einrichtung ist abgeschlossen" in response.text
 
 
-def test_lexware_step_can_be_skipped(client, settings):
+def test_lexware_step_can_be_skipped(unlocked, client, settings):
     settings.LEXWARE_API_KEY = ""
     client.post(reverse("setup:account"), ACCOUNT)
     assert reverse("setup:backup") in client.get(reverse("setup:lexware")).text
@@ -119,3 +129,31 @@ def test_employee_cannot_open_setup(client):
     employee = User.objects.create_user(username="ma", password="geheim-123", role=User.Role.EMPLOYEE)
     client.force_login(employee)
     assert client.get(reverse("setup:lexware")).status_code == 403
+
+
+def test_account_needs_the_setup_code(client, caplog):
+    response = client.get(reverse("setup:account"))
+    assert "Einrichtungscode" in response.text
+    # The link with the code goes to the log, never to the page.
+    assert setup_code() in caplog.text
+    assert setup_code() not in response.text
+
+    client.post(reverse("setup:account"), ACCOUNT)
+    assert not User.objects.exists()
+
+    response = client.post(reverse("setup:account"), {"code": "falsch"})
+    assert "Der Code stimmt nicht" in response.text
+
+    assert client.post(reverse("setup:account"), {"code": f" {setup_code().upper()} "}).url == reverse("setup:account")
+    client.post(reverse("setup:account"), ACCOUNT)
+    assert User.objects.count() == 1
+
+
+def test_setup_link_command(capsys, user):
+    call_command("setup_link")
+    assert "already set up" in capsys.readouterr().out
+
+
+def test_setup_link_command_on_fresh_instance(capsys):
+    call_command("setup_link")
+    assert setup_path() in capsys.readouterr().out

@@ -21,6 +21,7 @@ from lexware import credentials
 from lexware.client import LexwareError
 from lexware.forms import ApiKeyForm
 from lexware.views import check_and_store
+from setup import code as setup_code
 from setup.forms import AdminAccountForm, AlreadySetUp, BackupForm
 
 # (URL name, label)
@@ -62,6 +63,8 @@ def _not_admin(request: HttpRequest) -> HttpResponse | None:
 async def account(request: HttpRequest) -> HttpResponse:
     if not await is_fresh():
         return redirect("setup:lexware" if request.user.is_authenticated and request.user.is_admin else "/")
+    if not await request.session.aget(setup_code.SESSION_KEY):
+        return await _unlock(request)
     form = AdminAccountForm(request.POST or None)
     if request.method == "POST" and await sync_to_async(form.is_valid)():
         try:
@@ -72,6 +75,18 @@ async def account(request: HttpRequest) -> HttpResponse:
         await alogin(request, user, backend="django.contrib.auth.backends.ModelBackend")
         return redirect("setup:lexware")
     return _render(request, "setup/account.html", "setup:account", {"form": form})
+
+
+async def _unlock(request: HttpRequest) -> HttpResponse:
+    """Ask for the setup code from the log; a link from the log carries it already."""
+    code = request.POST.get("code") or request.GET.get("code") or ""
+    if code and setup_code.matches(code):
+        await request.session.aset(setup_code.SESSION_KEY, True)
+        return redirect("setup:account")
+    if not code:
+        setup_code.log_setup_link(request)
+    error = "Der Code stimmt nicht." if code else None
+    return _render(request, "setup/unlock.html", "setup:account", {"error": error})
 
 
 @sensitive_post_parameters("api_key")

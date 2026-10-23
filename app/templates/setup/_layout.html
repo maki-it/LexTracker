@@ -2,19 +2,18 @@
 {% load icons %}
 {% block title %}Einrichtung · LexTracker{% endblock %}
 {% block public_content %}
-<div class="flex w-full max-w-md flex-col gap-6">
+<div class="flex w-full max-w-lg flex-col gap-6">
   <div class="flex items-center justify-center gap-2.5 text-lg font-semibold">
     {% logo 32 %}
     LexTracker
   </div>
-  <ol class="flex items-center justify-center gap-2 text-[13px]" aria-label="Schritte der Einrichtung">
+  <ol class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[13px]" aria-label="Schritte der Einrichtung">
     {% for step in steps %}
-    <li class="flex items-center gap-2{% if step.current %} font-semibold text-ink{% else %} text-muted{% endif %}"{% if step.current %} aria-current="step"{% endif %}>
+    <li class="flex items-center gap-2 whitespace-nowrap{% if step.current %} font-semibold text-ink{% else %} text-muted{% endif %}"{% if step.current %} aria-current="step"{% endif %}>
       <span class="flex size-6 items-center justify-center rounded-full text-xs {% if step.done %}bg-primary text-white{% elif step.current %}border-2 border-primary text-primary{% else %}border border-line{% endif %}">
         {% if step.done %}{% icon "check" %}{% else %}{{ step.number }}{% endif %}
       </span>
       {{ step.label }}
-      {% if not forloop.last %}<span class="h-px w-4 bg-line" aria-hidden="true"></span>{% endif %}
     </li>
     {% endfor %}
   </ol>

@@ -60,7 +60,7 @@ make run         # http://localhost:8000
 ```
 
 Beim ersten Aufruf führt die **Einrichtung** durch das Anlegen des Admin-Kontos, das Verbinden mit Lexware Office und die Datensicherung (das Konto alternativ mit `make superuser`).
-Solange es kein Konto gibt, leitet jede Seite dorthin. Stell eine neue Instanz deshalb erst öffentlich erreichbar, wenn du die Einrichtung abgeschlossen hast, oder lass das Konto über `DJANGO_SUPERUSER_*` anlegen.
+Solange es kein Konto gibt, leitet jede Seite dorthin. Damit niemand anderes eine frische Instanz übernehmen kann, öffnet sich die Einrichtung nur mit einem Code: Die App schreibt den Einrichtungslink beim ersten Aufruf ins Log (`docker compose logs app`), alternativ zeigt ihn `manage.py setup_link` (`docker compose exec app python manage.py setup_link`). Der Code ist aus `APP_SECRET_KEY` abgeleitet und nach dem ersten Konto wertlos.
 
 Während du an Templates arbeitest, hält `make css-watch` in einem zweiten Terminal das Stylesheet aktuell.
 Den automatischen Kundenimport startest du lokal bei Bedarf mit `make scheduler`.
