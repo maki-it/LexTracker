@@ -41,6 +41,9 @@ class AppSettingsForm(StyledFormMixin, forms.ModelForm):
             "weekly_report_weekday",
             "weekly_report_time",
             "timer_reminder_hours",
+            "overdue_notice",
+            "overdue_notice_days",
+            "invite_by_mail",
         ]
         widgets = {
             name: forms.TimeInput(attrs={"type": "time"}, format="%H:%M")

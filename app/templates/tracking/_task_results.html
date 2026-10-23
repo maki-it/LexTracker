@@ -1,0 +1,11 @@
+{# Suggestions of the task search (tracking/_task_search.html): open tasks of active projects, recently used first. #}
+{% for task in tasks %}
+<button type="button" role="option" aria-selected="false" data-value="{{ task.pk }}"
+        data-label="{{ task.project.customer.name }} · {{ task.project.name }} · {{ task.name }}"
+        class="flex flex-col items-start rounded-md px-3 py-1.5 text-left hover:bg-surface-muted aria-selected:bg-surface-muted">
+  <span class="font-medium">{{ task.name }}</span>
+  <span class="text-xs text-muted">{{ task.project.customer.name }} · {{ task.project.name }}</span>
+</button>
+{% empty %}
+<p class="px-3 py-1.5 text-muted">Keine passende Aufgabe.</p>
+{% endfor %}

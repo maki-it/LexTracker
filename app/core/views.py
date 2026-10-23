@@ -45,7 +45,8 @@ async def dashboard(request: HttpRequest) -> HttpResponse:
         request,
         "core/dashboard.html",
         {
-            "tasks": [t async for t in task_choices(request.user)],
+            # Preselected in the timer's task search, so starting it again is one click.
+            "last_task": await task_choices(request.user).afirst(),
             "today_entries": today_entries,
             "today_total": sum((e.duration for e in today_entries), timedelta()),
             "filter_label": active_filter["label"],

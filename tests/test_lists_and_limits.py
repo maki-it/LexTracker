@@ -1,6 +1,7 @@
 """Task choices, lists that load more while scrolling, the login rate limit and compressed responses."""
 
 import gzip
+import re
 from datetime import date, timedelta
 from decimal import Decimal
 
@@ -14,7 +15,7 @@ from billing.models import Invoice
 from core.models import AppSettings
 from customers.models import Customer
 from projects.models import Project, Task
-from tracking.forms import task_choices
+from tracking.forms import SEARCH_LIMIT, task_choices
 from tracking.models import TimeEntry
 from tracking.queries import booked_time
 
@@ -46,6 +47,66 @@ def test_task_choices_only_active_projects_and_recently_used_first(user, task):
         user=user, task=other, started_at=start + timedelta(hours=2), ended_at=start + timedelta(hours=3)
     )
     assert [t.name for t in task_choices(user)] == ["Abstimmung", "Entwicklung"]
+
+
+def test_task_search_matches_every_word_in_task_project_or_customer(logged_in, user, task):
+    other_customer = Customer.objects.create(name="Bäckerei Krume")
+    shop = Project.objects.create(customer=other_customer, name="Onlineshop")
+    Task.objects.create(project=shop, name="Entwicklung")
+    Task.objects.create(project=shop, name="Fotos")
+    paused = Project.objects.create(customer=other_customer, name="Pausiert", status=Project.Status.PAUSED)
+    Task.objects.create(project=paused, name="Ruht")
+    url = reverse("tracking:task_search")
+
+    def offered(query):
+        return [o["data-label"] for o in _options(logged_in.get(url, {"q": query}).text)]
+
+    assert offered("entwick") == ["ACME GmbH · Website · Entwicklung", "Bäckerei Krume · Onlineshop · Entwicklung"]
+    assert offered("krume entw") == ["Bäckerei Krume · Onlineshop · Entwicklung"]
+    assert offered("ruht") == []
+    assert "Keine passende Aufgabe" in logged_in.get(url, {"q": "ruht"}).text
+
+
+def test_task_search_without_query_offers_recently_used_first_and_is_short(logged_in, user, task):
+    for i in range(SEARCH_LIMIT + 5):
+        Task.objects.create(project=task.project, name=f"Aufgabe {i:02d}")
+    start = timezone.now() - timedelta(days=1)
+    TimeEntry.objects.create(user=user, task=task, started_at=start, ended_at=start + timedelta(hours=1))
+
+    options = _options(logged_in.get(reverse("tracking:task_search")).text)
+
+    assert len(options) == SEARCH_LIMIT
+    assert options[0]["data-value"] == str(task.pk)
+
+
+def test_timer_start_preselects_the_last_used_task(logged_in, user, task):
+    other = Task.objects.create(project=task.project, name="Abstimmung")
+    start = timezone.now() - timedelta(days=1)
+    TimeEntry.objects.create(user=user, task=other, started_at=start, ended_at=start + timedelta(hours=1))
+
+    for url in (reverse("tracking:timer_start"), reverse("core:dashboard")):
+        page = logged_in.get(url).text
+        assert f'name="task" value="{other.pk}"' in page
+        assert 'value="ACME GmbH · Website · Abstimmung"' in page
+
+
+def test_entry_form_shows_the_entry_task_in_the_search_field(logged_in, user, task):
+    start = timezone.now() - timedelta(days=1)
+    entry = TimeEntry.objects.create(user=user, task=task, started_at=start, ended_at=start + timedelta(hours=1))
+
+    page = logged_in.get(reverse("tracking:edit", args=[entry.pk])).text
+
+    assert f'name="task" value="{task.pk}"' in page
+    assert 'value="ACME GmbH · Website · Entwicklung"' in page
+    assert "<select" not in page
+
+
+def _options(html: str) -> list[dict]:
+    """The suggestions of a task search answer, as their data attributes."""
+    return [
+        dict(re.findall(r'(data-\w+)="([^"]*)"', button))
+        for button in re.findall(r'<button[^>]*role="option"[^>]*>', html)
+    ]
 
 
 # Lists

@@ -150,3 +150,101 @@ document.addEventListener("change", (event) => {
   input.setCustomValidity(tooBig ? input.dataset.maxSizeMessage : "");
   input.reportValidity();
 });
+
+// Task search (tracking/_task_search.html): a search field whose suggestions htmx loads from the server.
+// Picking a suggestion puts its id into the hidden field next to it. Typing again clears that id,
+// so the form can only be sent with a picked task. Arrow keys move through the suggestions, Enter picks one.
+const taskSearchOf = (element) => element?.closest?.("[data-task-search]");
+const taskParts = (search) => ({
+  input: search.querySelector("input[type=search]"),
+  picked: search.querySelector("input[type=hidden]"),
+  list: search.querySelector("[role=listbox]"),
+});
+
+function showTaskResults(search, open) {
+  const { input, list } = taskParts(search);
+  list.hidden = !open;
+  input.setAttribute("aria-expanded", open);
+}
+
+function syncTaskValidity(search) {
+  const { input, picked } = taskParts(search);
+  input.setCustomValidity(picked.value ? "" : "Bitte eine Aufgabe aus den Vorschlägen auswählen.");
+}
+
+function pickTask(search, option) {
+  const { input, picked } = taskParts(search);
+  picked.value = option.dataset.value;
+  input.value = option.dataset.label;
+  syncTaskValidity(search);
+  showTaskResults(search, false);
+}
+
+function moveTaskSelection(search, step) {
+  const options = [...taskParts(search).list.querySelectorAll("[role=option]")];
+  if (!options.length) return;
+  const current = options.findIndex((option) => option.getAttribute("aria-selected") === "true");
+  const next = current === -1 ? (step > 0 ? 0 : options.length - 1) : (current + step + options.length) % options.length;
+  options.forEach((option, i) => option.setAttribute("aria-selected", i === next));
+  options[next].scrollIntoView({ block: "nearest" });
+}
+
+document.addEventListener("input", (event) => {
+  const search = taskSearchOf(event.target);
+  if (!search || event.target.type !== "search") return;
+  taskParts(search).picked.value = "";
+  syncTaskValidity(search);
+});
+
+// While a picked task is shown, the field holds its full name; the suggestions are then the recently used tasks.
+document.addEventListener("htmx:configRequest", (event) => {
+  const search = taskSearchOf(event.detail.elt);
+  if (search && taskParts(search).picked.value) event.detail.parameters.q = "";
+});
+
+document.addEventListener("htmx:afterSwap", (event) => {
+  const search = taskSearchOf(event.detail.target);
+  if (search) showTaskResults(search, search.contains(document.activeElement));
+});
+
+// Keeps the focus in the field, so the list stays open until the click picks the suggestion.
+document.addEventListener("mousedown", (event) => {
+  if (taskSearchOf(event.target) && event.target.closest("[role=option]")) event.preventDefault();
+});
+
+document.addEventListener("click", (event) => {
+  const option = event.target.closest?.("[role=option]");
+  const search = taskSearchOf(option);
+  if (search) pickTask(search, option);
+});
+
+document.addEventListener("focusout", (event) => {
+  const search = taskSearchOf(event.target);
+  if (search && !search.contains(event.relatedTarget)) showTaskResults(search, false);
+});
+
+document.addEventListener("keydown", (event) => {
+  const search = taskSearchOf(event.target);
+  if (!search || event.target.type !== "search") return;
+  const { list } = taskParts(search);
+  if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+    event.preventDefault();
+    if (list.hidden) showTaskResults(search, true);
+    moveTaskSelection(search, event.key === "ArrowDown" ? 1 : -1);
+  } else if (event.key === "Enter" && !list.hidden) {
+    // Enter picks the marked suggestion (or the first) instead of sending the form.
+    const option = list.querySelector("[aria-selected=true]") ?? list.querySelector("[role=option]");
+    if (!option) return;
+    event.preventDefault();
+    pickTask(search, option);
+  } else if (event.key === "Escape" && !list.hidden) {
+    // Only closes the list, not the dialog around it.
+    event.preventDefault();
+    showTaskResults(search, false);
+  }
+});
+
+document.addEventListener("htmx:load", (event) => {
+  event.detail.elt.querySelectorAll?.("[data-task-search]").forEach(syncTaskValidity);
+});
+document.addEventListener("DOMContentLoaded", () => document.querySelectorAll("[data-task-search]").forEach(syncTaskValidity));

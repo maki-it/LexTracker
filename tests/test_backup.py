@@ -110,6 +110,8 @@ def test_settings_page_saves_the_backup_settings(client, settings, user):
         "weekly_report_weekday": 0,
         "weekly_report_time": "07:00",
         "timer_reminder_hours": 10,
+        "overdue_notice": "admins",
+        "overdue_notice_days": 3,
     }
     assert client.post("/einstellungen/", data).status_code == 302
     app_settings = AppSettings.load()

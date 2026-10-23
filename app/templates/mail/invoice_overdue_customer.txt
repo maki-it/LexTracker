@@ -1,0 +1,10 @@
+{% autoescape off %}Guten Tag,
+
+zu unserer Rechnung {{ invoice.voucher_number }}{% if invoice.voucher_date %} vom {{ invoice.voucher_date|date:"d.m.Y" }}{% endif %} haben wir bisher keinen Zahlungseingang gesehen. Sie war am {{ invoice.due_date|date:"d.m.Y" }} fällig.{% if invoice.open_amount is not None %}
+Offener Betrag: {{ invoice.open_amount|floatformat:"2g" }} €{% endif %}
+
+Bitte überweisen Sie den Betrag in den nächsten Tagen. Falls Sie bereits bezahlt haben, betrachten Sie diese E-Mail bitte als gegenstandslos.
+
+Viele Grüße{% if sender_name %}
+{{ sender_name }}{% endif %}
+{% endautoescape %}

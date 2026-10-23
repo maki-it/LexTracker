@@ -66,7 +66,7 @@ MIDDLEWARE = [
     "core.dialogs.DialogMiddleware",
 ]
 
-# Invitation links (accounts.user_views.invite_url) are valid for a week.
+# Invitation links (accounts.links.invite_url) are valid for a week.
 PASSWORD_RESET_TIMEOUT = 7 * 24 * 60 * 60
 
 ROOT_URLCONF = "config.urls"

@@ -361,18 +361,20 @@ def test_customer_downloads_the_invoice_pdf(client, customer_user, other_task, m
 def test_employee_books_only_on_unlocked_customers_and_projects(client, user, employee, task, other_task):
     client.force_login(employee)
     start_url = reverse("tracking:timer_start")
+    search_url = reverse("tracking:task_search")
 
     # Nothing unlocked yet.
-    form = client.get(start_url).text
-    assert task.name not in form and other_task.name not in form
+    offered = client.get(search_url).text
+    assert task.name not in offered and other_task.name not in offered
+    assert "Noch keine offenen Aufgaben" in client.get(start_url).text
     assert client.post(start_url, {"task": task.pk}).status_code == 404
 
     employee.bookable_customers.add(task.project.customer)
-    form = client.get(start_url).text
-    assert task.name in form and other_task.name not in form
+    offered = client.get(search_url).text
+    assert task.name in offered and other_task.name not in offered
 
     employee.bookable_projects.add(other_task.project)
-    assert other_task.name in client.get(start_url).text
+    assert other_task.name in client.get(search_url).text
     client.post(start_url, {"task": other_task.pk})
     assert TimeEntry.objects.get(user=employee, ended_at__isnull=True).task == other_task
 

@@ -13,7 +13,7 @@ Zeiterfassung und Projektsteuerung mit Anbindung an die [Lexware Office Public A
 5. **Auswertungen** ✓: Stunden, Umsatz, Budgets und Retainer, CSV-Export.
 6. **MCP-Server** ✓: KI-Agenten erfassen Zeiten über das Model Context Protocol.
 7. **Zugänge** ✓: Mitarbeiter und Kunden mit eigenen Rechten, Einladung per Link.
-8. **E-Mail** ✓: Passwort zurücksetzen, Anmeldelink ohne Passwort, Wochenbericht und Erinnerung an laufende Timer.
+8. **E-Mail** ✓: Passwort zurücksetzen, Anmeldelink ohne Passwort, Einladung neuer Benutzer, Wochenbericht, Erinnerung an laufende Timer und Hinweis auf überfällige Rechnungen.
 
 ## Technik
 
@@ -41,7 +41,7 @@ app/
   reports/     Auswertungen und CSV-Export
   mcpserver/   MCP-Server für KI-Agenten
   portal/      Kundenportal (nur lesen)
-  mailer/      E-Mail-Versand: SMTP-Einstellungen, Warteschlange, Wochenbericht und Erinnerungen
+  mailer/      E-Mail-Versand: SMTP-Einstellungen, Warteschlange, Wochenbericht, Erinnerungen und Hinweise
   setup/       Einrichtung einer neuen Instanz (Admin-Konto, Lexware-Schlüssel, Datensicherung)
   templates/   HTML-Templates
   assets/      Tailwind-Quelle mit Farben und eigenen Komponenten
@@ -186,12 +186,16 @@ Sobald der Versand eingerichtet ist, bietet die Anmeldeseite an:
 
 Beide gibt es für Benutzername oder E-Mail-Adresse, und die Antwort ist immer gleich, ob es das Konto gibt oder nicht. Jede Anfrage zählt wie ein Fehlversuch zur Login-Sperre, und ein Konto bekommt höchstens drei Links pro Sperrzeitraum. Ist eine solche E-Mail verschickt oder verfallen, löscht die App ihren Text, damit keine Datenbankkopie die Links enthält.
 
+Legst du unter **Benutzer** jemanden mit E-Mail-Adresse an, bekommt er die **Einladung** gleich per E-Mail: einen Link, mit dem er sein Passwort festlegt, eine Woche gültig und nur einmal nutzbar. Auf der Einladungsseite schickst du sie jederzeit neu oder kopierst den Link selbst. Den automatischen Versand schaltest du unter **Einstellungen → E-Mail** ab. Auch der Text der Einladung wird nach dem Versand gelöscht.
+
 Der Scheduler verschickt außerdem nach dem Zeitplan unter **Einstellungen → E-Mail**:
 
 - **Wochenbericht** (Standard montags 07:00): die eigenen Stunden der sieben Tage davor, nach Tag und Projekt; Administratoren dazu die Stunden aller Benutzer, noch nicht abgerechnete Zeit, offene Rechnungen und Retainer. Wer nichts gebucht hat, bekommt keinen.
 - **Erinnerung an laufende Timer** (Standard nach 10 Stunden): eine E-Mail pro Timer, falls jemand vergessen hat, ihn zu stoppen.
 
 Beides geht an Administratoren und Mitarbeiter mit E-Mail-Adresse; jeder schaltet es für sich unter **Konto** ab. Für Links in diesen E-Mails braucht die App ihre **Adresse** (z. B. `https://zeit.example.de`) in den E-Mail-Einstellungen.
+
+Der **Hinweis auf überfällige Rechnungen** (Standard: an Administratoren, 3 Tage nach Fälligkeit) geht einmal pro Rechnung und Fälligkeitsdatum raus. Wahlweise bekommt auch der Kunde eine freundliche Zahlungserinnerung an seine E-Mail-Adresse aus Lexware, unterschrieben mit dem Absendernamen aus den E-Mail-Einstellungen; der Hinweis an dich sagt dann, wohin sie ging. Damit keine bezahlte Rechnung angemahnt wird, zählt nur der Status aus dem Rechnungsabgleich, und der muss jünger als einen Tag sein. Rechnungen, die schon mehr als eine Woche über die Frist sind, bekommen keinen Hinweis mehr, damit das Einschalten nicht alle alten Rechnungen auf einmal anmahnt.
 
 ## Betrieb mit Docker
 
