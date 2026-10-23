@@ -96,5 +96,5 @@ def test_customer_list_hints_missing_api_key(client, user, settings):
 
     response = client.get(reverse("customers:list"))
 
-    assert "APP_LEXWARE_API_KEY" in response.text
+    assert "fehlt der API-Schlüssel" in response.text
     assert "Aus Lexware importieren" not in response.text

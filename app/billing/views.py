@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 
 from asgiref.sync import sync_to_async
-from django.conf import settings
 from django.contrib import messages
 from django.db.models import Count, Q
 from django.db.models.functions import Coalesce, TruncDate
@@ -23,6 +22,7 @@ from core.models import AppSettings
 from core.paging import apage, wants_rows
 from core.shortcuts import arender
 from customers.models import Customer
+from lexware import credentials
 from lexware.client import LexwareError, client_from_settings
 from tracking.models import TimeEntry
 from tracking.queries import booked_time
@@ -120,7 +120,7 @@ async def invoice_list(request: HttpRequest) -> HttpResponse:
             (key, label, counts[key]) for key, (label, _) in STATUS_FILTERS.items() if counts[key] or key == status
         ],
         "app_settings": app_settings,
-        "lexware_configured": bool(settings.LEXWARE_API_KEY),
+        "lexware_configured": await credentials.ais_configured(),
     }
     return render(request, "billing/invoices.html", context)
 

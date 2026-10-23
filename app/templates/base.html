@@ -14,7 +14,7 @@
   <script src="{% static 'js/app.js' %}" defer></script>
 </head>
 <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
-  {% if user.is_authenticated %}
+  {% if user.is_authenticated and not bare_layout %}
   {% with section=request.resolver_match.app_name %}
   <div class="lg:flex">
     {# On phones this is a slim top bar (logo, timer, menu button); the menu button opens nav and user row. #}

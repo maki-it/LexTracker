@@ -9,6 +9,12 @@
   </div>
 </div>
 
+{% if lexware_missing %}
+<div role="alert" class="alert alert-warning">
+  Lexware Office ist noch nicht verbunden. Trag den API-Schlüssel in den <a href="{% url 'core:settings' %}#lexware">Einstellungen</a> ein, um Kunden zu importieren und Rechnungen zu erstellen.
+</div>
+{% endif %}
+
 <section class="card flex flex-col gap-3">
   <h2>Timer starten</h2>
   {% if tasks %}

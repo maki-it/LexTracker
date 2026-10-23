@@ -14,6 +14,8 @@ from django.views.generic import RedirectView
 from accounts.models import User
 from core.forms import AppSettingsForm
 from core.models import AppSettings
+from lexware import credentials
+from lexware.forms import ApiKeyForm
 from tracking.forms import task_choices
 from tracking.models import TimeEntry
 from tracking.queries import entry_filter
@@ -40,6 +42,7 @@ async def dashboard(request: HttpRequest) -> HttpResponse:
             "today_total": sum((e.duration for e in today_entries), timedelta()),
             "filter_label": active_filter["label"],
             "filter_base": "",
+            "lexware_missing": request.user.is_admin and not await credentials.ais_configured(),
         },
     )
 
@@ -88,7 +91,8 @@ async def app_settings(request: HttpRequest) -> HttpResponse:
             "failed": current.invoices_sync_failed,
         },
     ]
-    return render(request, "core/settings.html", {"form": form, "sync_jobs": sync_jobs})
+    context = {"form": form, "sync_jobs": sync_jobs, "lexware": await credentials.astatus(), "key_form": ApiKeyForm()}
+    return render(request, "core/settings.html", context)
 
 
 class FaviconView(RedirectView):

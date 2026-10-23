@@ -1,0 +1,24 @@
+{% extends "setup/_layout.html" %}
+{% block step %}
+<form method="post" class="card flex flex-col gap-4 p-6">
+  <div>
+    <h1 class="text-lg">Lexware Office verbinden</h1>
+    <p class="mt-1 text-sm text-muted">
+      Über die Public API importiert LexTracker deine Kunden und erstellt Rechnungsentwürfe.
+      Die API gibt es mit Lexware Office XL. Den Schlüssel prüft die App mit einem Testaufruf, bevor sie ihn verschlüsselt speichert.
+    </p>
+  </div>
+  {% if lexware.configured %}
+  <div class="alert alert-success">
+    Es ist schon ein Schlüssel hinterlegt (<code>{{ lexware.masked }}</code>{% if lexware.company_name %}, {{ lexware.company_name }}{% endif %}).
+    Du kannst ihn hier ersetzen oder einfach weitermachen.
+  </div>
+  {% endif %}
+  {% csrf_token %}
+  {% include "core/_form_fields.html" %}
+  <div class="mt-1 flex flex-wrap items-center gap-3">
+    <button type="submit" class="btn btn-primary">Prüfen und weiter</button>
+    <a href="{% url 'setup:done' %}" class="btn btn-ghost">{% if lexware.configured %}Weiter{% else %}Später einrichten{% endif %}</a>
+  </div>
+</form>
+{% endblock %}
