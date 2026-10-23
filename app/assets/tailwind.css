@@ -301,6 +301,11 @@
     @apply m-auto max-h-[90dvh] w-[min(40rem,calc(100vw-2rem))] overflow-y-auto rounded-xl border border-line bg-surface p-6 text-ink shadow-xl backdrop:bg-black/40;
   }
 
+  /* A dialog with a table gets more room. */
+  .dialog:has(.dialog-wide) {
+    @apply w-[min(64rem,calc(100vw-2rem))];
+  }
+
   .dialog-close {
     @apply absolute top-3 right-3;
   }

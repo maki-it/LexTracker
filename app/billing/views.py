@@ -1,6 +1,7 @@
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date, timedelta
+from decimal import Decimal
 from uuid import UUID
 
 from asgiref.sync import sync_to_async
@@ -13,7 +14,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
-from billing.calculation import active_agreement, build_draft, unbilled
+from billing.calculation import ProjectRows, active_agreement, build_draft, entries_by_project, open_draft, unbilled
 from billing.forms import BillingAgreementForm, PeriodForm
 from billing.models import BillingAgreement, Invoice
 from billing.periods import Period, period_containing, recent_periods
@@ -240,6 +241,51 @@ async def customer_billing(request: HttpRequest, pk: UUID) -> HttpResponse:
         return render(request, "billing/_preview.html", {**context, "oob": True})
     template = "billing/customer.html"
     return render(request, template, context)
+
+
+ENTRIES_PER_PAGE = 50
+
+
+def _entries_page(group: ProjectRows, number: int) -> dict:
+    offset = (number - 1) * ENTRIES_PER_PAGE
+    rest = len(group.rows) - offset - ENTRIES_PER_PAGE
+    return {
+        "group": group,
+        "rows": group.rows[offset : offset + ENTRIES_PER_PAGE],
+        "next_page": number + 1,
+        "remaining": max(rest, 0),
+    }
+
+
+@require_GET
+async def customer_entries(request: HttpRequest, pk: UUID) -> HttpResponse:
+    """The open time entries of a customer by project, as they would go onto the next invoice.
+
+    A project's rows come in pages of ``ENTRIES_PER_PAGE``; htmx asks for the next one with
+    ``?projekt=<id>&seite=<n>``.
+    """
+    customer = await _get_customer(pk)
+    draft = await sync_to_async(open_draft)(customer)
+    projects = await sync_to_async(entries_by_project)(draft) if draft else []
+    page = request.GET.get("seite", "")
+    group = next((p for p in projects if str(p.project.pk) == request.GET.get("projekt")), None)
+    if request.htmx and group and page.isdigit() and int(page) >= 1:
+        return render(
+            request, "billing/_customer_entries_rows.html", {"customer": customer, **_entries_page(group, int(page))}
+        )
+    is_retainer = (
+        draft is not None and draft.agreement is not None and draft.agreement.kind == BillingAgreement.Kind.RETAINER
+    )
+    context = {
+        "customer": customer,
+        "draft": draft,
+        "sections": [_entries_page(p, 1) for p in projects],
+        "retainer_total": sum((line.total for line in draft.lines if line.fixed), Decimal("0"))
+        if is_retainer
+        else None,
+        "included": sum((p.included for p in projects), timedelta()),
+    }
+    return render(request, "billing/customer_entries.html", context)
 
 
 @require_POST

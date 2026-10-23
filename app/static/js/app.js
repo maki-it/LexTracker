@@ -344,10 +344,12 @@ document.addEventListener("htmx:load", (event) => {
 document.addEventListener("DOMContentLoaded", () => document.querySelectorAll("[data-task-search]").forEach(syncTaskValidity));
 
 // A date-time field with data-snap-minutes="<n>" (time rounding): the browser's picker offers every minute,
-// so a picked or typed time snaps to the nearest step. The server rounds as well, see tracking/services.py.
+// so a picked time snaps to the nearest step. The server rounds as well, see tracking/services.py.
+// While typing, the browser fires "change" after every digit; snapping then would overwrite the first digit
+// ("1" -> "00"), so a field with typed digits waits until it loses focus or its form is submitted.
 // Also runs for the "Jetzt" buttons below, which fire this event after setting the field.
-document.addEventListener("change", (event) => {
-  const field = event.target;
+function snapToStep(field) {
+  delete field.dataset.typing;
   const step = Number(field.dataset?.snapMinutes);
   if (!step || !field.value) return;
   const [date, time] = field.value.split("T");
@@ -358,7 +360,22 @@ document.addEventListener("change", (event) => {
   day.setMinutes(snapped);
   const pad = (n) => String(n).padStart(2, "0");
   field.value = `${day.getFullYear()}-${pad(day.getMonth() + 1)}-${pad(day.getDate())}T${pad(day.getHours())}:${pad(day.getMinutes())}`;
+}
+
+document.addEventListener("keydown", (event) => {
+  if (event.target.dataset?.snapMinutes && /^\d$/.test(event.key)) event.target.dataset.typing = "1";
 });
+document.addEventListener("change", (event) => {
+  if (!event.target.dataset?.typing) snapToStep(event.target);
+});
+document.addEventListener("focusout", (event) => {
+  if (event.target.dataset?.snapMinutes) snapToStep(event.target);
+});
+document.addEventListener(
+  "submit",
+  (event) => event.target.querySelectorAll("[data-snap-minutes]").forEach(snapToStep),
+  true,
+);
 
 // A button with data-now-for="<id>" sets that date-time field to the current local time. It fires "change",
 // so the snapping above rounds it to the step like a typed time.
