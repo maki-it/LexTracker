@@ -299,9 +299,9 @@ def test_invoice_list_shows_due_date_and_days_overdue_below_the_badge(logged_in,
     text = logged_in.get(reverse("billing:invoices")).text
     assert "Fällig 05.03.2031" in text and "seit" not in text.split("Fällig 05.03.2031")[1].split("</span>")[0]
     assert f"Fällig {(today - timedelta(days=3)):%d.%m.%Y} · seit 3 Tagen" in text
-    # Paid invoices need no due date; the Lexware origin is a symbol with a tooltip, not running text.
+    # Paid invoices need no due date; the Lexware origin is a small label with a tooltip, not running text.
     assert "06.04.2031" not in text
-    assert text.count("In Lexware Office erstellt") == 2  # tooltip and screen reader text of the one invoice
+    assert text.count("badge-outline") == 1 and text.count("In Lexware Office erstellt") == 1
 
 
 def test_days_overdue_counts_only_for_overdue_invoices():
