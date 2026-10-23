@@ -3,8 +3,15 @@
 {% block content %}
 <div>
   <h1>Kontaktdaten</h1>
-  <p class="page-subtitle">{% if customer.customer_number %}Kundennummer {{ customer.customer_number }} · {% endif %}Name, Rechnungsadresse, Ansprechpartner und Kontaktwege von {{ customer.name }}</p>
+  <p class="page-subtitle">Name, Rechnungsadresse, Ansprechpartner und Kontaktwege von {{ customer.name }}</p>
 </div>
+
+{% if customer.customer_number %}
+<div class="stat max-w-2xl">
+  <span class="stat-label">Deine Kundennummer</span>
+  <span class="stat-value tabular-nums">{{ customer.customer_number }}</span>
+</div>
+{% endif %}
 
 {% if unavailable %}
 <p class="card text-sm text-muted">Für dich sind keine Kontaktdaten hinterlegt, die du hier ändern kannst. Bitte melde dich direkt bei uns, wenn sich etwas geändert hat.</p>

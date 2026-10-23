@@ -224,7 +224,8 @@ def test_contact_page_shows_customer_number_and_contact_person(client, customer_
 
     text = client.get(reverse("portal:contact")).text
 
-    assert "Kundennummer 10001" in text
+    assert "Deine Kundennummer" in text
+    assert ">10001<" in text
     assert 'value="Mustermann"' in text
     assert 'value="max@acme.de"' in text
 
