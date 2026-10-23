@@ -92,6 +92,17 @@ def test_time_fields_are_free_without_rounding(logged_in, user, task):
     assert "data-snap-minutes" not in page_text
 
 
+def test_time_fields_have_a_now_button_that_does_not_submit(logged_in, user, task):
+    page_text = logged_in.get(reverse("tracking:create")).text
+
+    for name in ("started_at", "ended_at"):
+        assert f'data-now-for="id_{name}"' in page_text
+        assert f'<input type="datetime-local" name="{name}"' in page_text
+    assert page_text.count('type="button" class="btn" data-now-for') == 2
+    assert 'aria-label="Beginn auf jetzt setzen"' in page_text
+    assert 'aria-label="Ende auf jetzt setzen"' in page_text
+
+
 def test_hours_filter_formats():
     assert hours(timedelta(hours=2, minutes=45)) == "2:45"
     assert hours(timedelta(hours=2, minutes=45), "decimal") == "2,75"
