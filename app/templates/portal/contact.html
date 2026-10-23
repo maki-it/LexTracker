@@ -3,7 +3,7 @@
 {% block content %}
 <div>
   <h1>Kontaktdaten</h1>
-  <p class="page-subtitle">Name, Rechnungsadresse und Kontaktwege von {{ customer.name }}</p>
+  <p class="page-subtitle">{% if customer.customer_number %}Kundennummer {{ customer.customer_number }} · {% endif %}Name, Rechnungsadresse, Ansprechpartner und Kontaktwege von {{ customer.name }}</p>
 </div>
 
 {% if unavailable %}
@@ -25,7 +25,8 @@
       {{ conflict.street }}<br>
       {{ conflict.zip }} {{ conflict.city }}{% if conflict.countryCode != "DE" %}, {{ conflict.countryCode }}{% endif %}<br>
       {% if conflict.email %}{{ conflict.email }}<br>{% endif %}
-      {% if conflict.phone %}{{ conflict.phone }}{% endif %}
+      {% if conflict.phone %}{{ conflict.phone }}<br>{% endif %}
+      {% if conflict.person_last_name %}Ansprechpartner: {{ conflict.person_salutation }} {{ conflict.person_first_name }} {{ conflict.person_last_name }}{% endif %}
     </p>
   </div>
   {% endif %}
@@ -48,6 +49,20 @@
     {% include "core/_field.html" with field=form.email %}
     {% include "core/_field.html" with field=form.phone %}
   </div>
+  {% if form.with_person %}
+  <fieldset class="flex flex-col gap-4">
+    <legend class="mb-2 font-medium">Ansprechpartner</legend>
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-[8rem_1fr_1fr]">
+      {% include "core/_field.html" with field=form.person_salutation %}
+      {% include "core/_field.html" with field=form.person_first_name %}
+      {% include "core/_field.html" with field=form.person_last_name %}
+    </div>
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      {% include "core/_field.html" with field=form.person_email %}
+      {% include "core/_field.html" with field=form.person_phone %}
+    </div>
+  </fieldset>
+  {% endif %}
   <div class="flex gap-2 border-t border-line pt-4">
     <button type="submit" class="btn btn-primary">Speichern</button>
   </div>

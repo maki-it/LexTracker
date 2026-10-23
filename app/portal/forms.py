@@ -39,6 +39,9 @@ COUNTRIES = {
 }
 
 
+SALUTATIONS = ("Herr", "Frau")
+
+
 class ContactForm(StyledFormMixin, forms.Form):
     """A customer changes its own contact in Lexware Office."""
 
@@ -50,11 +53,28 @@ class ContactForm(StyledFormMixin, forms.Form):
     countryCode = forms.ChoiceField(label="Land", choices=COUNTRIES.items())
     email = forms.EmailField(label="E-Mail", required=False)
     phone = forms.CharField(label="Telefon", max_length=50, required=False)
+    # The contact person of a company. Left out for contacts that are persons.
+    person_salutation = forms.ChoiceField(label="Anrede", required=False)
+    person_first_name = forms.CharField(label="Vorname", max_length=100, required=False)
+    person_last_name = forms.CharField(label="Nachname", max_length=100, required=False)
+    person_email = forms.EmailField(label="E-Mail des Ansprechpartners", required=False)
+    person_phone = forms.CharField(label="Telefon des Ansprechpartners", max_length=50, required=False)
     # The contact's version in Lexware when the form was loaded, to notice changes made in the meantime.
     version = forms.IntegerField(widget=forms.HiddenInput)
 
-    def __init__(self, *args, **kwargs):
+    PERSON_NAMES = ("salutation", "first_name", "last_name", "email", "phone")
+
+    def __init__(self, *args, with_person: bool = True, **kwargs):
         super().__init__(*args, **kwargs)
+        self.with_person = with_person
+        choices = [("", "–"), *((s, s) for s in SALUTATIONS)]
+        salutation = self.initial.get("person_salutation")
+        if salutation and salutation not in SALUTATIONS:
+            choices.insert(1, (salutation, salutation))
+        self.fields["person_salutation"].choices = choices
+        if not with_person:
+            for name in self.PERSON_NAMES:
+                del self.fields[f"person_{name}"]
         # Keep a country that is not in the list selectable.
         country = self.initial.get("countryCode")
         if country and country not in COUNTRIES:
@@ -63,3 +83,7 @@ class ContactForm(StyledFormMixin, forms.Form):
     @property
     def address(self) -> dict:
         return {key: self.cleaned_data[key] for key in ("supplement", "street", "zip", "city", "countryCode")}
+
+    @property
+    def person(self) -> dict:
+        return {name: self.cleaned_data[f"person_{name}"] for name in self.PERSON_NAMES}
