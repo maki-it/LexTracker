@@ -20,6 +20,7 @@ from billing.models import BillingAgreement, Invoice
 from billing.periods import Period, period_containing, recent_periods
 from billing.services import create_invoice
 from billing.sync import sync_and_record
+from core.filters import filter_pills, query_with, selected_filters
 from core.ids import parse_uuid
 from core.models import AppSettings
 from core.paging import apage, wants_rows
@@ -88,9 +89,7 @@ async def overview(request: HttpRequest) -> HttpResponse:
 @require_GET
 async def invoice_list(request: HttpRequest) -> HttpResponse:
     query = request.GET.get("q", "").strip()
-    status = request.GET.get("status", "")
-    if status not in STATUS_FILTERS:
-        status = ""
+    selected = selected_filters(request, STATUS_FILTERS)
     customer_id = parse_uuid(request.GET.get("kunde", ""))
     # Newest first: by invoice date (the creation date until Lexware has one), then by number.
     invoices = (
@@ -98,15 +97,15 @@ async def invoice_list(request: HttpRequest) -> HttpResponse:
         .annotate(entry_count=Count("time_entries"), date=Coalesce("voucher_date", TruncDate("created_at")))
         .order_by("-date", "-voucher_number", "-pk")
     )
-    if status:
-        invoices = invoices.filter(status__in=STATUS_FILTERS[status][1])
+    if selected:
+        invoices = invoices.filter(status__in=[s for key in selected for s in STATUS_FILTERS[key][1]])
     if customer_id:
         invoices = invoices.filter(customer_id=customer_id)
     if query:
         invoices = invoices.filter(Q(customer__name__icontains=query) | Q(voucher_number__icontains=query))
     page = await apage(request, invoices)
     if wants_rows(request):
-        context = {"page": page, "invoices": page.items, "show_customer": True, "query": query, "status": status}
+        context = {"page": page, "invoices": page.items, "show_customer": True, "query": query, "statuses": selected}
         return render(request, "billing/_invoice_rows.html", context)
     app_settings = await AppSettings.aload()
     counts = await _invoice_counts()
@@ -114,13 +113,12 @@ async def invoice_list(request: HttpRequest) -> HttpResponse:
         "page": page,
         "invoices": page.items,
         "query": query,
-        "status": status,
+        "statuses": selected,
         "customer_id": customer_id,
         "customers": [c async for c in Customer.objects.filter(invoices__isnull=False).distinct().order_by("name")],
-        # Only filters that would show something, plus the one in use.
-        "filters": [
-            (key, label, counts[key]) for key, (label, _) in STATUS_FILTERS.items() if counts[key] or key == status
-        ],
+        # Only filters that would show something, plus the ones in use.
+        "filters": filter_pills(request, STATUS_FILTERS, counts, selected, visible=lambda key: counts[key] > 0),
+        "all_query": query_with(request, []),
         "app_settings": app_settings,
         "lexware_configured": await credentials.ais_configured(),
     }

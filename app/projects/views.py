@@ -1,5 +1,4 @@
 from datetime import timedelta
-from urllib.parse import urlencode
 from uuid import UUID
 
 from asgiref.sync import sync_to_async
@@ -10,6 +9,7 @@ from django.shortcuts import redirect, render
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from core.dialogs import navigate
+from core.filters import filter_pills, selected_filters
 from core.ids import parse_uuid
 from core.paging import apage, wants_rows
 from core.shortcuts import arender
@@ -26,7 +26,8 @@ async def _get_project(pk: UUID) -> Project:
         raise Http404 from exc
 
 
-# The status filter on the project list: key in the URL, label, statuses. Active projects come first.
+# The status filters on the project list: key in the URL, label, statuses. Active projects come first.
+# They can be combined, except "Alle".
 STATUS_FILTERS = {
     "aktiv": ("Aktiv", [Project.Status.ACTIVE]),
     "geplant": ("Geplant", [Project.Status.PLANNED]),
@@ -38,9 +39,11 @@ STATUS_FILTERS = {
 
 @require_GET
 async def project_list(request: HttpRequest) -> HttpResponse:
-    status = request.GET.get("status", "aktiv")
-    if status not in STATUS_FILTERS:
-        status = "aktiv"
+    selected = selected_filters(request, STATUS_FILTERS)
+    if "alle" in selected:
+        selected = ["alle"]
+    elif not selected:
+        selected = ["aktiv"]
     query = request.GET.get("q", "").strip()
     projects = Project.objects.all()
     if query:
@@ -49,7 +52,7 @@ async def project_list(request: HttpRequest) -> HttpResponse:
         )
     page = await apage(
         request,
-        projects.filter(status__in=STATUS_FILTERS[status][1])
+        projects.filter(status__in=[s for key in selected for s in STATUS_FILTERS[key][1]])
         .select_related("customer")
         .annotate(booked=booked_time("tasks__time_entries__")),
     )
@@ -58,13 +61,13 @@ async def project_list(request: HttpRequest) -> HttpResponse:
     counts = await projects.aaggregate(
         **{key: Count("pk", filter=Q(status__in=statuses)) for key, (_, statuses) in STATUS_FILTERS.items()}
     )
-    q = "&" + urlencode({"q": query}) if query else ""
     context = {
         "page": page,
-        "status": status,
+        "statuses": selected,
         "query": query,
-        "count": counts[status],
-        "filters": [(key, label, counts[key], f"?status={key}{q}") for key, (label, _) in STATUS_FILTERS.items()],
+        "count": sum(counts[key] for key in selected),
+        "selected_labels": [STATUS_FILTERS[key][0] for key in selected],
+        "filters": filter_pills(request, STATUS_FILTERS, counts, selected, exclusive="alle", when_empty=["alle"]),
     }
     return render(request, "projects/list.html", context)
 
