@@ -79,6 +79,8 @@ class User(AbstractUser):
         "sieht Beschreibungen der Zeiteinträge", default=True, help_text="Nur wirksam, wenn Zeiteinträge sichtbar sind."
     )
     portal_invoices = models.BooleanField("sieht Rechnungen", default=True)
+    # Off by default: changes go straight to the contact in Lexware Office.
+    portal_contact = models.BooleanField("darf Kontaktdaten und Rechnungsadresse ändern", default=False)
 
     @property
     def is_admin(self) -> bool:

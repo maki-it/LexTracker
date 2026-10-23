@@ -1,4 +1,7 @@
-"""The read-only portal for customer logins. Everything is limited to the user's customer."""
+"""The portal for customer logins. Everything is limited to the user's customer.
+
+It is read-only, except that a login may be allowed to change the customer's own contact in Lexware.
+"""
 
 import logging
 from datetime import timedelta
@@ -10,13 +13,17 @@ from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.utils.http import content_disposition_header
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_http_methods
 
 from billing.models import Invoice
 from billing.periods import Period, period_containing
 from billing.views import STATUS_FILTERS
+from core.shortcuts import arender
+from customers.lexware import apply_billing_address, apply_to_contact, billing_address
 from customers.models import Customer
 from lexware.client import LexwareError, client_from_settings
+from lexware.schemas import Contact
+from portal.forms import COUNTRIES, ContactForm
 from projects.models import Project
 from reports.ranges import presets, selected_range
 from tracking.models import TimeEntry
@@ -150,3 +157,71 @@ async def invoice_pdf(request: HttpRequest, invoice_pk: int) -> HttpResponse:
     # ?ansehen=1 opens it in the browser instead of downloading it.
     response["Content-Disposition"] = content_disposition_header(request.GET.get("ansehen") != "1", name)
     return response
+
+
+def _contact_initial(contact: dict) -> dict:
+    current = Contact.model_validate(contact)
+    address = billing_address(contact)
+    return {
+        "name": current.name,
+        "email": current.email,
+        "phone": current.phone,
+        "version": current.version,
+        **address,
+        "countryCode": address["countryCode"] or "DE",
+    }
+
+
+@require_http_methods(["GET", "POST"])
+async def contact(request: HttpRequest) -> HttpResponse:
+    """The customer changes its own contact in Lexware Office: name, billing address, e-mail and phone.
+
+    The contact is read fresh from Lexware on every visit and before saving. If its version changed
+    since the form was loaded, nothing is saved and the customer is asked to check the current data.
+    """
+    user = request.user
+    if not user.portal_contact:
+        raise PermissionDenied
+    customer = await Customer.objects.aget(pk=user.customer_id)
+    if not customer.lexware_id or customer.lexware_deleted:
+        return render(request, "portal/contact.html", {"customer": customer, "unavailable": True})
+
+    form, conflict = None, None
+    try:
+        async with client_from_settings() as client:
+            raw = await client.get_contact(customer.lexware_id)
+            initial = _contact_initial(raw)
+            form = ContactForm(request.POST or None, initial=initial)
+            if request.method == "POST" and form.is_valid():
+                if form.cleaned_data["version"] != initial["version"]:
+                    # Keep what the customer typed, but with the new version, so saving again overwrites.
+                    data = request.POST.copy()
+                    data["version"] = initial["version"]
+                    form = ContactForm(data, initial=initial)
+                    form.add_error(
+                        None,
+                        "Deine Kontaktdaten wurden in der Zwischenzeit geändert. "
+                        "Bitte prüfe deine Eingaben und speichere erneut.",
+                    )
+                    conflict = initial
+                else:
+                    customer.name = form.cleaned_data["name"]
+                    customer.email = form.cleaned_data["email"]
+                    customer.phone = form.cleaned_data["phone"]
+                    apply_to_contact(raw, customer)
+                    apply_billing_address(raw, form.address)
+                    customer.lexware_version = await client.update_contact(customer.lexware_id, raw)
+                    customer.lexware_synced_at = timezone.now()
+                    await customer.asave(
+                        update_fields=["name", "email", "phone", "lexware_version", "lexware_synced_at", "updated_at"]
+                    )
+                    logger.info("Customer login %s changed the Lexware contact of customer %s", user.pk, customer.pk)
+                    messages.success(request, "Deine Kontaktdaten sind gespeichert.")
+                    return redirect("portal:contact")
+    except LexwareError:
+        logger.exception("Lexware contact %s could not be read or saved", customer.lexware_id)
+        if form is None:
+            return render(request, "portal/contact.html", {"customer": customer, "lexware_error": True})
+        form.add_error(None, "Deine Änderung konnte gerade nicht gespeichert werden. Bitte versuche es später.")
+    context = {"customer": customer, "form": form, "conflict": conflict, "countries": COUNTRIES}
+    return await arender(request, "portal/contact.html", context)

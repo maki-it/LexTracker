@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Kontaktdaten · LexTracker{% endblock %}
+{% block content %}
+<div>
+  <h1>Kontaktdaten</h1>
+  <p class="page-subtitle">Name, Rechnungsadresse und Kontaktwege von {{ customer.name }}</p>
+</div>
+
+{% if unavailable %}
+<p class="card text-sm text-muted">Für dich sind keine Kontaktdaten hinterlegt, die du hier ändern kannst. Bitte melde dich direkt bei uns, wenn sich etwas geändert hat.</p>
+{% elif lexware_error %}
+<div role="alert" class="alert alert-error">Deine Kontaktdaten können gerade nicht geladen werden. Bitte versuche es später noch einmal.</div>
+{% else %}
+<form method="post" action="{% url 'portal:contact' %}" class="card flex max-w-2xl flex-col gap-4">
+  {% csrf_token %}
+  <p class="rounded-lg bg-surface-muted px-4 py-3 text-[13px] text-muted">
+    Diese Angaben verwenden wir für deine Rechnungen. Änderungen gelten für alle Rechnungen, die ab jetzt erstellt werden.
+  </p>
+  {% if conflict %}
+  <div class="rounded-lg border border-line px-4 py-3 text-[13px]">
+    <p class="font-medium">Aktuell gespeichert:</p>
+    <p class="text-muted">
+      {{ conflict.name }}<br>
+      {% if conflict.supplement %}{{ conflict.supplement }}<br>{% endif %}
+      {{ conflict.street }}<br>
+      {{ conflict.zip }} {{ conflict.city }}{% if conflict.countryCode != "DE" %}, {{ conflict.countryCode }}{% endif %}<br>
+      {% if conflict.email %}{{ conflict.email }}<br>{% endif %}
+      {% if conflict.phone %}{{ conflict.phone }}{% endif %}
+    </p>
+  </div>
+  {% endif %}
+  {% for error in form.non_field_errors %}
+  <div role="alert" class="alert alert-error">{{ error }}</div>
+  {% endfor %}
+  {{ form.version }}
+  {% include "core/_field.html" with field=form.name %}
+  <fieldset class="flex flex-col gap-4">
+    <legend class="mb-2 font-medium">Rechnungsadresse</legend>
+    {% include "core/_field.html" with field=form.street %}
+    {% include "core/_field.html" with field=form.supplement %}
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-[8rem_1fr]">
+      {% include "core/_field.html" with field=form.zip %}
+      {% include "core/_field.html" with field=form.city %}
+    </div>
+    {% include "core/_field.html" with field=form.countryCode %}
+  </fieldset>
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+    {% include "core/_field.html" with field=form.email %}
+    {% include "core/_field.html" with field=form.phone %}
+  </div>
+  <div class="flex gap-2 border-t border-line pt-4">
+    <button type="submit" class="btn btn-primary">Speichern</button>
+  </div>
+</form>
+{% endif %}
+{% endblock %}

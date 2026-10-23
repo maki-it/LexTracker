@@ -45,6 +45,33 @@ def apply_to_contact(contact: dict, customer: Customer) -> dict:
     return contact
 
 
+# The parts of a Lexware address the customer portal shows and changes.
+ADDRESS_FIELDS = ("supplement", "street", "zip", "city", "countryCode")
+
+
+def billing_address(contact: dict) -> dict:
+    """The contact's first billing address with every field of ``ADDRESS_FIELDS``, empty if it has none."""
+    addresses = (contact.get("addresses") or {}).get("billing") or [{}]
+    return {key: addresses[0].get(key) or "" for key in ADDRESS_FIELDS}
+
+
+def apply_billing_address(contact: dict, address: dict) -> dict:
+    """Write ``address`` into the contact's first billing address, keeping fields LexTracker does not know.
+
+    A contact without a billing address gets one. Empty values are left out, as Lexware does.
+    """
+    billing = contact.setdefault("addresses", {}).setdefault("billing", [])
+    if not billing:
+        billing.append({})
+    entry = billing[0]
+    for key in ADDRESS_FIELDS:
+        if address.get(key):
+            entry[key] = address[key]
+        else:
+            entry.pop(key, None)
+    return contact
+
+
 async def push_to_lexware(client: LexwareClient, customer: Customer) -> None:
     """Send the customer's Lexware fields to Lexware and remember the contact's new version.
 
