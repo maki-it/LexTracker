@@ -16,6 +16,9 @@ from billing import sync as invoice_sync
 from core import backup
 from core.models import AppSettings
 from customers import sync as customer_sync
+from inbox import events as inbox_events
+from inbox import jobs as inbox_jobs
+from inbox import service as inbox
 from lexware import credentials
 from lexware.client import LexwareError
 from mailer import jobs as mail_jobs
@@ -29,6 +32,9 @@ CHECK_INTERVAL = 60
 # How often the outgoing mail queue is looked at, so a login link arrives within seconds.
 MAIL_INTERVAL = 5
 
+# How often old messages are deleted.
+PRUNE_INTERVAL = timedelta(hours=1)
+
 # Touched on every check. The container's health check looks at its age.
 HEARTBEAT = Path(tempfile.gettempdir()) / "lextracker-scheduler.heartbeat"
 
@@ -37,6 +43,9 @@ HEARTBEAT = Path(tempfile.gettempdir()) / "lextracker-scheduler.heartbeat"
 class Job:
     name: str
     run: Callable[[], Awaitable]
+    # How messages about it refer to it: the name in the key and the name in the title.
+    key: str
+    label: str
     # The AppSettings fields that configure the job and record its last run.
     interval_field: str
     from_field: str
@@ -48,6 +57,8 @@ JOBS = [
     Job(
         "customer import",
         customer_sync.sync_and_record,
+        "customers",
+        "Kundenimport",
         "lexware_sync_interval",
         "lexware_sync_from",
         "lexware_sync_until",
@@ -56,6 +67,8 @@ JOBS = [
     Job(
         "invoice sync",
         invoice_sync.sync_and_record,
+        "invoices",
+        "Rechnungsabgleich",
         "invoice_sync_interval",
         "invoice_sync_from",
         "invoice_sync_until",
@@ -103,8 +116,12 @@ async def run_due_jobs(now: datetime) -> list[str]:
             result = await job.run()
         except LexwareError as exc:
             logger.warning("Automatic %s failed: %s", job.name, exc)
+            await inbox_events.job_failed(job.key, job.label, exc)
         else:
             logger.info("Automatic %s: %s", job.name, result.summary)
+            await inbox_events.job_done(
+                job.key, job.label, result.summary, changed=getattr(result, "has_changes", False)
+            )
     return ran
 
 
@@ -112,7 +129,7 @@ async def send_mail(stop: asyncio.Event) -> None:
     """Send the queued e-mails, every few seconds."""
     while not stop.is_set():
         try:
-            if sent := await outbox.send_due():
+            if sent := await outbox.send_due(on_failed=inbox_events.mail_failed):
                 logger.info("Sent %s e-mail%s", sent, "s" if sent > 1 else "")
         except Exception:
             logger.exception("Sending e-mails failed")
@@ -123,6 +140,7 @@ async def send_mail(stop: asyncio.Event) -> None:
 async def run(stop: asyncio.Event) -> None:
     logger.info("Scheduler started")
     mailer = asyncio.create_task(send_mail(stop))
+    last_prune = None
     while not stop.is_set():
         HEARTBEAT.touch()
         now = timezone.now()
@@ -135,14 +153,25 @@ async def run(stop: asyncio.Event) -> None:
             if backup.is_due(now, await AppSettings.aload()):
                 path = await sync_to_async(backup.backup_and_record)(now)
                 logger.info("Database backup written to %s", path)
-        except Exception:
+                await inbox_events.backup_done(path.name)
+        except Exception as exc:
             logger.exception("Database backup failed")
+            await inbox_events.backup_failed(exc)
         try:
             for name, count in (await mail_jobs.run_due(now)).items():
                 if count:
                     logger.info("Queued %s %s e-mail%s", count, name, "s" if count > 1 else "")
         except Exception:
             logger.exception("Queueing reports and reminders failed")
+        try:
+            for name, count in (await inbox_jobs.run_due(now)).items():
+                if count:
+                    logger.info("Created %s %s message%s", count, name, "s" if count > 1 else "")
+            if last_prune is None or now - last_prune >= PRUNE_INTERVAL:
+                await inbox.prune(now)
+                last_prune = now
+        except Exception:
+            logger.exception("Creating or deleting messages failed")
         with suppress(TimeoutError):
             await asyncio.wait_for(stop.wait(), CHECK_INTERVAL)
     await mailer

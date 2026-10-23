@@ -43,6 +43,8 @@ class PreferencesForm(StyledFormMixin, forms.ModelForm):
             "list_page_size",
             "weekly_report",
             "timer_reminder",
+            "message_level",
+            "message_email_level",
         ]
 
     def __init__(self, *args, **kwargs):
@@ -51,6 +53,8 @@ class PreferencesForm(StyledFormMixin, forms.ModelForm):
         if self.instance.is_customer:
             del self.fields["weekly_report"]
             del self.fields["timer_reminder"]
+            del self.fields["message_level"]
+            del self.fields["message_email_level"]
         else:
             self.fields["email"].help_text = "Für Wochenbericht, Erinnerungen und Links zum Anmelden."
 

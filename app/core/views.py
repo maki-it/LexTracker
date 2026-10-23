@@ -22,6 +22,7 @@ from core import backup
 from core.dialogs import navigate
 from core.forms import AppSettingsForm
 from core.models import AppSettings
+from inbox import events as inbox_events
 from lexware import credentials
 from lexware.forms import ApiKeyForm
 from mailer.models import MailSettings, OutgoingMail
@@ -219,6 +220,7 @@ async def backup_upload(request: HttpRequest) -> HttpResponse:
                 error = str(exc)
             else:
                 messages.success(request, f"Sicherung hochgeladen und als {path.name} gespeichert.")
+                await inbox_events.backup_uploaded(path.name, request.user.get_username())
                 return navigate("core:backups")
     context = {"error": error, "max_size": settings.BACKUP_UPLOAD_MAX_SIZE}
     return render(request, "core/backup_upload.html", context)
@@ -269,6 +271,7 @@ async def backup_restore(request: HttpRequest, name: str) -> HttpResponse:
                 # The restored sessions table may not have this session; a new key keeps you signed in,
                 # as long as your account exists in the backup with the same password.
                 await request.session.acycle_key()
+                await inbox_events.backup_restored(name, request.user.get_username())
                 messages.success(
                     request,
                     f"Sicherung {name} wiederhergestellt. Der vorherige Stand liegt als {before.name} im Ordner.",

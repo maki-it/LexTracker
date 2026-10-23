@@ -8,6 +8,7 @@ import asyncio
 import logging
 import smtplib
 import ssl
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from uuid import UUID
@@ -162,8 +163,13 @@ async def asend_now(config: MailSettings, message: Message) -> str:
     return (await asyncio.to_thread(deliver, config, [message]))[0]
 
 
-async def send_due(now: datetime | None = None) -> int:
-    """Send the e-mails that are due. Returns how many were sent."""
+async def send_due(
+    now: datetime | None = None, on_failed: Callable[[OutgoingMail], Awaitable[None]] | None = None
+) -> int:
+    """Send the e-mails that are due. Returns how many were sent.
+
+    ``on_failed`` is called for each e-mail that failed for the last time.
+    """
     now = now or timezone.now()
     await OutgoingMail.objects.filter(status=OutgoingMail.Status.PENDING, expires_at__lt=now).aupdate(
         status=OutgoingMail.Status.EXPIRED
@@ -196,6 +202,8 @@ async def send_due(now: datetime | None = None) -> int:
             else:
                 mail.next_attempt_at = now + RETRY_DELAYS[mail.attempts - 1]
         await mail.asave(update_fields=["attempts", "status", "sent_at", "last_error", "next_attempt_at"])
+        if on_failed and mail.status == OutgoingMail.Status.FAILED:
+            await on_failed(mail)
     await _forget_secrets()
     return sent
 

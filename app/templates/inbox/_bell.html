@@ -1,0 +1,12 @@
+{% load icons dialogs %}
+{# The bell in the sidebar. Reloads itself every minute and whenever a message was read or deleted (inbox-changed). #}
+<div id="nav-bell" hx-get="{% url 'inbox:bell' %}" hx-trigger="every 60s, inbox-changed from:body" hx-swap="outerHTML">
+  <a {% dialog_link "inbox:panel" %} class="btn btn-ghost btn-icon relative" title="Nachrichten"
+     aria-label="Nachrichten{% if inbox.count %}, {{ inbox.count }} ungelesen{% endif %}">
+    {% icon "bell" size=18 %}
+    {% if inbox.count %}
+    <span class="absolute -top-0.5 -right-0.5 min-w-4.5 rounded-full px-1 text-[11px] leading-[18px] font-semibold tabular-nums
+                 {% if inbox.top >= 40 %}bg-danger text-canvas{% elif inbox.top >= 30 %}bg-warning text-canvas{% else %}bg-primary text-on-primary{% endif %}">{{ inbox.count }}</span>
+    {% endif %}
+  </a>
+</div>
