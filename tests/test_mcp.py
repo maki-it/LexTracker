@@ -130,12 +130,12 @@ def test_unknown_task_is_reported_to_the_agent(tool):
     assert "Keine offene Aufgabe" in tool("start_timer", task_id=999)
 
 
-def test_add_time_entry_rounds_the_end(tool, task):
+def test_add_time_entry_rounds_start_and_end(tool, task):
     settings = AppSettings.load()
     settings.time_rounding = 15
     settings.save()
 
-    entry = tool("add_time_entry", task_id=task.pk, start="2026-10-01T09:00", duration_minutes=50, description="Doku")
+    entry = tool("add_time_entry", task_id=task.pk, start="2026-10-01T09:07", duration_minutes=50, description="Doku")
     assert entry["minutes"] == 60
     assert entry["start"].startswith("2026-10-01T09:00")
 

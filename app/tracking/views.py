@@ -10,6 +10,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from core.dialogs import in_dialog
+from core.models import AppSettings
 from core.shortcuts import arender
 from projects.models import Task
 from tracking.forms import TimeEntryForm, open_tasks, task_choices
@@ -155,7 +156,8 @@ async def entry_form(request: HttpRequest, pk: int | None = None) -> HttpRespons
     if not pk:
         now = timezone.localtime().replace(second=0, microsecond=0)
         initial = {"started_at": now - timedelta(hours=1), "ended_at": now, "task": request.GET.get("aufgabe")}
-    form = TimeEntryForm(request.POST or None, instance=entry, initial=initial, user=request.user)
+    rounding = (await AppSettings.aload()).time_rounding
+    form = TimeEntryForm(request.POST or None, instance=entry, initial=initial, user=request.user, rounding=rounding)
     if request.method == "POST" and await sync_to_async(form.is_valid)():
         entry = await sync_to_async(form.save)()
         messages.success(request, "Zeiteintrag gespeichert.")

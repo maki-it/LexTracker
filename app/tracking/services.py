@@ -1,4 +1,3 @@
-import math
 from datetime import datetime, timedelta
 
 from django.db import transaction
@@ -12,12 +11,24 @@ from tracking.models import TimeEntry
 MIN_DURATION_SECONDS = 30
 
 
-def rounded_end(started_at: datetime, ended_at: datetime, minutes: int) -> datetime:
-    """Move ``ended_at`` so the duration is a whole number of ``minutes`` steps, rounding up."""
+def round_to_step(moment: datetime, minutes: int) -> datetime:
+    """Round ``moment`` to the nearest ``minutes`` step on the local clock, e.g. 9:07 → 9:00 and 9:08 → 9:15."""
     if not minutes:
-        return ended_at
+        return moment
+    local = timezone.localtime(moment).replace(tzinfo=None)
+    midnight = local.replace(hour=0, minute=0, second=0, microsecond=0)
     step = timedelta(minutes=minutes)
-    return started_at + step * math.ceil((ended_at - started_at) / step)
+    # Half a step rounds up, as people expect from rounding on paper.
+    steps = int((local - midnight + step / 2) // step)
+    return timezone.make_aware(midnight + step * steps)
+
+
+def rounded_times(started_at: datetime, ended_at: datetime, minutes: int) -> tuple[datetime, datetime]:
+    """Round start and end to the nearest ``minutes`` step; an entry keeps at least one step."""
+    if not minutes:
+        return started_at, ended_at
+    start, end = round_to_step(started_at, minutes), round_to_step(ended_at, minutes)
+    return start, max(end, start + timedelta(minutes=minutes))
 
 
 @transaction.atomic
@@ -36,6 +47,6 @@ def stop_timer(user) -> TimeEntry | None:
     if (now - entry.started_at).total_seconds() < MIN_DURATION_SECONDS:
         entry.delete()
         return None
-    entry.ended_at = rounded_end(entry.started_at, now, AppSettings.load().time_rounding)
-    entry.save(update_fields=["ended_at", "updated_at"])
+    entry.started_at, entry.ended_at = rounded_times(entry.started_at, now, AppSettings.load().time_rounding)
+    entry.save(update_fields=["started_at", "ended_at", "updated_at"])
     return entry

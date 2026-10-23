@@ -2,10 +2,9 @@ from django import forms
 from django.db.models import F, Max, Q, QuerySet
 
 from core.forms import StyledFormMixin
-from core.models import AppSettings
 from projects.models import Project, Task
 from tracking.models import TimeEntry
-from tracking.services import rounded_end
+from tracking.services import round_to_step, rounded_times
 
 
 def task_choices(user, include_pk: int | None = None):
@@ -56,12 +55,19 @@ class TimeEntryForm(StyledFormMixin, forms.ModelForm):
             "description": forms.Textarea(attrs={"rows": 2}),
         }
 
-    def __init__(self, *args, user, **kwargs):
+    def __init__(self, *args, user, rounding: int = 0, **kwargs):
         super().__init__(*args, **kwargs)
         # Keep the entry's current task selectable even if it is done or no longer unlocked by now.
         include = self.instance.task_id if self.instance.pk else None
         self.fields["task"].queryset = task_choices(user, include_pk=include)
         self.fields["ended_at"].required = True
+        self.rounding = rounding
+        if rounding:
+            # The browser's arrows then move in rounding steps, and the shown times already sit on a step.
+            for name in ("started_at", "ended_at"):
+                self.fields[name].widget.attrs["step"] = rounding * 60
+                if self.initial.get(name):
+                    self.initial[name] = round_to_step(self.initial[name], rounding)
 
     def clean(self):
         cleaned = super().clean()
@@ -69,5 +75,5 @@ class TimeEntryForm(StyledFormMixin, forms.ModelForm):
         if start and end and end <= start:
             self.add_error("ended_at", "Das Ende muss nach dem Beginn liegen.")
         elif start and end:
-            cleaned["ended_at"] = rounded_end(start, end, AppSettings.load().time_rounding)
+            cleaned["started_at"], cleaned["ended_at"] = rounded_times(start, end, self.rounding)
         return cleaned
