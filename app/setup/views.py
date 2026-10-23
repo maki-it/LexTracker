@@ -1,10 +1,11 @@
-"""Setup of a fresh instance: the first administrator, the Lexware key, then on to the start page.
+"""Setup of a fresh instance: the first administrator, the Lexware key, backups, then on to the start page.
 
 While no account exists, every page leads here (see core.middleware). The later steps need the new
 administrator's login, so they can also be opened again afterwards.
 """
 
 from asgiref.sync import sync_to_async
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import alogin
 from django.core.exceptions import PermissionDenied
@@ -14,17 +15,19 @@ from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.http import require_http_methods
 
 from accounts.models import User
+from core.models import AppSettings
 from customers.sync import sync_and_record
 from lexware import credentials
 from lexware.client import LexwareError
 from lexware.forms import ApiKeyForm
 from lexware.views import check_and_store
-from setup.forms import AdminAccountForm, AlreadySetUp
+from setup.forms import AdminAccountForm, AlreadySetUp, BackupForm
 
-# (URL name, label). A step for backups goes between "lexware" and "done" once they are set in the app.
+# (URL name, label)
 STEPS = [
     ("setup:account", "Admin-Konto"),
     ("setup:lexware", "Lexware Office"),
+    ("setup:backup", "Datensicherung"),
     ("setup:done", "Fertig"),
 ]
 
@@ -78,9 +81,20 @@ async def lexware(request: HttpRequest) -> HttpResponse:
         return response
     form = ApiKeyForm(request.POST or None)
     if request.method == "POST" and form.is_valid() and await check_and_store(form) is not None:
-        return redirect("setup:done")
+        return redirect("setup:backup")
     context = {"form": form, "lexware": await credentials.astatus()}
     return _render(request, "setup/lexware.html", "setup:lexware", context)
+
+
+@require_http_methods(["GET", "POST"])
+async def backup(request: HttpRequest) -> HttpResponse:
+    if response := _not_admin(request):
+        return response
+    form = BackupForm(request.POST or None, instance=await AppSettings.aload())
+    if request.method == "POST" and await sync_to_async(form.is_valid)():
+        await form.instance.asave(update_fields=list(form.fields))
+        return redirect("setup:done")
+    return _render(request, "setup/backup.html", "setup:backup", {"form": form, "backup_dir": settings.BACKUP_DIR})
 
 
 @require_http_methods(["GET", "POST"])
@@ -98,4 +112,5 @@ async def done(request: HttpRequest) -> HttpResponse:
                 messages.success(request, f"Kunden importiert: {result.summary}")
         messages.success(request, "Die Einrichtung ist abgeschlossen. Viel Spaß mit LexTracker!")
         return redirect("core:dashboard")
-    return _render(request, "setup/done.html", "setup:done", {"lexware": status})
+    context = {"lexware": status, "app_settings": await AppSettings.aload()}
+    return _render(request, "setup/done.html", "setup:done", context)

@@ -114,8 +114,8 @@ async def run(stop: asyncio.Event) -> None:
             # Keep running: a broken job must not stop the others or the next attempt.
             logger.exception("Scheduled job failed")
         try:
-            if backup.is_due(now):
-                path = await sync_to_async(backup.create_backup)(now)
+            if backup.is_due(now, await AppSettings.aload()):
+                path = await sync_to_async(backup.backup_and_record)(now)
                 logger.info("Database backup written to %s", path)
         except Exception:
             logger.exception("Database backup failed")

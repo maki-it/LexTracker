@@ -110,6 +110,31 @@
     {% endfor %}
   </section>
 
+  <section class="card flex flex-col gap-4">
+    <div>
+      <h2>Datensicherung</h2>
+      <p class="mt-1 text-sm text-muted">
+        Kopiert die Datenbank einmal am Tag ab der eingestellten Uhrzeit nach <code>{{ backup.dir }}</code>.
+        Den Ordner legt die Server-Konfiguration fest (<code>APP_BACKUP_DIR</code>, in Docker das Volume <code>/backups</code>).
+      </p>
+    </div>
+    <label class="flex items-center gap-2 text-sm font-medium">
+      {{ form.backup_enabled }} {{ form.backup_enabled.label }}
+    </label>
+    <div class="grid gap-3 sm:grid-cols-2">
+      {% include "core/_field.html" with field=form.backup_time %}
+      {% include "core/_field.html" with field=form.backup_keep %}
+    </div>
+    <p class="text-[13px]{% if backup.failed %} text-danger{% else %} text-muted{% endif %}">
+      {% if backup.last_run %}
+      Zuletzt {{ backup.last_run|date:datetime_format }} Uhr: {% if backup.failed %}fehlgeschlagen ({{ backup.status }}){% else %}{{ backup.status }}{% endif %}.
+      {% else %}
+      Noch keine Sicherung aufgezeichnet.
+      {% endif %}
+      {{ backup.count }} Kopie{{ backup.count|pluralize:"n" }} im Ordner.
+    </p>
+  </section>
+
   <div>
     <button type="submit" class="btn btn-primary">Speichern</button>
   </div>

@@ -1,0 +1,15 @@
+{% extends "setup/_layout.html" %}
+{% block step %}
+<form method="post" class="card flex flex-col gap-4 p-6">
+  <div>
+    <h1 class="text-lg">Datensicherung</h1>
+    <p class="mt-1 text-sm text-muted">
+      Der Scheduler kopiert die Datenbank einmal am Tag nach <code>{{ backup_dir }}</code>.
+      Den Ordner legt die Server-Konfiguration fest (<code>APP_BACKUP_DIR</code>, in Docker das Volume <code>/backups</code>).
+    </p>
+  </div>
+  {% csrf_token %}
+  {% include "core/_form_fields.html" %}
+  <button type="submit" class="btn btn-primary mt-1">Speichern und weiter</button>
+</form>
+{% endblock %}

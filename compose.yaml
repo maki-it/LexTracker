@@ -10,8 +10,6 @@ x-environment: &environment
   APP_TIME_ZONE: ${APP_TIME_ZONE:-Europe/Berlin}
   APP_LOG_LEVEL: ${APP_LOG_LEVEL:-info}
   APP_LEXWARE_API_KEY: ${APP_LEXWARE_API_KEY:-}
-  APP_BACKUP_KEEP: ${APP_BACKUP_KEEP:-14}
-  APP_BACKUP_TIME: ${APP_BACKUP_TIME:-03:00}
   APP_BACKUP_DIR: /backups
   FORWARDED_ALLOW_IPS: ${FORWARDED_ALLOW_IPS:-127.0.0.1}
   UVICORN_WORKERS: ${UVICORN_WORKERS:-1}
@@ -59,8 +57,8 @@ services:
       - command: ["python", "manage.py", "migrate", "--noinput"]
       - command: ["python", "manage.py", "ensure_superuser"]
 
-  # Runs recurring jobs: the automatic customer import, the invoice sync (both set on the settings
-  # page) and the daily database backup.
+  # Runs recurring jobs: the automatic customer import, the invoice sync and the daily database
+  # backup, all set on the settings page.
   scheduler:
     <<: *service
     container_name: lextracker-scheduler

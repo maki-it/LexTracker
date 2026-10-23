@@ -30,8 +30,17 @@ class AppSettingsForm(StyledFormMixin, forms.ModelForm):
             "invoice_sync_interval",
             "invoice_sync_from",
             "invoice_sync_until",
+            "backup_enabled",
+            "backup_time",
+            "backup_keep",
         ]
         widgets = {
             name: forms.TimeInput(attrs={"type": "time"}, format="%H:%M")
-            for name in ["lexware_sync_from", "lexware_sync_until", "invoice_sync_from", "invoice_sync_until"]
+            for name in [
+                "lexware_sync_from",
+                "lexware_sync_until",
+                "invoice_sync_from",
+                "invoice_sync_until",
+                "backup_time",
+            ]
         }

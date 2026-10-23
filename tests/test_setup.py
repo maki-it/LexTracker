@@ -1,8 +1,11 @@
+from datetime import time
+
 import pytest
 from asgiref.sync import async_to_sync
 from django.urls import reverse
 
 from accounts.models import User
+from core.models import AppSettings
 from customers.sync import SyncResult
 from lexware import credentials
 from lexware.schemas import Profile
@@ -64,9 +67,17 @@ def test_full_setup_ends_on_start_page(client, settings, accept_key, monkeypatch
     client.post(reverse("setup:account"), ACCOUNT)
 
     response = client.post(reverse("setup:lexware"), {"api_key": API_KEY})
-    assert response.url == reverse("setup:done")
+    assert response.url == reverse("setup:backup")
     assert async_to_sync(credentials.aget_api_key)() == API_KEY
-    assert "Maki IT" in client.get(reverse("setup:done")).text
+
+    response = client.post(
+        reverse("setup:backup"), {"backup_enabled": "on", "backup_time": "02:30", "backup_keep": "7"}
+    )
+    assert response.url == reverse("setup:done")
+    app_settings = AppSettings.load()
+    assert app_settings.backup_enabled and app_settings.backup_time == time(2, 30) and app_settings.backup_keep == 7
+    summary = client.get(reverse("setup:done")).text
+    assert "Maki IT" in summary and "ab 02:30 Uhr, 7 Kopien" in summary
 
     response = client.post(reverse("setup:done"), {"import_customers": "1"}, follow=True)
 
@@ -78,10 +89,15 @@ def test_full_setup_ends_on_start_page(client, settings, accept_key, monkeypatch
 def test_lexware_step_can_be_skipped(client, settings):
     settings.LEXWARE_API_KEY = ""
     client.post(reverse("setup:account"), ACCOUNT)
+    assert reverse("setup:backup") in client.get(reverse("setup:lexware")).text
+    # Unchecked: no automatic backups.
+    client.post(reverse("setup:backup"), {"backup_time": "03:00", "backup_keep": "14"})
+    assert not AppSettings.load().backup_enabled
 
     response = client.get(reverse("setup:done"))
 
     assert "noch nicht verbunden" in response.text
+    assert "Keine automatische Datensicherung" in response.text
     assert "Kunden jetzt" not in response.text
     assert client.post(reverse("setup:done")).url == reverse("core:dashboard")
 

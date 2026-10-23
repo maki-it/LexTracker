@@ -1,8 +1,10 @@
+from django import forms
 from django.contrib.auth.forms import BaseUserCreationForm
 from django.db import transaction
 
 from accounts.models import User
 from core.forms import StyledFormMixin
+from core.models import AppSettings
 
 
 class AdminAccountForm(StyledFormMixin, BaseUserCreationForm):
@@ -27,3 +29,10 @@ class AdminAccountForm(StyledFormMixin, BaseUserCreationForm):
 
 class AlreadySetUp(Exception):
     """Someone else created the first account in the meantime."""
+
+
+class BackupForm(StyledFormMixin, forms.ModelForm):
+    class Meta:
+        model = AppSettings
+        fields = ["backup_enabled", "backup_time", "backup_keep"]
+        widgets = {"backup_time": forms.TimeInput(attrs={"type": "time"}, format="%H:%M")}

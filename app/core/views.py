@@ -1,6 +1,7 @@
 from datetime import datetime, time, timedelta
 
 from asgiref.sync import sync_to_async
+from django.conf import settings
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.db import connection
@@ -12,6 +13,7 @@ from django.views.decorators.http import require_GET, require_http_methods
 from django.views.generic import RedirectView
 
 from accounts.models import User
+from core import backup
 from core.forms import AppSettingsForm
 from core.models import AppSettings
 from lexware import credentials
@@ -91,7 +93,20 @@ async def app_settings(request: HttpRequest) -> HttpResponse:
             "failed": current.invoices_sync_failed,
         },
     ]
-    context = {"form": form, "sync_jobs": sync_jobs, "lexware": await credentials.astatus(), "key_form": ApiKeyForm()}
+    backup_info = {
+        "dir": settings.BACKUP_DIR,
+        "count": len(await sync_to_async(backup.backups)()),
+        "last_run": current.backup_at,
+        "status": current.backup_status,
+        "failed": current.backup_failed,
+    }
+    context = {
+        "form": form,
+        "sync_jobs": sync_jobs,
+        "backup": backup_info,
+        "lexware": await credentials.astatus(),
+        "key_form": ApiKeyForm(),
+    }
     return render(request, "core/settings.html", context)
 
 

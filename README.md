@@ -40,7 +40,7 @@ app/
   reports/     Auswertungen und CSV-Export
   mcpserver/   MCP-Server für KI-Agenten
   portal/      Kundenportal (nur lesen)
-  setup/       Einrichtung einer neuen Instanz (Admin-Konto, Lexware-Schlüssel)
+  setup/       Einrichtung einer neuen Instanz (Admin-Konto, Lexware-Schlüssel, Datensicherung)
   templates/   HTML-Templates
   assets/      Tailwind-Quelle mit Farben und eigenen Komponenten
   static/      Statische Dateien (htmx, gebautes CSS)
@@ -59,7 +59,7 @@ make migrate     # Datenbank anlegen (liegt in ./data)
 make run         # http://localhost:8000
 ```
 
-Beim ersten Aufruf führt die **Einrichtung** durch das Anlegen des Admin-Kontos und das Verbinden mit Lexware Office (alternativ `make superuser`).
+Beim ersten Aufruf führt die **Einrichtung** durch das Anlegen des Admin-Kontos, das Verbinden mit Lexware Office und die Datensicherung (das Konto alternativ mit `make superuser`).
 Solange es kein Konto gibt, leitet jede Seite dorthin. Stell eine neue Instanz deshalb erst öffentlich erreichbar, wenn du die Einrichtung abgeschlossen hast, oder lass das Konto über `DJANGO_SUPERUSER_*` anlegen.
 
 Während du an Templates arbeitest, hält `make css-watch` in einem zweiten Terminal das Stylesheet aktuell.
@@ -195,7 +195,7 @@ FORWARDED_ALLOW_IPS=<IP des Proxys>
 
 Ohne HTTPS funktioniert der Login nur mit `APP_SECURE_COOKIES=false`.
 
-**Backup:** Der Scheduler kopiert die Datenbank täglich ab `APP_BACKUP_TIME` (Standard 03:00) nach `/backups` und behält die neuesten `APP_BACKUP_KEEP` Kopien (Standard 14, `0` schaltet es ab). Er nutzt dafür die Backup-Funktion von SQLite, die auch im laufenden Betrieb eine stimmige Kopie liefert; die Datei einfach zu kopieren reicht im WAL-Modus nicht.
+**Backup:** Der Scheduler kopiert die Datenbank täglich nach `/backups`. Ob, ab welcher Uhrzeit (Standard 03:00) und wie viele Kopien er behält (Standard 14), stellst du unter Einstellungen → Datensicherung ein; dort steht auch, wann die letzte Sicherung lief. Nur der Zielordner kommt aus der Umgebung (`APP_BACKUP_DIR`, in Docker fest `/backups`, ohne Docker `data/backups`). Der Scheduler nutzt dafür die Backup-Funktion von SQLite, die auch im laufenden Betrieb eine stimmige Kopie liefert; die Datei einfach zu kopieren reicht im WAL-Modus nicht.
 Ein Backup sofort: `make docker-backup` (oder `docker compose exec scheduler python manage.py backup_database`).
 Damit die Backups auch außerhalb von Docker liegen, z. B. für ein Offsite-Backup, kannst du das Volume durch einen Ordner auf dem Server ersetzen. Er muss dem Benutzer mit der UID 1000 gehören:
 
