@@ -72,44 +72,24 @@ def test_manual_entry_is_rounded(logged_in, user, task):
     assert entry.duration == timedelta(hours=2, minutes=15)
 
 
-def test_time_fields_offer_only_rounding_steps(logged_in, user, task):
+def test_time_fields_step_and_snap_by_the_rounding(logged_in, user, task):
     AppSettings.objects.create(pk=1, time_rounding=15)
     start = datetime(2026, 10, 20, 8, 31, tzinfo=TZ)
     entry = TimeEntry.objects.create(user=user, task=task, started_at=start, ended_at=start + timedelta(minutes=58))
 
     page_text = logged_in.get(reverse("tracking:edit", args=[entry.pk])).text
 
-    assert 'type="date" name="started_at_0"' in page_text
-    assert 'value="2026-10-20"' in page_text
-    assert '<option value="08:30" selected>' in page_text
-    assert '<option value="09:30" selected>' in page_text
-    assert '<option value="08:45">' in page_text
-    assert '<option value="08:31"' not in page_text
-    assert page_text.count('<option value="') >= 2 * 96
+    assert 'type="datetime-local"' in page_text
+    assert 'step="900"' in page_text
+    assert page_text.count('data-snap-minutes="15"') == 2
+    assert 'value="2026-10-20T08:30"' in page_text
+    assert 'value="2026-10-20T09:30"' in page_text
 
 
 def test_time_fields_are_free_without_rounding(logged_in, user, task):
     page_text = logged_in.get(reverse("tracking:create")).text
 
-    assert 'type="time" name="started_at_1"' in page_text
-
-
-def test_split_date_and_time_are_saved_rounded(logged_in, user, task):
-    AppSettings.objects.create(pk=1, time_rounding=15)
-    logged_in.post(
-        reverse("tracking:create"),
-        {
-            "task": task.pk,
-            "started_at_0": "2026-10-20",
-            "started_at_1": "09:00",
-            "ended_at_0": "2026-10-20",
-            "ended_at_1": "11:37",
-            "is_billable": "on",
-        },
-    )
-    entry = TimeEntry.objects.get()
-    assert timezone.localtime(entry.started_at) == datetime(2026, 10, 20, 9, 0, tzinfo=TZ)
-    assert timezone.localtime(entry.ended_at) == datetime(2026, 10, 20, 11, 30, tzinfo=TZ)
+    assert "data-snap-minutes" not in page_text
 
 
 def test_hours_filter_formats():

@@ -248,3 +248,19 @@ document.addEventListener("htmx:load", (event) => {
   event.detail.elt.querySelectorAll?.("[data-task-search]").forEach(syncTaskValidity);
 });
 document.addEventListener("DOMContentLoaded", () => document.querySelectorAll("[data-task-search]").forEach(syncTaskValidity));
+
+// A date-time field with data-snap-minutes="<n>" (time rounding): the browser's picker offers every minute,
+// so a picked or typed time snaps to the nearest step. The server rounds as well, see tracking/services.py.
+document.addEventListener("change", (event) => {
+  const field = event.target;
+  const step = Number(field.dataset?.snapMinutes);
+  if (!step || !field.value) return;
+  const [date, time] = field.value.split("T");
+  const [hours, minutes] = time.split(":").map(Number);
+  const snapped = Math.round((hours * 60 + minutes) / step) * step;
+  // Rounding up past midnight moves to the next day, like the server does.
+  const day = new Date(`${date}T00:00`);
+  day.setMinutes(snapped);
+  const pad = (n) => String(n).padStart(2, "0");
+  field.value = `${day.getFullYear()}-${pad(day.getMonth() + 1)}-${pad(day.getDate())}T${pad(day.getHours())}:${pad(day.getMinutes())}`;
+});
