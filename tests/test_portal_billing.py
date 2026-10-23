@@ -64,7 +64,7 @@ def test_entries_show_whether_and_where_they_were_billed(client, customer_user, 
     assert response.text.count("abgerechnet</span>") == 1
     assert response.text.count(">offen</span>") == 1
     assert "RE-100" in response.text
-    assert reverse("portal:invoice_entries", args=[inv.pk]) in response.text
+    assert reverse("portal:invoice_entries", args=[inv.voucher_number]) in response.text
 
 
 def test_entries_of_a_draft_invoice_count_as_open(client, customer_user, user, task):
@@ -91,7 +91,7 @@ def test_billed_entries_without_invoice_permission_show_no_number(client, custom
 
     response = client.get(reverse("portal:entries")).text
     assert "abgerechnet</span>" in response and "RE-100" not in response
-    assert reverse("portal:invoice_entries", args=[inv.pk]) not in response
+    assert reverse("portal:invoice_entries", args=[inv.voucher_number]) not in response
 
 
 def test_invoice_lists_its_entries(client, customer_user, user, task):
@@ -101,9 +101,9 @@ def test_invoice_lists_its_entries(client, customer_user, user, task):
     client.force_login(customer_user)
 
     listing = client.get(reverse("portal:invoices")).text
-    assert reverse("portal:invoice_entries", args=[inv.pk]) in listing
+    assert reverse("portal:invoice_entries", args=[inv.voucher_number]) in listing
 
-    response = client.get(reverse("portal:invoice_entries", args=[inv.pk])).text
+    response = client.get(reverse("portal:invoice_entries", args=[inv.voucher_number])).text
     assert "RE-100" in response and "Im Paket" in response and "Noch offen" not in response
     assert "Website · Entwicklung" in response and "2:00 h" in response
 
@@ -115,7 +115,7 @@ def test_invoice_entries_hide_descriptions_when_not_allowed(client, customer_use
     customer_user.save()
     client.force_login(customer_user)
 
-    response = client.get(reverse("portal:invoice_entries", args=[inv.pk])).text
+    response = client.get(reverse("portal:invoice_entries", args=[inv.voucher_number])).text
     assert "Interne Notiz" not in response and "Entwicklung" in response
 
 
@@ -123,12 +123,14 @@ def test_invoice_entries_need_both_permissions(client, customer_user, user, task
     inv = invoice(task.project.customer, "RE-100")
     entry(user, task, invoice=inv)
     client.force_login(customer_user)
-    url = reverse("portal:invoice_entries", args=[inv.pk])
+    url = reverse("portal:invoice_entries", args=[inv.voucher_number])
 
     customer_user.portal_entries = False
     customer_user.save()
     assert client.get(url).status_code == 403
-    assert reverse("portal:invoice_entries", args=[inv.pk]) not in client.get(reverse("portal:invoices")).text
+    assert (
+        reverse("portal:invoice_entries", args=[inv.voucher_number]) not in client.get(reverse("portal:invoices")).text
+    )
 
     customer_user.portal_entries, customer_user.portal_invoices = True, False
     customer_user.save()
@@ -139,8 +141,10 @@ def test_lexware_only_invoices_have_no_entries_link(client, customer_user, task)
     inv = invoice(task.project.customer, "RE-7", origin=Invoice.Origin.LEXWARE)
     client.force_login(customer_user)
 
-    assert reverse("portal:invoice_entries", args=[inv.pk]) not in client.get(reverse("portal:invoices")).text
-    assert "keine erfassten Zeiten" in client.get(reverse("portal:invoice_entries", args=[inv.pk])).text
+    assert (
+        reverse("portal:invoice_entries", args=[inv.voucher_number]) not in client.get(reverse("portal:invoices")).text
+    )
+    assert "keine erfassten Zeiten" in client.get(reverse("portal:invoice_entries", args=[inv.voucher_number])).text
 
 
 def test_invoice_entries_only_for_own_visible_invoices(client, customer_user, user, task, other_task):
@@ -150,8 +154,8 @@ def test_invoice_entries_only_for_own_visible_invoices(client, customer_user, us
     entry(user, task, invoice=draft)
     client.force_login(customer_user)
 
-    assert client.get(reverse("portal:invoice_entries", args=[foreign.pk])).status_code == 404
-    assert client.get(reverse("portal:invoice_entries", args=[draft.pk])).status_code == 404
+    assert client.get(reverse("portal:invoice_entries", args=[foreign.voucher_number])).status_code == 404
+    assert client.get(reverse("portal:invoice_entries", args=[draft.voucher_number])).status_code == 404
 
 
 def test_portal_lists_use_a_fixed_number_of_queries(client, customer_user, user, task, django_assert_max_num_queries):
@@ -162,3 +166,102 @@ def test_portal_lists_use_a_fixed_number_of_queries(client, customer_user, user,
         client.get(reverse("portal:entries"))
     with django_assert_max_num_queries(6):
         client.get(reverse("portal:invoices"))
+
+
+def test_invoice_number_links_to_the_pdf_and_replaces_online_view(client, customer_user, task):
+    inv = invoice(task.project.customer, "RE-2026-07-00403")
+    client.force_login(customer_user)
+
+    text = client.get(reverse("portal:invoices")).text
+    pdf = reverse("portal:invoice_pdf", args=[inv.voucher_number])
+    assert pdf == "/portal/rechnungen/RE-2026-07-00403/pdf/"
+    assert f'href="{pdf}?ansehen=1"' in text and f'href="{pdf}"' in text
+    assert "Online ansehen" not in text
+
+
+def test_urls_use_the_number_in_every_form(client, customer_user, task, monkeypatch):
+    import httpx
+
+    from tests.lexware_fakes import fake_client
+
+    # Lexware numbers are free-form: a slash, a space and a umlaut must survive the URL.
+    numbers = ["2026/00403", "RE 2026 Ä", "00045", "RE-1?x#y%z"]
+    invoices = {n: invoice(task.project.customer, n) for n in numbers}
+    fetched = []
+
+    def handler(request):
+        fetched.append(request.url.path)
+        return httpx.Response(200, content=b"%PDF", headers={"Content-Type": "application/pdf"})
+
+    monkeypatch.setattr("portal.views.client_from_settings", lambda: fake_client(handler))
+    client.force_login(customer_user)
+
+    for number, inv in invoices.items():
+        response = client.get(reverse("portal:invoice_pdf", args=[number]))
+        assert response.status_code == 200, number
+        assert fetched[-1].endswith(f"/invoices/{inv.lexware_id}/file")
+        assert "/" not in response["Content-Disposition"].split("filename", 1)[1]
+        assert client.get(reverse("portal:invoice_entries", args=[number])).status_code == 200, number
+
+
+def test_same_number_at_two_customers_stays_apart(client, customer_user, task, other_task):
+    own = invoice(task.project.customer, "RE-1")
+    foreign = invoice(other_task.project.customer, "RE-1")
+    Invoice.objects.filter(pk=foreign.pk).update(total_net=Decimal("999"))
+    client.force_login(customer_user)
+
+    response = client.get(reverse("portal:invoice_entries", args=["RE-1"]))
+    assert response.status_code == 200 and response.context["invoice"].pk == own.pk
+
+
+def test_voided_invoice_keeps_its_number_url(client, customer_user, task):
+    inv = invoice(task.project.customer, "RE-9", Invoice.Status.VOIDED)
+    client.force_login(customer_user)
+
+    assert client.get(reverse("portal:invoice_entries", args=[inv.voucher_number])).status_code == 200
+    assert reverse("portal:invoice_pdf", args=["RE-9"]) in client.get(reverse("portal:invoices")).text
+
+
+def test_unknown_and_foreign_numbers_are_404(client, customer_user, task, other_task):
+    invoice(other_task.project.customer, "FREMD-1")
+    invoice(task.project.customer, "ENTWURF-1", Invoice.Status.DRAFT)
+    client.force_login(customer_user)
+
+    for number in ["FREMD-1", "ENTWURF-1", "GIBT-ES-NICHT"]:
+        assert client.get(reverse("portal:invoice_pdf", args=[number])).status_code == 404
+        assert client.get(reverse("portal:invoice_entries", args=[number])).status_code == 404
+
+
+def test_invoice_without_a_number_has_no_links(client, customer_user, task):
+    inv = invoice(task.project.customer, "", Invoice.Status.OPEN)
+    entry(customer_user, task, invoice=inv)
+    client.force_login(customer_user)
+
+    text = client.get(reverse("portal:invoices")).text
+    table = text.split("<tbody>", 1)[1]
+    assert "/pdf/" not in table and "/zeiten/" not in table
+    assert "abgerechnet</span>" in client.get(reverse("portal:entries")).text
+
+
+def test_old_id_urls_redirect_to_the_number(client, customer_user, task, other_task):
+    inv = invoice(task.project.customer, "RE-2026-07-00403")
+    foreign = invoice(other_task.project.customer, "FREMD-1")
+    client.force_login(customer_user)
+
+    response = client.get(f"/portal/rechnungen/{inv.pk}/pdf/", {"ansehen": "1"})
+    assert response.status_code == 301
+    assert response["Location"] == "/portal/rechnungen/RE-2026-07-00403/pdf/?ansehen=1"
+    response = client.get(f"/portal/rechnungen/{inv.pk}/zeiten/")
+    assert response.status_code == 301 and response["Location"] == "/portal/rechnungen/RE-2026-07-00403/zeiten/"
+    # Another customer's ID gives nothing away.
+    assert client.get(f"/portal/rechnungen/{foreign.pk}/pdf/").status_code == 404
+    assert client.get("/portal/rechnungen/9999/zeiten/").status_code == 404
+
+
+def test_a_numeric_number_wins_over_an_old_id(client, customer_user, task):
+    first = invoice(task.project.customer, "RE-1")
+    numeric = invoice(task.project.customer, str(first.pk))
+    client.force_login(customer_user)
+
+    response = client.get(reverse("portal:invoice_entries", args=[numeric.voucher_number]))
+    assert response.status_code == 200 and response.context["invoice"].pk == numeric.pk

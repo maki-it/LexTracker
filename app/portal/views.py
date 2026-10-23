@@ -4,13 +4,15 @@ It is read-only, except that a login may be allowed to change the customer's own
 """
 
 import logging
+import re
 from datetime import timedelta
 
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.db.models import Exists, OuterRef, Q
-from django.http import Http404, HttpRequest, HttpResponse
+from django.http import Http404, HttpRequest, HttpResponse, HttpResponsePermanentRedirect
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.http import content_disposition_header
 from django.views.decorators.http import require_GET, require_http_methods
@@ -117,7 +119,7 @@ async def invoices(request: HttpRequest) -> HttpResponse:
     user = request.user
     if not user.portal_invoices:
         raise PermissionDenied
-    queryset = Invoice.objects.filter(customer_id=user.customer_id).exclude(status__in=HIDDEN_INVOICE_STATUSES)
+    queryset = _visible_invoices(user)
     status = request.GET.get("status", "")
     if status in INVOICE_STATUS_FILTERS:
         queryset = queryset.filter(status__in=INVOICE_STATUS_FILTERS[status][1])
@@ -145,19 +147,38 @@ async def invoices(request: HttpRequest) -> HttpResponse:
     return render(request, "portal/invoices.html", context)
 
 
+def _visible_invoices(user):
+    return Invoice.objects.filter(customer_id=user.customer_id).exclude(status__in=HIDDEN_INVOICE_STATUSES)
+
+
+async def _invoice_by_number(request: HttpRequest, number: str, route: str, **extra) -> Invoice | HttpResponse:
+    """The customer's invoice with this number, or a redirect to its number URL if the old ID form was used.
+
+    Invoices are addressed by their number, which Lexware assigns once and never reuses, so it is unique per
+    customer in practice. The database does not enforce that, so on a clash the newest invoice wins.
+    """
+    queryset = _visible_invoices(request.user).exclude(voucher_number="").filter(**extra)
+    matches = [i async for i in queryset.filter(voucher_number=number).order_by("-voucher_date", "-pk")[:2]]
+    if len(matches) > 1:
+        logger.warning("Customer %s has several invoices numbered %s", request.user.customer_id, number)
+    if matches:
+        return matches[0]
+    # Links from before the number was used in the URL carry the ID.
+    if number.isdecimal() and (legacy := await queryset.filter(pk=int(number)).afirst()):
+        url = reverse(route, args=[legacy.voucher_number])
+        return HttpResponsePermanentRedirect(f"{url}?{request.GET.urlencode()}" if request.GET else url)
+    raise Http404
+
+
 @require_GET
-async def invoice_entries(request: HttpRequest, invoice_pk: int) -> HttpResponse:
+async def invoice_entries(request: HttpRequest, number: str) -> HttpResponse:
     """The time entries that went into one invoice."""
     user = request.user
     if not (user.portal_invoices and user.portal_entries):
         raise PermissionDenied
-    invoice = await (
-        Invoice.objects.filter(customer_id=user.customer_id, pk=invoice_pk)
-        .exclude(status__in=HIDDEN_INVOICE_STATUSES)
-        .afirst()
-    )
-    if invoice is None:
-        raise Http404
+    invoice = await _invoice_by_number(request, number, "portal:invoice_entries")
+    if isinstance(invoice, HttpResponse):
+        return invoice
     rows = [
         e
         async for e in _customer_entries(user)
@@ -170,18 +191,14 @@ async def invoice_entries(request: HttpRequest, invoice_pk: int) -> HttpResponse
 
 
 @require_GET
-async def invoice_pdf(request: HttpRequest, invoice_pk: int) -> HttpResponse:
+async def invoice_pdf(request: HttpRequest, number: str) -> HttpResponse:
     """The invoice PDF, fetched from Lexware on each download."""
     user = request.user
     if not user.portal_invoices:
         raise PermissionDenied
-    invoice = await (
-        Invoice.objects.filter(customer_id=user.customer_id, pk=invoice_pk, lexware_id__isnull=False)
-        .exclude(status__in=HIDDEN_INVOICE_STATUSES)
-        .afirst()
-    )
-    if invoice is None:
-        raise Http404
+    invoice = await _invoice_by_number(request, number, "portal:invoice_pdf", lexware_id__isnull=False)
+    if isinstance(invoice, HttpResponse):
+        return invoice
     try:
         async with client_from_settings() as client:
             pdf = await client.get_invoice_pdf(invoice.lexware_id)
@@ -190,7 +207,8 @@ async def invoice_pdf(request: HttpRequest, invoice_pk: int) -> HttpResponse:
         messages.error(request, "Die Rechnung kann gerade nicht heruntergeladen werden. Bitte versuche es später.")
         return redirect("portal:invoices")
     response = HttpResponse(pdf, content_type="application/pdf")
-    name = f"Rechnung-{invoice.voucher_number or invoice.pk}.pdf"
+    # Numbers are free-form in Lexware and may hold a slash.
+    name = re.sub(r"[\\/]", "-", f"Rechnung-{invoice.voucher_number}.pdf")
     # ?ansehen=1 opens it in the browser instead of downloading it.
     response["Content-Disposition"] = content_disposition_header(request.GET.get("ansehen") != "1", name)
     return response
