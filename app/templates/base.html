@@ -40,7 +40,7 @@
         {% if user.is_customer %}
         <a href="{% url 'portal:overview' %}" class="nav-link{% if active == 'portal:overview' %} nav-link-active{% endif %}"{% if active == 'portal:overview' %} aria-current="page"{% endif %}>{% icon "dashboard" %}Übersicht</a>
         {% if user.portal_entries %}<a href="{% url 'portal:entries' %}" class="nav-link{% if active == 'portal:entries' %} nav-link-active{% endif %}"{% if active == 'portal:entries' %} aria-current="page"{% endif %}>{% icon "clock" %}Zeiten</a>{% endif %}
-        {% if user.portal_invoices %}<a href="{% url 'portal:invoices' %}" class="nav-link{% if active == 'portal:invoices' %} nav-link-active{% endif %}"{% if active == 'portal:invoices' %} aria-current="page"{% endif %}>{% icon "receipt" %}Rechnungen</a>{% endif %}
+        {% if user.portal_invoices %}<a href="{% url 'portal:invoices' %}" class="nav-link{% if active == 'portal:invoices' or active == 'portal:invoice_entries' %} nav-link-active{% endif %}"{% if active == 'portal:invoices' or active == 'portal:invoice_entries' %} aria-current="page"{% endif %}>{% icon "receipt" %}Rechnungen</a>{% endif %}
         {% if user.portal_contact %}<a href="{% url 'portal:contact' %}" class="nav-link{% if active == 'portal:contact' %} nav-link-active{% endif %}"{% if active == 'portal:contact' %} aria-current="page"{% endif %}>{% icon "building" %}Kontaktdaten</a>{% endif %}
         {% else %}
         <a href="{% url 'core:dashboard' %}" class="nav-link{% if section == 'core' %} nav-link-active{% endif %}"{% if section == 'core' %} aria-current="page"{% endif %}>{% icon "dashboard" %}Übersicht</a>

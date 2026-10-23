@@ -54,7 +54,7 @@
           {% if invoice.due_date and invoice.status == "open" or invoice.due_date and invoice.status == "overdue" %}<span class="ml-1 text-[13px] text-muted">fällig {{ invoice.due_date|date:date_format }}</span>{% endif %}
         </td>
         <td class="text-right whitespace-nowrap font-semibold tabular-nums{% if invoice.status == 'voided' %} text-muted line-through{% endif %}">{{ invoice.total_net }} €</td>
-        <td class="text-right whitespace-nowrap">{% if invoice.lexware_id %}{% url 'portal:invoice_pdf' invoice.pk as pdf_url %}<a class="inline-flex items-center gap-1.5 hover:underline" href="{{ pdf_url }}?ansehen=1" target="_blank" rel="noopener">{% icon "external" size=14 %}Online ansehen</a>
+        <td class="text-right whitespace-nowrap">{% if invoice.has_entries %}<a class="mr-3 inline-flex items-center gap-1.5 hover:underline" href="{% url 'portal:invoice_entries' invoice.pk %}">{% icon "clock" size=14 %}Zeiten</a>{% endif %}{% if invoice.lexware_id %}{% url 'portal:invoice_pdf' invoice.pk as pdf_url %}<a class="inline-flex items-center gap-1.5 hover:underline" href="{{ pdf_url }}?ansehen=1" target="_blank" rel="noopener">{% icon "external" size=14 %}Online ansehen</a>
           <a class="ml-3 inline-flex items-center gap-1.5 hover:underline" href="{{ pdf_url }}">{% icon "download" size=14 %}PDF</a>{% endif %}</td>
       </tr>
       {% empty %}

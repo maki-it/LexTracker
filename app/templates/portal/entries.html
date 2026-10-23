@@ -37,6 +37,7 @@
         <th>Projekt · Aufgabe</th>
         {% if user.portal_descriptions %}<th>Beschreibung</th>{% endif %}
         <th class="text-right">Dauer</th>
+        <th>Abrechnung</th>
       </tr>
     </thead>
     <tbody>
@@ -49,14 +50,21 @@
           {{ entry.duration|hours:duration_format }} h
           {% if not entry.is_billable or not entry.task.is_billable %}<div><span class="badge">nicht berechnet</span></div>{% endif %}
         </td>
+        <td class="whitespace-nowrap">
+          {% if not entry.is_billable or not entry.task.is_billable %}<span class="text-muted">–</span>
+          {% elif entry.invoice %}
+          <span class="badge badge-success">abgerechnet</span>
+          {% if user.portal_invoices %}<a class="ml-1 tabular-nums hover:underline" href="{% url 'portal:invoice_entries' entry.invoice_id %}">{{ entry.invoice.voucher_number|default:"Rechnung" }}</a>{% if entry.invoice.status == "voided" %} <span class="text-[13px] text-muted">(storniert)</span>{% endif %}{% endif %}
+          {% else %}<span class="badge">offen</span>{% endif %}
+        </td>
       </tr>
       {% empty %}
-      <tr><td colspan="4" class="py-8 text-center text-muted">In diesem Zeitraum wurde keine Zeit gebucht.</td></tr>
+      <tr><td colspan="{% if user.portal_descriptions %}5{% else %}4{% endif %}" class="py-8 text-center text-muted">In diesem Zeitraum wurde keine Zeit gebucht.</td></tr>
       {% endfor %}
     </tbody>
     {% if entries %}
     <tfoot>
-      <tr><td colspan="{% if user.portal_descriptions %}3{% else %}2{% endif %}" class="text-right">Summe</td><td class="text-right whitespace-nowrap tabular-nums">{{ total|hours:duration_format }} h</td></tr>
+      <tr><td colspan="{% if user.portal_descriptions %}3{% else %}2{% endif %}" class="text-right">Summe</td><td class="text-right whitespace-nowrap tabular-nums">{{ total|hours:duration_format }} h</td><td></td></tr>
     </tfoot>
     {% endif %}
   </table>

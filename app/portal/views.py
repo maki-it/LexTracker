@@ -8,7 +8,7 @@ from datetime import timedelta
 
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
-from django.db.models import Q
+from django.db.models import Exists, OuterRef, Q
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
@@ -92,7 +92,11 @@ async def entries(request: HttpRequest) -> HttpResponse:
     project_id = request.GET.get("projekt", "")
     if project_id.isdigit():
         queryset = queryset.filter(task__project_id=int(project_id))
-    rows = [e async for e in queryset.select_related("task", "task__project").order_by("-started_at")]
+    rows = [e async for e in queryset.select_related("task", "task__project", "invoice").order_by("-started_at")]
+    for entry in rows:
+        # Entries of a draft are not billed yet from the customer's side: the draft is not shown to them.
+        if entry.invoice and entry.invoice.status in HIDDEN_INVOICE_STATUSES:
+            entry.invoice = None
     context = {
         "entries": rows,
         "total": sum((e.duration for e in rows), timedelta()),
@@ -127,6 +131,9 @@ async def invoices(request: HttpRequest) -> HttpResponse:
         queryset = queryset.filter(
             Q(voucher_date__range=span) | Q(voucher_date__isnull=True, created_at__date__range=span)
         )
+    if user.portal_entries:
+        # Only invoices created here have time entries; one EXISTS check per row keeps the list a single query.
+        queryset = queryset.annotate(has_entries=Exists(TimeEntry.objects.filter(invoice=OuterRef("pk"))))
     rows = [i async for i in queryset.order_by("-period_end", "-created_at")]
     context = {
         "invoices": rows,
@@ -136,6 +143,30 @@ async def invoices(request: HttpRequest) -> HttpResponse:
         "presets": presets(today),
     }
     return render(request, "portal/invoices.html", context)
+
+
+@require_GET
+async def invoice_entries(request: HttpRequest, invoice_pk: int) -> HttpResponse:
+    """The time entries that went into one invoice."""
+    user = request.user
+    if not (user.portal_invoices and user.portal_entries):
+        raise PermissionDenied
+    invoice = await (
+        Invoice.objects.filter(customer_id=user.customer_id, pk=invoice_pk)
+        .exclude(status__in=HIDDEN_INVOICE_STATUSES)
+        .afirst()
+    )
+    if invoice is None:
+        raise Http404
+    rows = [
+        e
+        async for e in _customer_entries(user)
+        .filter(invoice=invoice)
+        .select_related("task", "task__project")
+        .order_by("started_at")
+    ]
+    context = {"invoice": invoice, "entries": rows, "total": sum((e.duration for e in rows), timedelta())}
+    return render(request, "portal/invoice_entries.html", context)
 
 
 @require_GET
