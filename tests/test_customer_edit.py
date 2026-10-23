@@ -119,6 +119,7 @@ def test_settings_page_saves_settings(logged_in):
         {
             "default_hourly_rate": "85",
             "time_rounding": "15",
+            "invoice_detail": "summary",
             "lexware_sync_interval": "30",
             "lexware_sync_from": "07:00",
             "lexware_sync_until": "19:00",

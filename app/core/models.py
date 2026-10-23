@@ -56,6 +56,20 @@ class AppSettings(models.Model):
         "Schritt. Bestehende Einträge bleiben, wie sie sind.",
     )
 
+    class InvoiceDetail(models.TextChoices):
+        SUMMARY = "summary", "Projekt und Zeitraum"
+        ENTRIES = "entries", "zusätzlich die Tätigkeiten mit Datum und Dauer"
+
+    invoice_detail = models.CharField(
+        "Detailtiefe der Rechnungspositionen",
+        max_length=10,
+        choices=InvoiceDetail,
+        default=InvoiceDetail.SUMMARY,
+        help_text="Jede Position heißt wie die Aufgabe. Die Beschreibung darunter nennt das Projekt und den Zeitraum. "
+        "Mit den Tätigkeiten steht auch jeder Zeiteintrag mit seiner Beschreibung auf der Rechnung, "
+        "und der Kunde sieht sie.",
+    )
+
     login_max_attempts = models.PositiveSmallIntegerField(
         "Fehlversuche bis zur Sperre",
         default=5,

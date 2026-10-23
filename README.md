@@ -107,6 +107,7 @@ Pro Kunde legst du unter **Abrechnung** eine Vereinbarung an:
 
 Für einen gewählten Zeitraum zeigt die Vorschau alle noch nicht abgerechneten, abrechenbaren Zeiten als Rechnungspositionen.
 **Rechnungsentwurf in Lexware anlegen** erstellt daraus einen Entwurf (nicht finalisiert), den du in Lexware prüfst und abschließt. Die Zeiten gelten danach als abgerechnet und tauchen in keiner weiteren Rechnung auf.
+Jede Position heißt wie die Aufgabe (Mehrstunden eines Retainers: „… (Mehrstunden)“), die Beschreibung darunter nennt Projekt und Zeitraum. Unter **Einstellungen → Allgemein** kannst du zusätzlich die Tätigkeiten (Datum, Dauer, Beschreibung des Zeiteintrags) in die Beschreibung schreiben lassen; der Kunde sieht sie dann auf der Rechnung.
 Der Kunde muss dafür mit einem Lexware-Kontakt verknüpft sein. Die Umsatzsteuer richtet sich nach deinem Lexware-Konto: Ist es als Kleinunternehmer (§ 19 UStG) eingerichtet, entsteht die Rechnung ohne Umsatzsteuer, sonst mit 19 %.
 
 Der Reiter **Rechnungen** listet alle Rechnungen mit Nummer, Status (Entwurf, offen, überfällig, bezahlt, storniert) und Fälligkeit, filterbar nach Status und Kunde und durchsuchbar nach Kunde oder Nummer. Die neuesten stehen oben (nach Rechnungsdatum, dann Rechnungsnummer).

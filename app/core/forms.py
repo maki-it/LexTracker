@@ -25,6 +25,7 @@ class AppSettingsForm(StyledFormMixin, forms.ModelForm):
         fields = [
             "default_hourly_rate",
             "time_rounding",
+            "invoice_detail",
             "login_max_attempts",
             "login_lockout_minutes",
             "login_link_enabled",

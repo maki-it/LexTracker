@@ -85,7 +85,7 @@ SETTINGS_TABS = [
     ("sicherheit", "Sicherheit"),
 ]
 _SETTINGS_TAB_FIELDS = {
-    "allgemein": ["default_hourly_rate", "time_rounding"],
+    "allgemein": ["default_hourly_rate", "time_rounding", "invoice_detail"],
     "lexware": [
         "lexware_sync_interval",
         "lexware_sync_from",
