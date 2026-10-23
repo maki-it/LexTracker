@@ -14,6 +14,7 @@ Zeiterfassung und Projektsteuerung mit Anbindung an die [Lexware Office Public A
 6. **MCP-Server** ✓: KI-Agenten erfassen Zeiten über das Model Context Protocol.
 7. **Zugänge** ✓: Mitarbeiter und Kunden mit eigenen Rechten, Einladung per Link.
 8. **E-Mail** ✓: Passwort zurücksetzen, Anmeldelink ohne Passwort, Einladung neuer Benutzer, Wochenbericht, Erinnerung an laufende Timer und Hinweis auf überfällige Rechnungen.
+9. **Nachrichten** ✓: Glocke und Postfach für Meldungen der App (Sicherung, Lexware-Abgleich, E-Mail-Versand, Timer) mit Prioritäten Kritisch, Warnung, Info und Debug, pro Benutzer einstellbar.
 
 ## Technik
 
@@ -42,6 +43,7 @@ app/
   mcpserver/   MCP-Server für KI-Agenten
   portal/      Kundenportal (nur lesen)
   mailer/      E-Mail-Versand: SMTP-Einstellungen, Warteschlange, Wochenbericht, Erinnerungen und Hinweise
+  inbox/       Nachrichten an Benutzer: Glocke, Postfach, Prioritäten, Weitergabe per E-Mail
   setup/       Einrichtung einer neuen Instanz (Admin-Konto, Lexware-Schlüssel, Datensicherung)
   templates/   HTML-Templates
   assets/      Tailwind-Quelle mit Farben und eigenen Komponenten
@@ -172,6 +174,28 @@ Unter deinem Namen oben rechts stellst du Darstellung (hell, dunkel oder wie das
 Dort schaltest du auch die **Zwei-Faktor-Anmeldung** mit einer Authenticator-App ein (TOTP, über [django-otp](https://django-otp-official.readthedocs.io/)). Dabei entstehen zehn Wiederherstellungscodes, die je einmal statt des App-Codes funktionieren.
 Auch die Verwaltung unter `/admin/` meldet über diese Anmeldung an, damit der zweite Faktor dort nicht umgangen wird.
 Nach zu vielen falschen Passwörtern oder Codes von einer IP-Adresse ist die Anmeldung von dort eine Weile gesperrt. Wie viele Fehlversuche und wie lange, legst du unter **Einstellungen** fest (Standard: 5 Versuche, 15 Minuten; 0 Versuche schaltet die Sperre aus). Hinter einem Reverse Proxy muss `FORWARDED_ALLOW_IPS` stimmen, sonst sehen alle Anfragen wie die IP des Proxys aus.
+
+## Nachrichten
+
+Die App meldet sich bei dir, wenn im Hintergrund etwas passiert: Die **Glocke** oben in der Seitenleiste zeigt, wie viele Nachrichten ungelesen sind, und öffnet sie als Fenster. Dort liest, löscht und öffnest du sie (der Titel führt zur passenden Seite); **Als Seite öffnen** zeigt alle mit Filtern nach Priorität. Eine ungelesene kritische Nachricht steht zusätzlich als Banner auf jeder Seite, bis du sie gelesen hast.
+
+Es gibt vier Prioritäten: **Kritisch**, **Warnung**, **Info** und **Debug**. Im Konto stellst du ein, ab welcher Priorität du Nachrichten siehst (Standard: Info) und ab welcher du sie zusätzlich per E-Mail bekommst (Standard: Kritisch, nur wenn der E-Mail-Versand eingerichtet ist). Kritische Nachrichten siehst du immer. Die Einstellung filtert beim Anzeigen: Stellst du später auf Debug um, erscheinen auch die älteren.
+
+Was die App meldet, und an wen (Administratoren, außer wo es dich selbst betrifft):
+
+| Ereignis | Priorität |
+| --- | --- |
+| Datensicherung fehlgeschlagen | Kritisch |
+| Lexware lehnt den API-Schlüssel ab | Kritisch |
+| Kundenimport oder Rechnungsabgleich fehlgeschlagen | Warnung, ab dem dritten Fehlschlag in Folge Kritisch |
+| E-Mail endgültig nicht zugestellt | Warnung |
+| Dein Timer läuft länger als eingestellt (an den Mitarbeiter selbst) | Warnung |
+| Kundenimport oder Rechnungsabgleich mit Änderungen, Sicherung hochgeladen oder wiederhergestellt | Info |
+| Sicherung erstellt, Import oder Abgleich ohne Änderungen | Debug |
+
+Gleiche Meldungen werden zusammengefasst: Scheitert der stündliche Abgleich einen Tag lang, steht dort eine Nachricht mit „24×“, und es geht nur eine E-Mail raus. Sobald der Job wieder läuft, gilt sie als gelesen. Andere Programmteile melden über `inbox.service.anotify(level, kind, title, body, url=…, to=…, dedupe_key=…)`; der Scheduler läuft in einem eigenen Prozess, deshalb geht jede Nachricht über die Datenbank, und die Glocke fragt jede Minute nach.
+
+Aufgeräumt wird stündlich im Scheduler: Gelesene Nachrichten bleiben bei Debug 3 Tage, Info 30, Warnung 90 und Kritisch 365 Tage; ungelesene Debug- und Info-Nachrichten gehen nach der doppelten Zeit, ungelesene Warnungen und kritische bleiben, bis du sie liest. Mehr als 1000 Nachrichten pro Benutzer werden nicht aufbewahrt. Kunden haben (noch) kein Postfach.
 
 ## E-Mail
 

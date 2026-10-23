@@ -381,6 +381,8 @@ def test_account_page_has_mail_preferences(logged_in, kim):
         "date_format": "d.m.Y",
         "duration_format": "clock",
         "list_page_size": 50,
+        "message_level": 20,
+        "message_email_level": 40,
         "timer_reminder": "on",
     }
     assert logged_in.post(reverse("account:settings"), data).status_code == 302

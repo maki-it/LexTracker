@@ -13,7 +13,7 @@ from django.urls import Resolver404, resolve
 from django.utils.decorators import async_only_middleware
 
 # By URL namespace. The Django admin checks is_staff itself.
-EMPLOYEE_NAMESPACES = {"core", "tracking", "account", "accounts", "mcp", "admin"}
+EMPLOYEE_NAMESPACES = {"core", "tracking", "inbox", "account", "accounts", "mcp", "admin"}
 EMPLOYEE_DENIED = {"core:settings"}
 CUSTOMER_NAMESPACES = {"portal", "account", "accounts", "admin"}
 CUSTOMER_DENIED = {"account:token_create", "account:token_revoke"}

@@ -1,0 +1,27 @@
+{% extends layout %}
+{% block title %}Nachrichten · LexTracker{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Nachrichten</h1>
+    <p class="page-subtitle">Angezeigt ab Priorität „{{ user.get_message_level_display }}“. Das stellst du unter Konto ein.</p>
+  </div>
+  <form method="post" action="{% url 'inbox:read_all' %}">
+    {% csrf_token %}<input type="hidden" name="next" value="{{ next_url }}">
+    <button type="submit" class="btn">Alle als gelesen markieren</button>
+  </form>
+</div>
+<nav aria-label="Nach Priorität filtern" class="flex flex-wrap gap-1.5">
+  <a href="{% url 'inbox:all' %}" class="pill gap-1.5{% if not active %} pill-active{% endif %}">Alle<span class="text-muted tabular-nums">{{ total }}</span></a>
+  {% for key, label, count in filters %}
+  <a href="?filter={{ key }}" class="pill gap-1.5{% if active == key %} pill-active{% endif %}">{{ label }}<span class="text-muted tabular-nums">{{ count }}</span></a>
+  {% endfor %}
+</nav>
+{% if page.items %}
+<ul class="card flex flex-col py-2">
+  {% include "inbox/_rows.html" %}
+</ul>
+{% else %}
+<p class="empty">Keine Nachrichten.</p>
+{% endif %}
+{% endblock %}

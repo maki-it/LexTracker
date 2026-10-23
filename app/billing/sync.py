@@ -44,6 +44,10 @@ class InvoiceSyncResult:
     imported: int = 0
 
     @property
+    def has_changes(self) -> bool:
+        return bool(self.changed or self.imported or self.deleted)
+
+    @property
     def summary(self) -> str:
         summary = f"{self.changed} geändert, {self.unchanged} unverändert"
         if self.imported:

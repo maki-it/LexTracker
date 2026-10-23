@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "portal",
     "setup",
     "mailer",
+    "inbox",
 ]
 
 # All middleware is async-capable, so Django never has to run the whole request in a thread.

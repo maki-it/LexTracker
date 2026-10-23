@@ -39,6 +39,8 @@ def test_preferences_change_theme_and_date_format(logged_in, user):
             "date_format": "Y-m-d",
             "duration_format": "decimal",
             "list_page_size": "25",
+            "message_level": "20",
+            "message_email_level": "40",
         },
     )
     assert response.status_code == 302

@@ -1,0 +1,8 @@
+{% autoescape off %}{{ message.get_level_display }}: {{ message.title }}{% if message.body %}
+
+{{ message.body }}{% endif %}{% if url %}
+
+{{ url }}{% endif %}
+
+Welche Nachrichten du per E-Mail bekommst, stellst du in LexTracker unter Konto ein.
+{% endautoescape %}
