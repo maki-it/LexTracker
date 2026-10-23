@@ -158,11 +158,22 @@ def test_mail_step_sends_a_test_mail_to_the_admin(unlocked, client, settings):
 def test_mail_step_shows_the_server_error(unlocked, client, monkeypatch):
     client.post(reverse("setup:account"), ACCOUNT)
     monkeypatch.setattr(outbox, "deliver", lambda config, messages: ["Connection refused"])
-    data = {"host": "smtp.example.de", "port": "587", "security": "ssl", "from_address": "zeit@example.de", "test": "1"}
+    data = {"host": "smtp.example.de", "port": "465", "security": "ssl", "from_address": "zeit@example.de", "test": "1"}
 
     response = client.post(reverse("setup:mail"), data)
 
     assert "nicht verschickt: Connection refused" in response.text
+
+
+def test_mail_step_warns_about_port_and_encryption_that_do_not_fit(unlocked, client):
+    client.post(reverse("setup:account"), ACCOUNT)
+    data = {"host": "smtp.example.de", "port": "587", "security": "ssl", "from_address": "zeit@example.de", "test": "1"}
+
+    response = client.post(reverse("setup:mail"), data)
+
+    assert response.status_code == 200
+    assert "Port 587 nutzt STARTTLS" in response.text
+    assert not MailSettings.objects.get().host
 
 
 def test_setup_is_closed_once_an_account_exists(client, user):

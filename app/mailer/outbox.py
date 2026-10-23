@@ -6,6 +6,8 @@ server. The scheduler sends what is due every few seconds (``send_due``) and ret
 
 import asyncio
 import logging
+import smtplib
+import ssl
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from uuid import UUID
@@ -17,7 +19,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.module_loading import import_string
 
-from mailer.models import MailSettings, OutgoingMail
+from mailer.models import SSL_PORT, MailSettings, OutgoingMail
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +84,7 @@ def deliver(config: MailSettings, messages: list[Message]) -> list[str]:
     try:
         connection.open()
     except Exception as exc:
-        return [_describe(exc)] * len(messages)
+        return [_describe(exc, config)] * len(messages)
     errors = []
     try:
         for message in messages:
@@ -92,7 +94,7 @@ def deliver(config: MailSettings, messages: list[Message]) -> list[str]:
             try:
                 connection.send_messages([mail])
             except Exception as exc:
-                errors.append(_describe(exc))
+                errors.append(_describe(exc, config))
             else:
                 errors.append("")
     finally:
@@ -122,8 +124,35 @@ def _connection(config: MailSettings, password: str):
     return backend(alias="default", **options)
 
 
-def _describe(exc: Exception) -> str:
+def _describe(exc: Exception, config: MailSettings) -> str:
+    """The error as text. Port and encryption that do not fit together get a hint instead of the raw TLS error."""
+    if hint := _security_hint(exc, config):
+        return hint
     return (f"{type(exc).__name__}: {exc}" if str(exc) else type(exc).__name__)[:500]
+
+
+def _security_hint(exc: Exception, config: MailSettings) -> str:
+    """What to change when the error is the typical sign of a wrong encryption setting, "" for any other error."""
+    Security = MailSettings.Security
+    # A server that wants STARTTLS answers the TLS handshake of "SSL/TLS" in plain text.
+    if config.security == Security.SSL and isinstance(exc, ssl.SSLError) and "WRONG_VERSION_NUMBER" in str(exc):
+        return (
+            f"Der Server antwortet auf Port {config.port} nicht mit SSL/TLS. Wahrscheinlich erwartet er STARTTLS "
+            "(üblich auf Port 587). Wähle als Verschlüsselung „STARTTLS“."
+        )
+    if config.security == Security.STARTTLS:
+        if isinstance(exc, smtplib.SMTPNotSupportedError):
+            return (
+                f"Der Server auf Port {config.port} bietet kein STARTTLS an. Wahrscheinlich erwartet er SSL/TLS "
+                "von Anfang an (üblich auf Port 465). Wähle als Verschlüsselung „SSL/TLS“ und Port 465."
+            )
+        # An SSL/TLS port waits for the client to speak first, so it never sends the greeting STARTTLS waits for.
+        if config.port == SSL_PORT and isinstance(exc, TimeoutError | smtplib.SMTPServerDisconnected):
+            return (
+                "Port 465 erwartet SSL/TLS von Anfang an und antwortet nicht auf STARTTLS. "
+                "Wähle als Verschlüsselung „SSL/TLS“ oder nutze Port 587."
+            )
+    return ""
 
 
 async def asend_now(config: MailSettings, message: Message) -> str:

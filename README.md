@@ -176,7 +176,7 @@ Nach zu vielen falschen Passwörtern oder Codes von einer IP-Adresse ist die Anm
 
 ## E-Mail
 
-Unter **Einstellungen → E-Mail-Versand verwalten** trägst du den SMTP-Server ein (Server, Port, Verschlüsselung, Zugangsdaten, Absender). Das Passwort wird wie der Lexware-Schlüssel verschlüsselt gespeichert. Eine **Testmail** geht sofort raus und zeigt direkt, was der Server antwortet.
+Unter **Einstellungen → E-Mail-Versand verwalten** trägst du den SMTP-Server ein (Server, Port, Verschlüsselung, Zugangsdaten, Absender). Das Passwort wird wie der Lexware-Schlüssel verschlüsselt gespeichert. Eine **Testmail** geht sofort raus und zeigt direkt, was der Server antwortet. Port 587 gehört zu STARTTLS, Port 465 zu SSL/TLS; passen Port und Verschlüsselung nicht zusammen, weist dich das Formular darauf hin, und ein TLS-Fehler der Testmail nennt die passende Einstellung.
 
 Alle anderen E-Mails legt die App in eine Warteschlange in der Datenbank, damit keine Seite auf den SMTP-Server wartet. Der Scheduler schaut alle fünf Sekunden hinein, verschickt, was ansteht, und versucht es bei Fehlern nach 1, 5, 15 und 60 Minuten erneut. Die letzten E-Mails mit Status und Fehlermeldung stehen auf derselben Seite unter **Postausgang**. Ohne laufenden Scheduler (`make scheduler` oder der Container `scheduler`) geht also nichts raus.
 
