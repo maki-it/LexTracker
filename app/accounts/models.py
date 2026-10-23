@@ -45,6 +45,14 @@ class User(AbstractUser):
         default=PageSize.MEDIUM,
         help_text="Wie viele Kunden oder Projekte eine Liste auf einmal lädt. Beim Scrollen kommen weitere dazu.",
     )
+    weekly_report = models.BooleanField(
+        "Wochenbericht per E-Mail", default=True, help_text="Deine Stunden der letzten sieben Tage."
+    )
+    timer_reminder = models.BooleanField(
+        "Erinnerung, wenn mein Timer sehr lange läuft",
+        default=True,
+        help_text="Falls du vergessen hast, ihn zu stoppen.",
+    )
     # Only set for customer logins: the customer whose data this user may see.
     customer = models.ForeignKey(
         "customers.Customer",
@@ -145,3 +153,27 @@ class LoginFailure(models.Model):
 
     def __str__(self) -> str:
         return f"{self.ip_address} {self.at:%d.%m.%Y %H:%M}"
+
+
+class LoginLink(models.Model):
+    """A link that signs a user in without a password, sent by e-mail (see ``accounts.links``).
+
+    Only a hash is stored. A link works once and only until it expires.
+    """
+
+    user = models.ForeignKey(User, verbose_name="Benutzer", on_delete=models.CASCADE, related_name="login_links")
+    key_hash = models.CharField(max_length=64, unique=True, editable=False)
+    created_at = models.DateTimeField("erstellt", auto_now_add=True)
+    expires_at = models.DateTimeField("gültig bis")
+    used_at = models.DateTimeField("benutzt", null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Anmeldelink"
+        verbose_name_plural = "Anmeldelinks"
+
+    def __str__(self) -> str:
+        return f"{self.user} {self.created_at:%d.%m.%Y %H:%M}"
+
+    @staticmethod
+    def hash(key: str) -> str:
+        return hashlib.sha256(key.encode()).hexdigest()

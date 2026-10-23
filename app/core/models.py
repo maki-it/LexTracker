@@ -54,6 +54,13 @@ class AppSettings(models.Model):
         help_text="Zählt die Fehlversuche in diesem Zeitraum und sperrt so lange.",
     )
 
+    login_link_enabled = models.BooleanField(
+        "Anmeldung per E-Mail-Link erlauben",
+        default=True,
+        help_text="Bietet auf der Anmeldeseite einen Link per E-Mail statt des Passworts an. "
+        "Die Zwei-Faktor-Anmeldung gilt auch dann. Nur wenn der E-Mail-Versand eingerichtet ist.",
+    )
+
     class SyncInterval(models.IntegerChoices):
         # Minutes between two automatic runs.
         OFF = 0, "aus"
@@ -105,6 +112,26 @@ class AppSettings(models.Model):
     backup_at = models.DateTimeField("letzte Sicherung", null=True, blank=True, editable=False)
     backup_status = models.CharField("Ergebnis der letzten Sicherung", max_length=500, blank=True, editable=False)
     backup_failed = models.BooleanField("letzte Sicherung fehlgeschlagen", default=False, editable=False)
+
+    class Weekday(models.IntegerChoices):
+        MONDAY = 0, "montags"
+        TUESDAY = 1, "dienstags"
+        WEDNESDAY = 2, "mittwochs"
+        THURSDAY = 3, "donnerstags"
+        FRIDAY = 4, "freitags"
+        SATURDAY = 5, "samstags"
+        SUNDAY = 6, "sonntags"
+
+    weekly_report_enabled = models.BooleanField("Wochenbericht per E-Mail", default=True)
+    weekly_report_weekday = models.PositiveSmallIntegerField("Tag", choices=Weekday, default=Weekday.MONDAY)
+    weekly_report_time = models.TimeField("Uhrzeit", default=time(7))
+    timer_reminder_hours = models.PositiveSmallIntegerField(
+        "Erinnern, wenn ein Timer länger läuft als (Stunden)",
+        default=10,
+        help_text="Eine E-Mail pro Timer an den, der ihn gestartet hat. 0 schaltet die Erinnerung aus.",
+    )
+    # Written by the scheduler, not on the settings page.
+    weekly_report_at = models.DateTimeField("letzter Wochenbericht", null=True, blank=True, editable=False)
 
     class Meta:
         verbose_name = verbose_name_plural = "Einstellungen"

@@ -12,6 +12,14 @@ class LoginForm(forms.Form):
     password = forms.CharField(label="Passwort", strip=False, widget=forms.PasswordInput)
 
 
+class LinkRequestForm(forms.Form):
+    identifier = forms.CharField(
+        label="Benutzername oder E-Mail-Adresse",
+        max_length=254,
+        widget=forms.TextInput(attrs={"autofocus": True, "autocomplete": "username", "class": "input"}),
+    )
+
+
 class CodeForm(forms.Form):
     code = forms.CharField(
         label="Code",
@@ -25,7 +33,26 @@ class CodeForm(forms.Form):
 class PreferencesForm(StyledFormMixin, forms.ModelForm):
     class Meta:
         model = User
-        fields = ["first_name", "last_name", "email", "theme", "date_format", "duration_format", "list_page_size"]
+        fields = [
+            "first_name",
+            "last_name",
+            "email",
+            "theme",
+            "date_format",
+            "duration_format",
+            "list_page_size",
+            "weekly_report",
+            "timer_reminder",
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Customers do not book time, so there is nothing to report or remind them of.
+        if self.instance.is_customer:
+            del self.fields["weekly_report"]
+            del self.fields["timer_reminder"]
+        else:
+            self.fields["email"].help_text = "Für Wochenbericht, Erinnerungen und Links zum Anmelden."
 
 
 class StyledPasswordChangeForm(StyledFormMixin, PasswordChangeForm):

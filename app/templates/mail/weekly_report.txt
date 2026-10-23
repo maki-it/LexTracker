@@ -1,0 +1,21 @@
+{% load timefmt %}{% autoescape off %}Hallo{% if user.first_name %} {{ user.first_name }}{% endif %},
+
+dein Wochenbericht für {{ report.range.label }}.
+
+Deine Stunden: {{ report.total|hours:duration_format }} (davon abrechenbar {{ report.billable|hours:duration_format }})
+{% for day in report.days %}
+  {{ day.label }}  {{ day.duration|hours:duration_format }}{% endfor %}
+{% if report.projects %}
+Nach Projekt:{% for line in report.projects %}
+  {{ line.label }}: {{ line.duration|hours:duration_format }}{% endfor %}
+{% endif %}{% if report.overview %}{% with o=report.overview %}
+Überblick
+{% if report.team_total is not None %}  Stunden aller Benutzer: {{ report.team_total|hours:duration_format }}
+{% endif %}  Noch nicht abgerechnet (in diesem Zeitraum): {{ o.totals.unbilled|hours:duration_format }}{% if o.unbilled_value %}, ≈ {{ o.unbilled_value|floatformat:2 }} €{% endif %}
+  Rechnungen offen: {{ o.open|floatformat:2 }} €
+{% for r in o.retainers %}  Retainer {{ r.agreement.customer.name }} ({{ r.period_label }}): {{ r.used|hours:duration_format }} von {{ r.included|hours:duration_format }}{% if r.overage %}, {{ r.overage|hours:duration_format }} darüber{% endif %}
+{% endfor %}{% endwith %}{% endif %}{% if url %}
+Mehr in LexTracker: {{ url }}
+{% endif %}
+Den Wochenbericht schaltest du in LexTracker unter Konto ab.
+{% endautoescape %}

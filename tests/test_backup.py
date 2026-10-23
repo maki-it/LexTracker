@@ -104,6 +104,9 @@ def test_settings_page_saves_the_backup_settings(client, settings, user):
         "invoice_sync_interval": 60,
         "backup_time": "04:30",
         "backup_keep": 7,
+        "weekly_report_weekday": 0,
+        "weekly_report_time": "07:00",
+        "timer_reminder_hours": 10,
     }
     assert client.post("/einstellungen/", data).status_code == 302
     app_settings = AppSettings.load()

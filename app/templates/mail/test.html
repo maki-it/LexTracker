@@ -1,0 +1,6 @@
+{% extends "mail/_base.html" %}
+{% block content %}
+<p style="margin:0 0 12px;font-size:18px;font-weight:600">Es klappt.</p>
+<p style="margin:0">Diese Testmail zeigt: LexTracker kann über <strong>{{ config.host }}</strong> E-Mails verschicken.</p>
+<p style="margin:12px 0 0;color:#71717a">Absender: {{ config.sender }}</p>
+{% endblock %}

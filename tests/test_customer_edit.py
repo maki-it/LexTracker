@@ -129,6 +129,9 @@ def test_settings_page_saves_settings(logged_in):
             "backup_enabled": "on",
             "backup_time": "03:00",
             "backup_keep": "14",
+            "weekly_report_weekday": "0",
+            "weekly_report_time": "07:00",
+            "timer_reminder_hours": "10",
         },
     )
 

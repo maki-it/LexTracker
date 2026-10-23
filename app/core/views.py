@@ -22,6 +22,7 @@ from core.forms import AppSettingsForm
 from core.models import AppSettings
 from lexware import credentials
 from lexware.forms import ApiKeyForm
+from mailer.models import MailSettings, OutgoingMail
 from tracking.forms import task_choices
 from tracking.models import TimeEntry
 from tracking.queries import entry_filter
@@ -114,6 +115,10 @@ async def app_settings(request: HttpRequest) -> HttpResponse:
         "backup": backup_info,
         "lexware": await credentials.astatus(),
         "key_form": ApiKeyForm(),
+        "mail": await MailSettings.aload(),
+        "mail_failed": await OutgoingMail.objects.filter(
+            status=OutgoingMail.Status.FAILED, created_at__gte=timezone.now() - timedelta(days=7)
+        ).acount(),
     }
     return render(request, "core/settings.html", context)
 

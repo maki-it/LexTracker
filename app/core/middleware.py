@@ -10,7 +10,13 @@ from accounts.models import User
 
 # Never redirected, not even to the setup. /mcp/ checks its own API token.
 ALWAYS_PUBLIC_PREFIXES = ("/health/", "/static/", "/mcp/", "/favicon.ico")
-PUBLIC_PREFIXES = (*ALWAYS_PUBLIC_PREFIXES, "/accounts/login/", "/accounts/einladung/", "/admin/")
+PUBLIC_PREFIXES = (
+    *ALWAYS_PUBLIC_PREFIXES,
+    "/accounts/login/",
+    "/accounts/einladung/",
+    "/accounts/passwort/",
+    "/admin/",
+)
 # Open without a login only while no account exists.
 SETUP_PREFIX = "/einrichtung/"
 

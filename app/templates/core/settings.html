@@ -81,6 +81,38 @@
       {% include "core/_field.html" with field=form.login_max_attempts %}
       {% include "core/_field.html" with field=form.login_lockout_minutes %}
     </div>
+    <label class="flex flex-col gap-1 text-sm">
+      <span class="flex items-center gap-2 font-medium">{{ form.login_link_enabled }} {{ form.login_link_enabled.label }}</span>
+      <span class="text-muted">{{ form.login_link_enabled.help_text }}</span>
+    </label>
+  </section>
+
+  <section class="card flex flex-col gap-4" id="e-mail">
+    <div>
+      <h2>E-Mail</h2>
+      <p class="mt-1 text-sm text-muted">
+        {% if mail.is_configured %}
+        Die App verschickt E-Mails über <code>{{ mail.host }}</code> als {{ mail.sender }}.
+        {% else %}
+        Noch kein SMTP-Server eingerichtet. Ohne ihn gibt es keine Links zum Zurücksetzen des Passworts, keine Anmeldelinks, Berichte oder Erinnerungen.
+        {% endif %}
+        <a href="{% url 'mailer:settings' %}">E-Mail-Versand {% if mail.is_configured %}verwalten{% else %}einrichten{% endif %}</a>
+      </p>
+      {% if mail_failed %}<p class="mt-1 text-sm text-danger">{{ mail_failed }} E-Mail{{ mail_failed|pluralize:"s" }} konnte{{ mail_failed|pluralize:"n" }} nicht verschickt werden.</p>{% endif %}
+    </div>
+    <label class="flex items-center gap-2 text-sm font-medium">
+      {{ form.weekly_report_enabled }} {{ form.weekly_report_enabled.label }}
+    </label>
+    <div class="grid gap-3 sm:grid-cols-2">
+      {% include "core/_field.html" with field=form.weekly_report_weekday %}
+      {% include "core/_field.html" with field=form.weekly_report_time %}
+    </div>
+    <p class="-mt-2 text-[13px] text-muted">
+      Jeder bekommt seine Stunden der sieben Tage vor dem Versandtag, Administratoren dazu offene Stunden, offene Rechnungen und Retainer.
+      {% if form.instance.weekly_report_at %}Zuletzt verschickt {{ form.instance.weekly_report_at|date:datetime_format }} Uhr.{% endif %}
+    </p>
+    {% include "core/_field.html" with field=form.timer_reminder_hours %}
+    <p class="-mt-2 text-[13px] text-muted">Abschalten kann jeder beides für sich unter Konto.</p>
   </section>
 
   <section class="card flex flex-col gap-5">

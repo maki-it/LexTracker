@@ -1,0 +1,72 @@
+{% extends "mail/_base.html" %}
+{% load timefmt %}
+{% block content %}
+<p style="margin:0 0 4px;font-size:18px;font-weight:600">Dein Wochenbericht</p>
+<p style="margin:0 0 20px;color:#71717a">{{ report.range.label }}</p>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px">
+  <tr>
+    <td style="padding:0 8px 0 0;width:50%">
+      <div style="font-size:12px;color:#71717a">Deine Stunden</div>
+      <div style="font-size:24px;font-weight:600">{{ report.total|hours:duration_format }}</div>
+    </td>
+    <td style="padding:0 0 0 8px;width:50%">
+      <div style="font-size:12px;color:#71717a">davon abrechenbar</div>
+      <div style="font-size:24px;font-weight:600">{{ report.billable|hours:duration_format }}</div>
+    </td>
+  </tr>
+</table>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;font-size:14px">
+  {% for day in report.days %}
+  <tr>
+    <td style="padding:3px 8px 3px 0;white-space:nowrap;color:#71717a;width:64px">{{ day.label }}</td>
+    <td style="padding:3px 0">
+      <div style="background:#e0e7ff;border-radius:4px;height:10px;width:{{ day.share }}%;min-width:{% if day.duration %}4px{% else %}0{% endif %}"></div>
+    </td>
+    <td style="padding:3px 0 3px 8px;text-align:right;white-space:nowrap;width:56px">{{ day.duration|hours:duration_format }}</td>
+  </tr>
+  {% endfor %}
+</table>
+
+{% if report.projects %}
+<p style="margin:0 0 6px;font-weight:600">Nach Projekt</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;font-size:14px">
+  {% for line in report.projects %}
+  <tr>
+    <td style="padding:4px 8px 4px 0;border-top:1px solid #e4e4e7">{{ line.label }}</td>
+    <td style="padding:4px 0;border-top:1px solid #e4e4e7;text-align:right;white-space:nowrap">{{ line.duration|hours:duration_format }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+
+{% if report.overview %}{% with o=report.overview %}
+<p style="margin:0 0 6px;font-weight:600">Überblick</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;font-size:14px">
+  {% if report.team_total is not None %}
+  <tr>
+    <td style="padding:4px 8px 4px 0;border-top:1px solid #e4e4e7">Stunden aller Benutzer</td>
+    <td style="padding:4px 0;border-top:1px solid #e4e4e7;text-align:right;white-space:nowrap">{{ report.team_total|hours:duration_format }}</td>
+  </tr>
+  {% endif %}
+  <tr>
+    <td style="padding:4px 8px 4px 0;border-top:1px solid #e4e4e7">Noch nicht abgerechnet (in diesem Zeitraum)</td>
+    <td style="padding:4px 0;border-top:1px solid #e4e4e7;text-align:right;white-space:nowrap">{{ o.totals.unbilled|hours:duration_format }}{% if o.unbilled_value %}<br><span style="color:#71717a">≈ {{ o.unbilled_value|floatformat:2 }} €</span>{% endif %}</td>
+  </tr>
+  <tr>
+    <td style="padding:4px 8px 4px 0;border-top:1px solid #e4e4e7">Rechnungen offen</td>
+    <td style="padding:4px 0;border-top:1px solid #e4e4e7;text-align:right;white-space:nowrap">{{ o.open|floatformat:2 }} €</td>
+  </tr>
+  {% for r in o.retainers %}
+  <tr>
+    <td style="padding:4px 8px 4px 0;border-top:1px solid #e4e4e7">Retainer {{ r.agreement.customer.name }} <span style="color:#71717a">({{ r.period_label }})</span></td>
+    <td style="padding:4px 0;border-top:1px solid #e4e4e7;text-align:right;white-space:nowrap{% if r.overage %};color:#b91c1c{% endif %}">{{ r.used|hours:duration_format }} / {{ r.included|hours:duration_format }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endwith %}{% endif %}
+
+{% if url %}{% include "mail/_button.html" with label="In LexTracker ansehen" %}{% endif %}
+{% endblock %}
+{% block footer %}Den Wochenbericht schaltest du in LexTracker unter Konto ab.{% endblock %}

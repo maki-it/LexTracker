@@ -1,0 +1,8 @@
+{% autoescape off %}Hallo{% if user.first_name %} {{ user.first_name }}{% endif %},
+
+mit diesem Link meldest du dich bei LexTracker als „{{ user.get_username }}“ an, ohne Passwort:
+
+{{ url }}
+
+Der Link gilt {{ minutes }} Minuten und nur einmal. Hast du ihn nicht angefordert, ignoriere diese E-Mail. Ohne den Link kann sich niemand damit anmelden.
+{% endautoescape %}

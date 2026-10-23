@@ -13,6 +13,7 @@ Zeiterfassung und Projektsteuerung mit Anbindung an die [Lexware Office Public A
 5. **Auswertungen** ✓: Stunden, Umsatz, Budgets und Retainer, CSV-Export.
 6. **MCP-Server** ✓: KI-Agenten erfassen Zeiten über das Model Context Protocol.
 7. **Zugänge** ✓: Mitarbeiter und Kunden mit eigenen Rechten, Einladung per Link.
+8. **E-Mail** ✓: Passwort zurücksetzen, Anmeldelink ohne Passwort, Wochenbericht und Erinnerung an laufende Timer.
 
 ## Technik
 
@@ -40,6 +41,7 @@ app/
   reports/     Auswertungen und CSV-Export
   mcpserver/   MCP-Server für KI-Agenten
   portal/      Kundenportal (nur lesen)
+  mailer/      E-Mail-Versand: SMTP-Einstellungen, Warteschlange, Wochenbericht und Erinnerungen
   setup/       Einrichtung einer neuen Instanz (Admin-Konto, Lexware-Schlüssel, Datensicherung)
   templates/   HTML-Templates
   assets/      Tailwind-Quelle mit Farben und eigenen Komponenten
@@ -63,7 +65,7 @@ Beim ersten Aufruf führt die **Einrichtung** durch das Anlegen des Admin-Kontos
 Solange es kein Konto gibt, leitet jede Seite dorthin. Damit niemand anderes eine frische Instanz übernehmen kann, öffnet sich die Einrichtung nur mit einem Code: Die App schreibt den Einrichtungslink beim ersten Aufruf ins Log (`docker compose logs app`), alternativ zeigt ihn `manage.py setup_link` (`docker compose exec app python manage.py setup_link`). Der Code ist aus `APP_SECRET_KEY` abgeleitet und nach dem ersten Konto wertlos.
 
 Während du an Templates arbeitest, hält `make css-watch` in einem zweiten Terminal das Stylesheet aktuell.
-Den automatischen Kundenimport startest du lokal bei Bedarf mit `make scheduler`.
+Den automatischen Kundenimport und den E-Mail-Versand startest du lokal bei Bedarf mit `make scheduler`.
 `make test` startet die Tests, `make lint` prüft den Code-Stil. `make help` zeigt alle Befehle.
 Einen Last- und Performancetest mit Testdaten beschreibt [loadtest/README.md](loadtest/README.md).
 
@@ -171,6 +173,26 @@ Dort schaltest du auch die **Zwei-Faktor-Anmeldung** mit einer Authenticator-App
 Auch die Verwaltung unter `/admin/` meldet über diese Anmeldung an, damit der zweite Faktor dort nicht umgangen wird.
 Nach zu vielen falschen Passwörtern oder Codes von einer IP-Adresse ist die Anmeldung von dort eine Weile gesperrt. Wie viele Fehlversuche und wie lange, legst du unter **Einstellungen** fest (Standard: 5 Versuche, 15 Minuten; 0 Versuche schaltet die Sperre aus). Hinter einem Reverse Proxy muss `FORWARDED_ALLOW_IPS` stimmen, sonst sehen alle Anfragen wie die IP des Proxys aus.
 
+## E-Mail
+
+Unter **Einstellungen → E-Mail-Versand verwalten** trägst du den SMTP-Server ein (Server, Port, Verschlüsselung, Zugangsdaten, Absender). Das Passwort wird wie der Lexware-Schlüssel verschlüsselt gespeichert. Eine **Testmail** geht sofort raus und zeigt direkt, was der Server antwortet.
+
+Alle anderen E-Mails legt die App in eine Warteschlange in der Datenbank, damit keine Seite auf den SMTP-Server wartet. Der Scheduler schaut alle fünf Sekunden hinein, verschickt, was ansteht, und versucht es bei Fehlern nach 1, 5, 15 und 60 Minuten erneut. Die letzten E-Mails mit Status und Fehlermeldung stehen auf derselben Seite unter **Postausgang**. Ohne laufenden Scheduler (`make scheduler` oder der Container `scheduler`) geht also nichts raus.
+
+Sobald der Versand eingerichtet ist, bietet die Anmeldeseite an:
+
+- **Passwort vergessen:** Link für ein neues Passwort, eine Stunde gültig, nur einmal nutzbar.
+- **Anmeldelink per E-Mail:** meldet ohne Passwort an, 15 Minuten gültig, nur einmal nutzbar. Der Link öffnet erst eine Seite mit Knopf, damit Mailprogramme, die Links vorab prüfen, ihn nicht verbrauchen. Wer die Zwei-Faktor-Anmeldung nutzt, gibt danach trotzdem den Code ein. Abschalten lässt sich der Anmeldelink unter **Einstellungen → Anmeldung**.
+
+Beide gibt es für Benutzername oder E-Mail-Adresse, und die Antwort ist immer gleich, ob es das Konto gibt oder nicht. Jede Anfrage zählt wie ein Fehlversuch zur Login-Sperre, und ein Konto bekommt höchstens drei Links pro Sperrzeitraum. Ist eine solche E-Mail verschickt oder verfallen, löscht die App ihren Text, damit keine Datenbankkopie die Links enthält.
+
+Der Scheduler verschickt außerdem nach dem Zeitplan unter **Einstellungen → E-Mail**:
+
+- **Wochenbericht** (Standard montags 07:00): die eigenen Stunden der sieben Tage davor, nach Tag und Projekt; Administratoren dazu die Stunden aller Benutzer, noch nicht abgerechnete Zeit, offene Rechnungen und Retainer. Wer nichts gebucht hat, bekommt keinen.
+- **Erinnerung an laufende Timer** (Standard nach 10 Stunden): eine E-Mail pro Timer, falls jemand vergessen hat, ihn zu stoppen.
+
+Beides geht an Administratoren und Mitarbeiter mit E-Mail-Adresse; jeder schaltet es für sich unter **Konto** ab. Für Links in diesen E-Mails braucht die App ihre **Adresse** (z. B. `https://zeit.example.de`) in den E-Mail-Einstellungen.
+
 ## Betrieb mit Docker
 
 ```sh
@@ -181,7 +203,7 @@ docker compose up -d --build
 Seiten gehen mit Brotli oder gzip komprimiert an den Browser.
 Ein Worker (`UVICORN_WORKERS`) nutzt höchstens einen CPU-Kern und braucht etwa 80 bis 200 MB RAM; bei mehreren Kernen und mehreren gleichzeitigen Benutzern lohnt einer pro Kern (siehe [loadtest/README.md](loadtest/README.md)).
 Die App lauscht auf Port 8000 (über `APP_PORT` änderbar, z. B. `127.0.0.1:8000`, wenn nur ein Reverse Proxy auf demselben Server sie erreichen soll). Datenbank und alle Daten liegen im Volume `lextracker-data` (`/data` im Container), Backups im Volume `lextracker-backups` (`/backups`).
-Neben der App startet ein zweiter Container `scheduler` aus demselben Image, sobald die App gesund ist. Er führt wiederkehrende Aufgaben wie den automatischen Kundenimport, den Rechnungsabgleich und das tägliche Backup aus und prüft dafür jede Minute, was fällig ist. Sein Healthcheck schlägt an, wenn er länger als fünf Minuten nicht mehr geprüft hat.
+Neben der App startet ein zweiter Container `scheduler` aus demselben Image, sobald die App gesund ist. Er führt wiederkehrende Aufgaben wie den automatischen Kundenimport, den Rechnungsabgleich, das tägliche Backup, Wochenberichte und Erinnerungen aus und prüft dafür jede Minute, was fällig ist. Außerdem verschickt er die E-Mails aus der Warteschlange. Sein Healthcheck schlägt an, wenn er länger als fünf Minuten nicht mehr geprüft hat.
 Vor jedem Start führt Compose über `pre_start`-Hooks die Migrationen aus und legt, falls `DJANGO_SUPERUSER_USERNAME` und `DJANGO_SUPERUSER_PASSWORD` gesetzt sind, das Admin-Konto an (sofern es noch nicht existiert). Schlägt ein Hook fehl, startet die App nicht. Dafür ist ein aktuelles Docker Compose nötig (getestet mit v5.6).
 Beide Container laufen ohne Root, mit schreibgeschütztem Dateisystem (beschreibbar sind nur `/data`, `/backups` und `/tmp`), ohne Linux-Capabilities und mit begrenzten Logs (5 × 10 MB).
 
