@@ -239,6 +239,26 @@ def test_invoice_list_filters_by_status(logged_in, billed):
     assert other.lexware_url == ""
 
 
+def test_invoice_number_links_to_lexware(logged_in, billed):
+    _, draft, _ = billed
+    sent = Invoice.objects.create(
+        customer=draft.customer,
+        period_start=date(2026, 9, 1),
+        period_end=date(2026, 9, 30),
+        total_net=Decimal("80.00"),
+        status=Invoice.Status.PAID,
+        voucher_number="RE0001",
+        lexware_id=uuid.uuid4(),
+    )
+
+    text = logged_in.get(reverse("billing:invoices")).text
+    # The number is the link; there is no separate "open" link next to it.
+    assert f'href="{sent.lexware_url}" target="_blank" rel="noopener">RE0001</a>' in text
+    assert "In Lexware öffnen" not in text
+    # A draft has no number yet, so its link to the draft in Lexware carries a label instead.
+    assert f'href="{draft.lexware_url}" target="_blank" rel="noopener">Entwurf öffnen</a>' in text
+
+
 def test_invoice_with_a_single_service_date_shows_only_that_date(logged_in, billed):
     _, invoice, _ = billed
     # Lexware's "service" and "delivery" types have only a shippingDate; sync stores it as start and end.
