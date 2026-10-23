@@ -75,22 +75,44 @@ document.addEventListener("change", (event) => {
 });
 
 // A list of checkboxes with data-checkbox-group can have a checkbox with data-select-all that ticks or unticks
-// all others at once. It is half ticked while only some are, and has no name, so it is not sent.
+// all others at once. It is half ticked while only some are, and has no name, so it is not sent. A search field
+// with data-filter hides the entries that do not match; select all then covers only the entries still shown.
+function groupBoxes(group) {
+  return [...group.querySelectorAll("input[type=checkbox]:not([data-select-all])")].filter((box) => !box.closest("label").hidden);
+}
 function syncSelectAll(group) {
   const all = group.querySelector("input[data-select-all]");
   if (!all) return;
-  const boxes = [...group.querySelectorAll("input[type=checkbox]:not([data-select-all])")];
+  const boxes = groupBoxes(group);
   const ticked = boxes.filter((box) => box.checked).length;
   all.checked = ticked > 0 && ticked === boxes.length;
   all.indeterminate = ticked > 0 && ticked < boxes.length;
+  all.disabled = boxes.length === 0;
 }
+function filterGroup(group, input) {
+  const query = input.value.trim().toLocaleLowerCase();
+  let shown = 0;
+  for (const box of group.querySelectorAll("input[type=checkbox]:not([data-select-all])")) {
+    const label = box.closest("label");
+    label.hidden = !label.textContent.toLocaleLowerCase().includes(query);
+    if (!label.hidden) shown++;
+  }
+  const none = group.querySelector("[data-no-match]");
+  if (none) none.hidden = shown > 0;
+  syncSelectAll(group);
+}
+document.addEventListener("input", (event) => {
+  const group = event.target.closest?.("[data-checkbox-group]");
+  if (group && event.target.matches("[data-filter]")) filterGroup(group, event.target);
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && event.target.matches?.("[data-filter]")) event.preventDefault();
+});
 document.addEventListener("change", (event) => {
   const group = event.target.closest?.("[data-checkbox-group]");
   if (!group) return;
   if (event.target.matches("[data-select-all]")) {
-    for (const box of group.querySelectorAll("input[type=checkbox]:not([data-select-all])")) {
-      box.checked = event.target.checked;
-    }
+    for (const box of groupBoxes(group)) box.checked = event.target.checked;
   }
   syncSelectAll(group);
 });
@@ -98,6 +120,35 @@ document.addEventListener("htmx:load", (event) => {
   event.detail.elt.querySelectorAll?.("[data-checkbox-group]").forEach(syncSelectAll);
 });
 document.addEventListener("DOMContentLoaded", () => document.querySelectorAll("[data-checkbox-group]").forEach(syncSelectAll));
+
+// A select with data-searchable gets a search field above it that narrows its options while typing. The
+// chosen option always stays in the list, so searching never changes the value.
+function makeSearchable(select) {
+  if (select.dataset.searchReady) return;
+  select.dataset.searchReady = "1";
+  const options = [...select.options];
+  if (options.length < 6) return;
+  const input = document.createElement("input");
+  input.type = "search";
+  input.className = "input";
+  input.placeholder = "Suchen …";
+  input.autocomplete = "off";
+  input.setAttribute("aria-label", "Auswahl durchsuchen");
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") event.preventDefault();
+  });
+  input.addEventListener("input", () => {
+    const query = input.value.trim().toLocaleLowerCase();
+    const value = select.value;
+    select.replaceChildren(...options.filter((option) => option.value === value || option.textContent.toLocaleLowerCase().includes(query)));
+    select.value = value;
+  });
+  select.before(input);
+}
+document.addEventListener("htmx:load", (event) => {
+  event.detail.elt.querySelectorAll?.("select[data-searchable]").forEach(makeSearchable);
+});
+document.addEventListener("DOMContentLoaded", () => document.querySelectorAll("select[data-searchable]").forEach(makeSearchable));
 
 // Menu button of the top bar on phones: shows or hides the navigation.
 document.addEventListener("click", (event) => {

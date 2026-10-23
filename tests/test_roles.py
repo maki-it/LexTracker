@@ -249,6 +249,18 @@ def test_booking_lists_can_select_all(client, user, employee, task, other_task):
     assert form.count("data-select-all") == 2
 
 
+def test_long_booking_lists_and_customer_select_are_searchable(client, user, employee, task, other_task):
+    client.force_login(user)
+    url = reverse("users:edit", args=[employee.pk])
+    # Short lists do not need a search field.
+    assert "data-filter" not in client.get(url).text
+    for number in range(6):
+        Customer.objects.create(name=f"Kunde {number}")
+    form = client.get(url).text
+    assert form.count("data-filter") == 1
+    assert 'name="customer"' in form and "data-searchable" in form
+
+
 def test_health_check_stays_open_for_everyone(client, customer_user):
     client.force_login(customer_user)
     assert client.get(reverse("core:health")).status_code == 200
