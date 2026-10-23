@@ -9,6 +9,7 @@ from django.core.exceptions import PermissionDenied
 from django.db import connection
 from django.http import Http404, HttpRequest, HttpResponse, JsonResponse, StreamingHttpResponse
 from django.shortcuts import redirect, render
+from django.template.defaultfilters import filesizeformat
 from django.templatetags.static import static
 from django.utils import timezone
 from django.utils.http import content_disposition_header
@@ -147,6 +148,32 @@ async def backup_create(request: HttpRequest) -> HttpResponse:
     else:
         messages.success(request, f"Sicherung {path.name} erstellt.")
     return redirect("core:backups")
+
+
+@require_http_methods(["GET", "POST"])
+async def backup_upload(request: HttpRequest) -> HttpResponse:
+    """Store a backup file from elsewhere, e.g. another server, in the folder. Restoring it is a separate step.
+
+    Oversized requests are refused before Django reads them, see core/upload_limit.py.
+    """
+    _require_admin(request)
+    error = None
+    if request.method == "POST":
+        file = request.FILES.get("datei")
+        if file is None:
+            error = "Bitte wähle eine Datei aus."
+        elif file.size > settings.BACKUP_UPLOAD_MAX_SIZE:
+            error = f"Die Datei ist größer als {filesizeformat(settings.BACKUP_UPLOAD_MAX_SIZE)}."
+        else:
+            try:
+                path = await sync_to_async(backup.save_upload)(file.chunks())
+            except backup.InvalidBackup as exc:
+                error = str(exc)
+            else:
+                messages.success(request, f"Sicherung hochgeladen und als {path.name} gespeichert.")
+                return navigate("core:backups")
+    context = {"error": error, "max_size": settings.BACKUP_UPLOAD_MAX_SIZE}
+    return render(request, "core/backup_upload.html", context)
 
 
 @require_GET

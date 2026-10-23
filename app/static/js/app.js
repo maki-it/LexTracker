@@ -140,3 +140,13 @@ document.addEventListener("click", async (event) => {
   button.textContent = "Kopiert";
   setTimeout(() => (button.textContent = label), 2000);
 });
+
+// A file field with data-max-size="<bytes>" refuses larger files before the upload starts; the server would
+// cut such a request off without an answer the page could show (see core/upload_limit.py).
+document.addEventListener("change", (event) => {
+  const input = event.target;
+  if (!input.matches?.("input[type=file][data-max-size]")) return;
+  const tooBig = [...input.files].some((file) => file.size > Number(input.dataset.maxSize));
+  input.setCustomValidity(tooBig ? input.dataset.maxSizeMessage : "");
+  input.reportValidity();
+});

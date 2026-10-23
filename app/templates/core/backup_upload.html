@@ -1,0 +1,29 @@
+{% extends layout %}
+{% block title %}Sicherung hochladen · LexTracker{% endblock %}
+{% block content %}
+<div>
+  <p class="breadcrumb"><a href="{% url 'core:settings' %}">Einstellungen</a> / <a href="{% url 'core:backups' %}">Sicherungen</a></p>
+  <h1>Sicherung hochladen</h1>
+</div>
+<form method="post" action="{% url 'core:backup_upload' %}" enctype="multipart/form-data" class="card flex max-w-2xl flex-col gap-4">
+  {% csrf_token %}
+  {% if error %}<div role="alert" class="alert alert-error">{{ error }}</div>{% endif %}
+  <p class="text-sm">
+    Eine Sicherung von einem anderen Server, z. B. eine heruntergeladene <code>db-….sqlite3</code>, kommt hier in den Ordner der Sicherungen.
+    Die Daten der App ändern sich dabei noch nicht: Wiederherstellen kannst du sie danach in der Liste.
+  </p>
+  <p class="text-sm text-muted">
+    Die App prüft die Datei vorher und nimmt nur unbeschädigte Datenbanken von LexTracker an, die nicht aus einer neueren Version stammen.
+    Höchstens {{ max_size|filesizeformat }}.
+  </p>
+  <label class="flex flex-col gap-1 text-sm font-medium">
+    Datei
+    <input type="file" name="datei" accept=".sqlite3,.sqlite,.db,application/vnd.sqlite3" required data-max-size="{{ max_size }}"
+           data-max-size-message="Die Datei ist größer als {{ max_size|filesizeformat }}." class="input">
+  </label>
+  <div class="flex gap-2 border-t border-line pt-4">
+    <button type="submit" class="btn btn-primary">Hochladen</button>
+    <a href="{% url 'core:backups' %}" class="btn btn-ghost" data-close-dialog>Abbrechen</a>
+  </div>
+</form>
+{% endblock %}

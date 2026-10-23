@@ -164,6 +164,7 @@ LEXWARE_BASE_URL = env.lexware_base_url
 MAILERS = {"default": {"BACKEND": "django.core.mail.backends.smtp.EmailBackend"}}
 
 BACKUP_DIR = env.backup_dir or DATA_DIR / "backups"
+BACKUP_UPLOAD_MAX_SIZE = env.backup_upload_max_mb * 1024 * 1024
 
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"

@@ -8,10 +8,13 @@
     <h1>Sicherungen</h1>
     <p class="page-subtitle">Kopien der Datenbank in <code>{{ dir }}</code>. Wann und wie viele entstehen, legst du in den <a href="{% url 'core:settings' %}">Einstellungen</a> fest.</p>
   </div>
-  <form method="post" action="{% url 'core:backup_create' %}">
-    {% csrf_token %}
-    <button type="submit" class="btn btn-primary">{% icon "plus" %}Jetzt sichern</button>
-  </form>
+  <div class="flex gap-2">
+    <a {% dialog_link "core:backup_upload" %} class="btn btn-ghost">{% icon "upload" %}Hochladen</a>
+    <form method="post" action="{% url 'core:backup_create' %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-primary">{% icon "plus" %}Jetzt sichern</button>
+    </form>
+  </div>
 </div>
 <div class="table-wrap">
   <table class="table">
@@ -27,7 +30,7 @@
       <tr>
         <td class="w-full">
           <div class="font-medium">{{ item.created|date:datetime_format }} Uhr</div>
-          <div class="text-xs text-muted">{{ item.name }}{% if item.before_restore %} · Stand vor einer Wiederherstellung{% endif %}</div>
+          <div class="text-xs text-muted">{{ item.name }}{% if item.before_restore %} · Stand vor einer Wiederherstellung{% elif item.uploaded %} · Hochgeladen{% endif %}</div>
         </td>
         <td class="whitespace-nowrap text-right text-muted tabular-nums">{{ item.size|filesizeformat }}</td>
         <td>
