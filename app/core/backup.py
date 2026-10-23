@@ -22,9 +22,11 @@ from core.models import AppSettings
 
 # A copy made just before a restore, so the restore can be undone. Pruned like the daily ones.
 BEFORE_RESTORE = "-vorher"
+# A copy made by a migration that rewrites the data (see core.migrations.0010), so it can be undone.
+BEFORE_UPGRADE = "-vor-umstellung"
 # A file uploaded on the backups page, e.g. from another server. Never pruned before it is the oldest.
 UPLOADED = "-hochgeladen"
-NAME = re.compile(rf"db-(\d{{4}}-\d{{2}}-\d{{2}}-\d{{6}})({BEFORE_RESTORE}|{UPLOADED})?\.sqlite3")
+NAME = re.compile(rf"db-(\d{{4}}-\d{{2}}-\d{{2}}-\d{{6}})({BEFORE_RESTORE}|{BEFORE_UPGRADE}|{UPLOADED})?\.sqlite3")
 
 
 class InvalidBackup(Exception):
@@ -37,6 +39,7 @@ class Backup:
     created: datetime
     size: int
     before_restore: bool
+    before_upgrade: bool
     uploaded: bool
 
     @property
@@ -55,7 +58,16 @@ def listing() -> list[Backup]:
     for path in reversed(backups()):
         match = NAME.fullmatch(path.name)
         created = timezone.make_aware(datetime.strptime(match[1], "%Y-%m-%d-%H%M%S"))
-        result.append(Backup(path, created, path.stat().st_size, match[2] == BEFORE_RESTORE, match[2] == UPLOADED))
+        result.append(
+            Backup(
+                path,
+                created,
+                path.stat().st_size,
+                match[2] == BEFORE_RESTORE,
+                match[2] == BEFORE_UPGRADE,
+                match[2] == UPLOADED,
+            )
+        )
     return result
 
 
@@ -64,7 +76,7 @@ def get(name: str) -> Path | None:
     return next((path for path in backups() if path.name == name), None)
 
 
-def _copy(now: datetime | None, suffix: str = "") -> Path:
+def _copy(now: datetime | None, suffix: str = "", source: sqlite3.Connection | None = None) -> Path:
     """Copy the database with SQLite's backup API, which is safe while the app writes to it."""
     local = timezone.localtime(now)
     settings.BACKUP_DIR.mkdir(parents=True, exist_ok=True)
@@ -74,13 +86,26 @@ def _copy(now: datetime | None, suffix: str = "") -> Path:
     connection.ensure_connection()
     copy = sqlite3.connect(partial)
     try:
-        connection.connection.backup(copy)
+        (source or connection.connection).backup(copy)
         # A single self-contained file, so a downloaded copy opens anywhere.
         copy.execute("PRAGMA journal_mode=DELETE")
     finally:
         copy.close()
     partial.rename(target)
     return target
+
+
+def backup_before_upgrade(now: datetime | None = None, database: Path | str | None = None) -> Path:
+    """The copy a migration makes before it rewrites the data. Pruned later like the daily copies.
+
+    A migration holds a write transaction, and SQLite cannot copy through the connection that holds it (the
+    copy waits for a lock the same connection keeps). So the copy is read through a second connection, which
+    sees the state before the migration began.
+    """
+    connection.ensure_connection()
+    database = database or connection.settings_dict["NAME"]
+    with closing(sqlite3.connect(f"file:{database}?mode=ro", uri=True)) as source:
+        return _copy(now, BEFORE_UPGRADE, source)
 
 
 def create_backup(keep: int, now: datetime | None = None) -> Path:

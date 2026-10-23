@@ -10,9 +10,8 @@ from datetime import timedelta
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.db.models import Exists, OuterRef, Q
-from django.http import Http404, HttpRequest, HttpResponse, HttpResponsePermanentRedirect
+from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
-from django.urls import reverse
 from django.utils import timezone
 from django.utils.http import content_disposition_header
 from django.views.decorators.http import require_GET, require_http_methods
@@ -20,6 +19,7 @@ from django.views.decorators.http import require_GET, require_http_methods
 from billing.models import Invoice
 from billing.periods import Period, period_containing
 from billing.views import STATUS_FILTERS
+from core.ids import parse_uuid
 from core.shortcuts import arender
 from customers.lexware import (
     apply_billing_address,
@@ -91,9 +91,9 @@ async def entries(request: HttpRequest) -> HttpResponse:
     queryset = _customer_entries(user).filter(
         started_at__date__gte=date_range.start, started_at__date__lte=date_range.end
     )
-    project_id = request.GET.get("projekt", "")
-    if project_id.isdigit():
-        queryset = queryset.filter(task__project_id=int(project_id))
+    project_id = parse_uuid(request.GET.get("projekt", ""))
+    if project_id:
+        queryset = queryset.filter(task__project_id=project_id)
     rows = [e async for e in queryset.select_related("task", "task__project", "invoice").order_by("-started_at")]
     for entry in rows:
         # Entries of a draft are not billed yet from the customer's side: the draft is not shown to them.
@@ -105,7 +105,7 @@ async def entries(request: HttpRequest) -> HttpResponse:
         "range": date_range,
         "presets": presets(today),
         "projects": [p async for p in Project.objects.filter(customer_id=user.customer_id).order_by("name")],
-        "project_id": int(project_id) if project_id.isdigit() else None,
+        "project_id": project_id,
     }
     return render(request, "portal/entries.html", context)
 
@@ -151,8 +151,8 @@ def _visible_invoices(user):
     return Invoice.objects.filter(customer_id=user.customer_id).exclude(status__in=HIDDEN_INVOICE_STATUSES)
 
 
-async def _invoice_by_number(request: HttpRequest, number: str, route: str, **extra) -> Invoice | HttpResponse:
-    """The customer's invoice with this number, or a redirect to its number URL if the old ID form was used.
+async def _invoice_by_number(request: HttpRequest, number: str, **extra) -> Invoice:
+    """The customer's invoice with this number.
 
     Invoices are addressed by their number, which Lexware assigns once and never reuses, so it is unique per
     customer in practice. The database does not enforce that, so on a clash the newest invoice wins.
@@ -163,10 +163,6 @@ async def _invoice_by_number(request: HttpRequest, number: str, route: str, **ex
         logger.warning("Customer %s has several invoices numbered %s", request.user.customer_id, number)
     if matches:
         return matches[0]
-    # Links from before the number was used in the URL carry the ID.
-    if number.isdecimal() and (legacy := await queryset.filter(pk=int(number)).afirst()):
-        url = reverse(route, args=[legacy.voucher_number])
-        return HttpResponsePermanentRedirect(f"{url}?{request.GET.urlencode()}" if request.GET else url)
     raise Http404
 
 
@@ -176,9 +172,7 @@ async def invoice_entries(request: HttpRequest, number: str) -> HttpResponse:
     user = request.user
     if not (user.portal_invoices and user.portal_entries):
         raise PermissionDenied
-    invoice = await _invoice_by_number(request, number, "portal:invoice_entries")
-    if isinstance(invoice, HttpResponse):
-        return invoice
+    invoice = await _invoice_by_number(request, number)
     rows = [
         e
         async for e in _customer_entries(user)
@@ -196,9 +190,7 @@ async def invoice_pdf(request: HttpRequest, number: str) -> HttpResponse:
     user = request.user
     if not user.portal_invoices:
         raise PermissionDenied
-    invoice = await _invoice_by_number(request, number, "portal:invoice_pdf", lexware_id__isnull=False)
-    if isinstance(invoice, HttpResponse):
-        return invoice
+    invoice = await _invoice_by_number(request, number, lexware_id__isnull=False)
     try:
         async with client_from_settings() as client:
             pdf = await client.get_invoice_pdf(invoice.lexware_id)

@@ -1,5 +1,7 @@
 """User management for administrators: employees and customer logins, invited by a link or by e-mail."""
 
+from uuid import UUID
+
 from asgiref.sync import sync_to_async
 from django.contrib import messages
 from django.http import Http404, HttpRequest, HttpResponse
@@ -15,7 +17,7 @@ from core.shortcuts import arender
 from tracking.models import TimeEntry
 
 
-async def _get_user(pk: int) -> User:
+async def _get_user(pk: UUID) -> User:
     try:
         return await User.objects.select_related("customer").aget(pk=pk)
     except User.DoesNotExist as exc:
@@ -34,12 +36,12 @@ async def user_list(request: HttpRequest) -> HttpResponse:
 
 
 @require_http_methods(["GET", "POST"])
-async def user_form(request: HttpRequest, pk: int | None = None) -> HttpResponse:
+async def user_form(request: HttpRequest, pk: UUID | None = None) -> HttpResponse:
     user = await _get_user(pk) if pk else User(role=User.Role.EMPLOYEE)
     # Built in a thread: the initial values of the many-to-many fields come from the database.
     form = await sync_to_async(UserForm)(request.POST or None, instance=user, acting_user=request.user)
     if request.method == "POST" and await sync_to_async(form.is_valid)():
-        if user.pk is None:
+        if user._state.adding:
             user.set_unusable_password()
             await sync_to_async(form.save)()
             if (await AppSettings.aload()).invite_by_mail and await links.can_send_invitation(user):
@@ -49,14 +51,17 @@ async def user_form(request: HttpRequest, pk: int | None = None) -> HttpResponse
         await sync_to_async(form.save)()
         messages.success(request, f"{user.get_username()} gespeichert.")
         return redirect("users:list")
-    has_entries = user.pk is not None and await TimeEntry.objects.filter(user=user).aexists()
+    is_new = user._state.adding
+    has_entries = not is_new and await TimeEntry.objects.filter(user=user).aexists()
     return await arender(
-        request, "accounts/users/form.html", {"form": form, "edited": user, "has_entries": has_entries}
+        request,
+        "accounts/users/form.html",
+        {"form": form, "edited": user, "is_new": is_new, "has_entries": has_entries},
     )
 
 
 @require_POST
-async def user_delete(request: HttpRequest, pk: int) -> HttpResponse:
+async def user_delete(request: HttpRequest, pk: UUID) -> HttpResponse:
     user = await _get_user(pk)
     if user.pk == request.user.pk:
         messages.error(request, "Du kannst dich nicht selbst löschen.")
@@ -74,7 +79,7 @@ async def user_delete(request: HttpRequest, pk: int) -> HttpResponse:
 
 
 @require_http_methods(["GET", "POST"])
-async def invite_link(request: HttpRequest, pk: int) -> HttpResponse:
+async def invite_link(request: HttpRequest, pk: UUID) -> HttpResponse:
     user = await _get_user(pk)
     if not user.is_active:
         messages.error(request, "Der Benutzer ist deaktiviert. Aktiviere ihn zuerst.")

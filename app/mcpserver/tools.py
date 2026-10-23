@@ -3,12 +3,14 @@
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
+from uuid import UUID
 
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 from django.utils.dateparse import parse_date, parse_datetime
 
+from core.ids import parse_uuid
 from core.models import AppSettings
 from projects.models import Project, Task
 from tracking import services
@@ -58,18 +60,18 @@ def _minutes(delta: timedelta) -> int:
 
 def _task(task: Task) -> dict:
     return {
-        "id": task.pk,
+        "id": str(task.pk),
         "name": task.name,
         "status": task.get_status_display(),
         "project": task.project.name,
-        "project_id": task.project_id,
+        "project_id": str(task.project_id),
         "customer": task.project.customer.name,
     }
 
 
 def _entry(entry: TimeEntry) -> dict:
     return {
-        "id": entry.pk,
+        "id": str(entry.pk),
         "task": _task(entry.task),
         "description": entry.description,
         "start": _local(entry.started_at),
@@ -80,10 +82,14 @@ def _entry(entry: TimeEntry) -> dict:
     }
 
 
+# The ids are UUIDs, as text in JSON.
+ID_PROPERTY = {"type": "string", "format": "uuid"}
+
+
 def _get_task(user, task_id) -> Task:
     try:
-        return open_tasks(user).get(pk=int(task_id))
-    except Task.DoesNotExist, TypeError, ValueError:
+        return open_tasks(user).get(pk=parse_uuid(task_id))
+    except Task.DoesNotExist:
         raise ToolError(
             f"Keine offene Aufgabe mit der ID {task_id}. Finde die richtige mit find_tasks oder lege sie an."
         ) from None
@@ -114,12 +120,12 @@ def list_projects(user, query: str = ""):
     projects = bookable_projects(user).exclude(status=Project.Status.DONE).select_related("customer")
     if query:
         projects = projects.filter(Q(name__icontains=query) | Q(customer__name__icontains=query))
-    tasks_by_project: dict[int, list] = {}
+    tasks_by_project: dict[UUID, list] = {}
     for task in open_tasks(user).filter(project__in=projects):
-        tasks_by_project.setdefault(task.project_id, []).append({"id": task.pk, "name": task.name})
+        tasks_by_project.setdefault(task.project_id, []).append({"id": str(task.pk), "name": task.name})
     return [
         {
-            "id": p.pk,
+            "id": str(p.pk),
             "name": p.name,
             "customer": p.customer.name,
             "status": p.get_status_display(),
@@ -147,19 +153,19 @@ def find_tasks(user, query: str):
 @tool(
     "Creates a task in a project, for work that has no task yet.",
     {
-        "project_id": {"type": "integer"},
+        "project_id": ID_PROPERTY,
         "name": {"type": "string", "description": "Short name of the task."},
         "description": {"type": "string"},
     },
     ["project_id", "name"],
 )
-def create_task(user, project_id: int, name: str, description: str = ""):
+def create_task(user, project_id: str, name: str, description: str = ""):
     name = (name or "").strip()
     if not name:
         raise ToolError("name darf nicht leer sein.")
     try:
-        project = bookable_projects(user).exclude(status=Project.Status.DONE).get(pk=int(project_id))
-    except Project.DoesNotExist, TypeError, ValueError:
+        project = bookable_projects(user).exclude(status=Project.Status.DONE).get(pk=parse_uuid(project_id))
+    except Project.DoesNotExist:
         raise ToolError(f"Kein aktives Projekt mit der ID {project_id}. Siehe list_projects.") from None
     task = Task.objects.create(project=project, name=name[:255], description=description or "")
     return _task(Task.objects.select_related("project__customer").get(pk=task.pk))
@@ -175,12 +181,12 @@ def get_running_timer(user):
 @tool(
     "Starts the timer on a task. A timer that is already running is stopped and saved first.",
     {
-        "task_id": {"type": "integer"},
+        "task_id": ID_PROPERTY,
         "description": {"type": "string", "description": "What is being worked on."},
     },
     ["task_id"],
 )
-def start_timer(user, task_id: int, description: str = ""):
+def start_timer(user, task_id: str, description: str = ""):
     task = _get_task(user, task_id)
     with transaction.atomic():
         stopped = services.stop_timer(user)
@@ -210,7 +216,7 @@ def stop_timer(user, description: str | None = None):
     "Books time on a task after the fact. Give either end or duration_minutes. "
     "Times without a time zone are local time. Start and end are rounded to the nearest step set in LexTracker.",
     {
-        "task_id": {"type": "integer"},
+        "task_id": ID_PROPERTY,
         "start": {"type": "string", "description": "ISO 8601, e.g. 2026-10-22T09:30"},
         "end": {"type": "string", "description": "ISO 8601"},
         "duration_minutes": {"type": "integer", "minimum": 1},
@@ -252,7 +258,7 @@ def add_time_entry(user, task_id, start, end=None, duration_minutes=None, descri
     {
         "date_from": {"type": "string", "description": "First day, e.g. 2026-10-01"},
         "date_to": {"type": "string", "description": "Last day, inclusive"},
-        "task_id": {"type": "integer"},
+        "task_id": ID_PROPERTY,
     },
 )
 def list_time_entries(user, date_from=None, date_to=None, task_id=None):
@@ -263,7 +269,9 @@ def list_time_entries(user, date_from=None, date_to=None, task_id=None):
         user=user, started_at__date__gte=first, started_at__date__lte=last
     ).select_related("task__project__customer")
     if task_id is not None:
-        entries = entries.filter(task_id=task_id)
+        if (task_uuid := parse_uuid(task_id)) is None:
+            raise ToolError(f"task_id muss eine ID aus find_tasks oder list_projects sein, nicht {task_id!r}.")
+        entries = entries.filter(task_id=task_uuid)
     entries = list(entries[:200])
     return {
         "from": first.isoformat(),

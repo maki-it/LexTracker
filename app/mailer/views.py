@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from asgiref.sync import sync_to_async
 from django.contrib import messages
 from django.http import HttpRequest, HttpResponse
@@ -61,7 +63,7 @@ async def test_mail(request: HttpRequest) -> HttpResponse:
 
 
 @require_POST
-async def retry(request: HttpRequest, pk: int) -> HttpResponse:
+async def retry(request: HttpRequest, pk: UUID) -> HttpResponse:
     if await outbox.aretry(pk):
         messages.success(request, "Die E-Mail wird gleich noch einmal verschickt.")
     return redirect("mailer:settings")

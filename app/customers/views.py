@@ -1,4 +1,5 @@
 from urllib.parse import urlencode
+from uuid import UUID
 
 from asgiref.sync import sync_to_async
 from django.contrib import messages
@@ -7,6 +8,7 @@ from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
+from core.ids import parse_uuid
 from core.models import AppSettings
 from core.paging import apage, wants_rows
 from core.shortcuts import arender
@@ -30,8 +32,7 @@ async def _customer_list_context(request: HttpRequest) -> dict:
     if view not in VIEWS:
         view = "aktiv"
     query = request.GET.get("q", "").strip()
-    category = request.GET.get("kategorie", "")
-    category = int(category) if category.isdigit() else None
+    category = parse_uuid(request.GET.get("kategorie", ""))
 
     customers = Customer.objects.prefetch_related("categories")
     if query:
@@ -107,7 +108,7 @@ async def import_from_lexware(request: HttpRequest) -> HttpResponse:
 
 
 @require_http_methods(["GET", "POST"])
-async def customer_edit(request: HttpRequest, pk: int) -> HttpResponse:
+async def customer_edit(request: HttpRequest, pk: UUID) -> HttpResponse:
     try:
         customer = await Customer.objects.aget(pk=pk)
     except Customer.DoesNotExist as exc:

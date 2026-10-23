@@ -1,5 +1,6 @@
 from django.db.models import DurationField, F, Func, Q, Sum
 
+from core.ids import parse_uuid
 from customers.models import Customer
 from projects.models import Project
 
@@ -33,14 +34,14 @@ async def entry_filter(request) -> dict:
 
     Returns the queryset filters plus what the template needs to show the active filter.
     """
-    project_id = request.GET.get("projekt", "")
-    customer_id = request.GET.get("kunde", "")
-    if project_id.isdigit():
-        project = await Project.objects.select_related("customer").filter(pk=int(project_id)).afirst()
+    project_id = parse_uuid(request.GET.get("projekt", ""))
+    customer_id = parse_uuid(request.GET.get("kunde", ""))
+    if project_id:
+        project = await Project.objects.select_related("customer").filter(pk=project_id).afirst()
         if project:
             return {"filters": {"task__project": project}, "label": f"{project.customer.name} · {project.name}"}
-    if customer_id.isdigit():
-        customer = await Customer.objects.filter(pk=int(customer_id)).afirst()
+    if customer_id:
+        customer = await Customer.objects.filter(pk=customer_id).afirst()
         if customer:
             return {"filters": {"task__project__customer": customer}, "label": customer.name}
     return {"filters": {}, "label": ""}

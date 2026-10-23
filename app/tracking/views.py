@@ -1,5 +1,6 @@
 from datetime import date, datetime, time, timedelta
 from urllib.parse import urlencode
+from uuid import UUID
 
 from asgiref.sync import sync_to_async
 from django.contrib import messages
@@ -10,6 +11,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from core.dialogs import in_dialog
+from core.ids import parse_uuid
 from core.models import AppSettings
 from core.shortcuts import arender
 from projects.models import Task
@@ -49,8 +51,8 @@ async def timer_start(request: HttpRequest) -> HttpResponse:
         # The most recently used task is preselected, so starting it again is one click.
         return render(request, "tracking/timer_start.html", {"last_task": await task_choices(request.user).afirst()})
     try:
-        task = await open_tasks(request.user).aget(pk=int(request.POST.get("task", "")))
-    except ValueError, Task.DoesNotExist:
+        task = await open_tasks(request.user).aget(pk=parse_uuid(request.POST.get("task", "")))
+    except Task.DoesNotExist:
         raise Http404 from None
     await sync_to_async(start_timer)(request.user, task, request.POST.get("description", "").strip())
     if not request.htmx:
@@ -81,7 +83,7 @@ async def timer_stop(request: HttpRequest) -> HttpResponse:
 
 def _filter_query(request: HttpRequest) -> str:
     """``&kunde=…`` or ``&projekt=…`` of the current filter, to append to other links."""
-    params = {k: request.GET[k] for k in ("kunde", "projekt") if request.GET.get(k, "").isdigit()}
+    params = {k: request.GET[k] for k in ("kunde", "projekt") if parse_uuid(request.GET.get(k, ""))}
     return f"&{urlencode(params)}" if params else ""
 
 
@@ -146,7 +148,7 @@ async def entry_list(request: HttpRequest) -> HttpResponse:
     )
 
 
-async def _get_entry(request: HttpRequest, pk: int) -> TimeEntry:
+async def _get_entry(request: HttpRequest, pk: UUID) -> TimeEntry:
     try:
         return await _entries(request.user).aget(pk=pk)
     except TimeEntry.DoesNotExist as exc:
@@ -158,7 +160,7 @@ def _back_to_week(entry: TimeEntry) -> str:
 
 
 @require_http_methods(["GET", "POST"])
-async def entry_form(request: HttpRequest, pk: int | None = None) -> HttpResponse:
+async def entry_form(request: HttpRequest, pk: UUID | None = None) -> HttpResponse:
     entry = await _get_entry(request, pk) if pk else TimeEntry(user=request.user)
     initial = None
     if not pk:
@@ -174,7 +176,7 @@ async def entry_form(request: HttpRequest, pk: int | None = None) -> HttpRespons
 
 
 @require_POST
-async def entry_delete(request: HttpRequest, pk: int) -> HttpResponse:
+async def entry_delete(request: HttpRequest, pk: UUID) -> HttpResponse:
     entry = await _get_entry(request, pk)
     back = _back_to_week(entry)
     await entry.adelete()

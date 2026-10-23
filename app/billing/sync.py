@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal
+from uuid import UUID
 
 from asgiref.sync import sync_to_async
 from django.db import transaction
@@ -152,7 +153,7 @@ async def sync_invoices(client: LexwareClient) -> InvoiceSyncResult:
     return result
 
 
-async def _create_from_lexware(voucher: Voucher, data: dict, customer_id: int, now, today) -> Invoice:
+async def _create_from_lexware(voucher: Voucher, data: dict, customer_id: UUID, now, today) -> Invoice:
     voucher_date = _local_date(data.get("voucherDate")) or _day(voucher.voucher_date)
     shipping = data.get("shippingConditions") or {}
     start = _local_date(shipping.get("shippingDate")) or voucher_date or today

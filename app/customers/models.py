@@ -1,9 +1,9 @@
 from django.db import models
 
-from core.models import TimeStampedModel
+from core.models import TimeStampedModel, UUIDModel
 
 
-class Category(models.Model):
+class Category(UUIDModel):
     """A label for grouping customers, maintained in LexTracker (Lexware contacts have none)."""
 
     name = models.CharField("Name", max_length=100, unique=True)

@@ -1,10 +1,24 @@
+import uuid
 from datetime import time
 
 from django.core.validators import MinValueValidator
 from django.db import models
 
 
-class TimeStampedModel(models.Model):
+class UUIDModel(models.Model):
+    """A model identified by a UUID instead of a counter.
+
+    Version 7 puts the creation time first, so new rows land at the end of the primary key index like
+    counters do. That keeps SQLite's B-tree compact, which random UUIDs (version 4) would not.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
+
+    class Meta:
+        abstract = True
+
+
+class TimeStampedModel(UUIDModel):
     created_at = models.DateTimeField("erstellt", auto_now_add=True)
     updated_at = models.DateTimeField("geändert", auto_now=True)
 

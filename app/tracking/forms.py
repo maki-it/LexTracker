@@ -1,15 +1,18 @@
+from uuid import UUID
+
 from django import forms
 from django.db.models import F, Max, Q, QuerySet
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
 
 from core.forms import StyledFormMixin
+from core.ids import parse_uuid
 from projects.models import Project, Task
 from tracking.models import TimeEntry
 from tracking.services import round_to_step, rounded_times
 
 
-def task_choices(user, include_pk: int | None = None):
+def task_choices(user, include_pk: UUID | None = None):
     """The tasks offered when booking time: open tasks of active projects, the ones the user booked last first."""
     tasks = open_tasks(user, include_pk=include_pk).filter(Q(project__status=Project.Status.ACTIVE) | Q(pk=include_pk))
     last_used = Max("time_entries__started_at", filter=Q(time_entries__user=user))
@@ -42,8 +45,8 @@ class TaskSearchInput(forms.Widget):
 
     def get_context(self, name, value, attrs):
         context = super().get_context(name, value, attrs)
-        is_pk = str(value or "").isdigit()
-        task = Task.objects.select_related("project__customer").filter(pk=value).first() if is_pk else None
+        task_id = parse_uuid(value)
+        task = Task.objects.select_related("project__customer").filter(pk=task_id).first() if task_id else None
         context["widget"]["task"] = task
         return context
 
@@ -82,7 +85,7 @@ def bookable_projects(user) -> QuerySet[Project]:
     return Project.objects.filter(Q(bookable_by=user) | Q(customer__bookable_by=user)).distinct()
 
 
-def open_tasks(user, include_pk: int | None = None):
+def open_tasks(user, include_pk: UUID | None = None):
     """Tasks the user can book time on: not done, in a project that is not done and is unlocked for them."""
     is_open = ~Q(status=Task.Status.DONE) & ~Q(project__status=Project.Status.DONE)
     is_open &= Q(project__in=bookable_projects(user).values("pk"))
@@ -110,7 +113,7 @@ class TimeEntryForm(StyledFormMixin, forms.ModelForm):
     def __init__(self, *args, user, rounding: int = 0, **kwargs):
         super().__init__(*args, **kwargs)
         # Keep the entry's current task selectable even if it is done or no longer unlocked by now.
-        include = self.instance.task_id if self.instance.pk else None
+        include = None if self.instance._state.adding else self.instance.task_id
         self.fields["task"].queryset = task_choices(user, include_pk=include)
         self.fields["ended_at"].required = True
         self.rounding = rounding

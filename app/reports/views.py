@@ -1,6 +1,7 @@
 import csv
 import io
 from urllib.parse import urlencode
+from uuid import UUID
 
 from asgiref.sync import sync_to_async
 from django.http import HttpRequest, HttpResponse
@@ -9,14 +10,14 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET
 
 from billing.calculation import to_hours
+from core.ids import parse_uuid
 from customers.models import Customer
 from reports.queries import build_report, entries_in
 from reports.ranges import presets, selected_range
 
 
-def _customer_id(request: HttpRequest) -> int | None:
-    value = request.GET.get("kunde", "")
-    return int(value) if value.isdigit() else None
+def _customer_id(request: HttpRequest) -> UUID | None:
+    return parse_uuid(request.GET.get("kunde", ""))
 
 
 @require_GET
@@ -46,7 +47,7 @@ def _decimal(value) -> str:
     return str(value).replace(".", ",")
 
 
-def _entries_csv(rng, customer_id: int | None) -> str:
+def _entries_csv(rng, customer_id: UUID | None) -> str:
     out = io.StringIO()
     out.write("﻿")  # BOM, so Excel reads the file as UTF-8
     writer = csv.writer(out, delimiter=";")

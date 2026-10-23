@@ -422,8 +422,8 @@ def test_employee_agent_sees_only_unlocked_tasks(client, employee, task, other_t
 
     assert [p["name"] for p in json.loads(call("list_projects"))] == ["Website"]
     assert json.loads(call("find_tasks", query="Intern")) == []
-    assert "Keine offene Aufgabe" in call("start_timer", task_id=other_task.pk)
-    assert "Kein aktives Projekt" in call("create_task", project_id=other_task.project_id, name="Neu")
+    assert "Keine offene Aufgabe" in call("start_timer", task_id=str(other_task.pk))
+    assert "Kein aktives Projekt" in call("create_task", project_id=str(other_task.project_id), name="Neu")
 
 
 def test_admin_unlocks_customers_and_projects(client, user, employee, task, other_task):

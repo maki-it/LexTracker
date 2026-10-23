@@ -4,8 +4,10 @@ import secrets
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+from core.models import UUIDModel
 
-class User(AbstractUser):
+
+class User(UUIDModel, AbstractUser):
     class Role(models.TextChoices):
         ADMIN = "admin", "Administrator"
         EMPLOYEE = "employee", "Mitarbeiter"
@@ -105,7 +107,7 @@ class User(AbstractUser):
         ]
 
 
-class ApiToken(models.Model):
+class ApiToken(UUIDModel):
     """A token for programs acting as a user, e.g. an AI agent using the MCP server.
 
     Only a hash is stored; the token itself is shown once when it is created.
@@ -141,7 +143,7 @@ class ApiToken(models.Model):
         return token, key
 
 
-class LoginFailure(models.Model):
+class LoginFailure(UUIDModel):
     """A wrong password or code, for the login rate limit (see accounts.ratelimit)."""
 
     ip_address = models.GenericIPAddressField("IP-Adresse")
@@ -157,7 +159,7 @@ class LoginFailure(models.Model):
         return f"{self.ip_address} {self.at:%d.%m.%Y %H:%M}"
 
 
-class LoginLink(models.Model):
+class LoginLink(UUIDModel):
     """A link that signs a user in without a password, sent by e-mail (see ``accounts.links``).
 
     Only a hash is stored. A link works once and only until it expires.

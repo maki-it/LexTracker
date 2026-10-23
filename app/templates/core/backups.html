@@ -30,7 +30,7 @@
       <tr>
         <td class="w-full">
           <div class="font-medium">{{ item.created|date:datetime_format }} Uhr</div>
-          <div class="text-xs text-muted">{{ item.name }}{% if item.before_restore %} · Stand vor einer Wiederherstellung{% elif item.uploaded %} · Hochgeladen{% endif %}</div>
+          <div class="text-xs text-muted">{{ item.name }}{% if item.before_restore %} · Stand vor einer Wiederherstellung{% elif item.before_upgrade %} · Stand vor einer Umstellung der Datenbank{% elif item.uploaded %} · Hochgeladen{% endif %}</div>
         </td>
         <td class="whitespace-nowrap text-right text-muted tabular-nums">{{ item.size|filesizeformat }}</td>
         <td>

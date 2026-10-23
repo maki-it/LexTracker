@@ -2,6 +2,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date, timedelta
 from decimal import Decimal
+from uuid import UUID
 
 from asgiref.sync import sync_to_async
 from django.contrib import messages
@@ -19,6 +20,7 @@ from billing.models import BillingAgreement, Invoice
 from billing.periods import Period, period_containing, recent_periods
 from billing.services import create_invoice
 from billing.sync import sync_and_record
+from core.ids import parse_uuid
 from core.models import AppSettings
 from core.paging import apage, wants_rows
 from core.shortcuts import arender
@@ -29,7 +31,7 @@ from tracking.models import TimeEntry
 from tracking.queries import booked_time
 
 
-async def _get_customer(pk: int) -> Customer:
+async def _get_customer(pk: UUID) -> Customer:
     try:
         return await Customer.objects.aget(pk=pk)
     except Customer.DoesNotExist as exc:
@@ -89,8 +91,7 @@ async def invoice_list(request: HttpRequest) -> HttpResponse:
     status = request.GET.get("status", "")
     if status not in STATUS_FILTERS:
         status = ""
-    customer_id = request.GET.get("kunde", "")
-    customer_id = int(customer_id) if customer_id.isdigit() else None
+    customer_id = parse_uuid(request.GET.get("kunde", ""))
     # Newest first: by invoice date (the creation date until Lexware has one), then by number.
     invoices = (
         Invoice.objects.select_related("customer")
@@ -138,7 +139,7 @@ async def invoice_sync(request: HttpRequest) -> HttpResponse:
 
 
 @require_POST
-async def invoice_release(request: HttpRequest, invoice_pk: int) -> HttpResponse:
+async def invoice_release(request: HttpRequest, invoice_pk: UUID) -> HttpResponse:
     """Let the time of a voided invoice be billed again."""
     try:
         invoice = await Invoice.objects.aget(pk=invoice_pk, status=Invoice.Status.VOIDED)
@@ -219,7 +220,7 @@ def _selected_period(request: HttpRequest, options) -> tuple[PeriodForm, date | 
 
 
 @require_GET
-async def customer_billing(request: HttpRequest, pk: int) -> HttpResponse:
+async def customer_billing(request: HttpRequest, pk: UUID) -> HttpResponse:
     customer = await _get_customer(pk)
     today = timezone.localdate()
     current = await sync_to_async(active_agreement)(customer, today, today)
@@ -257,7 +258,7 @@ def _entries_page(group: ProjectRows, number: int) -> dict:
 
 
 @require_GET
-async def customer_entries(request: HttpRequest, pk: int) -> HttpResponse:
+async def customer_entries(request: HttpRequest, pk: UUID) -> HttpResponse:
     """The open time entries of a customer by project, as they would go onto the next invoice.
 
     A project's rows come in pages of ``ENTRIES_PER_PAGE``; htmx asks for the next one with
@@ -288,7 +289,7 @@ async def customer_entries(request: HttpRequest, pk: int) -> HttpResponse:
 
 
 @require_POST
-async def invoice_create(request: HttpRequest, pk: int) -> HttpResponse:
+async def invoice_create(request: HttpRequest, pk: UUID) -> HttpResponse:
     customer = await _get_customer(pk)
     period_form = PeriodForm(request.POST)
     if not period_form.is_valid():
@@ -306,7 +307,7 @@ async def invoice_create(request: HttpRequest, pk: int) -> HttpResponse:
 
 
 @require_http_methods(["GET", "POST"])
-async def agreement_form(request: HttpRequest, pk: int, agreement_pk: int | None = None) -> HttpResponse:
+async def agreement_form(request: HttpRequest, pk: UUID, agreement_pk: int | None = None) -> HttpResponse:
     customer = await _get_customer(pk)
     agreement = None
     if agreement_pk:
