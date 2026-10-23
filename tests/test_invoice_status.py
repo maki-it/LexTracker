@@ -388,3 +388,25 @@ def test_deleted_draft_is_labelled_as_a_draft_with_its_time_hint_in_the_status_c
     assert "Entwurf gelöscht" not in deleted_sent and ">In Lexware gelöscht<" in deleted_sent
     assert "Zeiten wieder offen" in deleted_sent
     assert "badge-warning" not in deleted_draft and "badge-warning" not in deleted_sent
+
+
+def test_deleted_draft_is_listed_under_drafts_and_deleted(logged_in, billed):
+    _, invoice, _ = billed
+    other = dict(customer=invoice.customer, period_start=date(2026, 9, 1), period_end=date(2026, 9, 30))
+    Invoice.objects.filter(pk=invoice.pk).update(status=Invoice.Status.DELETED)  # 200,00 €, never had a number
+    Invoice.objects.create(**other, total_net=Decimal("70.00"), status=Invoice.Status.DRAFT)
+    Invoice.objects.create(**other, total_net=Decimal("20.00"), status=Invoice.Status.DELETED, voucher_number="RE-SENT")
+    url = reverse("billing:invoices")
+
+    def shown(*statuses):
+        response = logged_in.get(url, {"status": list(statuses)})
+        text = response.text
+        return {amount for amount in ("200,00", "70,00", "20,00") if f"{amount} €" in text}, response
+
+    # A deleted draft is still a draft, a deleted invoice that had a number is not.
+    assert shown("entwurf")[0] == {"200,00", "70,00"}
+    assert shown("geloescht")[0] == {"200,00", "20,00"}
+    both, response = shown("entwurf", "geloescht")
+    assert both == {"200,00", "70,00", "20,00"} and response.text.count("200,00 €") == 1
+    counts = {pill.key: pill.count for pill in response.context["filters"]}
+    assert counts["entwurf"] == 2 and counts["geloescht"] == 2
