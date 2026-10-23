@@ -36,6 +36,8 @@ class Env(BaseSettings):
     lexware_base_url: str = "https://api.lexware.io/v1/"
     # Folder for the daily database copies (data_dir/backups if unset). When and how many is set on the settings page.
     backup_dir: Path | None = None
+    # Largest file accepted when uploading a backup on the backups page, in MB.
+    backup_upload_max_mb: int = Field(default=100, ge=1)
 
     @property
     def debug(self) -> bool:

@@ -141,6 +141,16 @@ document.addEventListener("click", async (event) => {
   setTimeout(() => (button.textContent = label), 2000);
 });
 
+// A file field with data-max-size="<bytes>" refuses larger files before the upload starts; the server would
+// cut such a request off without an answer the page could show (see core/upload_limit.py).
+document.addEventListener("change", (event) => {
+  const input = event.target;
+  if (!input.matches?.("input[type=file][data-max-size]")) return;
+  const tooBig = [...input.files].some((file) => file.size > Number(input.dataset.maxSize));
+  input.setCustomValidity(tooBig ? input.dataset.maxSizeMessage : "");
+  input.reportValidity();
+});
+
 // Task search (tracking/_task_search.html): a search field whose suggestions htmx loads from the server.
 // Picking a suggestion puts its id into the hidden field next to it. Typing again clears that id,
 // so the form can only be sent with a picked task. Arrow keys move through the suggestions, Enter picks one.

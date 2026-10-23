@@ -6,6 +6,7 @@ Docker only the mounted /backups is writable.
 
 import re
 import sqlite3
+from collections.abc import Iterable
 from contextlib import closing
 from dataclasses import dataclass
 from datetime import datetime
@@ -21,7 +22,9 @@ from core.models import AppSettings
 
 # A copy made just before a restore, so the restore can be undone. Pruned like the daily ones.
 BEFORE_RESTORE = "-vorher"
-NAME = re.compile(rf"db-(\d{{4}}-\d{{2}}-\d{{2}}-\d{{6}})({BEFORE_RESTORE})?\.sqlite3")
+# A file uploaded on the backups page, e.g. from another server. Never pruned before it is the oldest.
+UPLOADED = "-hochgeladen"
+NAME = re.compile(rf"db-(\d{{4}}-\d{{2}}-\d{{2}}-\d{{6}})({BEFORE_RESTORE}|{UPLOADED})?\.sqlite3")
 
 
 class InvalidBackup(Exception):
@@ -34,6 +37,7 @@ class Backup:
     created: datetime
     size: int
     before_restore: bool
+    uploaded: bool
 
     @property
     def name(self) -> str:
@@ -51,7 +55,7 @@ def listing() -> list[Backup]:
     for path in reversed(backups()):
         match = NAME.fullmatch(path.name)
         created = timezone.make_aware(datetime.strptime(match[1], "%Y-%m-%d-%H%M%S"))
-        result.append(Backup(path, created, path.stat().st_size, bool(match[2])))
+        result.append(Backup(path, created, path.stat().st_size, match[2] == BEFORE_RESTORE, match[2] == UPLOADED))
     return result
 
 
@@ -100,8 +104,9 @@ def is_due(now: datetime, app_settings: AppSettings) -> bool:
     local = timezone.localtime(now)
     if local.time() < app_settings.backup_time:
         return False
+    # Only the daily copies have no suffix; one made before a restore or uploaded does not count.
     today = settings.BACKUP_DIR.glob(f"db-{local:%Y-%m-%d}-*.sqlite3")
-    return not any(not path.stem.endswith(BEFORE_RESTORE) for path in today)
+    return not any((match := NAME.fullmatch(path.name)) and not match[2] for path in today)
 
 
 def backup_and_record(now: datetime | None = None) -> Path:
@@ -137,6 +142,32 @@ def check(path: Path) -> None:
     unknown = applied - set(MigrationLoader(None, ignore_no_migrations=True).disk_migrations)
     if unknown:
         raise InvalidBackup("Die Sicherung stammt aus einer neueren Version der App.")
+
+
+def save_upload(chunks: Iterable[bytes], now: datetime | None = None) -> Path:
+    """Store an uploaded file in the backup folder, if check() accepts it. Returns its path there.
+
+    The name is made here from the time of the upload, so nothing from the upload decides where it lands.
+    """
+    local = timezone.localtime(now)
+    settings.BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+    target = settings.BACKUP_DIR / f"db-{local:%Y-%m-%d-%H%M%S}{UPLOADED}.sqlite3"
+    partial = target.with_suffix(".partial")
+    try:
+        with partial.open("wb") as file:
+            for chunk in chunks:
+                file.write(chunk)
+        check(partial)
+        # A database copied straight from a running server may be in WAL mode; like our own copies it
+        # becomes a single self-contained file.
+        with closing(sqlite3.connect(partial)) as db:
+            db.execute("PRAGMA journal_mode=DELETE")
+    except BaseException:
+        for leftover in (partial, Path(f"{partial}-wal"), Path(f"{partial}-shm")):
+            leftover.unlink(missing_ok=True)
+        raise
+    partial.rename(target)
+    return target
 
 
 def restore(path: Path, now: datetime | None = None) -> Path:
