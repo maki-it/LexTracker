@@ -96,6 +96,8 @@ class Invoice(TimeStampedModel):
         indexes = [models.Index(fields=["status"])]
 
     def __str__(self) -> str:
+        if self.period_start == self.period_end:  # Lexware's single service or delivery date.
+            return f"{self.customer} {self.period_start:%d.%m.%Y}"
         return f"{self.customer} {self.period_start:%d.%m.%Y}–{self.period_end:%d.%m.%Y}"
 
     @property
