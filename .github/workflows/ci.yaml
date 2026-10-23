@@ -46,5 +46,5 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: false
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=ci
+          cache-to: type=gha,scope=ci,mode=max

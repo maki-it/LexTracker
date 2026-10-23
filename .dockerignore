@@ -1,11 +1,14 @@
-.git
-.github
-.venv
-.env
-data
-staticfiles
-tests
-**/__pycache__
+# Allowlist: the image needs only the dependency files and the app code. Everything else
+# (tests, load test, docs, CI files, local data, .git) stays out of the build context, so
+# changing it neither uploads more context nor invalidates a cached layer.
+*
+!pyproject.toml
+!uv.lock
+!app
+
+# Generated or downloaded locally, rebuilt in the image.
 app/.django_tailwind_cli
 app/static/css/tailwind.css
-loadtest
+**/__pycache__
+**/*.py[cod]
+**/.DS_Store
