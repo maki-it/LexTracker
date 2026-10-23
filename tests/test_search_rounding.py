@@ -12,7 +12,7 @@ from customers.sync import sync_customers
 from projects.models import Project, Task
 from tests.lexware_fakes import contact, fake_client, page, serve_pages
 from tracking.models import TimeEntry
-from tracking.services import rounded_end, stop_timer
+from tracking.services import round_to_step, rounded_times, stop_timer
 
 pytestmark = pytest.mark.django_db
 
@@ -28,31 +28,60 @@ def logged_in(client, user):
 # Rounding
 
 
-def test_rounded_end_rounds_every_started_step_up():
-    start = datetime(2026, 10, 22, 9, 0, tzinfo=TZ)
-    assert rounded_end(start, start + timedelta(minutes=7), 15) == start + timedelta(minutes=15)
-    assert rounded_end(start, start + timedelta(minutes=15), 15) == start + timedelta(minutes=15)
-    assert rounded_end(start, start + timedelta(minutes=15, seconds=1), 15) == start + timedelta(minutes=30)
-    assert rounded_end(start, start + timedelta(minutes=7), 0) == start + timedelta(minutes=7)
+def test_round_to_step_rounds_to_the_nearest_step():
+    day = datetime(2026, 10, 22, 9, 0, tzinfo=TZ)
+    assert round_to_step(day.replace(minute=7), 15) == day
+    assert round_to_step(day.replace(minute=8), 15) == day.replace(minute=15)
+    assert round_to_step(day.replace(minute=7, second=30), 15) == day.replace(minute=15)
+    assert round_to_step(day.replace(minute=32), 5) == day.replace(minute=30)
+    assert round_to_step(day.replace(hour=23, minute=55), 15) == day.replace(hour=0) + timedelta(days=1)
+    assert round_to_step(day.replace(minute=7), 0) == day.replace(minute=7)
 
 
-def test_stopping_timer_rounds_up(user, task):
+def test_rounded_times_keeps_at_least_one_step():
+    day = datetime(2026, 10, 22, 9, 0, tzinfo=TZ)
+    assert rounded_times(day.replace(minute=3), day.replace(minute=6), 15) == (day, day.replace(minute=15))
+    assert rounded_times(day.replace(minute=8), day.replace(hour=10, minute=53), 15) == (
+        day.replace(minute=15),
+        day.replace(hour=11),
+    )
+
+
+def test_stopping_timer_rounds_start_and_end(user, task):
     AppSettings.objects.create(pk=1, time_rounding=15)
-    started = timezone.now() - timedelta(minutes=20)
+    started = timezone.now() - timedelta(minutes=50)
     TimeEntry.objects.create(user=user, task=task, started_at=started)
 
     entry = stop_timer(user)
 
-    assert entry.duration == timedelta(minutes=30)
+    assert entry.started_at == round_to_step(started, 15)
+    assert timezone.localtime(entry.started_at).minute % 15 == 0
+    assert timezone.localtime(entry.ended_at).minute % 15 == 0
+    assert entry.duration.total_seconds() % (15 * 60) == 0
 
 
 def test_manual_entry_is_rounded(logged_in, user, task):
     AppSettings.objects.create(pk=1, time_rounding=15)
     logged_in.post(
         reverse("tracking:create"),
-        {"task": task.pk, "started_at": "2026-10-20T09:00", "ended_at": "2026-10-20T11:40", "is_billable": "on"},
+        {"task": task.pk, "started_at": "2026-10-20T09:08", "ended_at": "2026-10-20T11:37", "is_billable": "on"},
     )
-    assert TimeEntry.objects.get().duration == timedelta(hours=2, minutes=45)
+    entry = TimeEntry.objects.get()
+    assert timezone.localtime(entry.started_at).time() == datetime(2026, 1, 1, 9, 15).time()
+    assert timezone.localtime(entry.ended_at).time() == datetime(2026, 1, 1, 11, 30).time()
+    assert entry.duration == timedelta(hours=2, minutes=15)
+
+
+def test_time_fields_step_by_the_rounding(logged_in, user, task):
+    AppSettings.objects.create(pk=1, time_rounding=5)
+    start = datetime(2026, 10, 20, 8, 31, tzinfo=TZ)
+    entry = TimeEntry.objects.create(user=user, task=task, started_at=start, ended_at=start + timedelta(minutes=58))
+
+    page_text = logged_in.get(reverse("tracking:edit", args=[entry.pk])).text
+
+    assert 'step="300"' in page_text
+    assert 'value="2026-10-20T08:30"' in page_text
+    assert 'value="2026-10-20T09:30"' in page_text
 
 
 def test_hours_filter_formats():

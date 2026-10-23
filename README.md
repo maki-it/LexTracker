@@ -86,7 +86,7 @@ Der Client hält das Rate-Limit der API ein (2 Anfragen pro Sekunde) und wiederh
 
 ## Zeiterfassung
 
-Unter **Einstellungen** legst du fest, ob Zeiten exakt oder auf jede angefangene Zeiteinheit (z. B. Viertelstunde) aufgerundet werden. Gerundet wird beim Stoppen des Timers und beim Speichern eines Eintrags, indem das Ende verschoben wird; so sind Anzeige, Summen und Abrechnung immer gleich. Bestehende Einträge bleiben unverändert.
+Unter **Einstellungen** legst du fest, ob Zeiten exakt oder auf einen Schritt (z. B. Viertelstunde) gerundet werden. Beim Stoppen des Timers und beim Speichern eines Eintrags werden Beginn und Ende auf den nächstgelegenen Schritt gerundet (9:07 wird 9:00, 9:08 wird 9:15); ein Eintrag dauert mindestens einen Schritt. Gespeichert werden die gerundeten Zeiten, so sind Anzeige, Summen und Abrechnung immer gleich. Bestehende Einträge bleiben unverändert.
 Ob Dauern als `2:45` oder als Dezimalstunden `2,75` angezeigt werden, stellt jeder im Konto ein. Abgerechnet wird immer in Dezimalstunden (z. B. 2,75 Stunden × 80 €).
 
 ## Bedienung

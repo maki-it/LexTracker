@@ -208,7 +208,7 @@ def stop_timer(user, description: str | None = None):
 
 @tool(
     "Books time on a task after the fact. Give either end or duration_minutes. "
-    "Times without a time zone are local time. The end is rounded as set in LexTracker.",
+    "Times without a time zone are local time. Start and end are rounded to the nearest step set in LexTracker.",
     {
         "task_id": {"type": "integer"},
         "start": {"type": "string", "description": "ISO 8601, e.g. 2026-10-22T09:30"},
@@ -234,7 +234,7 @@ def add_time_entry(user, task_id, start, end=None, duration_minutes=None, descri
         raise ToolError("Das Ende muss nach dem Beginn liegen.")
     if ended_at > timezone.now() + timedelta(minutes=5):
         raise ToolError("Zeiten in der Zukunft können nicht gebucht werden.")
-    ended_at = services.rounded_end(started_at, ended_at, AppSettings.load().time_rounding)
+    started_at, ended_at = services.rounded_times(started_at, ended_at, AppSettings.load().time_rounding)
     entry = TimeEntry.objects.create(
         user=user,
         task=task,

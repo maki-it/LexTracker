@@ -26,19 +26,20 @@ class AppSettings(models.Model):
 
     class Rounding(models.IntegerChoices):
         EXACT = 0, "exakt (keine Rundung)"
-        FIVE = 5, "jede angefangenen 5 Minuten"
-        SIX = 6, "jede angefangenen 6 Minuten (Zehntelstunde)"
-        TEN = 10, "jede angefangenen 10 Minuten"
-        FIFTEEN = 15, "jede angefangene Viertelstunde"
-        THIRTY = 30, "jede angefangene halbe Stunde"
-        SIXTY = 60, "jede angefangene Stunde"
+        FIVE = 5, "5 Minuten"
+        SIX = 6, "6 Minuten (Zehntelstunde)"
+        TEN = 10, "10 Minuten"
+        FIFTEEN = 15, "Viertelstunde"
+        THIRTY = 30, "halbe Stunde"
+        SIXTY = 60, "volle Stunde"
 
     time_rounding = models.PositiveSmallIntegerField(
         "Zeiten runden auf",
         choices=Rounding,
         default=Rounding.EXACT,
-        help_text="Beim Stoppen des Timers und beim Speichern eines Eintrags wird das Ende aufgerundet. "
-        "Bestehende Einträge bleiben, wie sie sind.",
+        help_text="Beim Stoppen des Timers und beim Speichern eines Eintrags werden Beginn und Ende auf den "
+        "nächsten Schritt gerundet (z. B. 9:07 auf 9:00, 9:08 auf 9:15). Ein Eintrag dauert mindestens einen "
+        "Schritt. Bestehende Einträge bleiben, wie sie sind.",
     )
 
     login_max_attempts = models.PositiveSmallIntegerField(
