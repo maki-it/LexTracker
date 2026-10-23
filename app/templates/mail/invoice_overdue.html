@@ -1,0 +1,9 @@
+{% extends "mail/_base.html" %}
+{% block content %}
+<p style="margin:0 0 12px;font-size:18px;font-weight:600">Rechnung überfällig</p>
+<p style="margin:0">Die Rechnung <strong>{{ invoice.voucher_number|default:"ohne Nummer" }}</strong> an {{ invoice.customer.name }} war am {{ invoice.due_date|date:date_format }} fällig und ist seit {{ days_overdue }} Tag{{ days_overdue|pluralize:"en" }} überfällig.</p>
+{% if invoice.open_amount is not None %}<p style="margin:12px 0;padding:10px 12px;background:#f4f4f5;border-radius:8px">Offen: <strong>{{ invoice.open_amount|floatformat:"2g" }} €</strong></p>{% endif %}
+<p style="margin:12px 0 0">{% if customer_notified %}Der Kunde hat eine Zahlungserinnerung an {{ invoice.customer.email }} bekommen.{% elif customer_without_email %}Der Kunde hat keine E-Mail-Adresse in Lexware, deshalb ging keine Zahlungserinnerung an ihn.{% else %}An den Kunden ging keine Erinnerung.{% endif %}</p>
+{% if invoice.lexware_url %}{% include "mail/_button.html" with url=invoice.lexware_url label="In Lexware Office öffnen" %}{% endif %}
+{% endblock %}
+{% block footer %}Diese Hinweise stellst du in LexTracker unter Einstellungen ein.{% endblock %}

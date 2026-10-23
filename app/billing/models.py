@@ -87,6 +87,8 @@ class Invoice(TimeStampedModel):
     status = models.CharField("Status", max_length=20, choices=Status, default=Status.DRAFT)
     voucher_number = models.CharField("Rechnungsnummer", max_length=50, blank=True)
     due_date = models.DateField("fällig am", null=True, blank=True)
+    # Gross, as Lexware's voucher list reports it; None until the first sync.
+    open_amount = models.DecimalField("offener Betrag", max_digits=12, decimal_places=2, null=True, blank=True)
     status_synced_at = models.DateTimeField("Status abgeglichen", null=True, blank=True, editable=False)
 
     class Meta:

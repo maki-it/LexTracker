@@ -1,6 +1,7 @@
-"""E-mails the scheduler sends on its own: the weekly report and the reminder about a timer left running.
+"""E-mails the scheduler sends on its own: the weekly report, the reminder about a timer left running and the
+notice about an overdue invoice.
 
-When they go out is set on the settings page; each user can turn them off in their account.
+When they go out is set on the settings page; each user can turn the first two off in their account.
 """
 
 from dataclasses import dataclass, field
@@ -13,6 +14,7 @@ from django.utils import timezone
 from django.utils.http import urlencode
 
 from accounts.models import User
+from billing.models import Invoice
 from core.models import AppSettings
 from mailer import outbox
 from mailer.models import MailSettings, OutgoingMail
@@ -23,6 +25,11 @@ from tracking.models import TimeEntry
 WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
 # A weekly report missed by more than this (e.g. the server was down) waits for the next week.
 CATCH_UP = timedelta(days=1)
+# Invoices overdue for longer than this get no notice, so turning the notice on does not remind customers
+# of every old invoice at once.
+OVERDUE_CATCH_UP = timedelta(days=7)
+# The status must have been checked with Lexware this recently, so a paid invoice is not mistaken for an open one.
+OVERDUE_STATUS_MAX_AGE = timedelta(days=1)
 
 
 def last_weekly_slot(now: datetime, weekday: int, at: time) -> datetime:
@@ -178,8 +185,68 @@ async def queue_timer_reminders(now: datetime, hours: int) -> int:
     return queued
 
 
+def overdue_invoices(now: datetime, days: int):
+    """Invoices overdue for ``days`` days, but not much longer, whose status was checked with Lexware lately."""
+    today = timezone.localdate(now)
+    latest = today - timedelta(days=days)
+    return (
+        Invoice.objects.filter(
+            status=Invoice.Status.OVERDUE,
+            due_date__lte=latest,
+            due_date__gte=latest - OVERDUE_CATCH_UP,
+            status_synced_at__gte=now - OVERDUE_STATUS_MAX_AGE,
+        )
+        .select_related("customer")
+        .order_by("due_date", "pk")
+    )
+
+
+async def queue_overdue_notices(now: datetime, app_settings: AppSettings) -> int:
+    """One notice per invoice and due date: to the customer if wanted, and to every administrator."""
+    config = await MailSettings.aload()
+    to_customer = app_settings.overdue_notice == AppSettings.OverdueNotice.CUSTOMER
+    admins = [user async for user in _recipients(role=User.Role.ADMIN)]
+    queued = 0
+    async for invoice in overdue_invoices(now, app_settings.overdue_notice_days):
+        key = f"invoice-overdue:{invoice.pk}:{invoice.due_date.isoformat()}"
+        context = {"invoice": invoice, "days_overdue": (timezone.localdate(now) - invoice.due_date).days}
+        customer_email = invoice.customer.email if to_customer else ""
+        number = invoice.voucher_number or "ohne Nummer"
+        if customer_email and not await OutgoingMail.objects.filter(dedupe_key=f"{key}:customer").aexists():
+            await outbox.aqueue(
+                OutgoingMail.Kind.INVOICE_OVERDUE,
+                customer_email,
+                f"Zahlungserinnerung zur Rechnung {number}",
+                "invoice_overdue_customer",
+                context | {"sender_name": config.from_name},
+                dedupe_key=f"{key}:customer",
+            )
+            queued += 1
+        for admin in admins:
+            admin_key = f"{key}:user:{admin.pk}"
+            if await OutgoingMail.objects.filter(dedupe_key=admin_key).aexists():
+                continue
+            await outbox.aqueue(
+                OutgoingMail.Kind.INVOICE_OVERDUE,
+                admin.email,
+                f"Rechnung {number} von {invoice.customer.name} ist überfällig",
+                "invoice_overdue",
+                context
+                | {
+                    "user": admin,
+                    "customer_notified": bool(customer_email),
+                    "customer_without_email": to_customer and not invoice.customer.email,
+                    "date_format": admin.date_format,
+                },
+                user=admin,
+                dedupe_key=admin_key,
+            )
+            queued += 1
+    return queued
+
+
 async def run_due(now: datetime) -> dict[str, int]:
-    """Queue the reports and reminders that are due. Returns how many of each were queued."""
+    """Queue the reports, reminders and notices that are due. Returns how many of each were queued."""
     if not await outbox.ais_configured():
         return {}
     app_settings = await AppSettings.aload()
@@ -189,4 +256,6 @@ async def run_due(now: datetime) -> dict[str, int]:
         await AppSettings.objects.filter(pk=1).aupdate(weekly_report_at=now)
     if app_settings.timer_reminder_hours:
         queued["timer reminder"] = await queue_timer_reminders(now, app_settings.timer_reminder_hours)
+    if app_settings.overdue_notice != AppSettings.OverdueNotice.OFF:
+        queued["overdue invoice"] = await queue_overdue_notices(now, app_settings)
     return queued

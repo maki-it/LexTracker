@@ -1,0 +1,11 @@
+{% extends "mail/_base.html" %}
+{% block brand %}{{ sender_name|default:"Zahlungserinnerung" }}{% endblock %}
+{% block content %}
+<p style="margin:0 0 12px;font-size:18px;font-weight:600">Zahlungserinnerung</p>
+<p style="margin:0">Guten Tag,</p>
+<p style="margin:12px 0 0">zu unserer Rechnung <strong>{{ invoice.voucher_number }}</strong>{% if invoice.voucher_date %} vom {{ invoice.voucher_date|date:"d.m.Y" }}{% endif %} haben wir bisher keinen Zahlungseingang gesehen. Sie war am {{ invoice.due_date|date:"d.m.Y" }} fällig.</p>
+{% if invoice.open_amount is not None %}<p style="margin:12px 0;padding:10px 12px;background:#f4f4f5;border-radius:8px">Offener Betrag: <strong>{{ invoice.open_amount|floatformat:"2g" }} €</strong></p>{% endif %}
+<p style="margin:12px 0 0">Bitte überweisen Sie den Betrag in den nächsten Tagen. Falls Sie bereits bezahlt haben, betrachten Sie diese E-Mail bitte als gegenstandslos.</p>
+<p style="margin:12px 0 0">Viele Grüße{% if sender_name %}<br>{{ sender_name }}{% endif %}</p>
+{% endblock %}
+{% block footer %}Diese Erinnerung wurde automatisch verschickt.{% endblock %}

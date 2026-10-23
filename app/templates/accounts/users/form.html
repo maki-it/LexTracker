@@ -43,7 +43,7 @@
   {% for error in form.is_active.errors %}<span class="text-sm text-danger">{{ error }}</span>{% endfor %}
   {% endif %}
   <div class="flex gap-2 border-t border-line pt-4">
-    <button type="submit" class="btn btn-primary">{% if edited.pk %}Speichern{% else %}Anlegen und Einladungslink zeigen{% endif %}</button>
+    <button type="submit" class="btn btn-primary">{% if edited.pk %}Speichern{% else %}Anlegen und einladen{% endif %}</button>
     <a href="{% url 'users:list' %}" class="btn btn-ghost" data-close-dialog>Abbrechen</a>
   </div>
 </form>
