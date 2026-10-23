@@ -7,9 +7,7 @@
   <td class="whitespace-nowrap tabular-nums">{{ invoice.voucher_date|default:invoice.created_at|date:date_format }}</td>
   <td class="whitespace-nowrap text-muted tabular-nums">{{ invoice.period_start|date:date_format }}{% if invoice.period_end != invoice.period_start %} – {{ invoice.period_end|date:date_format }}{% endif %}</td>
   <td class="whitespace-nowrap">
-    <span class="badge {{ invoice.status_badge }}">{{ invoice.get_status_display }}</span>
-    {% if invoice.origin == "lexware" %}<span class="ml-1 text-[13px] text-muted" title="Direkt in Lexware Office geschrieben, ohne Zeiteinträge">in Lexware erstellt</span>{% endif %}
-    {% if invoice.due_date and invoice.status == "open" or invoice.due_date and invoice.status == "overdue" %}<span class="ml-1 text-[13px] text-muted">fällig {{ invoice.due_date|date:date_format }}</span>{% endif %}
+    {% include "billing/_invoice_status.html" with show_origin=True %}
   </td>
   <td class="text-right whitespace-nowrap font-semibold tabular-nums{% if invoice.status == 'deleted' or invoice.status == 'voided' %} text-muted line-through{% endif %}">{{ invoice.total_net }} €</td>
   <td class="text-right whitespace-nowrap">
