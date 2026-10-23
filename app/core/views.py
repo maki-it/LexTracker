@@ -147,9 +147,11 @@ async def app_settings(request: HttpRequest) -> HttpResponse:
             "failed": current.invoices_sync_failed,
         },
     ]
+    copies = await sync_to_async(backup.listing)()
     backup_info = {
         "dir": settings.BACKUP_DIR,
-        "count": len(await sync_to_async(backup.backups)()),
+        "count": len(copies),
+        "newest": copies[0].created if copies else None,
         "last_run": current.backup_at,
         "status": current.backup_status,
         "failed": current.backup_failed,

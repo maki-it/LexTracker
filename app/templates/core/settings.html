@@ -169,6 +169,17 @@
         Den Ordner legt die Server-Konfiguration fest (<code>APP_BACKUP_DIR</code>, in Docker das Volume <code>/backups</code>).
       </p>
     </div>
+    <div class="flex flex-col gap-3 rounded-lg border border-line bg-surface-muted p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div class="text-sm">
+        <p class="font-medium">
+          {% if backup.count %}{{ backup.count }} Kopie{{ backup.count|pluralize:"n" }} vorhanden{% else %}Noch keine Kopie vorhanden{% endif %}
+        </p>
+        <p class="text-muted">
+          {% if backup.newest %}Letzte Sicherung: {{ backup.newest|date:datetime_format }} Uhr{% else %}Die erste entsteht zur eingestellten Uhrzeit oder per Knopfdruck.{% endif %}
+        </p>
+      </div>
+      <a href="{% url 'core:backups' %}" class="btn btn-primary">Sicherungen verwalten</a>
+    </div>
     <label class="flex items-center gap-2 text-sm font-medium">
       {{ form.backup_enabled }} {{ form.backup_enabled.label }}
     </label>
@@ -182,8 +193,6 @@
       {% else %}
       Noch keine Sicherung aufgezeichnet.
       {% endif %}
-      {{ backup.count }} Kopie{{ backup.count|pluralize:"n" }} im Ordner.
-      <a href="{% url 'core:backups' %}">Sicherungen verwalten</a>
     </p>
   </section>
 
