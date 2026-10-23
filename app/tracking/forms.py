@@ -1,6 +1,9 @@
+from datetime import datetime
+
 from django import forms
 from django.db.models import F, Max, Q, QuerySet
 from django.template.loader import render_to_string
+from django.utils import timezone
 from django.utils.safestring import mark_safe
 
 from core.forms import StyledFormMixin
@@ -79,6 +82,57 @@ def open_tasks(user, include_pk: int | None = None):
     )
 
 
+class StepDateTimeWidget(forms.MultiWidget):
+    """A date field next to the time of day: a list of times in rounding steps, or a free time field without rounding.
+
+    A datetime-local field only steps its arrows, the browser's picker still offers every minute.
+    """
+
+    def __init__(self, step: int = 0, attrs=None):
+        self.step = step
+        self.step_choices = [(f"{m // 60:02}:{m % 60:02}",) * 2 for m in range(0, 24 * 60, step)] if step else []
+        if step:
+            time_widget = forms.Select(attrs={"aria-label": "Uhrzeit"}, choices=self.step_choices)
+        else:
+            time_widget = forms.TimeInput(attrs={"type": "time", "aria-label": "Uhrzeit"}, format="%H:%M")
+        date_widget = forms.DateInput(attrs={"type": "date", "aria-label": "Datum"}, format="%Y-%m-%d")
+        super().__init__([date_widget, time_widget], attrs)
+
+    def decompress(self, value):
+        if isinstance(value, str):
+            try:
+                value = datetime.fromisoformat(value)
+            except ValueError:
+                return [None, None]
+        if not value:
+            return [None, None]
+        if timezone.is_aware(value):
+            value = timezone.localtime(value)
+        return [value.date(), value.strftime("%H:%M")]
+
+    def get_context(self, name, value, attrs):
+        if self.step:
+            clock = (value if isinstance(value, list) else self.decompress(value))[1]
+            choices = self.step_choices
+            # An old entry may sit between two steps; keep its time instead of jumping to midnight.
+            if clock and (clock, clock) not in choices:
+                choices = sorted([*choices, (clock, clock)])
+            self.widgets[1].choices = choices
+        return super().get_context(name, value, attrs)
+
+    def render(self, name, value, attrs=None, renderer=None):
+        return mark_safe(f'<span class="grid grid-cols-2 gap-2">{super().render(name, value, attrs, renderer)}</span>')
+
+    def value_from_datadict(self, data, files, name):
+        if name in data:  # a single combined value, as the tests and older forms send it
+            return data[name]
+        day, clock = super().value_from_datadict(data, files, name)
+        return f"{day}T{clock}" if day and clock else None
+
+    def value_omitted_from_data(self, data, files, name):
+        return name not in data and super().value_omitted_from_data(data, files, name)
+
+
 class TimeEntryForm(StyledFormMixin, forms.ModelForm):
     task = TaskChoiceField(label="Aufgabe", queryset=Task.objects.none(), widget=TaskSearchInput)
 
@@ -86,8 +140,8 @@ class TimeEntryForm(StyledFormMixin, forms.ModelForm):
         model = TimeEntry
         fields = ["task", "started_at", "ended_at", "description", "is_billable"]
         widgets = {
-            "started_at": forms.DateTimeInput(attrs={"type": "datetime-local"}, format="%Y-%m-%dT%H:%M"),
-            "ended_at": forms.DateTimeInput(attrs={"type": "datetime-local"}, format="%Y-%m-%dT%H:%M"),
+            "started_at": StepDateTimeWidget(),
+            "ended_at": StepDateTimeWidget(),
             "description": forms.Textarea(attrs={"rows": 2}),
         }
 
@@ -98,12 +152,11 @@ class TimeEntryForm(StyledFormMixin, forms.ModelForm):
         self.fields["task"].queryset = task_choices(user, include_pk=include)
         self.fields["ended_at"].required = True
         self.rounding = rounding
-        if rounding:
-            # The browser's arrows then move in rounding steps, and the shown times already sit on a step.
-            for name in ("started_at", "ended_at"):
-                self.fields[name].widget.attrs["step"] = rounding * 60
-                if self.initial.get(name):
-                    self.initial[name] = round_to_step(self.initial[name], rounding)
+        for name in ("started_at", "ended_at"):
+            # Only times on a step can be picked, and the shown times already sit on one.
+            self.fields[name].widget = StepDateTimeWidget(step=rounding, attrs={"class": "input"})
+            if rounding and self.initial.get(name):
+                self.initial[name] = round_to_step(self.initial[name], rounding)
 
     def clean(self):
         cleaned = super().clean()
