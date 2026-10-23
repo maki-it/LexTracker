@@ -12,7 +12,7 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 from core.dialogs import in_dialog
 from core.shortcuts import arender
 from projects.models import Task
-from tracking.forms import TimeEntryForm, open_tasks
+from tracking.forms import TimeEntryForm, open_tasks, task_choices
 from tracking.models import TimeEntry
 from tracking.queries import entry_filter
 from tracking.services import start_timer, stop_timer
@@ -45,7 +45,7 @@ async def timer(request: HttpRequest) -> HttpResponse:
 async def timer_start(request: HttpRequest) -> HttpResponse:
     """GET: the start form (opened in the dialog from the sidebar). POST: start the timer."""
     if request.method == "GET":
-        return render(request, "tracking/timer_start.html", {"tasks": [t async for t in open_tasks(request.user)]})
+        return render(request, "tracking/timer_start.html", {"tasks": [t async for t in task_choices(request.user)]})
     try:
         task = await open_tasks(request.user).aget(pk=int(request.POST.get("task", "")))
     except ValueError, Task.DoesNotExist:

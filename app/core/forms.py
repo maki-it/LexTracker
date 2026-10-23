@@ -22,6 +22,8 @@ class AppSettingsForm(StyledFormMixin, forms.ModelForm):
         fields = [
             "default_hourly_rate",
             "time_rounding",
+            "login_max_attempts",
+            "login_lockout_minutes",
             "lexware_sync_interval",
             "lexware_sync_from",
             "lexware_sync_until",

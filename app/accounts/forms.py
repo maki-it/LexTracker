@@ -25,7 +25,7 @@ class CodeForm(forms.Form):
 class PreferencesForm(StyledFormMixin, forms.ModelForm):
     class Meta:
         model = User
-        fields = ["first_name", "last_name", "email", "theme", "date_format", "duration_format"]
+        fields = ["first_name", "last_name", "email", "theme", "date_format", "duration_format", "list_page_size"]
 
 
 class StyledPasswordChangeForm(StyledFormMixin, PasswordChangeForm):

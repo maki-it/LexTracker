@@ -9,6 +9,12 @@
       <input type="search" name="q" value="{{ query }}" placeholder="Kunde oder Rechnungsnummer suchen" aria-label="Rechnungen suchen" class="input max-w-sm"
              hx-get="{% url 'billing:invoices' %}" hx-trigger="input changed delay:250ms, search" hx-include="closest form"
              hx-target="#invoice-table" hx-select="#invoice-table" hx-swap="outerHTML" hx-push-url="true">
+      <select name="kunde" class="input max-w-xs" aria-label="Nach Kunde filtern"
+              hx-get="{% url 'billing:invoices' %}" hx-trigger="change" hx-include="closest form"
+              hx-target="#invoice-table" hx-select="#invoice-table" hx-swap="outerHTML" hx-push-url="true">
+        <option value="">Alle Kunden</option>
+        {% for c in customers %}<option value="{{ c.pk }}"{% if c.pk == customer_id %} selected{% endif %}>{{ c.name }}</option>{% endfor %}
+      </select>
       {% if status %}<input type="hidden" name="status" value="{{ status }}">{% endif %}
       <noscript><button type="submit" class="btn">Suchen</button></noscript>
     </form>
@@ -26,20 +32,13 @@
     {% endif %}
   </div>
   <nav aria-label="Nach Status filtern" class="flex flex-wrap gap-1.5">
-    <a href="?{% if query %}q={{ query|urlencode }}{% endif %}" class="pill{% if not status %} pill-active{% endif %}">Alle</a>
+    <a href="?{% if query %}q={{ query|urlencode }}{% endif %}{% if customer_id %}&kunde={{ customer_id }}{% endif %}" class="pill{% if not status %} pill-active{% endif %}">Alle</a>
     {% for key, label, count in filters %}
-    <a href="?status={{ key }}{% if query %}&q={{ query|urlencode }}{% endif %}" class="pill gap-1.5{% if status == key %} pill-active{% endif %}">{{ label }}<span class="text-muted tabular-nums">{{ count }}</span></a>
+    <a href="?status={{ key }}{% if query %}&q={{ query|urlencode }}{% endif %}{% if customer_id %}&kunde={{ customer_id }}{% endif %}" class="pill gap-1.5{% if status == key %} pill-active{% endif %}">{{ label }}<span class="text-muted tabular-nums">{{ count }}</span></a>
     {% endfor %}
   </nav>
 </div>
 <div id="invoice-table" class="flex flex-col gap-3">
   {% include "billing/_invoices.html" with show_customer=True %}
-  {% if page > 1 or has_next %}
-  <nav aria-label="Seiten" class="flex items-center justify-between gap-3 text-sm">
-    {% if page > 1 %}<a class="btn btn-sm" href="?seite={{ page|add:-1 }}{% if status %}&status={{ status }}{% endif %}{% if query %}&q={{ query|urlencode }}{% endif %}">Neuere</a>{% else %}<span></span>{% endif %}
-    <span class="text-muted">Seite {{ page }}</span>
-    {% if has_next %}<a class="btn btn-sm" href="?seite={{ page|add:1 }}{% if status %}&status={{ status }}{% endif %}{% if query %}&q={{ query|urlencode }}{% endif %}">Ältere</a>{% else %}<span></span>{% endif %}
-  </nav>
-  {% endif %}
 </div>
 {% endblock %}

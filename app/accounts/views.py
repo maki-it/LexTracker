@@ -11,7 +11,7 @@ from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme, urlencode, urlsafe_base64_decode
 from django.views.decorators.http import require_http_methods, require_POST
 
-from accounts import mfa
+from accounts import mfa, ratelimit
 from accounts.forms import (
     ApiTokenForm,
     CodeForm,
@@ -35,6 +35,12 @@ def _safe_next(request: HttpRequest) -> str:
     return settings.LOGIN_REDIRECT_URL
 
 
+def _locked(request: HttpRequest, template: str, form, minutes: int) -> HttpResponse:
+    error = f"Zu viele Fehlversuche. Versuche es in {minutes} Minute{'n' if minutes > 1 else ''} wieder."
+    context = {"form": form, "error": error, "next": _safe_next(request)}
+    return render(request, template, context, status=429)
+
+
 @require_http_methods(["GET", "POST"])
 async def login_view(request: HttpRequest) -> HttpResponse:
     if (await request.auser()).is_authenticated:
@@ -42,6 +48,8 @@ async def login_view(request: HttpRequest) -> HttpResponse:
 
     form = LoginForm(request.POST or None, initial={"username": request.GET.get("username", "")})
     error = None
+    if request.method == "POST" and (minutes := await ratelimit.locked_minutes(request)):
+        return _locked(request, "accounts/login.html", form, minutes)
     if request.method == "POST" and form.is_valid():
         user = await aauthenticate(
             request, username=form.cleaned_data["username"], password=form.cleaned_data["password"]
@@ -52,7 +60,9 @@ async def login_view(request: HttpRequest) -> HttpResponse:
             return redirect(f"{reverse('accounts:login_code')}?next={_safe_next(request)}")
         if user is not None:
             await alogin(request, user)
+            await ratelimit.clear_failures(request)
             return redirect(_safe_next(request))
+        await ratelimit.record_failure(request, form.cleaned_data["username"])
         error = "Benutzername oder Passwort ist falsch."
 
     return render(request, "accounts/login.html", {"form": form, "error": error, "next": _safe_next(request)})
@@ -68,12 +78,16 @@ async def login_code(request: HttpRequest) -> HttpResponse:
 
     form = CodeForm(request.POST or None)
     error = None
+    if request.method == "POST" and (minutes := await ratelimit.locked_minutes(request)):
+        return _locked(request, "accounts/login_code.html", form, minutes)
     if request.method == "POST" and form.is_valid():
         user = await User.objects.aget(pk=pending["user"])
         if await sync_to_async(mfa.verify)(user, form.cleaned_data["code"]):
             await request.session.apop(MFA_PENDING_KEY, None)
             await alogin(request, user, backend=pending["backend"])
+            await ratelimit.clear_failures(request)
             return redirect(_safe_next(request))
+        await ratelimit.record_failure(request, user.get_username())
         error = "Der Code ist ungültig oder abgelaufen."
     return render(request, "accounts/login_code.html", {"form": form, "error": error, "next": _safe_next(request)})
 

@@ -1,3 +1,4 @@
+from django.core.validators import MinValueValidator
 from django.db import models
 
 
@@ -36,6 +37,19 @@ class AppSettings(models.Model):
         default=Rounding.EXACT,
         help_text="Beim Stoppen des Timers und beim Speichern eines Eintrags wird das Ende aufgerundet. "
         "Bestehende Einträge bleiben, wie sie sind.",
+    )
+
+    login_max_attempts = models.PositiveSmallIntegerField(
+        "Fehlversuche bis zur Sperre",
+        default=5,
+        help_text="Nach so vielen falschen Passwörtern oder Codes von einer IP-Adresse ist die Anmeldung von dort "
+        "gesperrt. 0 schaltet die Sperre aus.",
+    )
+    login_lockout_minutes = models.PositiveSmallIntegerField(
+        "Sperre in Minuten",
+        default=15,
+        validators=[MinValueValidator(1)],
+        help_text="Zählt die Fehlversuche in diesem Zeitraum und sperrt so lange.",
     )
 
     class SyncInterval(models.IntegerChoices):

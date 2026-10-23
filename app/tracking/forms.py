@@ -1,11 +1,20 @@
 from django import forms
-from django.db.models import Q, QuerySet
+from django.db.models import F, Max, Q, QuerySet
 
 from core.forms import StyledFormMixin
 from core.models import AppSettings
 from projects.models import Project, Task
 from tracking.models import TimeEntry
 from tracking.services import rounded_end
+
+
+def task_choices(user, include_pk: int | None = None):
+    """The tasks offered when booking time: open tasks of active projects, the ones the user booked last first."""
+    tasks = open_tasks(user, include_pk=include_pk).filter(Q(project__status=Project.Status.ACTIVE) | Q(pk=include_pk))
+    last_used = Max("time_entries__started_at", filter=Q(time_entries__user=user))
+    return tasks.annotate(last_used=last_used).order_by(
+        F("last_used").desc(nulls_last=True), "project__customer__name", "project__name", "name"
+    )
 
 
 class TaskChoiceField(forms.ModelChoiceField):
@@ -51,7 +60,7 @@ class TimeEntryForm(StyledFormMixin, forms.ModelForm):
         super().__init__(*args, **kwargs)
         # Keep the entry's current task selectable even if it is done or no longer unlocked by now.
         include = self.instance.task_id if self.instance.pk else None
-        self.fields["task"].queryset = open_tasks(user, include_pk=include)
+        self.fields["task"].queryset = task_choices(user, include_pk=include)
         self.fields["ended_at"].required = True
 
     def clean(self):
