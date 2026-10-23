@@ -11,6 +11,7 @@
     <a href="?abgeschlossen={% if show_done %}0{% else %}1{% endif %}" class="btn">
       {% if show_done %}Abgeschlossene ausblenden{% else %}Abgeschlossene anzeigen{% endif %}
     </a>
+    <a href="{% url 'projects:templates' %}" class="btn">Aufgabenvorlagen</a>
     <a {% dialog_link "projects:create" %} class="btn btn-primary">{% icon "plus" %}Neues Projekt</a>
   </div>
 </div>

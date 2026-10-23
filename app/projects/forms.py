@@ -1,8 +1,9 @@
 from django import forms
+from django.db import transaction
 
 from core.forms import StyledFormMixin
 from customers.models import Customer
-from projects.models import Project, Task
+from projects.models import Project, Task, TaskTemplate
 
 
 class ProjectForm(StyledFormMixin, forms.ModelForm):
@@ -15,9 +16,19 @@ class ProjectForm(StyledFormMixin, forms.ModelForm):
             "end_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
         }
 
-    def __init__(self, *args, **kwargs):
+    templates = forms.ModelMultipleChoiceField(
+        label="Aufgaben aus Vorlagen",
+        queryset=TaskTemplate.objects.all(),
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+    )
+
+    def __init__(self, *args, offer_templates: bool = False, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["customer"].queryset = Customer.objects.filter(is_archived=False)
+        # Offered when creating a project; afterwards templates are added on the project page.
+        if not offer_templates:
+            del self.fields["templates"]
 
     def clean(self):
         cleaned = super().clean()
@@ -25,6 +36,13 @@ class ProjectForm(StyledFormMixin, forms.ModelForm):
         if start and end and end < start:
             self.add_error("end_date", "Das Ende liegt vor dem Start.")
         return cleaned
+
+    @transaction.atomic
+    def save(self, commit=True):
+        project = super().save(commit)
+        if commit and self.cleaned_data.get("templates"):
+            Task.objects.bulk_create(t.to_task(project) for t in self.cleaned_data["templates"])
+        return project
 
 
 class TaskForm(StyledFormMixin, forms.ModelForm):
@@ -37,4 +55,11 @@ class TaskEditForm(StyledFormMixin, forms.ModelForm):
     class Meta:
         model = Task
         fields = ["name", "status", "description", "hourly_rate", "estimated_hours", "is_billable"]
+        widgets = {"description": forms.Textarea(attrs={"rows": 3})}
+
+
+class TaskTemplateForm(StyledFormMixin, forms.ModelForm):
+    class Meta:
+        model = TaskTemplate
+        fields = ["name", "description", "hourly_rate", "estimated_hours", "is_billable"]
         widgets = {"description": forms.Textarea(attrs={"rows": 3})}

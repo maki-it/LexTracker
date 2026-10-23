@@ -37,6 +37,28 @@
     </table>
   </div>
 
+  {% if templates %}
+  <form hx-post="{% url 'projects:task_from_templates' project.pk %}" hx-target="#tasks" hx-swap="outerHTML"
+        method="post" action="{% url 'projects:task_from_templates' project.pk %}" class="card flex flex-col gap-4">
+    <div class="flex flex-wrap items-baseline justify-between gap-2">
+      <h3 class="font-semibold">Aus Vorlagen hinzufügen</h3>
+      <a href="{% url 'projects:templates' %}" class="text-[13px]">Vorlagen verwalten</a>
+    </div>
+    {% csrf_token %}
+    <div class="flex flex-wrap gap-x-4 gap-y-2">
+      {% for template, in_project in templates %}
+      <label class="flex items-center gap-2 text-sm{% if in_project %} text-muted{% endif %}"{% if in_project %} title="Schon im Projekt"{% endif %}>
+        <input type="checkbox" name="vorlage" value="{{ template.pk }}" class="size-4 accent-primary"{% if in_project %} disabled{% endif %}>
+        {{ template.name }}
+      </label>
+      {% endfor %}
+    </div>
+    <div class="flex justify-end">
+      <button type="submit" class="btn">Ausgewählte hinzufügen</button>
+    </div>
+  </form>
+  {% endif %}
+
   <form hx-post="{% url 'projects:task_create' project.pk %}" hx-target="#tasks" hx-swap="outerHTML"
         method="post" action="{% url 'projects:task_create' project.pk %}" class="card flex flex-col gap-4">
     <h3 class="font-semibold">Neue Aufgabe</h3>

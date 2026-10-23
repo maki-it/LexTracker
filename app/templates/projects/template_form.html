@@ -1,0 +1,28 @@
+{% extends layout %}
+{% load icons %}
+{% block title %}{% if template %}{{ template.name }} bearbeiten{% else %}Neue Vorlage{% endif %} · LexTracker{% endblock %}
+{% block content %}
+<div>
+  <p class="breadcrumb"><a href="{% url 'projects:list' %}">Projekte</a> / <a href="{% url 'projects:templates' %}">Aufgabenvorlagen</a></p>
+  <h1>{% if template %}Vorlage bearbeiten{% else %}Neue Vorlage{% endif %}</h1>
+</div>
+<form method="post" action="{{ request.get_full_path }}" class="card flex max-w-2xl flex-col gap-4">
+  {% csrf_token %}
+  {% include "core/_form_fields.html" %}
+  {% if template %}<p class="text-sm text-muted">Änderungen gelten für Aufgaben, die du danach aus der Vorlage anlegst. Bestehende Aufgaben bleiben, wie sie sind.</p>{% endif %}
+  <div class="flex gap-2 border-t border-line pt-4">
+    <button type="submit" class="btn btn-primary">Speichern</button>
+    <a href="{% url 'projects:templates' %}" class="btn btn-ghost" data-close-dialog>Abbrechen</a>
+  </div>
+</form>
+{% if template %}
+<section class="card flex max-w-2xl flex-col gap-3">
+  <h2>Vorlage löschen</h2>
+  <p class="text-sm text-muted">Aufgaben, die aus dieser Vorlage angelegt wurden, bleiben erhalten.</p>
+  <form method="post" action="{% url 'projects:template_delete' template.pk %}" onsubmit="return confirm('Diese Vorlage wirklich löschen?')">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">{% icon "trash" size=14 %}Löschen</button>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

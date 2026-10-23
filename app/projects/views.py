@@ -9,8 +9,8 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 
 from core.dialogs import navigate
 from core.shortcuts import arender
-from projects.forms import ProjectForm, TaskEditForm, TaskForm
-from projects.models import Project, Task
+from projects.forms import ProjectForm, TaskEditForm, TaskForm, TaskTemplateForm
+from projects.models import Project, Task, TaskTemplate
 from tracking.models import TimeEntry
 from tracking.queries import booked_time
 
@@ -41,7 +41,8 @@ async def project_list(request: HttpRequest) -> HttpResponse:
 async def project_form(request: HttpRequest, pk: int | None = None) -> HttpResponse:
     project = await _get_project(pk) if pk else None
     initial = {"customer": request.GET.get("kunde")} if not project else None
-    form = ProjectForm(request.POST or None, instance=project, initial=initial)
+    offer_templates = not project and await TaskTemplate.objects.aexists()
+    form = ProjectForm(request.POST or None, instance=project, initial=initial, offer_templates=offer_templates)
     if request.method == "POST" and await sync_to_async(form.is_valid)():
         project = await sync_to_async(form.save)()
         messages.success(request, f"Projekt „{project.name}“ gespeichert.")
@@ -68,12 +69,15 @@ async def project_delete(request: HttpRequest, pk: int) -> HttpResponse:
 
 
 async def _task_context(project: Project, task_form: TaskForm | None = None) -> dict:
-    tasks = project.tasks.annotate(booked=booked_time("time_entries__")).order_by("status", "name")
+    tasks = [t async for t in project.tasks.annotate(booked=booked_time("time_entries__")).order_by("status", "name")]
+    task_names = {t.name for t in tasks}
     return {
         "project": project,
-        "tasks": [t async for t in tasks],
+        "tasks": tasks,
         "task_form": task_form or TaskForm(),
         "status_choices": Task.Status.choices,
+        # Templates already in the project are shown, but cannot be added a second time.
+        "templates": [(t, t.name in task_names) async for t in TaskTemplate.objects.all()],
     }
 
 
@@ -95,6 +99,17 @@ async def task_create(request: HttpRequest, pk: int) -> HttpResponse:
         await sync_to_async(form.save)()
         form = None
     return render(request, "projects/_tasks.html", await _task_context(project, form))
+
+
+@require_POST
+async def task_from_templates(request: HttpRequest, pk: int) -> HttpResponse:
+    """Add a task for each chosen template and return the refreshed task list (htmx)."""
+    project = await _get_project(pk)
+    ids = [int(i) for i in request.POST.getlist("vorlage") if i.isdigit()]
+    existing = {name async for name in project.tasks.values_list("name", flat=True)}
+    new_tasks = [t.to_task(project) async for t in TaskTemplate.objects.filter(pk__in=ids) if t.name not in existing]
+    await Task.objects.abulk_create(new_tasks)
+    return render(request, "projects/_tasks.html", await _task_context(project))
 
 
 async def _get_task(project: Project, task_pk: int) -> Task:
@@ -120,6 +135,18 @@ async def task_edit(request: HttpRequest, pk: int, task_pk: int) -> HttpResponse
 
 
 @require_POST
+async def task_save_as_template(request: HttpRequest, pk: int, task_pk: int) -> HttpResponse:
+    project = await _get_project(pk)
+    task = await _get_task(project, task_pk)
+    if await TaskTemplate.objects.filter(name=task.name).aexists():
+        messages.error(request, f"Es gibt schon eine Vorlage „{task.name}“.")
+    else:
+        await TaskTemplate.from_task(task).asave()
+        messages.success(request, f"„{task.name}“ als Vorlage gespeichert.")
+    return redirect("projects:detail", pk=project.pk)
+
+
+@require_POST
 async def task_delete(request: HttpRequest, pk: int, task_pk: int) -> HttpResponse:
     project = await _get_project(pk)
     task = await _get_task(project, task_pk)
@@ -141,3 +168,36 @@ async def task_set_status(request: HttpRequest, pk: int, task_pk: int) -> HttpRe
     if status in Task.Status.values:
         await Task.objects.filter(pk=task_pk, project=project).aupdate(status=status)
     return render(request, "projects/_tasks.html", await _task_context(project))
+
+
+@require_GET
+async def template_list(request: HttpRequest) -> HttpResponse:
+    context = {"templates": [t async for t in TaskTemplate.objects.all()]}
+    return render(request, "projects/template_list.html", context)
+
+
+async def _get_template(pk: int) -> TaskTemplate:
+    try:
+        return await TaskTemplate.objects.aget(pk=pk)
+    except TaskTemplate.DoesNotExist as exc:
+        raise Http404 from exc
+
+
+@require_http_methods(["GET", "POST"])
+async def template_form(request: HttpRequest, pk: int | None = None) -> HttpResponse:
+    template = await _get_template(pk) if pk else None
+    form = TaskTemplateForm(request.POST or None, instance=template)
+    if request.method == "POST" and await sync_to_async(form.is_valid)():
+        template = await sync_to_async(form.save)()
+        messages.success(request, f"Vorlage „{template.name}“ gespeichert.")
+        return redirect("projects:templates")
+    return render(request, "projects/template_form.html", {"form": form, "template": template})
+
+
+@require_POST
+async def template_delete(request: HttpRequest, pk: int) -> HttpResponse:
+    # Tasks created from the template are copies and stay untouched.
+    template = await _get_template(pk)
+    await template.adelete()
+    messages.success(request, f"Vorlage „{template.name}“ gelöscht.")
+    return redirect("projects:templates")

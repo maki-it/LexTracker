@@ -81,3 +81,39 @@ class Task(TimeStampedModel):
             if rate is not None:
                 return rate
         return None
+
+
+class TaskTemplate(TimeStampedModel):
+    """A task that recurs across projects. Adding it to a project copies its values into a new task."""
+
+    name = models.CharField("Name", max_length=255, unique=True)
+    description = models.TextField("Beschreibung", blank=True)
+    is_billable = models.BooleanField("abrechenbar", default=True)
+    hourly_rate = models.DecimalField(
+        "Stundensatz (netto)",
+        max_digits=8,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Leer lassen, damit die Aufgabe den Stundensatz des Projekts verwendet.",
+    )
+    estimated_hours = models.DecimalField("Schätzung (Stunden)", max_digits=8, decimal_places=2, null=True, blank=True)
+
+    COPIED_FIELDS = ("name", "description", "is_billable", "hourly_rate", "estimated_hours")
+
+    class Meta:
+        verbose_name = "Aufgabenvorlage"
+        verbose_name_plural = "Aufgabenvorlagen"
+        ordering = ["name"]
+
+    def __str__(self) -> str:
+        return self.name
+
+    def to_task(self, project: Project) -> Task:
+        """An unsaved task in ``project`` with this template's values."""
+        return Task(project=project, **{field: getattr(self, field) for field in self.COPIED_FIELDS})
+
+    @classmethod
+    def from_task(cls, task: Task) -> TaskTemplate:
+        """An unsaved template with the values of ``task``."""
+        return cls(**{field: getattr(task, field) for field in cls.COPIED_FIELDS})
