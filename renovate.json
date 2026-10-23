@@ -7,16 +7,16 @@
   "packageRules": [
     {
       "matchManagers": ["pep621"],
-      "matchUpdateTypes": ["python"],
-      "groupName": "python version",
-      "semanticCommitType": "deps",
-      "semanticCommitScope": "python"
-    },
-    {
-      "matchManagers": ["pep621"],
       "groupName": "project dependencies",
       "semanticCommitType": "deps",
       "semanticCommitScope": "project"
+    },
+    {
+      "matchManagers": ["pep621"],
+      "matchDepNames": ["python"],
+      "groupName": "python version",
+      "semanticCommitType": "deps",
+      "semanticCommitScope": "python"
     }
   ]
 }
