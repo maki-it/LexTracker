@@ -14,6 +14,11 @@
     {% else %}
     <li class="flex items-center gap-2 text-muted">{% icon "x" %} Lexware Office noch nicht verbunden</li>
     {% endif %}
+    {% if mail.is_configured %}
+    <li class="flex items-center gap-2">{% icon "check" %} E-Mail-Versand über {{ mail.host }} (Passwort vergessen, Anmeldelinks, Wochenbericht)</li>
+    {% else %}
+    <li class="flex items-center gap-2 text-muted">{% icon "x" %} E-Mail-Versand noch nicht eingerichtet</li>
+    {% endif %}
     {% if app_settings.backup_enabled %}
     <li class="flex items-center gap-2">{% icon "check" %} Tägliche Datensicherung ab {{ app_settings.backup_time|time:"H:i" }} Uhr, {{ app_settings.backup_keep }} Kopien</li>
     {% else %}

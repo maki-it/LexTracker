@@ -1,4 +1,4 @@
-"""Setup of a fresh instance: the first administrator, the Lexware key, backups, then on to the start page.
+"""Setup of a fresh instance: the first administrator, the Lexware key, e-mail, backups, then on to the start page.
 
 While no account exists, every page leads here (see core.middleware). The later steps need the new
 administrator's login, so they can also be opened again afterwards.
@@ -11,6 +11,7 @@ from django.contrib.auth import alogin
 from django.core.exceptions import PermissionDenied
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
+from django.utils import timezone
 from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.http import require_http_methods
 
@@ -21,6 +22,9 @@ from lexware import credentials
 from lexware.client import LexwareError
 from lexware.forms import ApiKeyForm
 from lexware.views import check_and_store
+from mailer import outbox
+from mailer.forms import MailSettingsForm
+from mailer.models import MailSettings
 from setup import code as setup_code
 from setup.forms import AdminAccountForm, AlreadySetUp, BackupForm
 
@@ -28,6 +32,7 @@ from setup.forms import AdminAccountForm, AlreadySetUp, BackupForm
 STEPS = [
     ("setup:account", "Admin-Konto"),
     ("setup:lexware", "Lexware Office"),
+    ("setup:mail", "E-Mail"),
     ("setup:backup", "Datensicherung"),
     ("setup:done", "Fertig"),
 ]
@@ -96,9 +101,37 @@ async def lexware(request: HttpRequest) -> HttpResponse:
         return response
     form = ApiKeyForm(request.POST or None)
     if request.method == "POST" and form.is_valid() and await check_and_store(form) is not None:
-        return redirect("setup:backup")
+        return redirect("setup:mail")
     context = {"form": form, "lexware": await credentials.astatus()}
     return _render(request, "setup/lexware.html", "setup:lexware", context)
+
+
+@sensitive_post_parameters("password")
+@require_http_methods(["GET", "POST"])
+async def mail(request: HttpRequest) -> HttpResponse:
+    """The SMTP server, optional. A test mail goes to the administrator's address before moving on."""
+    if response := _not_admin(request):
+        return response
+    config = await MailSettings.aload()
+    initial = {} if config.base_url else {"base_url": request.build_absolute_uri("/").rstrip("/")}
+    form = MailSettingsForm(request.POST or None, instance=config, initial=initial)
+    test_result = None
+    if request.method == "POST" and await sync_to_async(form.is_valid)():
+        form.instance.updated_at = timezone.now()
+        await sync_to_async(form.save)()
+        if request.POST.get("test") and config.is_configured:
+            to = request.user.email
+            if not to:
+                test_result = {"error": "Dein Konto hat keine E-Mail-Adresse. Trag unter Konto eine ein."}
+            else:
+                subject = "Testmail von LexTracker"
+                text, html = outbox.render("test", {"subject": subject, "config": config})
+                error = await outbox.asend_now(config, outbox.Message(to, subject, text, html))
+                test_result = {"error": error} if error else {"ok": to}
+        else:
+            return redirect("setup:backup")
+    context = {"form": form, "config": form.instance, "test_result": test_result}
+    return _render(request, "setup/mail.html", "setup:mail", context)
 
 
 @require_http_methods(["GET", "POST"])
@@ -127,5 +160,9 @@ async def done(request: HttpRequest) -> HttpResponse:
                 messages.success(request, f"Kunden importiert: {result.summary}")
         messages.success(request, "Die Einrichtung ist abgeschlossen. Viel Spaß mit LexTracker!")
         return redirect("core:dashboard")
-    context = {"lexware": status, "app_settings": await AppSettings.aload()}
+    context = {
+        "lexware": status,
+        "app_settings": await AppSettings.aload(),
+        "mail": await MailSettings.aload(),
+    }
     return _render(request, "setup/done.html", "setup:done", context)

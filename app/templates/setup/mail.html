@@ -1,0 +1,24 @@
+{% extends "setup/_layout.html" %}
+{% block step %}
+<form method="post" class="card flex flex-col gap-4 p-6">
+  <div>
+    <h1 class="text-lg">E-Mail-Versand</h1>
+    <p class="mt-1 text-sm text-muted">
+      Mit einem SMTP-Server verschickt LexTracker Links zum Zurücksetzen des Passworts, Anmeldelinks, Wochenberichte und Erinnerungen.
+      Das Passwort wird verschlüsselt gespeichert. Du kannst den Schritt überspringen und es später unter „Einstellungen“ nachholen.
+    </p>
+  </div>
+  {% if test_result.ok %}
+  <div role="alert" class="alert alert-success">Testmail an {{ test_result.ok }} verschickt. Schau in dein Postfach, dann geht es mit „Weiter“ los.</div>
+  {% elif test_result.error %}
+  <div role="alert" class="alert alert-error">Die Testmail wurde nicht verschickt: {{ test_result.error }}</div>
+  {% endif %}
+  {% csrf_token %}
+  {% include "core/_form_fields.html" %}
+  <div class="mt-1 flex flex-wrap items-center gap-3">
+    <button type="submit" class="btn btn-primary">Speichern und weiter</button>
+    <button type="submit" name="test" value="1" class="btn">Speichern und Testmail schicken</button>
+    <a href="{% url 'setup:backup' %}" class="btn btn-ghost">{% if config.is_configured %}Weiter{% else %}Später einrichten{% endif %}</a>
+  </div>
+</form>
+{% endblock %}
