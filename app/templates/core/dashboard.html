@@ -14,6 +14,11 @@
   Lexware Office ist noch nicht verbunden. Trag den API-Schlüssel in den <a href="{% url 'core:settings' %}?tab=lexware">Einstellungen</a> ein, um Kunden zu importieren und Rechnungen zu erstellen.
 </div>
 {% endif %}
+{% if scheduler_stopped %}
+<div role="alert" class="alert alert-error">
+  Der Scheduler meldet sich nicht mehr. Import, Sicherung und E-Mail-Versand laufen so nicht. Mehr dazu unter <a href="{% url 'core:jobs' %}">Hintergrundaufgaben</a>.
+</div>
+{% endif %}
 
 <section class="card flex flex-col gap-3">
   <h2>Timer starten</h2>

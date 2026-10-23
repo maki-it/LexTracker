@@ -186,6 +186,10 @@ class AppSettings(models.Model):
     # Written by the scheduler, not on the settings page.
     weekly_report_at = models.DateTimeField("letzter Wochenbericht", null=True, blank=True, editable=False)
 
+    # Written by the scheduler every check, so the web app can tell whether it is still alive.
+    scheduler_started_at = models.DateTimeField("Scheduler gestartet", null=True, blank=True, editable=False)
+    scheduler_seen_at = models.DateTimeField("Scheduler zuletzt gemeldet", null=True, blank=True, editable=False)
+
     class Meta:
         verbose_name = verbose_name_plural = "Einstellungen"
 
@@ -199,3 +203,28 @@ class AppSettings(models.Model):
     @classmethod
     async def aload(cls) -> AppSettings:
         return (await cls.objects.aget_or_create(pk=1))[0]
+
+
+class JobStatus(UUIDModel):
+    """How the scheduler's last run of one job went, shown on the jobs page. One row per job."""
+
+    key = models.SlugField("Aufgabe", unique=True)
+    last_run_at = models.DateTimeField("letzter Lauf", null=True, blank=True)
+    last_success_at = models.DateTimeField("letzter erfolgreicher Lauf", null=True, blank=True)
+    duration_ms = models.PositiveIntegerField("Dauer in Millisekunden", default=0)
+    last_ok = models.BooleanField("letzter Lauf erfolgreich", default=True)
+    last_result = models.CharField("Ergebnis des letzten Laufs", max_length=500, blank=True)
+    failures = models.PositiveIntegerField("Fehlschläge in Folge", default=0)
+    last_error = models.CharField("letzte Fehlermeldung", max_length=500, blank=True)
+    last_error_at = models.DateTimeField("letzter Fehlschlag", null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Aufgabenstatus"
+        verbose_name_plural = "Aufgabenstatus"
+
+    def __str__(self) -> str:
+        return self.key
+
+    @property
+    def duration_seconds(self) -> float:
+        return self.duration_ms / 1000

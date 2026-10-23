@@ -18,7 +18,7 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 from django.views.generic import RedirectView
 
 from accounts.models import User
-from core import backup
+from core import backup, jobs, jobs_overview
 from core.dialogs import navigate
 from core.forms import AppSettingsForm
 from core.models import AppSettings
@@ -54,8 +54,14 @@ async def dashboard(request: HttpRequest) -> HttpResponse:
             "filter_label": active_filter["label"],
             "filter_base": "",
             "lexware_missing": request.user.is_admin and not await credentials.ais_configured(),
+            "scheduler_stopped": request.user.is_admin and await _scheduler_stopped(),
         },
     )
+
+
+async def _scheduler_stopped() -> bool:
+    """Whether the scheduler reported once and then stopped. One that never did is not a reason to warn."""
+    return jobs.is_alive(await AppSettings.aload(), timezone.now()) is False
 
 
 def _database_ok() -> bool:
@@ -171,6 +177,21 @@ async def app_settings(request: HttpRequest) -> HttpResponse:
         ).acount(),
     }
     return render(request, "core/settings.html", context)
+
+
+@require_GET
+async def job_list(request: HttpRequest) -> HttpResponse:
+    _require_admin(request)
+    now = timezone.now()
+    app_settings = await AppSettings.aload()
+    context = {
+        "now": now,
+        "alive": jobs.is_alive(app_settings, now),
+        "started_at": app_settings.scheduler_started_at,
+        "seen_at": app_settings.scheduler_seen_at,
+        "jobs": await jobs_overview.overview(now, app_settings),
+    }
+    return render(request, "core/jobs.html", context)
 
 
 async def _get_backup(name: str) -> Path:
