@@ -50,11 +50,23 @@ STATUS_FILTERS = {
 }
 
 
+# A draft deleted in Lexware is still listed under "Entwürfe" (next to "In Lexware gelöscht"): it has no number.
+DELETED_DRAFT = Q(status=Invoice.Status.DELETED, voucher_number="")
+
+
+def _status_q(keys: list[str]) -> Q:
+    """The invoices matching any of the selected status filters."""
+    query = Q(status__in=[s for key in keys for s in STATUS_FILTERS[key][1]])
+    return query | DELETED_DRAFT if "entwurf" in keys else query
+
+
 async def _invoice_counts() -> dict[str, int]:
     by_status = {
         row["status"]: row["n"] async for row in Invoice.objects.values("status").annotate(n=Count("pk")).order_by()
     }
-    return {key: sum(by_status.get(s, 0) for s in statuses) for key, (_, statuses) in STATUS_FILTERS.items()}
+    counts = {key: sum(by_status.get(s, 0) for s in statuses) for key, (_, statuses) in STATUS_FILTERS.items()}
+    counts["entwurf"] += await Invoice.objects.filter(DELETED_DRAFT).acount()
+    return counts
 
 
 @require_GET
@@ -98,7 +110,7 @@ async def invoice_list(request: HttpRequest) -> HttpResponse:
         .order_by("-date", "-voucher_number", "-pk")
     )
     if selected:
-        invoices = invoices.filter(status__in=[s for key in selected for s in STATUS_FILTERS[key][1]])
+        invoices = invoices.filter(_status_q(selected))
     if customer_id:
         invoices = invoices.filter(customer_id=customer_id)
     if query:
