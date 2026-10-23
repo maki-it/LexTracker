@@ -21,6 +21,6 @@
   </td>
 </tr>
 {% empty %}
-{% if not page or page.is_first %}<tr><td colspan="7" class="py-8 text-center text-muted">{% if query or status or customer_id %}Keine Rechnung passt zum Filter.{% else %}Noch keine Rechnungen erstellt.{% endif %}</td></tr>{% endif %}
+{% if not page or page.is_first %}<tr><td colspan="7" class="py-8 text-center text-muted">{% if query or statuses or customer_id %}Keine Rechnung passt zum Filter.{% else %}Noch keine Rechnungen erstellt.{% endif %}</td></tr>{% endif %}
 {% endfor %}
 {% if page %}{% include "core/_more_rows.html" with colspan=7 %}{% endif %}
