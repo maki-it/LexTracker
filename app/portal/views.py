@@ -19,7 +19,13 @@ from billing.models import Invoice
 from billing.periods import Period, period_containing
 from billing.views import STATUS_FILTERS
 from core.shortcuts import arender
-from customers.lexware import apply_billing_address, apply_to_contact, billing_address
+from customers.lexware import (
+    apply_billing_address,
+    apply_contact_person,
+    apply_to_contact,
+    billing_address,
+    contact_person,
+)
 from customers.models import Customer
 from lexware.client import LexwareError, client_from_settings
 from lexware.schemas import Contact
@@ -169,6 +175,7 @@ def _contact_initial(contact: dict) -> dict:
         "version": current.version,
         **address,
         "countryCode": address["countryCode"] or "DE",
+        **{f"person_{key}": value for key, value in contact_person(contact).items()},
     }
 
 
@@ -191,13 +198,14 @@ async def contact(request: HttpRequest) -> HttpResponse:
         async with client_from_settings() as client:
             raw = await client.get_contact(customer.lexware_id)
             initial = _contact_initial(raw)
-            form = ContactForm(request.POST or None, initial=initial)
+            with_person = raw.get("company") is not None
+            form = ContactForm(request.POST or None, initial=initial, with_person=with_person)
             if request.method == "POST" and form.is_valid():
                 if form.cleaned_data["version"] != initial["version"]:
                     # Keep what the customer typed, but with the new version, so saving again overwrites.
                     data = request.POST.copy()
                     data["version"] = initial["version"]
-                    form = ContactForm(data, initial=initial)
+                    form = ContactForm(data, initial=initial, with_person=with_person)
                     form.add_error(
                         None,
                         "Deine Kontaktdaten wurden in der Zwischenzeit geändert. "
@@ -210,6 +218,8 @@ async def contact(request: HttpRequest) -> HttpResponse:
                     customer.phone = form.cleaned_data["phone"]
                     apply_to_contact(raw, customer)
                     apply_billing_address(raw, form.address)
+                    if with_person:
+                        apply_contact_person(raw, form.person)
                     customer.lexware_version = await client.update_contact(customer.lexware_id, raw)
                     customer.lexware_synced_at = timezone.now()
                     await customer.asave(

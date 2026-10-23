@@ -6,7 +6,7 @@ import pytest
 from django.urls import reverse
 
 from accounts.models import User
-from customers.lexware import apply_billing_address, billing_address
+from customers.lexware import apply_billing_address, apply_contact_person, billing_address, contact_person
 from customers.models import Customer
 from tests.lexware_fakes import contact, fake_client
 
@@ -17,13 +17,23 @@ ADDRESS = {"street": "Hauptstr. 1", "zip": "10115", "city": "Berlin", "countryCo
 
 @pytest.fixture
 def lexware_contact():
-    return contact(
+    raw = contact(
         "ACME GmbH",
         version=3,
         addresses={"billing": [{**ADDRESS, "supplement": "Etage 2"}], "shipping": [{"street": "Lager 5"}]},
         emailAddresses={"business": ["info@acme.de"]},
         note="bleibt",
     )
+    raw["company"]["contactPersons"] = [
+        {
+            "salutation": "Herr",
+            "firstName": "Max",
+            "lastName": "Mustermann",
+            "emailAddress": "max@acme.de",
+            "primary": True,
+        }
+    ]
+    return raw
 
 
 @pytest.fixture
@@ -63,6 +73,11 @@ def form_data(**changes) -> dict:
         **ADDRESS,
         "email": "info@acme.de",
         "phone": "",
+        "person_salutation": "Herr",
+        "person_first_name": "Max",
+        "person_last_name": "Mustermann",
+        "person_email": "max@acme.de",
+        "person_phone": "",
         "version": "3",
         **changes,
     }
@@ -185,3 +200,60 @@ def test_admin_can_allow_contact_changes(client, user, customer_user):
     client.force_login(user)
     form = client.get(reverse("users:edit", args=[customer_user.pk])).text
     assert 'name="portal_contact"' in form
+
+
+def test_contact_person_helpers_keep_unknown_fields():
+    raw = {"company": {"name": "X", "contactPersons": [{"lastName": "Alt", "primary": True, "extra": 1}]}}
+
+    apply_contact_person(raw, {"salutation": "Frau", "first_name": "", "last_name": "Neu", "email": "", "phone": "1"})
+
+    person = raw["company"]["contactPersons"][0]
+    assert person == {"salutation": "Frau", "lastName": "Neu", "phoneNumber": "1", "primary": True, "extra": 1}
+    assert contact_person(raw)["last_name"] == "Neu"
+    # No values removes the contact person, values without one add it, other contacts are left alone.
+    empty = dict.fromkeys(["salutation", "first_name", "last_name", "email", "phone"], "")
+    assert apply_contact_person(raw, empty)["company"]["contactPersons"] == []
+    assert apply_contact_person(raw, {**empty, "last_name": "A"})["company"]["contactPersons"][0]["primary"]
+    assert apply_contact_person({"person": {}}, {**empty, "last_name": "A"}) == {"person": {}}
+
+
+def test_contact_page_shows_customer_number_and_contact_person(client, customer_user, customer, lexware):
+    customer.customer_number = "10001"
+    customer.save()
+    client.force_login(customer_user)
+
+    text = client.get(reverse("portal:contact")).text
+
+    assert "Kundennummer 10001" in text
+    assert 'value="Mustermann"' in text
+    assert 'value="max@acme.de"' in text
+
+
+def test_saving_changes_the_contact_person(client, customer_user, lexware):
+    client.force_login(customer_user)
+
+    client.post(reverse("portal:contact"), form_data(person_first_name="Maria", person_salutation="Frau"))
+
+    sent = json.loads(lexware[1].content)
+    assert sent["company"]["contactPersons"] == [
+        {
+            "salutation": "Frau",
+            "firstName": "Maria",
+            "lastName": "Mustermann",
+            "emailAddress": "max@acme.de",
+            "primary": True,
+        }
+    ]
+
+
+def test_contact_that_is_a_person_has_no_contact_person_section(client, customer_user, customer, monkeypatch, settings):
+    settings.LEXWARE_API_KEY = "test-key"
+    raw = contact(id=customer.lexware_id, version=3)
+    raw.pop("company")
+    raw["person"] = {"firstName": "Max", "lastName": "Muster"}
+    monkeypatch.setattr(
+        "portal.views.client_from_settings", lambda: fake_client(lambda request: httpx.Response(200, json=raw))
+    )
+    client.force_login(customer_user)
+
+    assert "person_last_name" not in client.get(reverse("portal:contact")).text

@@ -72,6 +72,49 @@ def apply_billing_address(contact: dict, address: dict) -> dict:
     return contact
 
 
+# The contact person (Ansprechpartner) of a company: form field -> key in Lexware.
+PERSON_FIELDS = {
+    "salutation": "salutation",
+    "first_name": "firstName",
+    "last_name": "lastName",
+    "email": "emailAddress",
+    "phone": "phoneNumber",
+}
+
+
+def contact_person(contact: dict) -> dict:
+    """The company's primary contact person (else the first) with every field of ``PERSON_FIELDS``, empty if none."""
+    persons = (contact.get("company") or {}).get("contactPersons") or []
+    person = next((p for p in persons if p.get("primary")), persons[0] if persons else {})
+    return {key: person.get(lexware_key) or "" for key, lexware_key in PERSON_FIELDS.items()}
+
+
+def apply_contact_person(contact: dict, person: dict) -> dict:
+    """Write ``person`` into the company's primary contact person, keeping fields LexTracker does not know.
+
+    Without any value the contact person is removed, with values but no contact person one is added.
+    Contacts that are not companies are left alone.
+    """
+    company = contact.get("company")
+    if company is None:
+        return contact
+    persons = company.setdefault("contactPersons", [])
+    target = next((p for p in persons if p.get("primary")), persons[0] if persons else None)
+    if not any(person.get(key) for key in PERSON_FIELDS):
+        if target is not None:
+            persons.remove(target)
+        return contact
+    if target is None:
+        target = {"primary": True}
+        persons.append(target)
+    for key, lexware_key in PERSON_FIELDS.items():
+        if person.get(key):
+            target[lexware_key] = person[key]
+        else:
+            target.pop(lexware_key, None)
+    return contact
+
+
 async def push_to_lexware(client: LexwareClient, customer: Customer) -> None:
     """Send the customer's Lexware fields to Lexware and remember the contact's new version.
 
