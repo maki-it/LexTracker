@@ -2,7 +2,7 @@
 {% block title %}Konto · LexTracker{% endblock %}
 {% block content %}
 <h1>Konto</h1>
-<div class="grid max-w-2xl gap-6">
+<div class="grid max-w-2xl grid-cols-1 gap-6">
   <form method="post" action="{% url 'account:settings' %}" class="card flex flex-col gap-4">
     {% csrf_token %}
     <h2>Profil und Anzeige</h2>
@@ -39,10 +39,14 @@
     {% if new_key %}
     <div role="alert" class="alert alert-success flex flex-col gap-2">
       <span class="font-medium">Neuer Token. Kopiere ihn jetzt, er wird nur dieses eine Mal angezeigt.</span>
-      <code class="break-all rounded bg-surface px-2 py-1 text-ink select-all">{{ new_key }}</code>
-      <span class="text-[13px]">Zum Beispiel in Claude Code: <code class="break-all">claude mcp add --transport http lextracker {{ mcp_url }} --header "Authorization: Bearer {{ new_key }}"</code></span>
+      <div class="flex items-center gap-2">
+        <code id="new-token" class="min-w-0 flex-1 break-all rounded bg-surface px-2 py-1 text-ink select-all">{{ new_key }}</code>
+        <button type="button" class="btn btn-sm" data-copy="new-token">Kopieren</button>
+      </div>
+      <span class="text-[13px]">In den Konfigurationen unten ist er schon eingesetzt.</span>
     </div>
     {% endif %}
+    {% include "accounts/_mcp_clients.html" %}
     <details class="rounded-lg border border-line px-3 py-2.5 text-sm"{% if new_key %} open{% endif %}>
       <summary class="cursor-pointer font-medium">Beispiel-Prompts für deinen Agenten</summary>
       <div class="mt-3 flex flex-col gap-3">

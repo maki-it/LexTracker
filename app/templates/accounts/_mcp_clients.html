@@ -1,0 +1,36 @@
+<div class="flex flex-col gap-3 rounded-lg border border-line px-3 py-3 text-sm" data-tabs>
+  <div>
+    <h3 class="font-medium">Agent verbinden</h3>
+    <p class="mt-0.5 text-muted">
+      Wähle deinen Client und kopiere die Konfiguration.
+      {% if new_key %}Dein neuer Token ist schon eingesetzt.{% else %}Ersetze <code class="text-ink">{{ token_placeholder }}</code> durch deinen Token.{% endif %}
+    </p>
+  </div>
+  <div class="tabs mt-0 overflow-x-auto" role="tablist">
+    {% for client in mcp_clients %}
+    <button type="button" role="tab" class="tab cursor-pointer whitespace-nowrap{% if forloop.first %} tab-active{% endif %}"
+            id="mcp-tab-{{ client.slug }}" aria-controls="mcp-panel-{{ client.slug }}"
+            aria-selected="{% if forloop.first %}true{% else %}false{% endif %}" data-tab="{{ client.slug }}">{{ client.name }}</button>
+    {% endfor %}
+  </div>
+  {% for client in mcp_clients %}
+  <div role="tabpanel" id="mcp-panel-{{ client.slug }}" aria-labelledby="mcp-tab-{{ client.slug }}"
+       class="flex flex-col gap-3" data-tab-panel="{{ client.slug }}"{% if not forloop.first %} hidden{% endif %}>
+    <p>{{ client.intro|safe }}</p>
+    {% for snippet in client.snippets %}
+    <div class="flex flex-col gap-1">
+      <div class="flex items-center justify-between gap-2">
+        <span class="text-muted">{{ snippet.label }}</span>
+        <button type="button" class="btn btn-sm" data-copy="mcp-{{ client.slug }}-{{ forloop.counter }}">Kopieren</button>
+      </div>
+      <pre id="mcp-{{ client.slug }}-{{ forloop.counter }}" class="overflow-x-auto rounded bg-surface-muted px-3 py-2 text-[13px] text-ink">{{ snippet.text }}</pre>
+    </div>
+    {% endfor %}
+    {% if client.notes %}
+    <ul class="flex list-disc flex-col gap-1 pl-5 text-[13px] text-muted">
+      {% for note in client.notes %}<li>{{ note|safe }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>

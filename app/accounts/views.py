@@ -11,7 +11,7 @@ from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme, urlencode, urlsafe_base64_decode
 from django.views.decorators.http import require_http_methods, require_POST
 
-from accounts import mfa, ratelimit
+from accounts import mcp_clients, mfa, ratelimit
 from accounts.forms import (
     ApiTokenForm,
     CodeForm,
@@ -112,6 +112,7 @@ async def account(request: HttpRequest) -> HttpResponse:
 
 
 async def _account_page(request: HttpRequest, form, token_form=None, new_key: str = "") -> HttpResponse:
+    mcp_url = request.build_absolute_uri(reverse("mcp:endpoint"))
     return render(
         request,
         "accounts/account.html",
@@ -121,7 +122,9 @@ async def _account_page(request: HttpRequest, form, token_form=None, new_key: st
             "tokens": [t async for t in request.user.api_tokens.all()],
             "token_form": token_form or ApiTokenForm(),
             "new_key": new_key,
-            "mcp_url": request.build_absolute_uri(reverse("mcp:endpoint")),
+            "mcp_url": mcp_url,
+            "mcp_clients": mcp_clients.clients(mcp_url, new_key),
+            "token_placeholder": mcp_clients.TOKEN_PLACEHOLDER,
         },
     )
 
