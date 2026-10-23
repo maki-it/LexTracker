@@ -14,6 +14,7 @@ dependencies = [
     "uvicorn[standard]>=0.54",
     "django-otp>=1.7.5",
     "segno>=1.6.6",
+    "brotli>=1.2.1",
 ]
 
 [dependency-groups]

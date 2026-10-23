@@ -1,4 +1,3 @@
-{% load icons dialogs %}
 <div id="customer-table" class="flex flex-col gap-4">
   {% if error %}
   <div role="alert" class="alert alert-error">{{ error }}</div>
@@ -26,21 +25,7 @@
         </tr>
       </thead>
       <tbody>
-        {% for customer in customers %}
-        <tr{% if customer.is_archived %} class="bg-surface-muted text-muted"{% endif %}>
-          <td class="text-muted tabular-nums">{{ customer.customer_number|default:"–" }}</td>
-          <td class="font-medium">
-            <a class="hover:underline{% if customer.is_archived %} text-muted{% endif %}" {% dialog_link "customers:edit" customer.pk %}>{{ customer.name }}</a>
-            {% if customer.lexware_deleted %}<span class="badge badge-danger ml-2">{% icon "archive" size=12 %}in Lexware gelöscht</span>{% elif customer.is_archived %}<span class="badge badge-warning ml-2">{% icon "archive" size=12 %}Archiviert</span>{% endif %}
-            {% for c in customer.categories.all %}<span class="badge ml-1.5">{{ c.name }}</span>{% endfor %}
-          </td>
-          <td>{% if customer.email %}<a class="hover:underline" href="mailto:{{ customer.email }}">{{ customer.email }}</a>{% else %}<span class="text-muted">–</span>{% endif %}</td>
-          <td class="whitespace-nowrap">{{ customer.phone|default:"–" }}</td>
-          <td class="text-right tabular-nums">{% if customer.default_hourly_rate is not None %}{{ customer.default_hourly_rate }} €{% else %}<span class="text-muted">–</span>{% endif %}</td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="5" class="py-10 text-center text-muted">{% if query or category %}Keine Kunden gefunden.{% else %}Noch keine Kunden. Importiere sie aus Lexware Office.{% endif %}</td></tr>
-        {% endfor %}
+        {% include "customers/_rows.html" %}
       </tbody>
     </table>
   </div>

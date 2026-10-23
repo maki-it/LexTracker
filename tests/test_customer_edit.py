@@ -124,6 +124,8 @@ def test_settings_page_saves_settings(logged_in):
             "lexware_sync_until": "19:00",
             "invoice_sync_interval": "1440",
             "invoice_sync_from": "06:00",
+            "login_max_attempts": "5",
+            "login_lockout_minutes": "15",
         },
     )
 

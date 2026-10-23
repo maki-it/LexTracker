@@ -88,6 +88,8 @@ Ob Dauern als `2:45` oder als Dezimalstunden `2,75` angezeigt werden, stellt jed
 
 Bearbeiten-Masken (Zeiteinträge, Projekte, Aufgaben, Kunden, Abrechnungsvereinbarungen) und **Timer starten** in der Seitenleiste öffnen sich als Dialog über der aktuellen Seite. Nach dem Speichern lädt die Seite dahinter neu; Esc, das X oder ein Klick daneben schließt den Dialog. Jeder dieser Links funktioniert auch als eigene Seite (z. B. in einem neuen Tab).
 In der Übersicht und unter **Zeiten** filtert ein Klick auf Kunde oder Projekt eines Eintrags die Liste. Projekte ohne gebuchte Zeiten lassen sich in ihrer Bearbeiten-Maske löschen.
+Beim Zeitbuchen (Übersicht, Timer starten, Zeiteintrag) stehen nur Aufgaben aktiver Projekte zur Wahl, die zuletzt benutzten zuerst.
+Die Listen der Kunden, Projekte und Rechnungen laden beim Scrollen weitere Einträge nach. Wie viele auf einmal, stellt jeder im Konto ein (25, 50, 100 oder 200). Die Projektliste zeigt zuerst die aktiven Projekte; geplante, pausierte, abgeschlossene oder alle wählst du darüber aus.
 
 ## Abrechnung
 
@@ -100,7 +102,7 @@ Für einen gewählten Zeitraum zeigt die Vorschau alle noch nicht abgerechneten,
 **Rechnungsentwurf in Lexware anlegen** erstellt daraus einen Entwurf (nicht finalisiert), den du in Lexware prüfst und abschließt. Die Zeiten gelten danach als abgerechnet und tauchen in keiner weiteren Rechnung auf.
 Der Kunde muss dafür mit einem Lexware-Kontakt verknüpft sein. Die Umsatzsteuer richtet sich nach deinem Lexware-Konto: Ist es als Kleinunternehmer (§ 19 UStG) eingerichtet, entsteht die Rechnung ohne Umsatzsteuer, sonst mit 19 %.
 
-Der Reiter **Rechnungen** listet alle Rechnungen mit Nummer, Status (Entwurf, offen, überfällig, bezahlt, storniert) und Fälligkeit, filterbar nach Status und durchsuchbar nach Kunde oder Nummer.
+Der Reiter **Rechnungen** listet alle Rechnungen mit Nummer, Status (Entwurf, offen, überfällig, bezahlt, storniert) und Fälligkeit, filterbar nach Status und Kunde und durchsuchbar nach Kunde oder Nummer. Die neuesten stehen oben (nach Rechnungsdatum, dann Rechnungsnummer).
 Der Rechnungsabgleich übernimmt auch Rechnungen, die du direkt in Lexware für einen importierten Kunden schreibst, mit Datum, Leistungszeitraum, Nettosumme und Status. Sie sind mit „in Lexware erstellt“ markiert, haben keine Zeiteinträge, erscheinen im Kundenzugang und zählen in den Auswertungen zum Umsatz. Löschst du eine solche Rechnung in Lexware, verschwindet sie auch hier.
 Den Status holt der Scheduler nach dem eingestellten Zeitplan aus der Belegliste von Lexware; **Status aktualisieren** gleicht sofort ab.
 Löschst du einen Entwurf in Lexware, wird die Rechnung hier als gelöscht markiert und ihre Zeiten sind wieder offen. Bei einer stornierten Rechnung gibst du die Zeiten mit **Zeiten freigeben** selbst wieder frei, falls du sie neu abrechnen willst.
@@ -162,6 +164,7 @@ Was ein Kundenzugang sieht, stellst du pro Zugang beim Benutzer ein. Welche Seit
 Unter deinem Namen oben rechts stellst du Darstellung (hell, dunkel oder wie das System) und Datumsformat ein und änderst dein Passwort.
 Dort schaltest du auch die **Zwei-Faktor-Anmeldung** mit einer Authenticator-App ein (TOTP, über [django-otp](https://django-otp-official.readthedocs.io/)). Dabei entstehen zehn Wiederherstellungscodes, die je einmal statt des App-Codes funktionieren.
 Auch die Verwaltung unter `/admin/` meldet über diese Anmeldung an, damit der zweite Faktor dort nicht umgangen wird.
+Nach zu vielen falschen Passwörtern oder Codes von einer IP-Adresse ist die Anmeldung von dort eine Weile gesperrt. Wie viele Fehlversuche und wie lange, legst du unter **Einstellungen** fest (Standard: 5 Versuche, 15 Minuten; 0 Versuche schaltet die Sperre aus). Hinter einem Reverse Proxy muss `FORWARDED_ALLOW_IPS` stimmen, sonst sehen alle Anfragen wie die IP des Proxys aus.
 
 ## Betrieb mit Docker
 
@@ -170,6 +173,8 @@ cp .env.example .env    # APP_ENVIRONMENT=production und APP_SECRET_KEY setzen
 docker compose up -d --build
 ```
 
+Seiten gehen mit Brotli oder gzip komprimiert an den Browser.
+Ein Worker (`UVICORN_WORKERS`) nutzt höchstens einen CPU-Kern und braucht etwa 80 bis 200 MB RAM; bei mehreren Kernen und mehreren gleichzeitigen Benutzern lohnt einer pro Kern (siehe [loadtest/README.md](loadtest/README.md)).
 Die App lauscht auf Port 8000 (über `APP_PORT` änderbar, z. B. `127.0.0.1:8000`, wenn nur ein Reverse Proxy auf demselben Server sie erreichen soll). Datenbank und alle Daten liegen im Volume `lextracker-data` (`/data` im Container), Backups im Volume `lextracker-backups` (`/backups`).
 Neben der App startet ein zweiter Container `scheduler` aus demselben Image, sobald die App gesund ist. Er führt wiederkehrende Aufgaben wie den automatischen Kundenimport, den Rechnungsabgleich und das tägliche Backup aus und prüft dafür jede Minute, was fällig ist. Sein Healthcheck schlägt an, wenn er länger als fünf Minuten nicht mehr geprüft hat.
 Vor jedem Start führt Compose über `pre_start`-Hooks die Migrationen aus und legt, falls `DJANGO_SUPERUSER_USERNAME` und `DJANGO_SUPERUSER_PASSWORD` gesetzt sind, das Admin-Konto an (sofern es noch nicht existiert). Schlägt ein Hook fehl, startet die App nicht. Dafür ist ein aktuelles Docker Compose nötig (getestet mit v5.6).

@@ -48,6 +48,8 @@ INSTALLED_APPS = [
 # All middleware is async-capable, so Django never has to run the whole request in a thread.
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # Outermost after security, so it compresses what everything below returns.
+    "core.compression.CompressionMiddleware",
     "servestatic.middleware.ServeStaticMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",

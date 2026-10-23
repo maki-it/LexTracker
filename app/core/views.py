@@ -14,7 +14,7 @@ from django.views.generic import RedirectView
 from accounts.models import User
 from core.forms import AppSettingsForm
 from core.models import AppSettings
-from tracking.forms import open_tasks
+from tracking.forms import task_choices
 from tracking.models import TimeEntry
 from tracking.queries import entry_filter
 
@@ -35,7 +35,7 @@ async def dashboard(request: HttpRequest) -> HttpResponse:
         request,
         "core/dashboard.html",
         {
-            "tasks": [t async for t in open_tasks(request.user)],
+            "tasks": [t async for t in task_choices(request.user)],
             "today_entries": today_entries,
             "today_total": sum((e.duration for e in today_entries), timedelta()),
             "filter_label": active_filter["label"],

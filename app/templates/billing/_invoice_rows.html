@@ -1,0 +1,32 @@
+{% load icons %}
+{% for invoice in invoices %}
+<tr>
+  <td class="whitespace-nowrap tabular-nums{% if not invoice.voucher_number %} text-muted{% endif %}">{{ invoice.voucher_number|default:"–" }}</td>
+  {% if show_customer %}<td class="font-medium"><a href="{% url 'billing:customer' invoice.customer_id %}" class="text-ink no-underline hover:underline">{{ invoice.customer.name }}</a></td>{% endif %}
+  <td class="whitespace-nowrap tabular-nums">{{ invoice.voucher_date|default:invoice.created_at|date:date_format }}</td>
+  <td class="whitespace-nowrap text-muted tabular-nums">{{ invoice.period_start|date:date_format }} – {{ invoice.period_end|date:date_format }}</td>
+  <td class="whitespace-nowrap">
+    <span class="badge {{ invoice.status_badge }}">{{ invoice.get_status_display }}</span>
+    {% if invoice.origin == "lexware" %}<span class="ml-1 text-[13px] text-muted" title="Direkt in Lexware Office geschrieben, ohne Zeiteinträge">in Lexware erstellt</span>{% endif %}
+    {% if invoice.due_date and invoice.status == "open" or invoice.due_date and invoice.status == "overdue" %}<span class="ml-1 text-[13px] text-muted">fällig {{ invoice.due_date|date:date_format }}</span>{% endif %}
+  </td>
+  <td class="text-right whitespace-nowrap font-semibold tabular-nums{% if invoice.status == 'deleted' or invoice.status == 'voided' %} text-muted line-through{% endif %}">{{ invoice.total_net }} €</td>
+  <td class="text-right whitespace-nowrap">
+    {% if invoice.lexware_url %}
+    <a class="inline-flex items-center gap-1.5 hover:underline" href="{{ invoice.lexware_url }}" target="_blank" rel="noopener">In Lexware öffnen{% icon "external" size=14 %}</a>
+    {% elif invoice.status == "deleted" %}
+    <span class="text-[13px] text-muted">Zeiten wieder offen</span>
+    {% endif %}
+    {% if invoice.status == "voided" and invoice.entry_count %}
+    <form method="post" action="{% url 'billing:invoice_release' invoice.pk %}" class="inline">
+      {% csrf_token %}
+      <input type="hidden" name="return_query" value="{{ request.GET.urlencode }}">
+      <button type="submit" class="btn btn-ghost btn-sm ml-2" title="Die Zeiten dieser stornierten Rechnung können dann neu abgerechnet werden">Zeiten freigeben</button>
+    </form>
+    {% endif %}
+  </td>
+</tr>
+{% empty %}
+{% if not page or page.is_first %}<tr><td colspan="7" class="py-8 text-center text-muted">{% if query or status or customer_id %}Keine Rechnung passt zum Filter.{% else %}Noch keine Rechnungen erstellt.{% endif %}</td></tr>{% endif %}
+{% endfor %}
+{% if page %}{% include "core/_more_rows.html" with colspan=7 %}{% endif %}
