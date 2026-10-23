@@ -345,6 +345,7 @@ document.addEventListener("DOMContentLoaded", () => document.querySelectorAll("[
 
 // A date-time field with data-snap-minutes="<n>" (time rounding): the browser's picker offers every minute,
 // so a picked or typed time snaps to the nearest step. The server rounds as well, see tracking/services.py.
+// Also runs for the "Jetzt" buttons below, which fire this event after setting the field.
 document.addEventListener("change", (event) => {
   const field = event.target;
   const step = Number(field.dataset?.snapMinutes);
@@ -357,4 +358,16 @@ document.addEventListener("change", (event) => {
   day.setMinutes(snapped);
   const pad = (n) => String(n).padStart(2, "0");
   field.value = `${day.getFullYear()}-${pad(day.getMonth() + 1)}-${pad(day.getDate())}T${pad(day.getHours())}:${pad(day.getMinutes())}`;
+});
+
+// A button with data-now-for="<id>" sets that date-time field to the current local time. It fires "change",
+// so the snapping above rounds it to the step like a typed time.
+document.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-now-for]");
+  const field = button && document.getElementById(button.dataset.nowFor);
+  if (!field) return;
+  const now = new Date();
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+  field.value = now.toISOString().slice(0, 16);
+  field.dispatchEvent(new Event("change", { bubbles: true }));
 });

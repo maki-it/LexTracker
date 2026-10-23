@@ -12,6 +12,11 @@
 </fieldset>
 {% elif field.widget_type == "checkbox" %}
 <label class="flex items-center gap-2 text-sm font-medium">{{ field }} {{ field.label }}</label>
+{% elif field.field.widget.with_now_button %}
+<div class="field">
+  <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+  {{ field }}
+</div>
 {% else %}
 <label class="field">
   <span>{{ field.label }}{% if not field.field.required %} <span class="font-normal text-muted">(optional)</span>{% endif %}</span>

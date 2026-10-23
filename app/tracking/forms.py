@@ -52,6 +52,22 @@ class TaskSearchInput(forms.Widget):
         return mark_safe(render_to_string(template_name, context))
 
 
+class NowDateTimeInput(forms.DateTimeInput):
+    """A date-time field with a "Jetzt" button next to it that app.js wires up (data-now-for)."""
+
+    template_name = "tracking/_datetime_now_widget.html"
+    with_now_button = True
+
+    def get_context(self, name, value, attrs):
+        context = super().get_context(name, value, attrs)
+        context["widget"]["now_label"] = getattr(self, "now_label", "")
+        return context
+
+    def _render(self, template_name, context, renderer=None):
+        # The template lives in templates/, which Django's default form renderer does not search.
+        return mark_safe(render_to_string(template_name, context))
+
+
 class TaskChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, task: Task) -> str:
         return f"{task.project.customer.name} · {task.project.name} · {task.name}"
@@ -86,8 +102,8 @@ class TimeEntryForm(StyledFormMixin, forms.ModelForm):
         model = TimeEntry
         fields = ["task", "started_at", "ended_at", "description", "is_billable"]
         widgets = {
-            "started_at": forms.DateTimeInput(attrs={"type": "datetime-local"}, format="%Y-%m-%dT%H:%M"),
-            "ended_at": forms.DateTimeInput(attrs={"type": "datetime-local"}, format="%Y-%m-%dT%H:%M"),
+            "started_at": NowDateTimeInput(attrs={"type": "datetime-local"}, format="%Y-%m-%dT%H:%M"),
+            "ended_at": NowDateTimeInput(attrs={"type": "datetime-local"}, format="%Y-%m-%dT%H:%M"),
             "description": forms.Textarea(attrs={"rows": 2}),
         }
 
@@ -98,6 +114,8 @@ class TimeEntryForm(StyledFormMixin, forms.ModelForm):
         self.fields["task"].queryset = task_choices(user, include_pk=include)
         self.fields["ended_at"].required = True
         self.rounding = rounding
+        for name in ("started_at", "ended_at"):
+            self.fields[name].widget.now_label = f"{self.fields[name].label} auf jetzt setzen"
         if rounding:
             # The arrows move in rounding steps, app.js snaps a picked time to a step, and the shown times sit on one.
             for name in ("started_at", "ended_at"):
