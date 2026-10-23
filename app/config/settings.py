@@ -158,8 +158,6 @@ LEXWARE_API_KEY = env.lexware_api_key.get_secret_value()
 LEXWARE_BASE_URL = env.lexware_base_url
 
 BACKUP_DIR = env.backup_dir or DATA_DIR / "backups"
-BACKUP_KEEP = env.backup_keep
-BACKUP_TIME = env.backup_time
 
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"

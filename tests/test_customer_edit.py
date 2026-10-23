@@ -126,6 +126,9 @@ def test_settings_page_saves_settings(logged_in):
             "invoice_sync_from": "06:00",
             "login_max_attempts": "5",
             "login_lockout_minutes": "15",
+            "backup_enabled": "on",
+            "backup_time": "03:00",
+            "backup_keep": "14",
         },
     )
 

@@ -1,3 +1,5 @@
+from datetime import time
+
 from django.core.validators import MinValueValidator
 from django.db import models
 
@@ -86,6 +88,23 @@ class AppSettings(models.Model):
     invoices_sync_failed = models.BooleanField(
         "letzter Rechnungsabgleich fehlgeschlagen", default=False, editable=False
     )
+
+    backup_enabled = models.BooleanField("Datenbank täglich sichern", default=True)
+    backup_time = models.TimeField(
+        "Uhrzeit",
+        default=time(3),
+        help_text="Ist der Server zu der Zeit aus, holt er die Sicherung am selben Tag nach.",
+    )
+    backup_keep = models.PositiveSmallIntegerField(
+        "Kopien aufbewahren",
+        default=14,
+        validators=[MinValueValidator(1)],
+        help_text="Ältere Kopien werden nach jeder Sicherung gelöscht.",
+    )
+    # Written by the scheduler, not on the settings page.
+    backup_at = models.DateTimeField("letzte Sicherung", null=True, blank=True, editable=False)
+    backup_status = models.CharField("Ergebnis der letzten Sicherung", max_length=500, blank=True, editable=False)
+    backup_failed = models.BooleanField("letzte Sicherung fehlgeschlagen", default=False, editable=False)
 
     class Meta:
         verbose_name = verbose_name_plural = "Einstellungen"
