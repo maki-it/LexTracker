@@ -4,9 +4,9 @@
 {% block content %}
 <div class="page-header">
   <div>
-    <p class="breadcrumb"><a href="{% url 'core:settings' %}">Einstellungen</a></p>
+    <p class="breadcrumb"><a href="{% url 'core:settings' %}?tab=datensicherung">Einstellungen</a></p>
     <h1>Sicherungen</h1>
-    <p class="page-subtitle">Kopien der Datenbank in <code>{{ dir }}</code>. Wann und wie viele entstehen, legst du in den <a href="{% url 'core:settings' %}">Einstellungen</a> fest.</p>
+    <p class="page-subtitle">Kopien der Datenbank in <code>{{ dir }}</code>. Wann und wie viele entstehen, legst du in den <a href="{% url 'core:settings' %}?tab=datensicherung">Einstellungen</a> fest.</p>
   </div>
   <div class="flex gap-2">
     <a {% dialog_link "core:backup_upload" %} class="btn btn-ghost">{% icon "upload" %}Hochladen</a>
