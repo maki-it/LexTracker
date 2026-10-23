@@ -7,5 +7,5 @@ app_name = "customers"
 urlpatterns = [
     path("", views.customer_list, name="list"),
     path("import/", views.import_from_lexware, name="import"),
-    path("<int:pk>/", views.customer_edit, name="edit"),
+    path("<uuid:pk>/", views.customer_edit, name="edit"),
 ]

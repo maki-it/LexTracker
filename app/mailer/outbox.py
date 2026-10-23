@@ -8,6 +8,7 @@ import asyncio
 import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from uuid import UUID
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
@@ -176,7 +177,7 @@ async def _forget_secrets() -> None:
     await done.exclude(text="", html="").aupdate(text="", html="")
 
 
-async def aretry(pk: int) -> bool:
+async def aretry(pk: UUID) -> bool:
     """Queue a failed e-mail again."""
     failed = OutgoingMail.objects.filter(pk=pk, status=OutgoingMail.Status.FAILED)
     updated = await failed.exclude(kind__in=OutgoingMail.SECRET_KINDS).aupdate(

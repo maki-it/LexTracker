@@ -18,6 +18,7 @@ from django.utils.encoding import force_bytes
 from django.utils.http import base36_to_int, urlsafe_base64_decode, urlsafe_base64_encode
 
 from accounts.models import LoginLink, User
+from core.ids import parse_uuid
 from core.models import AppSettings
 from mailer import outbox
 from mailer.models import MailSettings, OutgoingMail
@@ -87,13 +88,19 @@ async def send_password_reset(request: HttpRequest, identifier: str) -> None:
         )
 
 
+async def user_from_uid(uidb64: str) -> User | None:
+    """The active user a link's ``uidb64`` names, or None."""
+    try:
+        user_id = parse_uuid(urlsafe_base64_decode(uidb64).decode())
+    except ValueError:  # Not base64 or not text; UnicodeDecodeError is a ValueError, too.
+        return None
+    return await User.objects.filter(pk=user_id, is_active=True).afirst() if user_id else None
+
+
 async def reset_user(uidb64: str, token: str) -> User | None:
     """The user a password reset link is for, or None if the link is invalid or expired."""
-    try:
-        user = await User.objects.aget(pk=urlsafe_base64_decode(uidb64).decode(), is_active=True)
-    except User.DoesNotExist, ValueError, UnicodeDecodeError:
-        return None
-    return user if reset_tokens.check_token(user, token) else None
+    user = await user_from_uid(uidb64)
+    return user if user and reset_tokens.check_token(user, token) else None
 
 
 async def send_login_link(request: HttpRequest, identifier: str) -> None:

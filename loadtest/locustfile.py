@@ -17,7 +17,7 @@ HTMX = {"HX-Request": "true"}
 _next_user = 0
 _logged_in = 0
 # IDs of tasks, projects and customers, read from the pages by the first user.
-_ids_cache: dict[str, list[int]] = {}
+_ids_cache: dict[str, list[str]] = {}
 
 
 @events.test_start.add_listener
@@ -32,8 +32,11 @@ def _login_name() -> str:
     return f"loadtest{(_next_user - 1) % USERS + 1:02d}"
 
 
-def _ids(html: str, pattern: str) -> list[int]:
-    return sorted({int(m) for m in re.findall(pattern, html)})
+UUID = r"([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"
+
+
+def _ids(html: str, pattern: str) -> list[str]:
+    return sorted(set(re.findall(pattern, html)))
 
 
 class Kim(HttpUser):
@@ -52,9 +55,9 @@ class Kim(HttpUser):
         self.csrf = self.client.cookies.get("csrftoken", "")
         if not _ids_cache:
             start_form = self.client.get("/zeiten/timer/start/", headers=HTMX, name="/zeiten/timer/start/").text
-            _ids_cache["tasks"] = _ids(start_form, r'<option value="(\d+)"')
-            _ids_cache["projects"] = _ids(self.client.get("/projekte/").text, r'href="/projekte/(\d+)/"')
-            _ids_cache["customers"] = _ids(self.client.get("/kunden/").text, r'href="/kunden/(\d+)/"')
+            _ids_cache["tasks"] = _ids(start_form, rf'<option value="{UUID}"')
+            _ids_cache["projects"] = _ids(self.client.get("/projekte/").text, rf'href="/projekte/{UUID}/"')
+            _ids_cache["customers"] = _ids(self.client.get("/kunden/").text, rf'href="/kunden/{UUID}/"')
         self.task_ids, self.projects, self.customers = (_ids_cache[k] for k in ("tasks", "projects", "customers"))
         # Once everyone is logged in, start counting afresh: logins are rare in real use.
         global _logged_in

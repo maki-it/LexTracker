@@ -2,6 +2,7 @@ from django.db import models
 from django.utils import timezone
 
 from core import crypto
+from core.models import UUIDModel
 
 PASSWORD_PURPOSE = "smtp-password"
 
@@ -62,7 +63,7 @@ class MailSettings(models.Model):
         self.encrypted_password = crypto.encrypt(password, PASSWORD_PURPOSE) if password else ""
 
 
-class OutgoingMail(models.Model):
+class OutgoingMail(UUIDModel):
     """An e-mail waiting to be sent, or sent already. The scheduler sends what is due (see ``mailer.outbox``)."""
 
     class Status(models.TextChoices):
@@ -91,7 +92,7 @@ class OutgoingMail(models.Model):
     text = models.TextField("Text")
     html = models.TextField("HTML", blank=True)
     # Sent only once per key, e.g. one reminder per running timer.
-    dedupe_key = models.CharField(max_length=100, blank=True, db_index=True)
+    dedupe_key = models.CharField(max_length=200, blank=True, db_index=True)
     status = models.CharField("Status", max_length=10, choices=Status, default=Status.PENDING)
     created_at = models.DateTimeField("erstellt", auto_now_add=True)
     next_attempt_at = models.DateTimeField("nächster Versuch", default=timezone.now)

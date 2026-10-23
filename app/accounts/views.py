@@ -1,4 +1,5 @@
 import time
+from uuid import UUID
 
 from asgiref.sync import sync_to_async
 from django.conf import settings
@@ -8,7 +9,7 @@ from django.contrib.auth.tokens import default_token_generator
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
-from django.utils.http import url_has_allowed_host_and_scheme, urlencode, urlsafe_base64_decode
+from django.utils.http import url_has_allowed_host_and_scheme, urlencode
 from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.http import require_http_methods, require_POST
 
@@ -68,7 +69,7 @@ async def login_view(request: HttpRequest) -> HttpResponse:
 async def _sign_in(request: HttpRequest, user: User, backend: str) -> HttpResponse:
     """Sign in a user who proved who they are, after the code from the authenticator app if they use one."""
     if await sync_to_async(mfa.has_mfa)(user):
-        pending = {"user": user.pk, "backend": backend, "at": time.time()}
+        pending = {"user": str(user.pk), "backend": backend, "at": time.time()}
         await request.session.aset(MFA_PENDING_KEY, pending)
         return redirect(f"{reverse('accounts:login_code')}?next={_safe_next(request)}")
     await alogin(request, user, backend=backend)
@@ -216,7 +217,7 @@ async def token_create(request: HttpRequest) -> HttpResponse:
 
 
 @require_POST
-async def token_revoke(request: HttpRequest, pk: int) -> HttpResponse:
+async def token_revoke(request: HttpRequest, pk: UUID) -> HttpResponse:
     deleted, _ = await request.user.api_tokens.filter(pk=pk).adelete()
     if deleted:
         messages.success(request, "Token widerrufen. Programme, die ihn nutzen, haben keinen Zugriff mehr.")
@@ -272,10 +273,7 @@ async def mfa_manage(request: HttpRequest) -> HttpResponse:
 @require_http_methods(["GET", "POST"])
 async def invite(request: HttpRequest, uidb64: str, token: str) -> HttpResponse:
     """Set the first password from an invitation link (also works to reset a forgotten one)."""
-    try:
-        user = await User.objects.aget(pk=urlsafe_base64_decode(uidb64).decode(), is_active=True)
-    except User.DoesNotExist, ValueError, UnicodeDecodeError:
-        user = None
+    user = await links.user_from_uid(uidb64)
     if user is None or not default_token_generator.check_token(user, token):
         return render(request, "accounts/invite.html", {"invalid": True}, status=400)
     form = InviteForm(user, request.POST or None)

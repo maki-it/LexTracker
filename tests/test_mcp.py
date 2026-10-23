@@ -89,10 +89,10 @@ def test_get_is_not_allowed(client, key):
 
 
 def test_find_tasks_and_create_task(tool, task):
-    assert [t["id"] for t in tool("find_tasks", query="acme entw")] == [task.pk]
+    assert [t["id"] for t in tool("find_tasks", query="acme entw")] == [str(task.pk)]
     assert tool("find_tasks", query="gibt es nicht") == []
 
-    created = tool("create_task", project_id=task.project_id, name="MCP-Server")
+    created = tool("create_task", project_id=str(task.project_id), name="MCP-Server")
     assert created["project"] == "Website" and created["customer"] == "ACME GmbH"
     assert Task.objects.filter(name="MCP-Server").exists()
 
@@ -103,8 +103,8 @@ def test_find_tasks_and_create_task(tool, task):
 def test_timer(tool, task, user):
     assert tool("get_running_timer") == {"running": False}
 
-    started = tool("start_timer", task_id=task.pk, description="Bug suchen")["started"]
-    assert started["running"] and started["task"]["id"] == task.pk
+    started = tool("start_timer", task_id=str(task.pk), description="Bug suchen")["started"]
+    assert started["running"] and started["task"]["id"] == str(task.pk)
     assert tool("get_running_timer")["id"] == started["id"]
 
     # Make it long enough to be kept.
@@ -118,16 +118,17 @@ def test_timer(tool, task, user):
 
 
 def test_starting_a_timer_stops_the_running_one(tool, task):
-    first = tool("start_timer", task_id=task.pk)["started"]
+    first = tool("start_timer", task_id=str(task.pk))["started"]
     TimeEntry.objects.filter(pk=first["id"]).update(started_at=timezone.now() - timedelta(minutes=5))
 
-    result = tool("start_timer", task_id=task.pk, description="Weiter")
+    result = tool("start_timer", task_id=str(task.pk), description="Weiter")
     assert result["stopped"]["id"] == first["id"]
     assert TimeEntry.objects.filter(ended_at__isnull=True).count() == 1
 
 
 def test_unknown_task_is_reported_to_the_agent(tool):
     assert "Keine offene Aufgabe" in tool("start_timer", task_id=999)
+    assert "Keine offene Aufgabe" in tool("start_timer", task_id="kein-uuid")
 
 
 def test_add_time_entry_rounds_start_and_end(tool, task):
@@ -135,16 +136,20 @@ def test_add_time_entry_rounds_start_and_end(tool, task):
     settings.time_rounding = 15
     settings.save()
 
-    entry = tool("add_time_entry", task_id=task.pk, start="2026-10-01T09:07", duration_minutes=50, description="Doku")
+    entry = tool(
+        "add_time_entry", task_id=str(task.pk), start="2026-10-01T09:07", duration_minutes=50, description="Doku"
+    )
     assert entry["minutes"] == 60
     assert entry["start"].startswith("2026-10-01T09:00")
 
-    assert "entweder end oder duration_minutes" in tool("add_time_entry", task_id=task.pk, start="2026-10-01T09:00")
-    assert "nach dem Beginn" in tool(
-        "add_time_entry", task_id=task.pk, start="2026-10-01T09:00", end="2026-10-01T08:00"
+    assert "entweder end oder duration_minutes" in tool(
+        "add_time_entry", task_id=str(task.pk), start="2026-10-01T09:00"
     )
-    assert "ISO 8601" in tool("add_time_entry", task_id=task.pk, start="gestern", duration_minutes=10)
-    assert "Unbekannte Argumente" in tool("add_time_entry", task_id=task.pk, start="x", foo=1)
+    assert "nach dem Beginn" in tool(
+        "add_time_entry", task_id=str(task.pk), start="2026-10-01T09:00", end="2026-10-01T08:00"
+    )
+    assert "ISO 8601" in tool("add_time_entry", task_id=str(task.pk), start="gestern", duration_minutes=10)
+    assert "Unbekannte Argumente" in tool("add_time_entry", task_id=str(task.pk), start="x", foo=1)
 
     listed = tool("list_time_entries", date_from="2026-10-01", date_to="2026-10-01")
     assert listed["total_minutes"] == 60 and listed["entries"][0]["description"] == "Doku"

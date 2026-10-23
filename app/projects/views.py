@@ -1,5 +1,6 @@
 from datetime import timedelta
 from urllib.parse import urlencode
+from uuid import UUID
 
 from asgiref.sync import sync_to_async
 from django.contrib import messages
@@ -9,6 +10,7 @@ from django.shortcuts import redirect, render
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from core.dialogs import navigate
+from core.ids import parse_uuid
 from core.paging import apage, wants_rows
 from core.shortcuts import arender
 from projects.forms import ProjectForm, TaskEditForm, TaskForm, TaskTemplateForm
@@ -17,7 +19,7 @@ from tracking.models import TimeEntry
 from tracking.queries import booked_time
 
 
-async def _get_project(pk: int) -> Project:
+async def _get_project(pk: UUID) -> Project:
     try:
         return await Project.objects.select_related("customer").aget(pk=pk)
     except Project.DoesNotExist as exc:
@@ -68,7 +70,7 @@ async def project_list(request: HttpRequest) -> HttpResponse:
 
 
 @require_http_methods(["GET", "POST"])
-async def project_form(request: HttpRequest, pk: int | None = None) -> HttpResponse:
+async def project_form(request: HttpRequest, pk: UUID | None = None) -> HttpResponse:
     project = await _get_project(pk) if pk else None
     initial = {"customer": request.GET.get("kunde")} if not project else None
     offer_templates = not project and await TaskTemplate.objects.aexists()
@@ -84,7 +86,7 @@ async def project_form(request: HttpRequest, pk: int | None = None) -> HttpRespo
 
 
 @require_POST
-async def project_delete(request: HttpRequest, pk: int) -> HttpResponse:
+async def project_delete(request: HttpRequest, pk: UUID) -> HttpResponse:
     project = await _get_project(pk)
     # Booked time must not disappear with its project; such projects can be closed instead.
     if await TimeEntry.objects.filter(task__project=project).aexists():
@@ -112,7 +114,7 @@ async def _task_context(project: Project, task_form: TaskForm | None = None) -> 
 
 
 @require_GET
-async def project_detail(request: HttpRequest, pk: int) -> HttpResponse:
+async def project_detail(request: HttpRequest, pk: UUID) -> HttpResponse:
     project = await _get_project(pk)
     context = await _task_context(project)
     context["booked"] = sum((t.booked for t in context["tasks"] if t.booked), timedelta())
@@ -120,7 +122,7 @@ async def project_detail(request: HttpRequest, pk: int) -> HttpResponse:
 
 
 @require_POST
-async def task_create(request: HttpRequest, pk: int) -> HttpResponse:
+async def task_create(request: HttpRequest, pk: UUID) -> HttpResponse:
     """Add a task and return the refreshed task list (htmx)."""
     project = await _get_project(pk)
     form = TaskForm(request.POST)
@@ -132,17 +134,17 @@ async def task_create(request: HttpRequest, pk: int) -> HttpResponse:
 
 
 @require_POST
-async def task_from_templates(request: HttpRequest, pk: int) -> HttpResponse:
+async def task_from_templates(request: HttpRequest, pk: UUID) -> HttpResponse:
     """Add a task for each chosen template and return the refreshed task list (htmx)."""
     project = await _get_project(pk)
-    ids = [int(i) for i in request.POST.getlist("vorlage") if i.isdigit()]
+    ids = [i for value in request.POST.getlist("vorlage") if (i := parse_uuid(value))]
     existing = {name async for name in project.tasks.values_list("name", flat=True)}
     new_tasks = [t.to_task(project) async for t in TaskTemplate.objects.filter(pk__in=ids) if t.name not in existing]
     await Task.objects.abulk_create(new_tasks)
     return render(request, "projects/_tasks.html", await _task_context(project))
 
 
-async def _get_task(project: Project, task_pk: int) -> Task:
+async def _get_task(project: Project, task_pk: UUID) -> Task:
     try:
         return await project.tasks.aget(pk=task_pk)
     except Task.DoesNotExist as exc:
@@ -150,7 +152,7 @@ async def _get_task(project: Project, task_pk: int) -> Task:
 
 
 @require_http_methods(["GET", "POST"])
-async def task_edit(request: HttpRequest, pk: int, task_pk: int) -> HttpResponse:
+async def task_edit(request: HttpRequest, pk: UUID, task_pk: int) -> HttpResponse:
     project = await _get_project(pk)
     task = await _get_task(project, task_pk)
     form = TaskEditForm(request.POST or None, instance=task)
@@ -165,7 +167,7 @@ async def task_edit(request: HttpRequest, pk: int, task_pk: int) -> HttpResponse
 
 
 @require_POST
-async def task_save_as_template(request: HttpRequest, pk: int, task_pk: int) -> HttpResponse:
+async def task_save_as_template(request: HttpRequest, pk: UUID, task_pk: int) -> HttpResponse:
     project = await _get_project(pk)
     task = await _get_task(project, task_pk)
     if await TaskTemplate.objects.filter(name=task.name).aexists():
@@ -177,7 +179,7 @@ async def task_save_as_template(request: HttpRequest, pk: int, task_pk: int) -> 
 
 
 @require_POST
-async def task_delete(request: HttpRequest, pk: int, task_pk: int) -> HttpResponse:
+async def task_delete(request: HttpRequest, pk: UUID, task_pk: int) -> HttpResponse:
     project = await _get_project(pk)
     task = await _get_task(project, task_pk)
     # Booked time must not disappear with its task; such tasks can be set to done instead.
@@ -192,7 +194,7 @@ async def task_delete(request: HttpRequest, pk: int, task_pk: int) -> HttpRespon
 
 
 @require_POST
-async def task_set_status(request: HttpRequest, pk: int, task_pk: int) -> HttpResponse:
+async def task_set_status(request: HttpRequest, pk: UUID, task_pk: int) -> HttpResponse:
     project = await _get_project(pk)
     status = request.POST.get("status")
     if status in Task.Status.values:
@@ -206,7 +208,7 @@ async def template_list(request: HttpRequest) -> HttpResponse:
     return render(request, "projects/template_list.html", context)
 
 
-async def _get_template(pk: int) -> TaskTemplate:
+async def _get_template(pk: UUID) -> TaskTemplate:
     try:
         return await TaskTemplate.objects.aget(pk=pk)
     except TaskTemplate.DoesNotExist as exc:
@@ -214,7 +216,7 @@ async def _get_template(pk: int) -> TaskTemplate:
 
 
 @require_http_methods(["GET", "POST"])
-async def template_form(request: HttpRequest, pk: int | None = None) -> HttpResponse:
+async def template_form(request: HttpRequest, pk: UUID | None = None) -> HttpResponse:
     template = await _get_template(pk) if pk else None
     form = TaskTemplateForm(request.POST or None, instance=template)
     if request.method == "POST" and await sync_to_async(form.is_valid)():
@@ -225,7 +227,7 @@ async def template_form(request: HttpRequest, pk: int | None = None) -> HttpResp
 
 
 @require_POST
-async def template_delete(request: HttpRequest, pk: int) -> HttpResponse:
+async def template_delete(request: HttpRequest, pk: UUID) -> HttpResponse:
     # Tasks created from the template are copies and stay untouched.
     template = await _get_template(pk)
     await template.adelete()

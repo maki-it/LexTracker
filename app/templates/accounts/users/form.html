@@ -1,10 +1,10 @@
 {% extends layout %}
 {% load icons %}
-{% block title %}{% if edited.pk %}{{ edited.get_username }}{% else %}Neuer Benutzer{% endif %} · LexTracker{% endblock %}
+{% block title %}{% if not is_new %}{{ edited.get_username }}{% else %}Neuer Benutzer{% endif %} · LexTracker{% endblock %}
 {% block content %}
 <div>
   <p class="breadcrumb"><a href="{% url 'users:list' %}">Benutzer</a></p>
-  <h1>{% if edited.pk %}{{ edited.get_full_name|default:edited.get_username }}{% else %}Neuer Benutzer{% endif %}</h1>
+  <h1>{% if not is_new %}{{ edited.get_full_name|default:edited.get_username }}{% else %}Neuer Benutzer{% endif %}</h1>
 </div>
 <form method="post" action="{{ request.get_full_path }}" class="card flex max-w-2xl flex-col gap-4">
   {% csrf_token %}
@@ -49,11 +49,11 @@
   {% for error in form.is_active.errors %}<span class="text-sm text-danger">{{ error }}</span>{% endfor %}
   {% endif %}
   <div class="flex gap-2 border-t border-line pt-4">
-    <button type="submit" class="btn btn-primary">{% if edited.pk %}Speichern{% else %}Anlegen und einladen{% endif %}</button>
+    <button type="submit" class="btn btn-primary">{% if not is_new %}Speichern{% else %}Anlegen und einladen{% endif %}</button>
     <a href="{% url 'users:list' %}" class="btn btn-ghost" data-close-dialog>Abbrechen</a>
   </div>
 </form>
-{% if edited.pk and edited != user %}
+{% if not is_new and edited != user %}
 <section class="card flex max-w-2xl flex-col gap-3">
   <h2>Benutzer löschen</h2>
   {% if has_entries %}

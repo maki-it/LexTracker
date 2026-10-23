@@ -133,7 +133,7 @@ class UserForm(StyledFormMixin, forms.ModelForm):
         self.fields["customer"].empty_label = "– kein Kunde –"
         self.fields["customer"].widget.attrs["data-searchable"] = ""
         # Keep what is unlocked selectable even if it is archived or done by now.
-        unlocked = self.instance.pk or 0
+        unlocked = self.instance.pk
         customers = self.fields["bookable_customers"].queryset
         self.fields["bookable_customers"].queryset = (
             customers.filter(Q(is_archived=False) | Q(bookable_by=unlocked)).distinct().order_by("name")
@@ -144,7 +144,8 @@ class UserForm(StyledFormMixin, forms.ModelForm):
             .select_related("customer")
             .order_by("customer__name", "name")
         )
-        if self.instance.pk is None:
+        # A new user already has an ID, so ask the state whether it is saved.
+        if self.instance._state.adding:
             del self.fields["is_active"]
         # Descriptions belong to the time entries; static/js/app.js greys the box out without them.
         self.fields["portal_descriptions"].widget.attrs["data-requires"] = "portal_entries"
@@ -162,11 +163,11 @@ class UserForm(StyledFormMixin, forms.ModelForm):
         if role and role != User.Role.EMPLOYEE:
             # Same for what an employee may book on.
             for name in self.BOOKING_FIELDS:
-                cleaned[name] = getattr(self.instance, name).all() if self.instance.pk else []
+                cleaned[name] = [] if self.instance._state.adding else getattr(self.instance, name).all()
         if not cleaned.get("portal_entries"):
             # The greyed-out box is not sent. Keep the stored choice so it is back when the entries are.
             cleaned["portal_descriptions"] = self.instance.portal_descriptions
-        if self.instance.pk and self.instance == self.acting_user:
+        if not self.instance._state.adding and self.instance == self.acting_user:
             # Do not lock yourself out.
             if role != User.Role.ADMIN:
                 self.add_error("role", "Du kannst dir selbst die Administratorrolle nicht nehmen.")

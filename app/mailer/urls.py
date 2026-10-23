@@ -7,5 +7,5 @@ app_name = "mailer"
 urlpatterns = [
     path("", views.mail_settings, name="settings"),
     path("testmail/", views.test_mail, name="test"),
-    path("<int:pk>/erneut/", views.retry, name="retry"),
+    path("<uuid:pk>/erneut/", views.retry, name="retry"),
 ]

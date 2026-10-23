@@ -243,24 +243,17 @@ def test_invoice_without_a_number_has_no_links(client, customer_user, task):
     assert "abgerechnet</span>" in client.get(reverse("portal:entries")).text
 
 
-def test_old_id_urls_redirect_to_the_number(client, customer_user, task, other_task):
-    inv = invoice(task.project.customer, "RE-2026-07-00403")
-    foreign = invoice(other_task.project.customer, "FREMD-1")
+def test_old_numeric_id_urls_are_not_found(client, customer_user, task):
+    invoice(task.project.customer, "RE-2026-07-00403")
     client.force_login(customer_user)
 
-    response = client.get(f"/portal/rechnungen/{inv.pk}/pdf/", {"ansehen": "1"})
-    assert response.status_code == 301
-    assert response["Location"] == "/portal/rechnungen/RE-2026-07-00403/pdf/?ansehen=1"
-    response = client.get(f"/portal/rechnungen/{inv.pk}/zeiten/")
-    assert response.status_code == 301 and response["Location"] == "/portal/rechnungen/RE-2026-07-00403/zeiten/"
-    # Another customer's ID gives nothing away.
-    assert client.get(f"/portal/rechnungen/{foreign.pk}/pdf/").status_code == 404
-    assert client.get("/portal/rechnungen/9999/zeiten/").status_code == 404
+    # Links from before the number was used in the URL carried the counter, which no longer exists.
+    assert client.get("/portal/rechnungen/12/pdf/").status_code == 404
+    assert client.get("/portal/rechnungen/12/zeiten/").status_code == 404
 
 
-def test_a_numeric_number_wins_over_an_old_id(client, customer_user, task):
-    first = invoice(task.project.customer, "RE-1")
-    numeric = invoice(task.project.customer, str(first.pk))
+def test_a_number_that_looks_like_an_id_is_still_a_number(client, customer_user, task):
+    numeric = invoice(task.project.customer, "42")
     client.force_login(customer_user)
 
     response = client.get(reverse("portal:invoice_entries", args=[numeric.voucher_number]))

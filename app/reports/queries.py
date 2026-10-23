@@ -3,6 +3,7 @@
 from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
+from uuid import UUID
 
 from django.db.models import Q, Sum
 from django.db.models.functions import TruncDate, TruncMonth
@@ -113,7 +114,7 @@ def _bounds(start: date, end: date) -> tuple[datetime, datetime]:
     return datetime.combine(start, time.min, tzinfo=tz), datetime.combine(end + timedelta(days=1), time.min, tzinfo=tz)
 
 
-def entries_in(start: date, end: date, customer_id: int | None = None):
+def entries_in(start: date, end: date, customer_id: UUID | None = None):
     """Finished entries that started in the range, oldest first."""
     since, until = _bounds(start, end)
     entries = TimeEntry.objects.filter(ended_at__isnull=False, started_at__gte=since, started_at__lt=until)
@@ -168,7 +169,7 @@ def _buckets(entries, rng: DateRange) -> list[Bucket]:
     return buckets
 
 
-def _retainers(today: date, customer_id: int | None) -> list[Retainer]:
+def _retainers(today: date, customer_id: UUID | None) -> list[Retainer]:
     agreements = (
         BillingAgreement.objects.filter(kind=BillingAgreement.Kind.RETAINER, valid_from__lte=today)
         .filter(Q(valid_until__isnull=True) | Q(valid_until__gte=today))
@@ -193,7 +194,7 @@ def _retainers(today: date, customer_id: int | None) -> list[Retainer]:
     return result
 
 
-def build_report(rng: DateRange, customer_id: int | None = None, today: date | None = None) -> Report:
+def build_report(rng: DateRange, customer_id: UUID | None = None, today: date | None = None) -> Report:
     today = today or timezone.localdate()
     since, until = _bounds(rng.start, rng.end)
     entries = TimeEntry.objects.filter(ended_at__isnull=False, started_at__gte=since, started_at__lt=until)

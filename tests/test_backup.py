@@ -368,3 +368,26 @@ def test_settings_page_shows_one_tab_and_keeps_it_after_saving(client, user):
     page = client.post("/einstellungen/", data | {"tab": "allgemein", "backup_keep": 0})
     assert page.status_code == 200
     assert 'href="?tab=datensicherung" class="tab tab-active"' in page.content.decode()
+
+
+def test_backup_before_upgrade_is_read_while_a_migration_holds_the_write_lock(tmp_path):
+    live = tmp_path / "live.sqlite3"
+    with closing(sqlite3.connect(live)) as setup:
+        setup.execute("PRAGMA journal_mode=WAL")
+        setup.execute("CREATE TABLE django_migrations (app TEXT, name TEXT)")
+        setup.execute("INSERT INTO django_migrations VALUES ('core', '0001_initial')")
+        setup.execute("CREATE TABLE core_appsettings (id INTEGER)")
+        setup.commit()
+    # What a migration does: write inside an open transaction. The copy must not wait for it.
+    migrating = sqlite3.connect(live, isolation_level=None)
+    migrating.execute("BEGIN IMMEDIATE")
+    migrating.execute("INSERT INTO django_migrations VALUES ('core', '0099_in_progress')")
+    try:
+        copy = backup.backup_before_upgrade(local(23, 12), database=live)
+    finally:
+        migrating.close()
+
+    assert copy.name == "db-2026-10-23-120000-vor-umstellung.sqlite3"
+    with closing(sqlite3.connect(copy)) as db:
+        assert db.execute("SELECT name FROM django_migrations").fetchall() == [("0001_initial",)]
+    assert [(b.name, b.before_upgrade) for b in backup.listing()] == [(copy.name, True)]
