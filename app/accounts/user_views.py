@@ -8,12 +8,13 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
-from django.views.decorators.http import require_GET, require_http_methods
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from accounts.forms import UserForm
 from accounts.models import User
 from core.dialogs import navigate
 from core.shortcuts import arender
+from tracking.models import TimeEntry
 
 
 def invite_url(request: HttpRequest, user: User) -> str:
@@ -54,7 +55,28 @@ async def user_form(request: HttpRequest, pk: int | None = None) -> HttpResponse
         await sync_to_async(form.save)()
         messages.success(request, f"{user.get_username()} gespeichert.")
         return redirect("users:list")
-    return await arender(request, "accounts/users/form.html", {"form": form, "edited": user})
+    has_entries = user.pk is not None and await TimeEntry.objects.filter(user=user).aexists()
+    return await arender(
+        request, "accounts/users/form.html", {"form": form, "edited": user, "has_entries": has_entries}
+    )
+
+
+@require_POST
+async def user_delete(request: HttpRequest, pk: int) -> HttpResponse:
+    user = await _get_user(pk)
+    if user.pk == request.user.pk:
+        messages.error(request, "Du kannst dich nicht selbst löschen.")
+        return redirect("users:list")
+    # Booked time must not disappear with its user; such users can be deactivated instead.
+    if await TimeEntry.objects.filter(user=user).aexists():
+        messages.error(
+            request,
+            f"{user.get_username()} hat gebuchte Zeiten und kann nicht gelöscht werden. Deaktiviere den Zugang.",
+        )
+        return redirect("users:list")
+    await user.adelete()
+    messages.success(request, f"{user.get_username()} gelöscht.")
+    return redirect("users:list")
 
 
 @require_GET
