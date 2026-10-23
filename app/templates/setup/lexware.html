@@ -18,7 +18,7 @@
   {% include "core/_form_fields.html" %}
   <div class="mt-1 flex flex-wrap items-center gap-3">
     <button type="submit" class="btn btn-primary">Prüfen und weiter</button>
-    <a href="{% url 'setup:backup' %}" class="btn btn-ghost">{% if lexware.configured %}Weiter{% else %}Später einrichten{% endif %}</a>
+    <a href="{% url 'setup:mail' %}" class="btn btn-ghost">{% if lexware.configured %}Weiter{% else %}Später einrichten{% endif %}</a>
   </div>
 </form>
 {% endblock %}

@@ -2,6 +2,7 @@ from datetime import time
 
 import pytest
 from asgiref.sync import async_to_sync
+from django.core import mail
 from django.core.management import call_command
 from django.urls import reverse
 
@@ -10,6 +11,8 @@ from core.models import AppSettings
 from customers.sync import SyncResult
 from lexware import credentials
 from lexware.schemas import Profile
+from mailer import outbox
+from mailer.models import MailSettings
 from setup.code import setup_code, setup_path
 
 pytestmark = pytest.mark.django_db
@@ -77,8 +80,21 @@ def test_full_setup_ends_on_start_page(unlocked, client, settings, accept_key, m
     client.post(reverse("setup:account"), ACCOUNT)
 
     response = client.post(reverse("setup:lexware"), {"api_key": API_KEY})
-    assert response.url == reverse("setup:backup")
+    assert response.url == reverse("setup:mail")
     assert async_to_sync(credentials.aget_api_key)() == API_KEY
+
+    mail_data = {
+        "host": "smtp.example.de",
+        "port": "587",
+        "security": "starttls",
+        "password": "smtp-geheim",
+        "from_address": "zeit@example.de",
+        "from_name": "LexTracker",
+        "base_url": "https://zeit.example.de",
+    }
+    response = client.post(reverse("setup:mail"), mail_data)
+    assert response.url == reverse("setup:backup")
+    assert MailSettings.objects.get().password == "smtp-geheim"
 
     response = client.post(
         reverse("setup:backup"), {"backup_enabled": "on", "backup_time": "02:30", "backup_keep": "7"}
@@ -88,6 +104,7 @@ def test_full_setup_ends_on_start_page(unlocked, client, settings, accept_key, m
     assert app_settings.backup_enabled and app_settings.backup_time == time(2, 30) and app_settings.backup_keep == 7
     summary = client.get(reverse("setup:done")).text
     assert "Maki IT" in summary and "ab 02:30 Uhr, 7 Kopien" in summary
+    assert "E-Mail-Versand über smtp.example.de" in summary
 
     response = client.post(reverse("setup:done"), {"import_customers": "1"}, follow=True)
 
@@ -99,7 +116,11 @@ def test_full_setup_ends_on_start_page(unlocked, client, settings, accept_key, m
 def test_lexware_step_can_be_skipped(unlocked, client, settings):
     settings.LEXWARE_API_KEY = ""
     client.post(reverse("setup:account"), ACCOUNT)
-    assert reverse("setup:backup") in client.get(reverse("setup:lexware")).text
+    assert reverse("setup:mail") in client.get(reverse("setup:lexware")).text
+    # Empty: no e-mail, on to the backup.
+    response = client.post(reverse("setup:mail"), {"port": "587", "security": "starttls"})
+    assert response.url == reverse("setup:backup")
+    assert not MailSettings.objects.get().is_configured
     # Unchecked: no automatic backups.
     client.post(reverse("setup:backup"), {"backup_time": "03:00", "backup_keep": "14"})
     assert not AppSettings.load().backup_enabled
@@ -108,8 +129,40 @@ def test_lexware_step_can_be_skipped(unlocked, client, settings):
 
     assert "noch nicht verbunden" in response.text
     assert "Keine automatische Datensicherung" in response.text
+    assert "E-Mail-Versand noch nicht eingerichtet" in response.text
     assert "Kunden jetzt" not in response.text
     assert client.post(reverse("setup:done")).url == reverse("core:dashboard")
+
+
+def test_mail_step_sends_a_test_mail_to_the_admin(unlocked, client, settings):
+    settings.LEXWARE_API_KEY = ""
+    client.post(reverse("setup:account"), ACCOUNT)
+    data = {
+        "host": "smtp.example.de",
+        "port": "587",
+        "security": "starttls",
+        "from_address": "zeit@example.de",
+        "from_name": "LexTracker",
+        "test": "1",
+    }
+
+    response = client.post(reverse("setup:mail"), data)
+
+    assert response.status_code == 200
+    assert "Testmail an kim@example.com verschickt" in response.text
+    assert mail.outbox[0].to == ["kim@example.com"]
+    # The settings are saved even though the page stays, so "Weiter" has something to continue with.
+    assert MailSettings.objects.get().is_configured
+
+
+def test_mail_step_shows_the_server_error(unlocked, client, monkeypatch):
+    client.post(reverse("setup:account"), ACCOUNT)
+    monkeypatch.setattr(outbox, "deliver", lambda config, messages: ["Connection refused"])
+    data = {"host": "smtp.example.de", "port": "587", "security": "ssl", "from_address": "zeit@example.de", "test": "1"}
+
+    response = client.post(reverse("setup:mail"), data)
+
+    assert "nicht verschickt: Connection refused" in response.text
 
 
 def test_setup_is_closed_once_an_account_exists(client, user):
