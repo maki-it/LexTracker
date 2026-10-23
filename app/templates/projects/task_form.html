@@ -15,6 +15,14 @@
   </div>
 </form>
 <section class="card flex max-w-2xl flex-col gap-3">
+  <h2>Als Vorlage speichern</h2>
+  <p class="text-sm text-muted">Name, Beschreibung, Stundensatz, Schätzung und „abrechenbar“ werden zur Vorlage, die du in anderen Projekten mit einem Klick hinzufügst.</p>
+  <form method="post" action="{% url 'projects:task_save_as_template' project.pk task.pk %}">
+    {% csrf_token %}
+    <button type="submit" class="btn">Als Vorlage speichern</button>
+  </form>
+</section>
+<section class="card flex max-w-2xl flex-col gap-3">
   <h2>Aufgabe löschen</h2>
   {% if has_entries %}
   <p class="text-sm text-muted">Auf diese Aufgabe sind Zeiten gebucht, deshalb kann sie nicht gelöscht werden. Setze ihren Status auf „erledigt“, dann taucht sie bei der Zeiterfassung nicht mehr auf.</p>

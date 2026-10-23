@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from projects.models import Project, Task
+from projects.models import Project, Task, TaskTemplate
 
 
 class TaskInline(admin.TabularInline):
@@ -24,3 +24,9 @@ class TaskAdmin(admin.ModelAdmin):
     list_filter = ("status", "is_billable", "project__customer")
     search_fields = ("name", "project__name")
     list_select_related = ("project", "project__customer")
+
+
+@admin.register(TaskTemplate)
+class TaskTemplateAdmin(admin.ModelAdmin):
+    list_display = ("name", "is_billable", "hourly_rate", "estimated_hours")
+    search_fields = ("name",)

@@ -8,6 +8,7 @@
     <p class="page-subtitle">{{ count }} {% if status == "alle" %}Projekte{% else %}{{ status }}e Projekte{% endif %}</p>
   </div>
   <div class="toolbar">
+    <a href="{% url 'projects:templates' %}" class="btn">Aufgabenvorlagen</a>
     <a {% dialog_link "projects:create" %} class="btn btn-primary">{% icon "plus" %}Neues Projekt</a>
   </div>
 </div>
