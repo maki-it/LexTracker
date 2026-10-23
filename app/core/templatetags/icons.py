@@ -17,6 +17,8 @@ ICONS = {
         '<circle cx="10" cy="8" r="4"/><path d="M3 21a7 7 0 0 1 11-5.7"/><circle cx="18" cy="17" r="2.5"/>'
         '<path d="M18 13v1.5M18 19.5V21M14.5 17H16M20 17h1.5"/>'
     ),
+    "building": '<rect x="5" y="3" width="14" height="18" rx="1"/>'
+    '<path d="M9 7h2M13 7h2M9 11h2M13 11h2M10 21v-4h4v4"/>',
     "receipt": '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/>',
     "settings": '<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/>'
     '<circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>',

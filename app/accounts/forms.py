@@ -91,7 +91,7 @@ class ProjectChoices(forms.ModelMultipleChoiceField):
 class UserForm(StyledFormMixin, forms.ModelForm):
     """An administrator creates or edits a login for an employee or a customer."""
 
-    PORTAL_FIELDS = ["portal_budget", "portal_entries", "portal_descriptions", "portal_invoices"]
+    PORTAL_FIELDS = ["portal_budget", "portal_entries", "portal_descriptions", "portal_invoices", "portal_contact"]
     BOOKING_FIELDS = ["bookable_customers", "bookable_projects"]
 
     class Meta:
@@ -109,6 +109,7 @@ class UserForm(StyledFormMixin, forms.ModelForm):
             "portal_entries",
             "portal_descriptions",
             "portal_invoices",
+            "portal_contact",
             "is_active",
         ]
         labels = {"is_active": "aktiv", "bookable_customers": "Kunden", "bookable_projects": "Einzelne Projekte"}
