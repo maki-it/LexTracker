@@ -131,6 +131,30 @@ class AppSettings(models.Model):
         default=10,
         help_text="Eine E-Mail pro Timer an den, der ihn gestartet hat. 0 schaltet die Erinnerung aus.",
     )
+
+    class OverdueNotice(models.TextChoices):
+        OFF = "off", "aus"
+        ADMINS = "admins", "an Administratoren"
+        CUSTOMER = "customer", "an den Kunden und an Administratoren"
+
+    overdue_notice = models.CharField(
+        "Hinweis bei überfälligen Rechnungen",
+        max_length=10,
+        choices=OverdueNotice,
+        default=OverdueNotice.ADMINS,
+        help_text="Eine E-Mail pro Rechnung, sobald sie überfällig ist. Der Kunde bekommt eine freundliche "
+        "Zahlungserinnerung an die E-Mail-Adresse aus Lexware.",
+    )
+    overdue_notice_days = models.PositiveSmallIntegerField(
+        "Tage nach Fälligkeit",
+        default=3,
+        help_text="So lange wartet der Hinweis, damit eine gerade eingegangene Zahlung nicht übersehen wird.",
+    )
+    invite_by_mail = models.BooleanField(
+        "Einladung per E-Mail schicken",
+        default=True,
+        help_text="Neue Benutzer mit E-Mail-Adresse bekommen ihren Einladungslink direkt per E-Mail.",
+    )
     # Written by the scheduler, not on the settings page.
     weekly_report_at = models.DateTimeField("letzter Wochenbericht", null=True, blank=True, editable=False)
 

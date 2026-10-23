@@ -24,7 +24,15 @@ OPEN_STATUSES = [
     Invoice.Status.TRANSFERRED,
     Invoice.Status.SEPADEBIT,
 ]
-SYNCED_FIELDS = ["status", "voucher_number", "voucher_date", "due_date", "status_synced_at", "updated_at"]
+SYNCED_FIELDS = [
+    "status",
+    "voucher_number",
+    "voucher_date",
+    "due_date",
+    "open_amount",
+    "status_synced_at",
+    "updated_at",
+]
 
 
 @dataclass
@@ -52,13 +60,14 @@ def _status(lexware_status: str, due_date, today) -> str:
     return lexware_status
 
 
-def _apply(invoice: Invoice, status: str, voucher_number: str | None, voucher_date, due_date, now) -> bool:
+def _apply(invoice: Invoice, status: str, voucher_number: str | None, voucher_date, due_date, open_amount, now) -> bool:
     """Set the values from Lexware and tell whether anything changed."""
     values = {
         "status": status,
         "voucher_number": voucher_number or "",
         "voucher_date": voucher_date or invoice.voucher_date,
         "due_date": due_date,
+        "open_amount": open_amount,
     }
     changed = any(getattr(invoice, field) != value for field, value in values.items())
     for field, value in values.items():
@@ -91,9 +100,11 @@ async def sync_invoices(client: LexwareClient) -> InvoiceSyncResult:
     to_update: list[Invoice] = []
     new: list[Voucher] = []
 
-    def record(invoice: Invoice, lexware_status: str, voucher_number: str | None, voucher_date, due_date) -> None:
+    def record(
+        invoice: Invoice, lexware_status: str, voucher_number: str | None, voucher_date, due_date, open_amount
+    ) -> None:
         status = _status(lexware_status, due_date, today)
-        if _apply(invoice, status, voucher_number, voucher_date, due_date, now):
+        if _apply(invoice, status, voucher_number, voucher_date, due_date, open_amount, now):
             result.changed += 1
         else:
             result.unchanged += 1
@@ -103,7 +114,12 @@ async def sync_invoices(client: LexwareClient) -> InvoiceSyncResult:
     async for voucher in client.iter_invoices():
         if invoice := pending.pop(voucher.id, None):
             record(
-                invoice, voucher.voucher_status, voucher.voucher_number, _day(voucher.voucher_date), _due_date(voucher)
+                invoice,
+                voucher.voucher_status,
+                voucher.voucher_number,
+                _day(voucher.voucher_date),
+                _due_date(voucher),
+                _amount(voucher.open_amount),
             )
         elif voucher.id not in known and voucher.contact_id in customers:
             new.append(voucher)
@@ -120,7 +136,7 @@ async def sync_invoices(client: LexwareClient) -> InvoiceSyncResult:
             result.deleted += 1
             continue
         status, number = data.get("voucherStatus", invoice.status), data.get("voucherNumber")
-        record(invoice, status, number, _local_date(data.get("voucherDate")), invoice.due_date)
+        record(invoice, status, number, _local_date(data.get("voucherDate")), invoice.due_date, invoice.open_amount)
 
     if to_update:
         await Invoice.objects.abulk_update(to_update, SYNCED_FIELDS)
@@ -153,8 +169,13 @@ async def _create_from_lexware(voucher: Voucher, data: dict, customer_id: int, n
         status=_status(voucher.voucher_status, due_date, today),
         voucher_number=voucher.voucher_number or "",
         due_date=due_date,
+        open_amount=_amount(voucher.open_amount),
         status_synced_at=now,
     )
+
+
+def _amount(value: float | None) -> Decimal | None:
+    return None if value is None else Decimal(str(value)).quantize(Decimal("0.01"))
 
 
 def _local_date(value: str | None) -> date | None:

@@ -1,6 +1,6 @@
-"""Links sent by e-mail: one to set a new password, one to sign in without a password.
+"""Links sent by e-mail: one to set a new password, one to sign in without a password, and the invitation.
 
-Both are requested with a username or an e-mail address. The answer is the same whether an account
+The first two are requested with a username or an e-mail address. The answer is the same whether an account
 exists or not, so nobody can find out which accounts exist. Requests count against the login rate
 limit (``accounts.ratelimit``), and one account gets only a few links in a row.
 """
@@ -8,7 +8,8 @@ limit (``accounts.ratelimit``), and one account gets only a few links in a row.
 import secrets
 from datetime import timedelta
 
-from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.conf import settings
+from django.contrib.auth.tokens import PasswordResetTokenGenerator, default_token_generator
 from django.db.models import Q
 from django.http import HttpRequest
 from django.urls import reverse
@@ -133,6 +134,39 @@ async def redeem_login_link(key: str) -> User | None:
     if link is None or not await LoginLink.objects.filter(pk=link.pk, used_at__isnull=True).aupdate(used_at=now):
         return None
     return link.user
+
+
+def invite_path(user: User) -> str:
+    """The path to set a first password. It stops working once a password is set, or after a week."""
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    return reverse("accounts:invite", args=[uid, default_token_generator.make_token(user)])
+
+
+async def invite_url(request: HttpRequest, user: User) -> str:
+    return await _absolute(request, invite_path(user))
+
+
+async def can_send_invitation(user: User) -> bool:
+    return bool(user.is_active and user.email) and await outbox.ais_configured()
+
+
+async def send_invitation(request: HttpRequest, user: User) -> None:
+    """Queue the invitation e-mail for ``user``, sent by the administrator signed in."""
+    inviter = request.user.get_full_name() or request.user.get_username()
+    await outbox.aqueue(
+        OutgoingMail.Kind.INVITATION,
+        user.email,
+        "Dein Zugang zu LexTracker",
+        "invitation",
+        {
+            "invited": user,
+            "inviter": "" if inviter == user.get_username() else inviter,
+            "url": await invite_url(request, user),
+            "days": settings.PASSWORD_RESET_TIMEOUT // 86400,
+        },
+        user=user,
+        expires_at=timezone.now() + timedelta(seconds=settings.PASSWORD_RESET_TIMEOUT),
+    )
 
 
 async def available() -> dict:

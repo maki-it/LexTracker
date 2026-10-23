@@ -1,0 +1,11 @@
+{% autoescape off %}Hallo{% if user.first_name %} {{ user.first_name }}{% endif %},
+
+die Rechnung {{ invoice.voucher_number|default:"ohne Nummer" }} an {{ invoice.customer.name }} war am {{ invoice.due_date|date:date_format }} fällig und ist seit {{ days_overdue }} Tag{{ days_overdue|pluralize:"en" }} überfällig.{% if invoice.open_amount is not None %}
+Offen sind noch {{ invoice.open_amount|floatformat:"2g" }} €.{% endif %}
+
+{% if customer_notified %}Der Kunde hat eine Zahlungserinnerung an {{ invoice.customer.email }} bekommen.{% elif customer_without_email %}Der Kunde hat keine E-Mail-Adresse in Lexware, deshalb ging keine Zahlungserinnerung an ihn.{% else %}An den Kunden ging keine Erinnerung.{% endif %}{% if invoice.lexware_url %}
+
+Rechnung in Lexware Office: {{ invoice.lexware_url }}{% endif %}
+
+Diese Hinweise stellst du in LexTracker unter Einstellungen ein.
+{% endautoescape %}

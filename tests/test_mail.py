@@ -1,5 +1,7 @@
 import re
-from datetime import datetime, time, timedelta
+import uuid
+from datetime import date, datetime, time, timedelta
+from decimal import Decimal
 
 import pytest
 from asgiref.sync import async_to_sync
@@ -9,6 +11,7 @@ from django.utils import timezone
 
 from accounts import links, mfa
 from accounts.models import LoginLink, User
+from billing.models import Invoice
 from core.models import AppSettings
 from customers.models import Customer
 from mailer import jobs, outbox
@@ -353,7 +356,9 @@ def test_timer_reminder_once_per_running_timer(kim, task, smtp):
     TimeEntry.objects.create(user=short, task=task, started_at=timezone.now() - timedelta(hours=2))
 
     run_due = async_to_sync(jobs.run_due)
-    AppSettings.objects.update_or_create(pk=1, defaults={"weekly_report_enabled": False, "timer_reminder_hours": 10})
+    AppSettings.objects.update_or_create(
+        pk=1, defaults={"weekly_report_enabled": False, "timer_reminder_hours": 10, "overdue_notice": "off"}
+    )
     assert run_due(timezone.now()) == {"timer reminder": 1}
     reminder = OutgoingMail.objects.get()
     assert reminder.to == "kim@example.de"
@@ -381,3 +386,138 @@ def test_account_page_has_mail_preferences(logged_in, kim):
     assert logged_in.post(reverse("account:settings"), data).status_code == 302
     kim.refresh_from_db()
     assert (kim.weekly_report, kim.timer_reminder) == (False, True)
+
+
+# Overdue invoices
+
+
+@pytest.fixture
+def overdue(kim, task) -> Invoice:
+    customer = task.project.customer
+    customer.email = "buchhaltung@acme.example"
+    customer.save()
+    return Invoice.objects.create(
+        customer=customer,
+        period_start=date(2026, 9, 1),
+        period_end=date(2026, 9, 30),
+        total_net=Decimal("200.00"),
+        lexware_id=uuid.uuid4(),
+        status=Invoice.Status.OVERDUE,
+        voucher_number="RE0042",
+        voucher_date=date(2026, 10, 1),
+        due_date=timezone.localdate() - timedelta(days=4),
+        open_amount=Decimal("1238.00"),
+        status_synced_at=timezone.now(),
+    )
+
+
+def overdue_notices(**app_settings) -> int:
+    AppSettings.objects.update_or_create(
+        pk=1, defaults={"weekly_report_enabled": False, "timer_reminder_hours": 0, **app_settings}
+    )
+    return async_to_sync(jobs.run_due)(timezone.now()).get("overdue invoice", 0)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_overdue_invoice_notifies_admins_once(overdue, smtp):
+    User.objects.create_user("mia", "mia@example.de", "x", role=User.Role.EMPLOYEE)
+    assert overdue_notices() == 1
+    notice = OutgoingMail.objects.get()
+    assert notice.to == "kim@example.de"
+    assert notice.subject == "Rechnung RE0042 von ACME GmbH ist überfällig"
+    assert "seit 4 Tagen überfällig" in notice.text and "1.238,00 €" in notice.text
+    assert "An den Kunden ging keine Erinnerung." in notice.text
+    assert f"https://app.lexware.de/permalink/invoices/view/{overdue.lexware_id}" in notice.text
+    assert overdue_notices() == 0
+
+    # A new due date is a new notice.
+    Invoice.objects.filter(pk=overdue.pk).update(due_date=overdue.due_date - timedelta(days=1))
+    assert overdue_notices() == 1
+
+
+@pytest.mark.django_db(transaction=True)
+def test_overdue_invoice_reminds_the_customer(overdue, smtp):
+    assert overdue_notices(overdue_notice="customer") == 2
+    reminder = OutgoingMail.objects.get(to="buchhaltung@acme.example")
+    assert reminder.subject == "Zahlungserinnerung zur Rechnung RE0042"
+    assert "vom 01.10.2026" in reminder.text and "1.238,00 €" in reminder.text
+    assert "Viele Grüße\nLexTracker" in reminder.text
+    assert "lexware.de" not in reminder.text + reminder.html
+    notice = OutgoingMail.objects.get(to="kim@example.de")
+    assert "Zahlungserinnerung an buchhaltung@acme.example" in notice.text
+    assert overdue_notices(overdue_notice="customer") == 0
+
+
+@pytest.mark.django_db(transaction=True)
+def test_overdue_notice_waits_and_skips_unclear_invoices(overdue, smtp):
+    # Not before the days after the due date have passed.
+    assert overdue_notices(overdue_notice_days=5) == 0
+    # Not if the status was not checked with Lexware lately; the invoice may be paid by now.
+    Invoice.objects.filter(pk=overdue.pk).update(status_synced_at=timezone.now() - timedelta(days=2))
+    assert overdue_notices() == 0
+    # Not for invoices overdue long before the notice was turned on.
+    Invoice.objects.filter(pk=overdue.pk).update(
+        status_synced_at=timezone.now(), due_date=timezone.localdate() - timedelta(days=30)
+    )
+    assert overdue_notices() == 0
+    # Not for paid ones, and not at all when turned off.
+    Invoice.objects.filter(pk=overdue.pk).update(due_date=overdue.due_date, status=Invoice.Status.PAID)
+    assert overdue_notices() == 0
+    Invoice.objects.filter(pk=overdue.pk).update(status=Invoice.Status.OVERDUE)
+    assert overdue_notices(overdue_notice="off") == 0
+    assert not OutgoingMail.objects.exists()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_customer_without_email_gets_no_reminder(overdue, smtp):
+    Customer.objects.filter(pk=overdue.customer_id).update(email="")
+    assert overdue_notices(overdue_notice="customer") == 1
+    assert "keine E-Mail-Adresse in Lexware" in OutgoingMail.objects.get().text
+
+
+# Invitations
+
+
+def test_new_user_gets_the_invitation_by_mail(logged_in, kim, smtp):
+    response = logged_in.post(
+        reverse("users:create"),
+        {"username": "mia", "first_name": "Mia", "email": "mia@example.de", "role": User.Role.EMPLOYEE},
+        follow=True,
+    )
+    assert "Einladung an mia@example.de ist unterwegs" in response.text
+    invitation = OutgoingMail.objects.get()
+    assert (invitation.kind, invitation.to) == (OutgoingMail.Kind.INVITATION, "mia@example.de")
+    assert "Kim hat dir einen Zugang" in invitation.text and "„mia“" in invitation.text
+    assert invitation.expires_at > timezone.now() + timedelta(days=6)
+    link = link_in(invitation.text)
+
+    send_due()
+    invitation.refresh_from_db()
+    assert invitation.text == ""  # The link sets a password, so no copy stays in the database.
+
+    logged_in.logout()
+    data = {"new_password1": "Sehr-sicher-42", "new_password2": "Sehr-sicher-42"}
+    assert logged_in.post(link, data).url.startswith(reverse("accounts:login"))
+    assert User.objects.get(username="mia").check_password("Sehr-sicher-42")
+
+
+def test_invitation_by_mail_can_be_turned_off(logged_in, kim, smtp):
+    AppSettings.objects.update_or_create(pk=1, defaults={"invite_by_mail": False})
+    logged_in.post(reverse("users:create"), {"username": "mia", "email": "mia@example.de", "role": User.Role.EMPLOYEE})
+    assert not OutgoingMail.objects.exists()
+
+    # It can still be sent from the invitation page.
+    mia = User.objects.get(username="mia")
+    page = logged_in.get(reverse("users:invite", args=[mia.pk])).text
+    assert "Per E-Mail an mia@example.de schicken" in page
+    assert "https://zeit.example.de/accounts/einladung/" in page
+    logged_in.post(reverse("users:invite", args=[mia.pk]))
+    assert OutgoingMail.objects.get().to == "mia@example.de"
+
+
+def test_no_invitation_mail_without_smtp_server_or_address(logged_in, kim):
+    logged_in.post(reverse("users:create"), {"username": "mia", "email": "mia@example.de", "role": User.Role.EMPLOYEE})
+    mia = User.objects.get(username="mia")
+    assert "Per E-Mail" not in logged_in.get(reverse("users:invite", args=[mia.pk])).text
+    logged_in.post(reverse("users:invite", args=[mia.pk]))
+    assert not OutgoingMail.objects.exists()
