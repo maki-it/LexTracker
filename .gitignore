@@ -166,3 +166,6 @@ cython_debug/
 /staticfiles/
 app/static/css/tailwind.css
 app/.django_tailwind_cli/
+
+# Load test results (loadtest/run.sh)
+loadtest/results/

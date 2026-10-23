@@ -62,6 +62,7 @@ make run         # http://localhost:8000
 Während du an Templates arbeitest, hält `make css-watch` in einem zweiten Terminal das Stylesheet aktuell.
 Den automatischen Kundenimport startest du lokal bei Bedarf mit `make scheduler`.
 `make test` startet die Tests, `make lint` prüft den Code-Stil. `make help` zeigt alle Befehle.
+Einen Last- und Performancetest mit Testdaten beschreibt [loadtest/README.md](loadtest/README.md).
 
 ## Lexware Office
 

@@ -1,6 +1,6 @@
 MANAGE = uv run app/manage.py
 
-.PHONY: help install run scheduler css css-watch migrate makemigrations superuser test lint format backup docker-up docker-down docker-logs docker-backup
+.PHONY: help install run scheduler css css-watch migrate makemigrations superuser test lint format backup loadtest docker-up docker-down docker-logs docker-backup
 
 help: ## Show available commands
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  %-16s %s\n", $$1, $$2}'
@@ -43,6 +43,9 @@ lint: ## Check code style
 format: ## Fix code style
 	uv run ruff check --fix .
 	uv run ruff format .
+
+loadtest: ## Run the load test against http://localhost:8000 (see loadtest/README.md)
+	loadtest/run.sh
 
 docker-up: ## Build and start the container
 	docker compose up -d --build
