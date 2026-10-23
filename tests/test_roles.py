@@ -331,7 +331,7 @@ def test_customer_downloads_the_invoice_pdf(client, customer_user, other_task, m
         )
 
     own = invoice(customer_user.customer, "RE0042")
-    draft = invoice(customer_user.customer, "", Invoice.Status.DRAFT)
+    draft = invoice(customer_user.customer, "RE0044", Invoice.Status.DRAFT)
     foreign = invoice(other_task.project.customer, "RE0043")
     requests = []
 
@@ -344,27 +344,27 @@ def test_customer_downloads_the_invoice_pdf(client, customer_user, other_task, m
     monkeypatch.setattr("portal.views.client_from_settings", lambda: fake_client(handler))
     client.force_login(customer_user)
 
-    assert reverse("portal:invoice_pdf", args=[own.pk]) in client.get(reverse("portal:invoices")).text
-    response = client.get(reverse("portal:invoice_pdf", args=[own.pk]))
+    assert reverse("portal:invoice_pdf", args=[own.voucher_number]) in client.get(reverse("portal:invoices")).text
+    response = client.get(reverse("portal:invoice_pdf", args=[own.voucher_number]))
     assert response.content == b"%PDF-1.7" and response["Content-Type"] == "application/pdf"
     assert 'filename="Rechnung-RE0042.pdf"' in response["Content-Disposition"]
     assert requests[0].headers["Accept"] == "application/pdf"
-    # "Online ansehen" opens the same PDF in the browser.
-    response = client.get(reverse("portal:invoice_pdf", args=[own.pk]), {"ansehen": "1"})
+    # The invoice number in the list opens the same PDF in the browser.
+    response = client.get(reverse("portal:invoice_pdf", args=[own.voucher_number]), {"ansehen": "1"})
     assert response["Content-Disposition"].startswith("inline")
 
     # Drafts and other customers' invoices are not to be had.
-    assert client.get(reverse("portal:invoice_pdf", args=[draft.pk])).status_code == 404
-    assert client.get(reverse("portal:invoice_pdf", args=[foreign.pk])).status_code == 404
+    assert client.get(reverse("portal:invoice_pdf", args=[draft.voucher_number])).status_code == 404
+    assert client.get(reverse("portal:invoice_pdf", args=[foreign.voucher_number])).status_code == 404
 
     # Lexware failing ends on the list with a message.
     Invoice.objects.filter(pk=own.pk).update(lexware_id=uuid.uuid4())
-    response = client.get(reverse("portal:invoice_pdf", args=[own.pk]), follow=True)
+    response = client.get(reverse("portal:invoice_pdf", args=[own.voucher_number]), follow=True)
     assert "kann gerade nicht heruntergeladen werden" in response.text
 
     customer_user.portal_invoices = False
     customer_user.save()
-    assert client.get(reverse("portal:invoice_pdf", args=[own.pk])).status_code == 403
+    assert client.get(reverse("portal:invoice_pdf", args=[own.voucher_number])).status_code == 403
 
 
 # What employees may book on
@@ -480,4 +480,6 @@ def test_portal_invoices_filter_by_status_and_date(client, customer_user):
     # Drafts cannot be picked.
     assert "RE-NEU" in client.get(url, {"status": "entwurf"}).text
 
-    assert f"{reverse('portal:invoice_pdf', args=[current.pk])}?ansehen=1" in client.get(url).text
+    text = client.get(url).text
+    assert f'href="{reverse("portal:invoice_pdf", args=[current.voucher_number])}?ansehen=1"' in text
+    assert "Online ansehen" not in text

@@ -54,7 +54,7 @@
           {% if not entry.is_billable or not entry.task.is_billable %}<span class="text-muted">–</span>
           {% elif entry.invoice %}
           <span class="badge badge-success">abgerechnet</span>
-          {% if user.portal_invoices %}<a class="ml-1 tabular-nums hover:underline" href="{% url 'portal:invoice_entries' entry.invoice_id %}">{{ entry.invoice.voucher_number|default:"Rechnung" }}</a>{% if entry.invoice.status == "voided" %} <span class="text-[13px] text-muted">(storniert)</span>{% endif %}{% endif %}
+          {% if user.portal_invoices %}{% if entry.invoice.voucher_number %}<a class="ml-1 tabular-nums hover:underline" href="{% url 'portal:invoice_entries' entry.invoice.voucher_number %}">{{ entry.invoice.voucher_number }}</a>{% else %}<span class="ml-1">Rechnung</span>{% endif %}{% if entry.invoice.status == "voided" %} <span class="text-[13px] text-muted">(storniert)</span>{% endif %}{% endif %}
           {% else %}<span class="badge">offen</span>{% endif %}
         </td>
       </tr>
