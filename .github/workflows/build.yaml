@@ -49,5 +49,6 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           provenance: false # Fix for unknown/unknown image build
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # Own scope, so the CI build and the release build do not overwrite each other's cache.
+          cache-from: type=gha,scope=release
+          cache-to: type=gha,scope=release,mode=max

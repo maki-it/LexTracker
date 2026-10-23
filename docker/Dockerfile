@@ -16,20 +16,16 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 COPY app ./app
 
 # Build the stylesheet with the standalone Tailwind CLI and collect all static files.
+# The CLI binary lands in a cache mount, so it is downloaded once per Tailwind version
+# instead of on every code change, and never ends up in the image.
 # The secret is a throwaway value, only needed so the settings load.
-RUN APP_ENVIRONMENT=production APP_SECRET_KEY=build-only APP_DATA_DIR=/tmp/data \
+RUN --mount=type=cache,target=/srv/app/.django_tailwind_cli \
+    APP_ENVIRONMENT=production APP_SECRET_KEY=build-only APP_DATA_DIR=/tmp/data \
     sh -c "cd app && /srv/.venv/bin/python manage.py tailwind build \
-      && /srv/.venv/bin/python manage.py collectstatic --noinput" \
-    && rm -rf app/.django_tailwind_cli
+      && /srv/.venv/bin/python manage.py collectstatic --noinput"
 
 
 FROM python:3.14-slim AS runtime
-
-ARG VERSION=dev
-LABEL org.opencontainers.image.title="LexTracker" \
-      org.opencontainers.image.description="Zeiterfassung und Projektsteuerung mit Anbindung an Lexware Office" \
-      org.opencontainers.image.source="https://github.com/maki-it/LexTracker" \
-      org.opencontainers.image.version="${VERSION}"
 
 RUN useradd --uid 1000 --create-home --shell /usr/sbin/nologin app \
     && mkdir -p /data /backups && chown app:app /data /backups
@@ -45,9 +41,18 @@ ENV PATH="/srv/.venv/bin:$PATH" \
 
 WORKDIR /srv/app
 
-COPY --from=build /srv/.venv /srv/.venv
-COPY --from=build /srv/staticfiles /srv/staticfiles
-COPY --from=build /srv/app /srv/app
+# --link keeps these layers independent of the ones above, so a new base image or a code
+# change does not force the other layers to be rebuilt or re-pushed.
+COPY --link --from=build /srv/.venv /srv/.venv
+COPY --link --from=build /srv/staticfiles /srv/staticfiles
+COPY --link --from=build /srv/app /srv/app
+
+# Declared late so a new version only changes the metadata, not any cached layer above.
+ARG VERSION=dev
+LABEL org.opencontainers.image.title="LexTracker" \
+      org.opencontainers.image.description="Zeiterfassung und Projektsteuerung mit Anbindung an Lexware Office" \
+      org.opencontainers.image.source="https://github.com/maki-it/LexTracker" \
+      org.opencontainers.image.version="${VERSION}"
 
 USER app
 VOLUME ["/data", "/backups"]
