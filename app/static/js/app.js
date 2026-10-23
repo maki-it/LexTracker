@@ -121,13 +121,17 @@ document.addEventListener("htmx:load", (event) => {
 });
 document.addEventListener("DOMContentLoaded", () => document.querySelectorAll("[data-checkbox-group]").forEach(syncSelectAll));
 
-// A select with data-searchable gets a search field above it that narrows its options while typing. The
-// chosen option always stays in the list, so searching never changes the value.
+// A select with data-searchable is shown like the checkbox lists: a search field above a scrollable list of
+// radio buttons, so only one entry can be chosen. The select stays in the form (hidden) and is what gets sent.
+let searchableCount = 0;
 function makeSearchable(select) {
   if (select.dataset.searchReady) return;
   select.dataset.searchReady = "1";
-  const options = [...select.options];
-  if (options.length < 6) return;
+  const group = `searchable-${++searchableCount}`;
+  const box = document.createElement("div");
+  box.className = "flex max-h-48 flex-col gap-1.5 overflow-y-auto rounded-lg border border-line px-3 py-2";
+  const header = document.createElement("div");
+  header.className = "sticky -top-2 -mx-3 -mt-2 flex flex-col gap-1.5 border-b border-line bg-surface px-3 pb-1.5 pt-2";
   const input = document.createElement("input");
   input.type = "search";
   input.className = "input";
@@ -137,13 +141,41 @@ function makeSearchable(select) {
   input.addEventListener("keydown", (event) => {
     if (event.key === "Enter") event.preventDefault();
   });
+  header.append(input);
+  const none = document.createElement("span");
+  none.className = "text-sm text-muted";
+  none.textContent = "Keine Treffer.";
+  none.hidden = true;
+  const entries = [...select.options].map((option) => {
+    const label = document.createElement("label");
+    label.className = "flex items-center gap-2 text-sm";
+    const radio = document.createElement("input");
+    radio.type = "radio";
+    radio.name = group;
+    radio.checked = option.selected;
+    radio.addEventListener("change", () => {
+      select.value = option.value;
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    label.append(radio, ` ${option.textContent}`);
+    // The empty entry ("kein Kunde") stays in the header so it is always at hand.
+    (option.value ? box : header).append(label);
+    return { label, option };
+  });
   input.addEventListener("input", () => {
     const query = input.value.trim().toLocaleLowerCase();
-    const value = select.value;
-    select.replaceChildren(...options.filter((option) => option.value === value || option.textContent.toLocaleLowerCase().includes(query)));
-    select.value = value;
+    let shown = 0;
+    for (const { label, option } of entries) {
+      if (!option.value) continue;
+      label.hidden = !option.textContent.toLocaleLowerCase().includes(query);
+      if (!label.hidden) shown++;
+    }
+    none.hidden = shown > 0;
   });
-  select.before(input);
+  box.prepend(header);
+  box.append(none);
+  select.hidden = true;
+  select.before(box);
 }
 document.addEventListener("htmx:load", (event) => {
   event.detail.elt.querySelectorAll?.("select[data-searchable]").forEach(makeSearchable);
