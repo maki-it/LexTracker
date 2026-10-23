@@ -129,7 +129,7 @@ function makeSearchable(select) {
   select.dataset.searchReady = "1";
   const group = `searchable-${++searchableCount}`;
   const box = document.createElement("div");
-  box.className = "flex max-h-48 flex-col gap-1.5 overflow-y-auto rounded-lg border border-line px-3 py-2";
+  box.className = "relative flex max-h-48 flex-col gap-1.5 overflow-y-auto rounded-lg border border-line px-3 py-2";
   const header = document.createElement("div");
   header.className = "sticky -top-2 -mx-3 -mt-2 flex flex-col gap-1.5 border-b border-line bg-surface px-3 pb-1.5 pt-2";
   const input = document.createElement("input");
@@ -174,6 +174,17 @@ function makeSearchable(select) {
   });
   box.prepend(header);
   box.append(none);
+  // Scroll the chosen entry into view as soon as the list has a size, which is later when its fieldset is
+  // hidden until the role is "customer".
+  const chosen = entries.find(({ option }) => option.value && option.selected);
+  if (chosen) {
+    const observer = new ResizeObserver(() => {
+      if (!box.clientHeight) return;
+      box.scrollTop = chosen.label.offsetTop - header.offsetHeight - 8;
+      observer.disconnect();
+    });
+    observer.observe(box);
+  }
   select.hidden = true;
   select.before(box);
 }
