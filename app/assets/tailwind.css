@@ -267,6 +267,11 @@
     @apply bg-danger-soft text-danger;
   }
 
+  /* A quiet label, e.g. for where a record comes from. */
+  .badge-outline {
+    @apply bg-transparent px-1.5 py-px text-[11px] text-muted ring-1 ring-line ring-inset;
+  }
+
   .pill {
     @apply inline-flex h-8 items-center rounded-full border border-line bg-surface px-3 text-[13px] font-medium text-ink no-underline hover:bg-surface-muted;
   }
