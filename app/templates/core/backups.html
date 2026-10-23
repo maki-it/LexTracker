@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% load icons dialogs %}
+{% block title %}Sicherungen · LexTracker{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <p class="breadcrumb"><a href="{% url 'core:settings' %}">Einstellungen</a></p>
+    <h1>Sicherungen</h1>
+    <p class="page-subtitle">Kopien der Datenbank in <code>{{ dir }}</code>. Wann und wie viele entstehen, legst du in den <a href="{% url 'core:settings' %}">Einstellungen</a> fest.</p>
+  </div>
+  <form method="post" action="{% url 'core:backup_create' %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-primary">{% icon "plus" %}Jetzt sichern</button>
+  </form>
+</div>
+<div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Sicherung</th>
+        <th class="text-right">Größe</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in backups %}
+      <tr>
+        <td class="w-full">
+          <div class="font-medium">{{ item.created|date:datetime_format }} Uhr</div>
+          <div class="text-xs text-muted">{{ item.name }}{% if item.before_restore %} · Stand vor einer Wiederherstellung{% endif %}</div>
+        </td>
+        <td class="whitespace-nowrap text-right text-muted tabular-nums">{{ item.size|filesizeformat }}</td>
+        <td>
+          <div class="flex justify-end gap-1">
+            <a href="{% url 'core:backup_download' item.name %}" class="btn btn-ghost btn-sm btn-icon size-8" title="Herunterladen" aria-label="{{ item.name }} herunterladen">{% icon "download" %}</a>
+            <a {% dialog_link "core:backup_restore" item.name %} class="btn btn-ghost btn-sm btn-icon size-8" title="Wiederherstellen" aria-label="{{ item.name }} wiederherstellen">{% icon "refresh" %}</a>
+            <form method="post" action="{% url 'core:backup_delete' item.name %}" onsubmit="return confirm('Diese Sicherung wirklich löschen?')">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-ghost btn-sm btn-icon size-8 text-danger" title="Löschen" aria-label="{{ item.name }} löschen">{% icon "trash" %}</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="3" class="py-10 text-center text-muted">Noch keine Sicherungen.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

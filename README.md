@@ -196,7 +196,7 @@ FORWARDED_ALLOW_IPS=<IP des Proxys>
 Ohne HTTPS funktioniert der Login nur mit `APP_SECURE_COOKIES=false`.
 
 **Backup:** Der Scheduler kopiert die Datenbank täglich nach `/backups`. Ob, ab welcher Uhrzeit (Standard 03:00) und wie viele Kopien er behält (Standard 14), stellst du unter Einstellungen → Datensicherung ein; dort steht auch, wann die letzte Sicherung lief. Nur der Zielordner kommt aus der Umgebung (`APP_BACKUP_DIR`, in Docker fest `/backups`, ohne Docker `data/backups`). Der Scheduler nutzt dafür die Backup-Funktion von SQLite, die auch im laufenden Betrieb eine stimmige Kopie liefert; die Datei einfach zu kopieren reicht im WAL-Modus nicht.
-Ein Backup sofort: `make docker-backup` (oder `docker compose exec scheduler python manage.py backup_database`).
+Unter Einstellungen → Sicherungen siehst du alle Kopien, kannst sofort eine anlegen, sie herunterladen, löschen oder wiederherstellen. Ein Backup sofort geht auch mit `make docker-backup` (oder `docker compose exec scheduler python manage.py backup_database`).
 Damit die Backups auch außerhalb von Docker liegen, z. B. für ein Offsite-Backup, kannst du das Volume durch einen Ordner auf dem Server ersetzen. Er muss dem Benutzer mit der UID 1000 gehören:
 
 ```yaml
@@ -208,4 +208,4 @@ services:
     volumes: ["/srv/backups/lextracker:/backups"]
 ```
 
-Zum Wiederherstellen die App stoppen (`docker compose down`), die gewünschte Kopie als `/data/db.sqlite3` zurückspielen und dabei `db.sqlite3-wal` und `db.sqlite3-shm` löschen, dann wieder starten.
+Beim Wiederherstellen in der Oberfläche sichert die App zuerst den aktuellen Stand (Datei mit `-vorher` im Namen), schreibt die Kopie mit der Backup-Funktion von SQLite in die laufende Datenbank und führt danach die Migrationen aus. App und Scheduler laufen dabei weiter. Kopien aus einer neueren Version der App lehnt sie ab. Startet die App gar nicht mehr, geht es auch von Hand: App stoppen (`docker compose down`), die gewünschte Kopie als `/data/db.sqlite3` zurückspielen und dabei `db.sqlite3-wal` und `db.sqlite3-shm` löschen, dann wieder starten.

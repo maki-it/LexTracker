@@ -4,36 +4,83 @@ When and how many copies is set on the settings page; the folder is set by APP_B
 Docker only the mounted /backups is writable.
 """
 
+import re
 import sqlite3
+from contextlib import closing
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
 from django.conf import settings
+from django.core.management import call_command
 from django.db import connection
+from django.db.migrations.loader import MigrationLoader
 from django.utils import timezone
 
 from core.models import AppSettings
 
+# A copy made just before a restore, so the restore can be undone. Pruned like the daily ones.
+BEFORE_RESTORE = "-vorher"
+NAME = re.compile(rf"db-(\d{{4}}-\d{{2}}-\d{{2}}-\d{{6}})({BEFORE_RESTORE})?\.sqlite3")
+
+
+class InvalidBackup(Exception):
+    """The file is not a database this app can restore."""
+
+
+@dataclass(frozen=True)
+class Backup:
+    path: Path
+    created: datetime
+    size: int
+    before_restore: bool
+
+    @property
+    def name(self) -> str:
+        return self.path.name
+
 
 def backups() -> list[Path]:
     # The names start with the date and time, so sorting by name sorts by age.
-    return sorted(settings.BACKUP_DIR.glob("db-*.sqlite3"))
+    return sorted(p for p in settings.BACKUP_DIR.glob("db-*.sqlite3") if NAME.fullmatch(p.name))
 
 
-def create_backup(keep: int, now: datetime | None = None) -> Path:
+def listing() -> list[Backup]:
+    """The backups in the folder, newest first."""
+    result = []
+    for path in reversed(backups()):
+        match = NAME.fullmatch(path.name)
+        created = timezone.make_aware(datetime.strptime(match[1], "%Y-%m-%d-%H%M%S"))
+        result.append(Backup(path, created, path.stat().st_size, bool(match[2])))
+    return result
+
+
+def get(name: str) -> Path | None:
+    """The backup with this file name, or None. Only names from the folder, so no path can escape it."""
+    return next((path for path in backups() if path.name == name), None)
+
+
+def _copy(now: datetime | None, suffix: str = "") -> Path:
     """Copy the database with SQLite's backup API, which is safe while the app writes to it."""
     local = timezone.localtime(now)
     settings.BACKUP_DIR.mkdir(parents=True, exist_ok=True)
-    target = settings.BACKUP_DIR / f"db-{local:%Y-%m-%d-%H%M%S}.sqlite3"
+    target = settings.BACKUP_DIR / f"db-{local:%Y-%m-%d-%H%M%S}{suffix}.sqlite3"
     # Write to a temporary name first, so a half-written copy never looks like a backup.
     partial = target.with_suffix(".partial")
     connection.ensure_connection()
     copy = sqlite3.connect(partial)
     try:
         connection.connection.backup(copy)
+        # A single self-contained file, so a downloaded copy opens anywhere.
+        copy.execute("PRAGMA journal_mode=DELETE")
     finally:
         copy.close()
     partial.rename(target)
+    return target
+
+
+def create_backup(keep: int, now: datetime | None = None) -> Path:
+    target = _copy(now)
     prune(keep)
     return target
 
@@ -53,7 +100,8 @@ def is_due(now: datetime, app_settings: AppSettings) -> bool:
     local = timezone.localtime(now)
     if local.time() < app_settings.backup_time:
         return False
-    return not any(settings.BACKUP_DIR.glob(f"db-{local:%Y-%m-%d}-*.sqlite3"))
+    today = settings.BACKUP_DIR.glob(f"db-{local:%Y-%m-%d}-*.sqlite3")
+    return not any(not path.stem.endswith(BEFORE_RESTORE) for path in today)
 
 
 def backup_and_record(now: datetime | None = None) -> Path:
@@ -71,3 +119,37 @@ def backup_and_record(now: datetime | None = None) -> Path:
 def _record(now: datetime | None, status: str, failed: bool) -> None:
     # Only these columns, so a settings change saved at the same moment is not overwritten.
     AppSettings.objects.filter(pk=1).update(backup_at=now or timezone.now(), backup_status=status, backup_failed=failed)
+
+
+def check(path: Path) -> None:
+    """Raise InvalidBackup unless the file is an intact database of this app."""
+    try:
+        with closing(sqlite3.connect(f"file:{path}?mode=ro", uri=True)) as db:
+            if db.execute("PRAGMA quick_check").fetchone()[0] != "ok":
+                raise InvalidBackup("Die Datei ist beschädigt.")
+            tables = {row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+            if not {"django_migrations", "core_appsettings"} <= tables:
+                raise InvalidBackup("Die Datei ist keine Datenbank von LexTracker.")
+            applied = set(db.execute("SELECT app, name FROM django_migrations"))
+    except sqlite3.DatabaseError as exc:
+        raise InvalidBackup(f"Keine lesbare Datenbank ({exc}).") from exc
+    # A backup from a newer version has tables this code does not know; migrate cannot undo that.
+    unknown = applied - set(MigrationLoader(None, ignore_no_migrations=True).disk_migrations)
+    if unknown:
+        raise InvalidBackup("Die Sicherung stammt aus einer neueren Version der App.")
+
+
+def restore(path: Path, now: datetime | None = None) -> Path:
+    """Replace the database's content with the backup. Returns the copy of the state before.
+
+    SQLite's backup API writes into the open database, so the app and the scheduler keep running and
+    see the restored data with their next query. Migrations run afterwards, in case the backup is older
+    than the code.
+    """
+    check(path)
+    before = _copy(now, BEFORE_RESTORE)
+    connection.ensure_connection()
+    with closing(sqlite3.connect(f"file:{path}?mode=ro", uri=True)) as source:
+        source.backup(connection.connection)
+    call_command("migrate", interactive=False, verbosity=0)
+    return before

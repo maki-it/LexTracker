@@ -132,6 +132,7 @@
       Noch keine Sicherung aufgezeichnet.
       {% endif %}
       {{ backup.count }} Kopie{{ backup.count|pluralize:"n" }} im Ordner.
+      <a href="{% url 'core:backups' %}">Sicherungen verwalten</a>
     </p>
   </section>
 
