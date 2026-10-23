@@ -238,6 +238,23 @@ def test_invoice_list_filters_by_status(logged_in, billed):
     assert other.lexware_url == ""
 
 
+def test_invoice_with_a_single_service_date_shows_only_that_date(logged_in, billed):
+    _, invoice, _ = billed
+    # Lexware's "service" and "delivery" types have only a shippingDate; sync stores it as start and end.
+    Invoice.objects.create(
+        customer=invoice.customer,
+        period_start=date(2026, 10, 19),
+        period_end=date(2026, 10, 19),
+        total_net=Decimal("80.00"),
+        status=Invoice.Status.OPEN,
+        voucher_number="RE0002",
+    )
+
+    text = logged_in.get(reverse("billing:invoices")).text
+    assert "19.10.2026" in text and "19.10.2026 – 19.10.2026" not in text
+    assert "01.10.2026 – 31.10.2026" in text
+
+
 def test_overview_lists_only_customers_with_open_time(logged_in, billed):
     entry = billed[2]
     Customer.objects.create(name="Ohne Zeiten AG")
