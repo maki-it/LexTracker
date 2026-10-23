@@ -106,3 +106,37 @@ document.addEventListener("click", (event) => {
   const open = document.getElementById("sidebar").toggleAttribute("data-open");
   toggle.setAttribute("aria-expanded", open);
 });
+
+// Tabs inside a page: a container with data-tabs holds buttons with data-tab="<name>" and panels with
+// data-tab-panel="<name>". A click shows its panel and hides the others.
+document.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-tab]");
+  const tabs = button?.closest("[data-tabs]");
+  if (!tabs) return;
+  for (const tab of tabs.querySelectorAll("[data-tab]")) {
+    const active = tab === button;
+    tab.classList.toggle("tab-active", active);
+    tab.setAttribute("aria-selected", active);
+  }
+  for (const panel of tabs.querySelectorAll("[data-tab-panel]")) {
+    panel.hidden = panel.dataset.tabPanel !== button.dataset.tab;
+  }
+});
+
+// A button with data-copy="<id>" copies the text of the element with that id, e.g. a configuration.
+// The clipboard needs HTTPS (or localhost); without it the text is selected for copying by hand.
+document.addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-copy]");
+  if (!button) return;
+  const source = document.getElementById(button.dataset.copy);
+  try {
+    await navigator.clipboard.writeText(source.textContent);
+  } catch {
+    getSelection().selectAllChildren(source);
+    return;
+  }
+  const label = button.dataset.label ?? button.textContent;
+  button.dataset.label = label;
+  button.textContent = "Kopiert";
+  setTimeout(() => (button.textContent = label), 2000);
+});
