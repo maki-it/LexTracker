@@ -2,10 +2,69 @@
 {% block title %}Einstellungen · LexTracker{% endblock %}
 {% block content %}
 <h1>Einstellungen</h1>
+<p class="-mt-3 text-sm text-muted">Diese Einstellungen gelten für alle Benutzer.</p>
+
+{# Its own forms, so saving the key never touches the settings below and the other way round. #}
+<section class="card flex max-w-2xl flex-col gap-4" id="lexware">
+  <div>
+    <h2>Lexware Office</h2>
+    <p class="mt-1 text-sm text-muted">
+      Der API-Schlüssel wird verschlüsselt gespeichert und nicht wieder angezeigt.
+      Zum Ändern trägst du einfach einen neuen ein; den alten brauchst du dafür nicht.
+    </p>
+  </div>
+  {% if lexware.source == "app" %}
+  <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+    <span class="badge badge-success">verbunden</span>
+    <code>{{ lexware.masked }}</code>
+    {% if lexware.company_name %}<span>{{ lexware.company_name }}</span>{% endif %}
+    {% if lexware.verified_at %}<span class="text-muted">zuletzt geprüft {{ lexware.verified_at|date:datetime_format }} Uhr</span>{% endif %}
+  </div>
+  {% elif lexware.source == "env" %}
+  <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+    <span class="badge badge-warning">aus Umgebungsvariable</span>
+    <code>{{ lexware.masked }}</code>
+  </div>
+  <p class="text-sm text-muted">
+    Der Schlüssel kommt aus <code>APP_LEXWARE_API_KEY</code>. Trag ihn hier ein, dann kannst du die Variable entfernen.
+    Ein hier eingetragener Schlüssel hat Vorrang.
+  </p>
+  {% elif lexware.unreadable %}
+  <div role="alert" class="alert alert-warning">
+    Der gespeicherte Schlüssel lässt sich nicht mehr entschlüsseln, vermutlich weil sich <code>APP_SECRET_KEY</code> geändert hat. Bitte trag ihn neu ein.
+  </div>
+  {% else %}
+  <div role="alert" class="alert alert-warning">Noch kein API-Schlüssel hinterlegt. Ohne ihn gibt es keinen Kundenimport und keine Rechnungen.</div>
+  {% endif %}
+
+  <form method="post" action="{% url 'lexware:save_key' %}" class="flex flex-col gap-3">
+    {% csrf_token %}
+    {% include "core/_field.html" with field=key_form.api_key %}
+    <div class="flex flex-wrap gap-2">
+      <button type="submit" class="btn btn-primary">{% if lexware.configured %}Neuen Schlüssel prüfen und speichern{% else %}Prüfen und speichern{% endif %}</button>
+    </div>
+  </form>
+  {% if lexware.configured or lexware.unreadable %}
+  <div class="flex flex-wrap gap-2">
+    {% if lexware.configured %}
+    <form method="post" action="{% url 'lexware:test_key' %}">
+      {% csrf_token %}
+      <button type="submit" class="btn">Verbindung testen</button>
+    </form>
+    {% endif %}
+    {% if lexware.source == "app" or lexware.unreadable %}
+    <form method="post" action="{% url 'lexware:remove_key' %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">Schlüssel entfernen</button>
+    </form>
+    {% endif %}
+  </div>
+  {% endif %}
+</section>
+
 <form method="post" class="flex max-w-2xl flex-col gap-6">
   {% csrf_token %}
   {% for error in form.non_field_errors %}<div role="alert" class="alert alert-error">{{ error }}</div>{% endfor %}
-  <p class="text-sm text-muted">Diese Einstellungen gelten für alle Benutzer.</p>
 
   <section class="card flex flex-col gap-4">
     <h2>Abrechnung</h2>

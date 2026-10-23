@@ -29,6 +29,7 @@ ICONS = {
     "chart": '<path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/>',
     "archive": '<rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11h14V8"/><path d="M10 12h4"/>',
     "x": '<path d="M6 6l12 12M18 6 6 18"/>',
+    "check": '<path d="M20 6 9 17l-5-5"/>',
     "chevron-left": '<path d="m15 18-6-6 6-6"/>',
     "chevron-right": '<path d="m9 18 6-6-6-6"/>',
     "download": '<path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/>',

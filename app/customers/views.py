@@ -1,7 +1,6 @@
 from urllib.parse import urlencode
 
 from asgiref.sync import sync_to_async
-from django.conf import settings
 from django.contrib import messages
 from django.db.models import Count, Q
 from django.http import Http404, HttpRequest, HttpResponse
@@ -15,6 +14,7 @@ from customers.forms import CustomerForm
 from customers.lexware import LEXWARE_FIELDS, push_to_lexware
 from customers.models import Category, Customer
 from customers.sync import sync_and_record
+from lexware import credentials
 from lexware.client import LexwareError, client_from_settings
 
 # The archive filter on the customer list: key in the URL, label.
@@ -71,7 +71,7 @@ async def _customer_list_context(request: HttpRequest) -> dict:
         "all_categories_link": _query_string(ansicht=ansicht, q=query),
         "list_query": _query_string(ansicht=ansicht, q=query, kategorie=category),
         "ansicht": ansicht,
-        "lexware_configured": bool(settings.LEXWARE_API_KEY),
+        "lexware_configured": await credentials.ais_configured(),
         "app_settings": app_settings,
         "synced_marker": _synced_marker(app_settings),
     }

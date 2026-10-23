@@ -71,6 +71,7 @@ async def test_jobs_have_their_own_schedule(monkeypatch, settings):
     assert calls == ["invoice sync"]
 
 
+@pytest.mark.django_db(transaction=True)
 async def test_nothing_runs_without_api_key(settings):
     settings.LEXWARE_API_KEY = ""
     assert await run_due_jobs(timezone.now() + timedelta(days=1)) == []

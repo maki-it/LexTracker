@@ -18,6 +18,8 @@ urlpatterns = [
     path("zeiten/", include("tracking.urls")),
     path("abrechnung/", include("billing.urls")),
     path("auswertungen/", include("reports.urls")),
+    path("einstellungen/lexware/", include("lexware.urls")),
+    path("einrichtung/", include("setup.urls")),
     path("mcp/", include("mcpserver.urls")),
     path("portal/", include("portal.urls")),
     path("", include("core.urls")),

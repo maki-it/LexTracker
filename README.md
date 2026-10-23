@@ -33,13 +33,14 @@ app/
   core/        Basis-Modelle, Einstellungen, Middleware, Übersicht, Health-Check, Scheduler
   accounts/    Benutzer mit Rolle (Admin, Mitarbeiter, Kunde), Login mit Zwei-Faktor, Kontoeinstellungen
   customers/   Kunden (mit Verknüpfung zum Lexware-Kontakt) und Import aus Lexware
-  lexware/     Async Client für die Lexware Office Public API
+  lexware/     Async Client für die Lexware Office Public API, verschlüsselt gespeicherter API-Schlüssel
   projects/    Projekte und Aufgaben
   tracking/    Zeiteinträge (ein Eintrag ohne Ende ist ein laufender Timer)
   billing/     Abrechnungsvereinbarungen, Berechnung und Rechnungen
   reports/     Auswertungen und CSV-Export
   mcpserver/   MCP-Server für KI-Agenten
   portal/      Kundenportal (nur lesen)
+  setup/       Einrichtung einer neuen Instanz (Admin-Konto, Lexware-Schlüssel, Datensicherung)
   templates/   HTML-Templates
   assets/      Tailwind-Quelle mit Farben und eigenen Komponenten
   static/      Statische Dateien (htmx, gebautes CSS)
@@ -55,9 +56,11 @@ Voraussetzung: [uv](https://docs.astral.sh/uv/getting-started/installation/) (in
 make install     # Abhängigkeiten installieren, .env anlegen
 make css         # Stylesheet bauen (lädt beim ersten Mal das Tailwind-CLI)
 make migrate     # Datenbank anlegen (liegt in ./data)
-make superuser   # Admin-Konto anlegen
 make run         # http://localhost:8000
 ```
+
+Beim ersten Aufruf führt die **Einrichtung** durch das Anlegen des Admin-Kontos, das Verbinden mit Lexware Office und die Datensicherung (das Konto alternativ mit `make superuser`).
+Solange es kein Konto gibt, leitet jede Seite dorthin. Damit niemand anderes eine frische Instanz übernehmen kann, öffnet sich die Einrichtung nur mit einem Code: Die App schreibt den Einrichtungslink beim ersten Aufruf ins Log (`docker compose logs app`), alternativ zeigt ihn `manage.py setup_link` (`docker compose exec app python manage.py setup_link`). Der Code ist aus `APP_SECRET_KEY` abgeleitet und nach dem ersten Konto wertlos.
 
 Während du an Templates arbeitest, hält `make css-watch` in einem zweiten Terminal das Stylesheet aktuell.
 Den automatischen Kundenimport startest du lokal bei Bedarf mit `make scheduler`.
@@ -66,7 +69,9 @@ Einen Last- und Performancetest mit Testdaten beschreibt [loadtest/README.md](lo
 
 ## Lexware Office
 
-Den API-Schlüssel erstellst du in Lexware Office unter *Erweiterungen > Public API* und trägst ihn als `APP_LEXWARE_API_KEY` ein.
+Den API-Schlüssel erstellst du in Lexware Office unter *Erweiterungen > Public API* und trägst ihn bei der Einrichtung oder später unter **Einstellungen > Lexware Office** ein. Die App prüft ihn vorher mit einem Testaufruf.
+Er wird verschlüsselt in der Datenbank gespeichert (mit einem Schlüssel, der aus `APP_SECRET_KEY` abgeleitet ist; auch Backups enthalten ihn also nicht im Klartext) und danach nur noch maskiert angezeigt. Zum Ändern trägst du einfach einen neuen ein. Änderst du `APP_SECRET_KEY`, musst du den Lexware-Schlüssel neu eintragen; die Einstellungsseite weist dann darauf hin. Der Schlüssel landet nie in Logs.
+`APP_LEXWARE_API_KEY` funktioniert weiter als Ersatz, solange in der App keiner hinterlegt ist; danach kannst du die Variable entfernen.
 
 **Import:** Kontakte mit Kundenrolle werden automatisch importiert, standardmäßig stündlich. Unter **Einstellungen** stellst du für den Kundenimport und den Abgleich des Rechnungsstatus getrennt ein, wie oft sie laufen (aus, alle 15 Minuten bis wöchentlich) und optional in welchem Zeitfenster (z. B. 07:00 bis 19:00, auch über Mitternacht). Bei „täglich“ oder „wöchentlich“ bestimmt „ab“ die Uhrzeit. Der Button **Aus Lexware importieren** auf der Kundenseite startet den Import sofort, auf der Kommandozeile geht das mit `uv run app/manage.py sync_lexware_customers` (im Container `docker compose exec app python manage.py sync_lexware_customers`).
 Der Import legt neue Kunden an und aktualisiert Name, Kundennummer, E-Mail, Telefon und Archiv-Status, wenn sich der Kontakt in Lexware geändert hat (erkannt an der Versionsnummer).

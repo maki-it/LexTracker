@@ -4,7 +4,7 @@ from django.urls import reverse
 pytestmark = pytest.mark.django_db
 
 
-def test_pages_require_login(client):
+def test_pages_require_login(client, user):
     response = client.get(reverse("core:dashboard"))
     assert response.status_code == 302
     assert response.url == f"{reverse('accounts:login')}?next=/"

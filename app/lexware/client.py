@@ -2,6 +2,7 @@ import asyncio
 import logging
 import time
 from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from datetime import date
 from types import TracebackType
 from typing import Self
@@ -39,10 +40,15 @@ class LexwareNotFound(LexwareError):
     """Lexware does not know the requested resource (HTTP 404), for example a deleted draft."""
 
 
-def client_from_settings() -> LexwareClient:
+@asynccontextmanager
+async def client_from_settings() -> AsyncIterator[LexwareClient]:
+    """A client with the key from the settings page or APP_LEXWARE_API_KEY, used as ``async with``."""
     from django.conf import settings
 
-    return LexwareClient(settings.LEXWARE_API_KEY, base_url=settings.LEXWARE_BASE_URL)
+    from lexware.credentials import aget_api_key
+
+    async with LexwareClient(await aget_api_key(), base_url=settings.LEXWARE_BASE_URL) as client:
+        yield client
 
 
 class LexwareClient:
@@ -61,7 +67,7 @@ class LexwareClient:
         transport: httpx.AsyncBaseTransport | None = None,
     ) -> None:
         if not api_key:
-            raise LexwareError("Es ist kein Lexware-API-Schlüssel hinterlegt (APP_LEXWARE_API_KEY).")
+            raise LexwareError("Es ist kein Lexware-API-Schlüssel hinterlegt. Trage ihn in den Einstellungen ein.")
         self._http = httpx.AsyncClient(
             base_url=base_url,
             headers={"Authorization": f"Bearer {api_key}", "Accept": "application/json"},

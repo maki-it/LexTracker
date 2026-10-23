@@ -21,7 +21,7 @@
 </div>
 {% if not lexware_configured %}
 <div role="alert" class="alert alert-warning">
-  Für den Import aus Lexware Office fehlt der API-Schlüssel. Trage ihn als <code>APP_LEXWARE_API_KEY</code> ein und starte die App neu.
+  Für den Import aus Lexware Office fehlt der API-Schlüssel. Trage ihn in den <a href="{% url 'core:settings' %}#lexware">Einstellungen</a> ein.
 </div>
 {% endif %}
 <div class="flex flex-col gap-3">

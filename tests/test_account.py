@@ -108,7 +108,7 @@ def test_recovery_code_works_once(client, mfa_user):
     assert "Der Code ist ungültig" in response.text
 
 
-def test_code_step_without_password_redirects(client):
+def test_code_step_without_password_redirects(client, user):
     response = client.get(reverse("accounts:login_code"))
     assert response.status_code == 302
     assert response.url == reverse("accounts:login")
@@ -124,7 +124,7 @@ def test_disable_mfa_needs_password(logged_in, mfa_user):
     assert not mfa.has_mfa(user)
 
 
-def test_admin_login_goes_through_app_login(client):
+def test_admin_login_goes_through_app_login(client, user):
     response = client.get("/admin/login/?next=/admin/")
     assert response.status_code == 302
     assert response.url == f"{reverse('accounts:login')}?next=/admin/"

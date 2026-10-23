@@ -10,13 +10,13 @@ from datetime import datetime, time, timedelta
 from pathlib import Path
 
 from asgiref.sync import sync_to_async
-from django.conf import settings
 from django.utils import timezone
 
 from billing import sync as invoice_sync
 from core import backup
 from core.models import AppSettings
 from customers import sync as customer_sync
+from lexware import credentials
 from lexware.client import LexwareError
 
 logger = logging.getLogger(__name__)
@@ -78,7 +78,7 @@ def is_due(now: datetime, interval: int, start: time | None, end: time | None, l
 
 async def run_due_jobs(now: datetime) -> list[str]:
     """Run every job whose interval has passed and whose time window is open. Returns the names that ran."""
-    if not settings.LEXWARE_API_KEY:
+    if not await credentials.ais_configured():
         return []
     app_settings = await AppSettings.aload()
     ran = []
