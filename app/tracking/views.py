@@ -13,7 +13,7 @@ from core.dialogs import in_dialog
 from core.models import AppSettings
 from core.shortcuts import arender
 from projects.models import Task
-from tracking.forms import TimeEntryForm, open_tasks, task_choices
+from tracking.forms import TimeEntryForm, open_tasks, search_tasks, task_choices
 from tracking.models import TimeEntry
 from tracking.queries import entry_filter
 from tracking.services import start_timer, stop_timer
@@ -46,7 +46,8 @@ async def timer(request: HttpRequest) -> HttpResponse:
 async def timer_start(request: HttpRequest) -> HttpResponse:
     """GET: the start form (opened in the dialog from the sidebar). POST: start the timer."""
     if request.method == "GET":
-        return render(request, "tracking/timer_start.html", {"tasks": [t async for t in task_choices(request.user)]})
+        # The most recently used task is preselected, so starting it again is one click.
+        return render(request, "tracking/timer_start.html", {"last_task": await task_choices(request.user).afirst()})
     try:
         task = await open_tasks(request.user).aget(pk=int(request.POST.get("task", "")))
     except ValueError, Task.DoesNotExist:
@@ -61,6 +62,13 @@ async def timer_start(request: HttpRequest) -> HttpResponse:
         response["HX-Reswap"] = "none"
         return response
     return _timer_response(request, await _running_entry(request.user))
+
+
+@require_GET
+async def task_search(request: HttpRequest) -> HttpResponse:
+    """Suggestions for the task search field (tracking/_task_search.html)."""
+    tasks = [t async for t in search_tasks(request.user, request.GET.get("q", ""))]
+    return render(request, "tracking/_task_results.html", {"tasks": tasks})
 
 
 @require_POST

@@ -1,5 +1,7 @@
 from django import forms
 from django.db.models import F, Max, Q, QuerySet
+from django.template.loader import render_to_string
+from django.utils.safestring import mark_safe
 
 from core.forms import StyledFormMixin
 from projects.models import Project, Task
@@ -14,6 +16,40 @@ def task_choices(user, include_pk: int | None = None):
     return tasks.annotate(last_used=last_used).order_by(
         F("last_used").desc(nulls_last=True), "project__customer__name", "project__name", "name"
     )
+
+
+# Suggestions shown at once in the task search; enough to find a task without a long list.
+SEARCH_LIMIT = 8
+
+
+def search_tasks(user, query: str):
+    """Tasks for the task search: every word of ``query`` in the task, project or customer name.
+
+    Without a query these are the recently used tasks.
+    """
+    tasks = task_choices(user)
+    for word in query.split():
+        tasks = tasks.filter(
+            Q(name__icontains=word) | Q(project__name__icontains=word) | Q(project__customer__name__icontains=word)
+        )
+    return tasks[:SEARCH_LIMIT]
+
+
+class TaskSearchInput(forms.Widget):
+    """The task as a search field with suggestions from the server instead of a long list."""
+
+    template_name = "tracking/_task_search_widget.html"
+
+    def get_context(self, name, value, attrs):
+        context = super().get_context(name, value, attrs)
+        is_pk = str(value or "").isdigit()
+        task = Task.objects.select_related("project__customer").filter(pk=value).first() if is_pk else None
+        context["widget"]["task"] = task
+        return context
+
+    def _render(self, template_name, context, renderer=None):
+        # The template lives in templates/, which Django's default form renderer does not search.
+        return mark_safe(render_to_string(template_name, context))
 
 
 class TaskChoiceField(forms.ModelChoiceField):
@@ -44,7 +80,7 @@ def open_tasks(user, include_pk: int | None = None):
 
 
 class TimeEntryForm(StyledFormMixin, forms.ModelForm):
-    task = TaskChoiceField(label="Aufgabe", queryset=Task.objects.none())
+    task = TaskChoiceField(label="Aufgabe", queryset=Task.objects.none(), widget=TaskSearchInput)
 
     class Meta:
         model = TimeEntry
