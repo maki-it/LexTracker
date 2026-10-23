@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}E-Mail-Versand · LexTracker{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <p class="breadcrumb"><a href="{% url 'core:settings' %}">Einstellungen</a></p>
+    <h1>E-Mail-Versand</h1>
+    <p class="page-subtitle">Der SMTP-Server, über den die App E-Mails verschickt. Den Zeitplan für Berichte und Erinnerungen legst du in den <a href="{% url 'core:settings' %}#e-mail">Einstellungen</a> fest.</p>
+  </div>
+</div>
+
+<div class="grid max-w-2xl gap-6">
+  <form method="post" action="{% url 'mailer:settings' %}" class="card flex flex-col gap-4">
+    {% csrf_token %}
+    <div>
+      <h2>SMTP-Server</h2>
+      <p class="mt-1 text-sm text-muted">Das Passwort wird verschlüsselt gespeichert und nicht wieder angezeigt.</p>
+    </div>
+    {% if config.encrypted_password and config.password is None %}
+    <div role="alert" class="alert alert-warning">Das gespeicherte Passwort lässt sich nicht mehr entschlüsseln, vermutlich weil sich <code>APP_SECRET_KEY</code> geändert hat. Bitte trag es neu ein.</div>
+    {% endif %}
+    {% for error in form.non_field_errors %}<div role="alert" class="alert alert-error">{{ error }}</div>{% endfor %}
+    <div class="grid gap-3 sm:grid-cols-[2fr_1fr]">
+      {% include "core/_field.html" with field=form.host %}
+      {% include "core/_field.html" with field=form.port %}
+    </div>
+    {% include "core/_field.html" with field=form.security %}
+    <div class="grid gap-3 sm:grid-cols-2">
+      {% include "core/_field.html" with field=form.username %}
+      {% include "core/_field.html" with field=form.password %}
+    </div>
+    {% if form.remove_password %}
+    <label class="flex items-center gap-2 text-sm font-medium">{{ form.remove_password }} {{ form.remove_password.label }}</label>
+    {% endif %}
+    <div class="grid gap-3 sm:grid-cols-2">
+      {% include "core/_field.html" with field=form.from_address %}
+      {% include "core/_field.html" with field=form.from_name %}
+    </div>
+    {% include "core/_field.html" with field=form.base_url %}
+    <div class="border-t border-line pt-4"><button type="submit" class="btn btn-primary">Speichern</button></div>
+  </form>
+
+  {% if config.is_configured %}
+  <form method="post" action="{% url 'mailer:test' %}" class="card flex flex-col gap-4">
+    {% csrf_token %}
+    <div>
+      <h2>Testmail</h2>
+      <p class="mt-1 text-sm text-muted">Geht sofort raus, nicht über die Warteschlange, damit du hier siehst, was der Server antwortet.</p>
+    </div>
+    <div class="flex flex-wrap items-end gap-3">
+      <div class="min-w-60 flex-1">{% include "core/_field.html" with field=test_form.to %}</div>
+      <button type="submit" class="btn">Testmail schicken</button>
+    </div>
+  </form>
+  {% endif %}
+</div>
+
+<div class="mt-8 flex flex-col gap-3">
+  <div>
+    <h2>Postausgang</h2>
+    <p class="mt-1 text-sm text-muted">
+      Die App legt E-Mails hier ab und der Scheduler verschickt sie wenige Sekunden später. Klappt das nicht, versucht er es nach 1, 5, 15 und 60 Minuten noch einmal.
+      {% if pending %}{{ pending }} E-Mail{{ pending|pluralize:"s" }} {{ pending|pluralize:"wartet,warten" }}.{% endif %}
+    </p>
+  </div>
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>E-Mail</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for mail in mails %}
+        <tr>
+          <td class="w-full">
+            <div class="font-medium">{{ mail.subject }}</div>
+            <div class="text-xs text-muted">an {{ mail.to }} · {{ mail.created_at|date:datetime_format }} Uhr</div>
+            {% if mail.last_error %}<div class="text-xs text-danger">{{ mail.last_error }}</div>{% endif %}
+          </td>
+          <td class="whitespace-nowrap">
+            <span class="badge{% if mail.status == 'sent' %} badge-success{% elif mail.status == 'failed' %} badge-danger{% elif mail.status == 'pending' %} badge-warning{% endif %}">{{ mail.get_status_display }}</span>
+            {% if mail.status == 'pending' and mail.attempts %}<div class="text-xs text-muted">{{ mail.attempts }}. Versuch fehlgeschlagen</div>{% endif %}
+          </td>
+          <td>
+            {% if mail.can_retry %}
+            <form method="post" action="{% url 'mailer:retry' mail.pk %}">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm">Erneut</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="3" class="py-10 text-center text-muted">Noch keine E-Mails.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

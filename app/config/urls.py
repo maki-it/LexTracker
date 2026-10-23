@@ -19,6 +19,7 @@ urlpatterns = [
     path("abrechnung/", include("billing.urls")),
     path("auswertungen/", include("reports.urls")),
     path("einstellungen/lexware/", include("lexware.urls")),
+    path("einstellungen/e-mail/", include("mailer.urls")),
     path("einrichtung/", include("setup.urls")),
     path("mcp/", include("mcpserver.urls")),
     path("portal/", include("portal.urls")),

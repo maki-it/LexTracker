@@ -18,11 +18,16 @@ from core.models import AppSettings
 from customers import sync as customer_sync
 from lexware import credentials
 from lexware.client import LexwareError
+from mailer import jobs as mail_jobs
+from mailer import outbox
 
 logger = logging.getLogger(__name__)
 
 # How often the scheduler looks for due jobs. Settings changes apply within this time.
 CHECK_INTERVAL = 60
+
+# How often the outgoing mail queue is looked at, so a login link arrives within seconds.
+MAIL_INTERVAL = 5
 
 # Touched on every check. The container's health check looks at its age.
 HEARTBEAT = Path(tempfile.gettempdir()) / "lextracker-scheduler.heartbeat"
@@ -103,8 +108,21 @@ async def run_due_jobs(now: datetime) -> list[str]:
     return ran
 
 
+async def send_mail(stop: asyncio.Event) -> None:
+    """Send the queued e-mails, every few seconds."""
+    while not stop.is_set():
+        try:
+            if sent := await outbox.send_due():
+                logger.info("Sent %s e-mail%s", sent, "s" if sent > 1 else "")
+        except Exception:
+            logger.exception("Sending e-mails failed")
+        with suppress(TimeoutError):
+            await asyncio.wait_for(stop.wait(), MAIL_INTERVAL)
+
+
 async def run(stop: asyncio.Event) -> None:
     logger.info("Scheduler started")
+    mailer = asyncio.create_task(send_mail(stop))
     while not stop.is_set():
         HEARTBEAT.touch()
         now = timezone.now()
@@ -119,6 +137,13 @@ async def run(stop: asyncio.Event) -> None:
                 logger.info("Database backup written to %s", path)
         except Exception:
             logger.exception("Database backup failed")
+        try:
+            for name, count in (await mail_jobs.run_due(now)).items():
+                if count:
+                    logger.info("Queued %s %s e-mail%s", count, name, "s" if count > 1 else "")
+        except Exception:
+            logger.exception("Queueing reports and reminders failed")
         with suppress(TimeoutError):
             await asyncio.wait_for(stop.wait(), CHECK_INTERVAL)
+    await mailer
     logger.info("Scheduler stopped")

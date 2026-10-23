@@ -9,14 +9,16 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme, urlencode, urlsafe_base64_decode
+from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.http import require_http_methods, require_POST
 
-from accounts import mcp_clients, mfa, ratelimit
+from accounts import links, mcp_clients, mfa, ratelimit
 from accounts.forms import (
     ApiTokenForm,
     CodeForm,
     ConfirmPasswordForm,
     InviteForm,
+    LinkRequestForm,
     LoginForm,
     PreferencesForm,
     StyledPasswordChangeForm,
@@ -54,18 +56,24 @@ async def login_view(request: HttpRequest) -> HttpResponse:
         user = await aauthenticate(
             request, username=form.cleaned_data["username"], password=form.cleaned_data["password"]
         )
-        if user is not None and await sync_to_async(mfa.has_mfa)(user):
-            pending = {"user": user.pk, "backend": user.backend, "at": time.time()}
-            await request.session.aset(MFA_PENDING_KEY, pending)
-            return redirect(f"{reverse('accounts:login_code')}?next={_safe_next(request)}")
         if user is not None:
-            await alogin(request, user)
-            await ratelimit.clear_failures(request)
-            return redirect(_safe_next(request))
+            return await _sign_in(request, user, user.backend)
         await ratelimit.record_failure(request, form.cleaned_data["username"])
         error = "Benutzername oder Passwort ist falsch."
 
-    return render(request, "accounts/login.html", {"form": form, "error": error, "next": _safe_next(request)})
+    context = {"form": form, "error": error, "next": _safe_next(request), "links": await links.available()}
+    return render(request, "accounts/login.html", context)
+
+
+async def _sign_in(request: HttpRequest, user: User, backend: str) -> HttpResponse:
+    """Sign in a user who proved who they are, after the code from the authenticator app if they use one."""
+    if await sync_to_async(mfa.has_mfa)(user):
+        pending = {"user": user.pk, "backend": backend, "at": time.time()}
+        await request.session.aset(MFA_PENDING_KEY, pending)
+        return redirect(f"{reverse('accounts:login_code')}?next={_safe_next(request)}")
+    await alogin(request, user, backend=backend)
+    await ratelimit.clear_failures(request)
+    return redirect(_safe_next(request))
 
 
 @require_http_methods(["GET", "POST"])
@@ -90,6 +98,73 @@ async def login_code(request: HttpRequest) -> HttpResponse:
         await ratelimit.record_failure(request, user.get_username())
         error = "Der Code ist ungültig oder abgelaufen."
     return render(request, "accounts/login_code.html", {"form": form, "error": error, "next": _safe_next(request)})
+
+
+async def _request_link(request: HttpRequest, template: str, send) -> HttpResponse:
+    """Ask for a username or e-mail address and send a link there, if such an account exists."""
+    form = LinkRequestForm(request.POST or None)
+    if request.method == "POST" and (minutes := await ratelimit.locked_minutes(request)):
+        return _locked(request, template, form, minutes)
+    if request.method == "POST" and form.is_valid():
+        identifier = form.cleaned_data["identifier"]
+        # Every request counts towards the rate limit, so nobody can flood an inbox or probe for accounts.
+        await ratelimit.record_failure(request, identifier)
+        await send(request, identifier)
+        return render(request, template, {"sent": True, "identifier": identifier})
+    return render(request, template, {"form": form})
+
+
+@require_http_methods(["GET", "POST"])
+async def password_forgot(request: HttpRequest) -> HttpResponse:
+    if not (await links.available())["password_reset"]:
+        return render(request, "accounts/password_forgot.html", {"unavailable": True})
+    return await _request_link(request, "accounts/password_forgot.html", links.send_password_reset)
+
+
+@sensitive_post_parameters()
+@require_http_methods(["GET", "POST"])
+async def password_reset(request: HttpRequest, uidb64: str, token: str) -> HttpResponse:
+    """Set a new password from the link in the e-mail."""
+    if request.method == "POST" and (minutes := await ratelimit.locked_minutes(request)):
+        return _locked(request, "accounts/password_reset.html", None, minutes)
+    user = await links.reset_user(uidb64, token)
+    if user is None:
+        if request.method == "POST":
+            await ratelimit.record_failure(request)
+        return render(request, "accounts/password_reset.html", {"invalid": True}, status=400)
+    form = InviteForm(user, request.POST or None)
+    if request.method == "POST" and await sync_to_async(form.is_valid)():
+        await sync_to_async(form.save)()
+        messages.success(request, "Neues Passwort gesetzt. Melde dich jetzt damit an.")
+        return redirect(f"{reverse('accounts:login')}?{urlencode({'username': user.get_username()})}")
+    return render(request, "accounts/password_reset.html", {"form": form, "reset_user": user})
+
+
+@require_http_methods(["GET", "POST"])
+async def login_link_request(request: HttpRequest) -> HttpResponse:
+    if not (await links.available())["login_link"]:
+        return redirect(settings.LOGIN_URL)
+    return await _request_link(request, "accounts/login_link_request.html", links.send_login_link)
+
+
+@require_http_methods(["GET", "POST"])
+async def login_link(request: HttpRequest, key: str) -> HttpResponse:
+    """Sign in with the link from the e-mail.
+
+    Opening the link only shows a button; the button signs in. Mail programs that open links to check
+    them would otherwise use up the link before the user clicks it.
+    """
+    if request.method == "GET":
+        if not await links.login_link_valid(key):
+            return render(request, "accounts/login_link.html", {"invalid": True}, status=400)
+        return render(request, "accounts/login_link.html", {})
+    if minutes := await ratelimit.locked_minutes(request):
+        return _locked(request, "accounts/login_link.html", None, minutes)
+    user = await links.redeem_login_link(key)
+    if user is None:
+        await ratelimit.record_failure(request)
+        return render(request, "accounts/login_link.html", {"invalid": True}, status=400)
+    return await _sign_in(request, user, "django.contrib.auth.backends.ModelBackend")
 
 
 @require_POST

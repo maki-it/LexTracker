@@ -57,8 +57,9 @@ services:
       - command: ["python", "manage.py", "migrate", "--noinput"]
       - command: ["python", "manage.py", "ensure_superuser"]
 
-  # Runs recurring jobs: the automatic customer import, the invoice sync and the daily database
-  # backup, all set on the settings page.
+  # Runs recurring jobs: the automatic customer import, the invoice sync, the daily database
+  # backup, weekly reports and reminders, all set on the settings page. It also sends the queued
+  # e-mails, so without it no password reset or login link arrives.
   scheduler:
     <<: *service
     container_name: lextracker-scheduler

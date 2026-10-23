@@ -1,12 +1,8 @@
 {% extends "base.html" %}
-{% load icons %}
 {% block title %}Anmelden · LexTracker{% endblock %}
 {% block public_content %}
 <div class="flex w-full max-w-sm flex-col gap-6">
-  <div class="flex items-center justify-center gap-2.5 text-lg font-semibold">
-    {% logo 32 %}
-    LexTracker
-  </div>
+  {% include "accounts/_public_header.html" %}
   <form method="post" class="card flex flex-col gap-4 p-6">
     <h1 class="text-lg">Anmelden</h1>
     {% csrf_token %}
@@ -18,10 +14,13 @@
       <input type="text" name="username" value="{{ form.username.value|default:'' }}" class="input" autocomplete="username" required autofocus>
     </label>
     <label class="field">
-      <span>{{ form.password.label }}</span>
+      <span class="flex justify-between gap-2">{{ form.password.label }}{% if links.password_reset %}<a href="{% url 'accounts:password_forgot' %}" class="font-normal">Vergessen?</a>{% endif %}</span>
       <input type="password" name="password" class="input" autocomplete="current-password" required>
     </label>
     <button type="submit" class="btn btn-primary mt-1">Anmelden</button>
+    {% if links.login_link %}
+    <a href="{% url 'accounts:login_link_request' %}" class="btn">Anmeldelink per E-Mail</a>
+    {% endif %}
   </form>
 </div>
 {% endblock %}

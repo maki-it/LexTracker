@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "mcpserver",
     "portal",
     "setup",
+    "mailer",
 ]
 
 # All middleware is async-capable, so Django never has to run the whole request in a thread.
@@ -157,6 +158,10 @@ TAILWIND_CLI_DIST_CSS = "css/tailwind.css"
 
 LEXWARE_API_KEY = env.lexware_api_key.get_secret_value()
 LEXWARE_BASE_URL = env.lexware_base_url
+
+# The SMTP server is set on the settings page (mailer.models.MailSettings) and passed to the backend
+# when sending. Tests swap in Django's in-memory backend.
+MAILERS = {"default": {"BACKEND": "django.core.mail.backends.smtp.EmailBackend"}}
 
 BACKUP_DIR = env.backup_dir or DATA_DIR / "backups"
 

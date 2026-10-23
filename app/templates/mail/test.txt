@@ -1,0 +1,6 @@
+{% autoescape off %}Hallo,
+
+diese Testmail zeigt: LexTracker kann über {{ config.host }} E-Mails verschicken.
+
+Absender: {{ config.sender }}
+{% endautoescape %}

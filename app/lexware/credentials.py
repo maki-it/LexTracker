@@ -1,48 +1,34 @@
 """Where the app gets its Lexware Office API key from.
 
-A key entered in the app is stored encrypted with a key derived from ``APP_SECRET_KEY``, so a copy of
-the database (e.g. a backup) does not reveal it. ``APP_LEXWARE_API_KEY`` still works as a fallback for
+A key entered in the app is stored encrypted (see ``core.crypto``), so a copy of the database
+(e.g. a backup) does not reveal it. ``APP_LEXWARE_API_KEY`` still works as a fallback for
 setups that have not moved the key into the app yet.
 
 Never log the key or put it into an exception message.
 """
 
-import base64
-import hashlib
 from dataclasses import dataclass
 from datetime import datetime
 
-from cryptography.fernet import Fernet, InvalidToken, MultiFernet
 from django.conf import settings
 from django.utils import timezone
 
+from core import crypto
 from lexware.client import LexwareClient
 from lexware.models import LexwareConnection
 from lexware.schemas import Profile
 
 SUFFIX_LENGTH = 4
-
-
-def _fernet() -> MultiFernet:
-    # The first secret encrypts; SECRET_KEY_FALLBACKS still decrypt after the secret key was rotated.
-    secrets = [settings.SECRET_KEY, *getattr(settings, "SECRET_KEY_FALLBACKS", [])]
-    keys = [
-        base64.urlsafe_b64encode(hashlib.sha256(f"lextracker.lexware-api-key:{secret}".encode()).digest())
-        for secret in secrets
-    ]
-    return MultiFernet([Fernet(key) for key in keys])
+PURPOSE = "lexware-api-key"
 
 
 def encrypt(api_key: str) -> str:
-    return _fernet().encrypt(api_key.encode()).decode()
+    return crypto.encrypt(api_key, PURPOSE)
 
 
 def decrypt(token: str) -> str | None:
     """The key, or None if it was encrypted with a different secret key."""
-    try:
-        return _fernet().decrypt(token.encode()).decode()
-    except InvalidToken:
-        return None
+    return crypto.decrypt(token, PURPOSE)
 
 
 def mask(suffix: str) -> str:

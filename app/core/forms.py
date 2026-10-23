@@ -27,6 +27,7 @@ class AppSettingsForm(StyledFormMixin, forms.ModelForm):
             "time_rounding",
             "login_max_attempts",
             "login_lockout_minutes",
+            "login_link_enabled",
             "lexware_sync_interval",
             "lexware_sync_from",
             "lexware_sync_until",
@@ -36,6 +37,10 @@ class AppSettingsForm(StyledFormMixin, forms.ModelForm):
             "backup_enabled",
             "backup_time",
             "backup_keep",
+            "weekly_report_enabled",
+            "weekly_report_weekday",
+            "weekly_report_time",
+            "timer_reminder_hours",
         ]
         widgets = {
             name: forms.TimeInput(attrs={"type": "time"}, format="%H:%M")
@@ -45,5 +50,6 @@ class AppSettingsForm(StyledFormMixin, forms.ModelForm):
                 "invoice_sync_from",
                 "invoice_sync_until",
                 "backup_time",
+                "weekly_report_time",
             ]
         }
