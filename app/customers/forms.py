@@ -1,6 +1,6 @@
 from django import forms
 
-from core.forms import StyledFormMixin
+from core.forms import MARKDOWN_HELP, StyledFormMixin
 from customers.models import Category, Customer
 
 
@@ -16,6 +16,7 @@ class CustomerForm(StyledFormMixin, forms.ModelForm):
         model = Customer
         fields = ["name", "email", "phone", "default_hourly_rate", "categories", "new_categories", "notes"]
         widgets = {"notes": forms.Textarea(attrs={"rows": 4}), "categories": forms.CheckboxSelectMultiple}
+        help_texts = {"notes": MARKDOWN_HELP}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

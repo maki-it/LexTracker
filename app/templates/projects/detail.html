@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load timefmt icons dialogs %}
+{% load timefmt icons dialogs markdown %}
 {% block title %}{{ project.name }} · LexTracker{% endblock %}
 {% block content %}
 <div class="page-header">
@@ -28,7 +28,7 @@
     <span class="stat-value text-base">{{ project.start_date|date:date_format|default:"–" }} – {{ project.end_date|date:date_format|default:"offen" }}</span>
   </div>
 </div>
-{% if project.description %}<p class="max-w-3xl whitespace-pre-line text-muted">{{ project.description }}</p>{% endif %}
+{% if project.description %}<div class="max-w-3xl text-muted">{{ project.description|markdown }}</div>{% endif %}
 
 {% include "projects/_tasks.html" %}
 {% endblock %}

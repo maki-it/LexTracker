@@ -1,4 +1,4 @@
-{% load icons dialogs %}
+{% load icons dialogs markdown %}
 {% for customer in page.items %}
 <tr{% if customer.is_archived %} class="bg-surface-muted text-muted"{% endif %}>
   <td class="text-muted tabular-nums">{{ customer.customer_number|default:"–" }}</td>
@@ -6,6 +6,7 @@
     <a class="hover:underline{% if customer.is_archived %} text-muted{% endif %}" {% dialog_link "customers:edit" customer.pk %}>{{ customer.name }}</a>
     {% if customer.lexware_deleted %}<span class="badge badge-danger ml-2">{% icon "archive" size=12 %}in Lexware gelöscht</span>{% elif customer.is_archived %}<span class="badge badge-warning ml-2">{% icon "archive" size=12 %}Archiviert</span>{% endif %}
     {% for c in customer.categories.all %}<span class="badge ml-1.5">{{ c.name }}</span>{% endfor %}
+    {% if customer.notes %}<div class="mt-0.5 line-clamp-2 max-w-xl text-xs font-normal text-muted">{{ customer.notes|markdown }}</div>{% endif %}
   </td>
   <td>{% if customer.email %}<a class="hover:underline" href="mailto:{{ customer.email }}">{{ customer.email }}</a>{% else %}<span class="text-muted">–</span>{% endif %}</td>
   <td class="whitespace-nowrap">{{ customer.phone|default:"–" }}</td>

@@ -2,6 +2,9 @@ from django import forms
 
 from core.models import AppSettings
 
+# Help text for text fields that are shown with the |markdown template filter.
+MARKDOWN_HELP = "Markdown möglich: **fett**, *kursiv*, [Linktext](https://example.com), Listen mit „- “."
+
 
 class StyledFormMixin:
     """Give every widget the app's input styling."""

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load icons dialogs %}
+{% load icons dialogs markdown %}
 {% block title %}Aufgabenvorlagen · LexTracker{% endblock %}
 {% block content %}
 <div class="page-header">
@@ -25,7 +25,8 @@
       <tr>
         <td class="w-full">
           <div class="font-medium">{{ template.name }}</div>
-          <div class="text-xs text-muted">{% if not template.is_billable %}nicht abrechenbar{% if template.description %} · {% endif %}{% endif %}{{ template.description|truncatechars:90 }}</div>
+          {% if not template.is_billable %}<div class="text-xs text-muted">nicht abrechenbar</div>{% endif %}
+          {% if template.description %}<div class="line-clamp-2 text-xs text-muted">{{ template.description|markdown }}</div>{% endif %}
         </td>
         <td class="whitespace-nowrap text-right text-muted tabular-nums">{% if template.hourly_rate is not None %}{{ template.hourly_rate }} €/h{% else %}vom Projekt{% endif %}</td>
         <td class="whitespace-nowrap text-right text-muted tabular-nums">{% if template.estimated_hours is not None %}{{ template.estimated_hours }} h{% else %}–{% endif %}</td>
