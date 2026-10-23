@@ -136,7 +136,7 @@ LexTracker ist ein [MCP-Server](https://modelcontextprotocol.io): Ein KI-Agent w
      --header "Authorization: Bearer lxt_..."
    ```
 
-   Andere Clients brauchen dieselben Angaben: Transport „Streamable HTTP“, die Adresse `/mcp/` und den Header `Authorization: Bearer <Token>`.
+   Fertige Konfigurationen zum Kopieren für Claude Code, Claude (Desktop und Web), VS Code, Cursor und Codex stehen im Konto unter **Agent verbinden**, mit der Adresse deiner Instanz und, direkt nach dem Erstellen, mit dem neuen Token. Andere Clients brauchen dieselben Angaben: Transport „Streamable HTTP“, die Adresse `/mcp/` und den Header `Authorization: Bearer <Token>`. Claude Desktop und Web verbinden sich aus der Anthropic-Cloud, dafür muss die Instanz über HTTPS aus dem Internet erreichbar sein.
 
 Werkzeuge für den Agenten:
 

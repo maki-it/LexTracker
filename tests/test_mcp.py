@@ -179,3 +179,34 @@ def test_create_and_revoke_token(client, user):
 
     client.post(reverse("account:token_revoke", args=[token.pk]))
     assert not ApiToken.objects.exists()
+
+
+def test_account_page_shows_client_setups_with_placeholder(client, user):
+    client.force_login(user)
+
+    response = client.get(reverse("account:settings"))
+    names = [c.name for c in response.context["mcp_clients"]]
+    assert names == ["Claude Code", "Claude Desktop und Web", "VS Code", "Cursor", "Codex"]
+    assert "Agent verbinden" in response.text and 'data-copy="mcp-claude-code-1"' in response.text
+    assert "claude mcp add --transport http --scope user lextracker http://testserver/mcp/" in response.text
+    assert "Bearer DEIN_TOKEN" in response.text
+
+
+def test_client_setups_contain_new_token_and_valid_json(client, user):
+    client.force_login(user)
+
+    response = client.post(reverse("account:token_create"), {"name": "Laptop"})
+    key = response.context["new_key"]
+    setups = {c.slug: c for c in response.context["mcp_clients"]}
+    assert "DEIN_TOKEN" not in response.text
+    assert f"Bearer {key}" in setups["claude-code"].snippets[0].text
+
+    project_file = json.loads(setups["claude-code"].snippets[1].text)["mcpServers"]["lextracker"]
+    assert project_file["url"] == "http://testserver/mcp/" and key not in setups["claude-code"].snippets[1].text
+    assert project_file["headers"]["Authorization"] == "Bearer ${LEXTRACKER_TOKEN}"
+    vscode = json.loads(setups["vscode"].snippets[0].text)["servers"]["lextracker"]
+    assert vscode["type"] == "http" and vscode["headers"]["Authorization"] == "Bearer ${input:lextracker-token}"
+    cursor = json.loads(setups["cursor"].snippets[0].text)["mcpServers"]["lextracker"]
+    assert cursor["headers"]["Authorization"] == f"Bearer {key}"
+    assert setups["claude"].snippets[1].text == f"Bearer {key}"
+    assert f'export LEXTRACKER_TOKEN="{key}"' in setups["codex"].snippets[1].text
