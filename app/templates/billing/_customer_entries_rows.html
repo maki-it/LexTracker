@@ -1,0 +1,33 @@
+{# Rows of one project in the open time entries of a customer (customer_entries.html), or the next page of them. #}
+{% load timefmt %}
+{% for row in rows %}
+{% with entry=row.entry %}
+<tr{% if not row.has_rate %} class="bg-warning-soft"{% endif %}>
+  <td class="whitespace-nowrap tabular-nums">
+    {{ entry.started_at|date:date_format }}
+    <span class="block text-xs text-muted">{{ entry.started_at|time:"H:i" }}–{{ entry.ended_at|time:"H:i" }}</span>
+  </td>
+  <td class="whitespace-nowrap">{{ entry.user.get_full_name|default:entry.user.get_username }}</td>
+  <td>{{ entry.task.name }}</td>
+  <td class="text-right whitespace-nowrap tabular-nums">
+    {{ entry.duration|hours:duration_format }} h
+    {% if row.included and row.billed %}<span class="block text-xs text-muted">{{ row.included|hours:duration_format }} h im Retainer</span>{% endif %}
+  </td>
+  <td class="text-right whitespace-nowrap tabular-nums">
+    {% if row.rate is not None %}{{ row.rate }} €{% elif not row.has_rate %}<span class="badge badge-warning">kein Satz</span>{% else %}–{% endif %}
+  </td>
+  <td class="text-right whitespace-nowrap tabular-nums">
+    {% if row.billed %}{{ row.amount }} €{% elif row.included %}<span class="badge badge-primary">im Retainer</span>{% else %}–{% endif %}
+  </td>
+  <td class="min-w-48 text-muted whitespace-pre-line break-words">{{ entry.description|default:"–" }}</td>
+</tr>
+{% endwith %}
+{% endfor %}
+{% if remaining %}
+<tr>
+  <td colspan="7" class="text-center">
+    <button type="button" class="btn btn-ghost btn-sm" hx-get="{% url 'billing:customer_entries' customer.pk %}?projekt={{ group.project.pk }}&seite={{ next_page }}"
+            hx-target="closest tr" hx-swap="outerHTML" hx-select="unset">Weitere {{ remaining }} Zeiteintr{{ remaining|pluralize:"ag,äge" }} anzeigen</button>
+  </td>
+</tr>
+{% endif %}

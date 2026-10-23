@@ -5,13 +5,14 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 
-from django.db.models import Q
+from django.db.models import Max, Min, Q
 from django.utils import timezone
 
 from billing.models import BillingAgreement
 from billing.periods import periods_between
 from core.models import AppSettings
 from customers.models import Customer
+from projects.models import Project
 from tracking.models import TimeEntry
 
 CENT = Decimal("0.01")
@@ -33,6 +34,8 @@ class Line:
     unit: str
     unit_price: Decimal
     description: str = ""
+    # A retainer's fixed price, as opposed to hours billed at a rate.
+    fixed: bool = False
     # The time behind the line, shown in the preview. Not sent to Lexware.
     entries: list[TimeEntry] = field(default_factory=list)
 
@@ -85,7 +88,8 @@ def unbilled_entries(customer: Customer, start: date, end: date) -> list[TimeEnt
             started_at__gte=datetime.combine(start, time.min, tzinfo=tz),
             started_at__lt=datetime.combine(end + timedelta(days=1), time.min, tzinfo=tz),
         )
-        .select_related("task", "task__project", "task__project__customer")
+        # Prefetched, not joined: each task, project and user is loaded once, not once per entry.
+        .prefetch_related("user", "task__project__customer")
         .order_by("started_at")
     )
 
@@ -121,7 +125,13 @@ def _hourly_lines(entries: list[TimeEntry], draft: Draft, label_prefix: str = ""
 
 def _part(entry: TimeEntry, duration: timedelta) -> TimeEntry:
     """An unsaved copy of ``entry`` that lasts ``duration``, for splitting it between lines."""
-    part = TimeEntry(task=entry.task, started_at=entry.started_at, description=entry.description)
+    part = TimeEntry(
+        pk=entry.pk,
+        user=entry.user,
+        task=entry.task,
+        started_at=entry.started_at,
+        description=entry.description,
+    )
     part.ended_at = entry.started_at + duration
     return part
 
@@ -163,6 +173,7 @@ def build_draft(customer: Customer, start: date, end: date) -> Draft:
             "Pauschale",
             agreement.fixed_price,
             description=f"Enthält {_german_number(agreement.included_hours)} Stunden.",
+            fixed=True,
         )
         draft.lines.append(retainer)
         remaining = included
@@ -179,3 +190,76 @@ def build_draft(customer: Customer, start: date, end: date) -> Draft:
             remaining = timedelta()
         _hourly_lines(overage, draft, label_prefix=f"Mehrstunden {period.label}: ", rate=agreement.overage_rate)
     return draft
+
+
+def open_draft(customer: Customer) -> Draft | None:
+    """The invoice for all of the customer's open time at once, or ``None`` if there is none."""
+    bounds = unbilled(customer).aggregate(first=Min("started_at"), last=Max("started_at"))
+    if bounds["first"] is None:
+        return None
+    return build_draft(customer, timezone.localtime(bounds["first"]).date(), timezone.localtime(bounds["last"]).date())
+
+
+@dataclass
+class EntryRow:
+    """One time entry of a draft and what becomes of it on the invoice."""
+
+    entry: TimeEntry
+    # The part inside a retainer's included hours, and the part billed at ``rate``.
+    included: timedelta = timedelta()
+    billed: timedelta = timedelta()
+    rate: Decimal | None = None
+
+    @property
+    def amount(self) -> Decimal | None:
+        return None if self.rate is None else (to_hours(self.billed) * self.rate).quantize(CENT, ROUND_HALF_UP)
+
+    @property
+    def has_rate(self) -> bool:
+        """False if the entry stays off the invoice because no rate is set."""
+        return self.rate is not None or bool(self.included)
+
+
+@dataclass
+class ProjectRows:
+    project: Project
+    rows: list[EntryRow] = field(default_factory=list)
+    # Of the draft's lines, so it adds up to what the invoice shows.
+    amount: Decimal = Decimal("0")
+
+    @property
+    def duration(self) -> timedelta:
+        return sum((r.entry.duration for r in self.rows), timedelta())
+
+    @property
+    def included(self) -> timedelta:
+        return sum((r.included for r in self.rows), timedelta())
+
+    @property
+    def without_rate(self) -> int:
+        return sum(1 for r in self.rows if not r.has_rate)
+
+
+def entries_by_project(draft: Draft) -> list[ProjectRows]:
+    """The draft's time entries by project, with the line each one ends up on.
+
+    An entry that a retainer splits between its included hours and extra hours is one row.
+    """
+    rows = {e.pk: EntryRow(e) for e in draft.entries}
+    amounts: dict[int, Decimal] = defaultdict(Decimal)
+    for line in draft.lines:
+        for entry in line.entries:
+            row = rows[entry.pk]
+            if line.fixed:
+                row.included += entry.duration
+            else:
+                row.billed += entry.duration
+                row.rate = line.unit_price
+        if line.entries and not line.fixed:
+            amounts[line.entries[0].task.project_id] += line.total
+    projects: dict[int, ProjectRows] = {}
+    for row in rows.values():
+        project = row.entry.task.project
+        group = projects.setdefault(project.pk, ProjectRows(project, amount=amounts[project.pk]))
+        group.rows.append(row)
+    return sorted(projects.values(), key=lambda g: g.project.name.lower())

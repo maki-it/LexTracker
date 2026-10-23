@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load timefmt %}
+{% load timefmt dialogs %}
 {% block title %}Abrechnung · LexTracker{% endblock %}
 {% block content %}
 {% include "billing/_tabs.html" with tab="abrechnen" %}
@@ -32,7 +32,7 @@
     <tbody>
       {% for customer in customers %}
       <tr>
-        <td class="w-full font-medium">{{ customer.name }}</td>
+        <td class="w-full font-medium">{% if customer.unbilled %}<a {% dialog_link "billing:customer_entries" customer.pk %} class="text-ink no-underline hover:underline" title="Offene Zeiteinträge anzeigen">{{ customer.name }}</a>{% else %}{{ customer.name }}{% endif %}</td>
         <td class="text-right whitespace-nowrap tabular-nums{% if customer.unbilled %} font-semibold{% else %} text-muted{% endif %}">{% if customer.unbilled %}{{ customer.unbilled|hours:duration_format }} h{% else %}–{% endif %}</td>
         <td class="text-right"><a class="btn btn-sm{% if customer.unbilled %} btn-primary{% endif %}" href="{% url 'billing:customer' customer.pk %}">Abrechnen</a></td>
       </tr>

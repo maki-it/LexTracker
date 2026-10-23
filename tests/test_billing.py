@@ -5,9 +5,12 @@ from decimal import Decimal
 
 import httpx
 import pytest
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
 
+from accounts.models import User
 from billing.calculation import build_draft
 from billing.lexware import invoice_payload
 from billing.models import BillingAgreement, Invoice
@@ -16,7 +19,7 @@ from billing.services import create_invoice
 from core.models import AppSettings
 from lexware.client import LexwareClient, LexwareError
 from lexware.schemas import Profile
-from projects.models import Task
+from projects.models import Project, Task
 from tracking.models import TimeEntry
 
 pytestmark = pytest.mark.django_db
@@ -325,3 +328,127 @@ def test_sidebar_counts(logged_in, user, task, customer):
     response = logged_in.get(reverse("core:dashboard"))
     assert response.wsgi_request.nav_counts["billable_customers"] == 1
     assert 'title="Kunden mit offenen, abrechenbaren Zeiten">1<' in response.text
+
+
+# Open entries of a customer
+
+
+def entries_url(customer) -> str:
+    return reverse("billing:customer_entries", args=[customer.pk])
+
+
+def test_overview_links_the_customer_to_its_open_entries(logged_in, user, task, customer):
+    assert entries_url(customer) not in logged_in.get(reverse("billing:overview"), {"alle": "1"}).text
+    work(user, task, "2026-10-05", 2)
+
+    page = logged_in.get(reverse("billing:overview")).text
+    assert f'hx-get="{entries_url(customer)}" hx-target="#dialog-body"' in page
+
+
+def test_open_entries_by_project_with_sums(logged_in, user, task, customer):
+    app = Project.objects.create(customer=customer, name="App", hourly_rate=Decimal("80.00"))
+    concept = Task.objects.create(project=app, name="Konzept")
+    entry = work(user, task, "2026-10-05", 1.5)
+    entry.description = "Startseite gestaltet"
+    entry.save()
+    work(user, concept, "2026-10-06", 2)
+    # A running timer is not billable yet.
+    TimeEntry.objects.create(user=user, task=task, started_at=timezone.now())
+
+    response = logged_in.get(entries_url(customer))
+
+    groups = {s["group"].project.name: s["group"] for s in response.context["sections"]}
+    assert set(groups) == {"App", "Website"}
+    assert (groups["Website"].duration, groups["Website"].amount) == (timedelta(hours=1.5), Decimal("150.00"))
+    assert (groups["App"].duration, groups["App"].amount) == (timedelta(hours=2), Decimal("160.00"))
+    row = groups["Website"].rows[0]
+    assert (row.rate, row.amount, row.entry.user) == (Decimal("100.00"), Decimal("150.00"), user)
+    assert "Startseite gestaltet" in response.text and "Konzept" in response.text
+    assert response.context["draft"].total == Decimal("310.00")
+    assert "Hauptnavigation" in response.text
+
+
+def test_open_entries_in_dialog(logged_in, user, task, customer):
+    work(user, task, "2026-10-05", 1)
+    response = logged_in.get(entries_url(customer), headers={"HX-Request": "true", "HX-Target": "dialog-body"})
+    assert "Hauptnavigation" not in response.text and "dialog-wide" in response.text
+
+
+def test_open_entries_leave_out_billed_and_not_billable_time(logged_in, user, task, customer):
+    billed = work(user, task, "2026-10-05", 1)
+    invoice = Invoice.objects.create(
+        customer=customer, period_start=date(2026, 10, 1), period_end=date(2026, 10, 31), total_net=Decimal("100")
+    )
+    TimeEntry.objects.filter(pk=billed.pk).update(invoice=invoice)
+    free = work(user, task, "2026-10-06", 1)
+    TimeEntry.objects.filter(pk=free.pk).update(is_billable=False)
+
+    response = logged_in.get(entries_url(customer))
+    assert response.context["draft"] is None
+    assert "Alles ist abgerechnet" in response.text
+
+
+def test_open_entries_without_a_rate_are_marked(logged_in, user, task, customer):
+    customer.default_hourly_rate = None
+    customer.save()
+    work(user, task, "2026-10-05", 1)
+
+    response = logged_in.get(entries_url(customer))
+    row = response.context["sections"][0]["rows"][0]
+    assert not row.has_rate and row.amount is None
+    assert "kein Satz" in response.text and "kein Stundensatz hinterlegt" in response.text
+
+
+def test_open_entries_in_a_retainer(logged_in, user, task, customer):
+    retainer(customer, period=Period.MONTH, included_hours=Decimal("3"), fixed_price=Decimal("300.00"))
+    work(user, task, "2026-10-05", 2)
+    work(user, task, "2026-10-06", 2)
+
+    response = logged_in.get(entries_url(customer))
+
+    first, second = response.context["sections"][0]["rows"]
+    assert (first.included, first.billed, first.amount) == (timedelta(hours=2), timedelta(0), None)
+    # The second entry is split: one hour still fits, the other one is billed extra.
+    assert (second.included, second.billed, second.amount) == (
+        timedelta(hours=1),
+        timedelta(hours=1),
+        Decimal("100.00"),
+    )
+    assert response.context["retainer_total"] == Decimal("300.00")
+    assert response.context["draft"].total == Decimal("400.00")
+    assert "im Retainer" in response.text and "1:00 h im Retainer" in response.text
+
+
+def test_open_entries_are_paged_per_project(logged_in, user, task, customer, monkeypatch):
+    monkeypatch.setattr("billing.views.ENTRIES_PER_PAGE", 2)
+    for day in range(1, 6):
+        work(user, task, f"2026-10-{day:02d}", 1)
+    htmx = {"HX-Request": "true", "HX-Target": "more"}
+
+    first = logged_in.get(entries_url(customer))
+    assert first.text.count("<tr") == 1 + 2 + 1  # head, two rows, "more"
+    assert "Weitere 3 Zeiteinträge anzeigen" in first.text
+
+    url = f"{entries_url(customer)}?projekt={task.project_id}"
+    second = logged_in.get(f"{url}&seite=2", headers=htmx)
+    assert second.text.count("<tr") == 3 and "Weitere 1 Zeiteintrag anzeigen" in second.text
+    last = logged_in.get(f"{url}&seite=3", headers=htmx)
+    assert last.text.count("<tr") == 1 and "Weitere" not in last.text
+
+
+def test_open_entries_query_count_does_not_grow_with_entries(
+    logged_in, user, task, customer, django_assert_max_num_queries
+):
+    work(user, task, "2026-10-01", 1)
+    with CaptureQueriesContext(connection) as few:
+        logged_in.get(entries_url(customer))
+    for day in range(2, 29):
+        work(user, task, f"2026-10-{day:02d}", 1)
+    with django_assert_max_num_queries(len(few)):
+        logged_in.get(entries_url(customer))
+
+
+def test_open_entries_are_for_administrators_only(client, task, customer):
+    employee = User.objects.create_user(username="ma", password="geheim-123", role=User.Role.EMPLOYEE)
+    client.force_login(employee)
+    assert client.get(entries_url(customer)).status_code == 403
