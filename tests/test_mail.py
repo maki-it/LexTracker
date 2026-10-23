@@ -1,4 +1,6 @@
 import re
+import smtplib
+import ssl
 import uuid
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
@@ -86,6 +88,57 @@ def test_settings_need_a_sender(logged_in):
     response = logged_in.post(reverse("mailer:settings"), {"host": "smtp.example.de", "port": 587, "security": "ssl"})
     assert response.status_code == 200
     assert "Ohne Absenderadresse" in response.text
+
+
+@pytest.mark.parametrize(
+    ("port", "security", "field_error"),
+    [
+        (587, "ssl", "Port 587 nutzt STARTTLS"),
+        (465, "starttls", "Port 465 erwartet SSL/TLS"),
+    ],
+)
+def test_settings_reject_port_and_encryption_that_do_not_fit(logged_in, port, security, field_error):
+    data = {"host": "smtp.example.de", "port": port, "security": security, "from_address": "zeit@example.de"}
+
+    response = logged_in.post(reverse("mailer:settings"), data)
+
+    assert response.status_code == 200
+    assert field_error in response.text
+    assert not MailSettings.objects.get(pk=1).host
+
+
+@pytest.mark.parametrize(("port", "security"), [(587, "starttls"), (465, "ssl"), (25, "none"), (2525, "ssl")])
+def test_settings_accept_fitting_port_and_encryption(logged_in, port, security):
+    data = {"host": "smtp.example.de", "port": port, "security": security, "from_address": "zeit@example.de"}
+    assert logged_in.post(reverse("mailer:settings"), data).status_code == 302
+
+
+def describe(exc: Exception, port: int, security: str) -> str:
+    return outbox._describe(exc, MailSettings(host="smtp.example.de", port=port, security=security))
+
+
+def test_wrong_version_number_on_ssl_points_to_starttls():
+    exc = ssl.SSLError(1, "[SSL: WRONG_VERSION_NUMBER] wrong version number (_ssl.c:1082)")
+    error = describe(exc, 587, "ssl")
+    assert "Port 587" in error and "„STARTTLS“" in error
+    assert "SSLError" not in error
+
+
+def test_starttls_on_the_ssl_port_points_to_ssl():
+    error = describe(TimeoutError("timed out"), 465, "starttls")
+    assert "Port 465" in error and "„SSL/TLS“" in error
+    assert "Port 465" in describe(smtplib.SMTPServerDisconnected("Connection unexpectedly closed"), 465, "starttls")
+
+
+def test_server_without_starttls_points_to_ssl():
+    error = describe(smtplib.SMTPNotSupportedError("STARTTLS extension not supported by server."), 25, "starttls")
+    assert "kein STARTTLS" in error and "„SSL/TLS“" in error
+
+
+def test_other_errors_stay_as_they_are():
+    assert describe(smtplib.SMTPAuthenticationError(535, b"no"), 587, "starttls").startswith("SMTPAuthenticationError")
+    assert describe(TimeoutError("timed out"), 587, "starttls") == "TimeoutError: timed out"
+    assert describe(ssl.SSLError(1, "[SSL: CERTIFICATE_VERIFY_FAILED]"), 465, "ssl").startswith("SSLError")
 
 
 def test_mail_settings_are_for_admins_only(client, kim):
