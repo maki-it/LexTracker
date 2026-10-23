@@ -327,6 +327,20 @@ async def test_oversized_uploads_are_refused_before_django_reads_them(settings):
     assert await call_limited("/kunden/", [(b"content-length", big)]) == ([], True)
 
 
+def test_settings_page_highlights_the_backup_count_and_newest_copy(client, settings, user, tmp_path):
+    settings.BACKUP_DIR = tmp_path
+    client.force_login(user)
+    html = client.get("/einstellungen/").content.decode()
+    assert "Noch keine Kopie vorhanden" in html
+    assert 'href="/einstellungen/sicherungen/" class="btn btn-primary"' in html
+
+    (tmp_path / "db-2026-10-01-030000.sqlite3").write_bytes(b"x")
+    (tmp_path / "db-2026-10-02-030000.sqlite3").write_bytes(b"x")
+    html = client.get("/einstellungen/").content.decode()
+    assert "2 Kopien vorhanden" in html
+    assert "Letzte Sicherung: 02.10.2026" in html
+
+
 def test_settings_page_shows_one_tab_and_keeps_it_after_saving(client, user):
     client.force_login(user)
     html = client.get("/einstellungen/", {"tab": "sicherheit"}).content.decode()
