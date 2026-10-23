@@ -2,6 +2,7 @@ import sqlite3
 from datetime import datetime, time
 
 import pytest
+from asgiref.sync import sync_to_async
 from django.core.management import call_command
 from django.utils import timezone
 
@@ -109,3 +110,85 @@ def test_settings_page_saves_the_backup_settings(client, settings, user):
     assert (app_settings.backup_enabled, app_settings.backup_time, app_settings.backup_keep) == (False, time(4, 30), 7)
 
     assert client.post("/einstellungen/", data | {"backup_keep": 0}).status_code == 200
+
+
+def test_copy_made_before_a_restore_does_not_count_as_the_daily_backup():
+    app_settings = AppSettings.load()
+    backup._copy(local(22, 4), backup.BEFORE_RESTORE)
+    assert backup.is_due(local(22, 5), app_settings)
+    assert [b.before_restore for b in backup.listing()] == [True]
+
+
+@pytest.fixture
+def admin(client, user):
+    client.force_login(user)
+    return client
+
+
+def test_backup_page_lists_downloads_and_deletes(admin):
+    admin.post("/einstellungen/sicherungen/neu/")
+    [item] = backup.listing()
+    page = admin.get("/einstellungen/sicherungen/")
+    assert item.name in page.text
+
+    assert admin.post(f"/einstellungen/sicherungen/{item.name}/loeschen/").status_code == 302
+    assert backup.listing() == []
+
+
+async def test_backup_download(async_client, user):
+    await async_client.aforce_login(user)
+    path = await sync_to_async(backup.create_backup)(5)
+    download = await async_client.get(f"/einstellungen/sicherungen/{path.name}/")
+    assert download["Content-Disposition"] == f'attachment; filename="{path.name}"'
+    assert b"".join([chunk async for chunk in download.streaming_content]) == path.read_bytes()
+
+
+def test_only_backups_from_the_folder_can_be_reached(admin, settings):
+    settings.BACKUP_DIR.mkdir(parents=True)
+    assert admin.get("/einstellungen/sicherungen/db.sqlite3/").status_code == 404
+    assert admin.get("/einstellungen/sicherungen/..%2Fdb.sqlite3/").status_code == 404
+    assert admin.post("/einstellungen/sicherungen/db-2026-10-22-030000.sqlite3/loeschen/").status_code == 404
+
+
+def test_restore_replaces_the_data_and_keeps_the_previous_state(admin):
+    Customer.objects.create(name="ACME GmbH")
+    saved = backup.create_backup(5, local(20, 3))
+    Customer.objects.create(name="Neu AG")
+    url = f"/einstellungen/sicherungen/{saved.name}/wiederherstellen/"
+
+    unconfirmed = admin.post(url)
+    assert "Bitte bestätige" in unconfirmed.text
+    assert Customer.objects.count() == 2
+
+    assert admin.post(url, {"bestaetigt": "1"}).status_code == 302
+    assert list(Customer.objects.values_list("name", flat=True)) == ["ACME GmbH"]
+    [before] = [b for b in backup.listing() if b.before_restore]
+    with sqlite3.connect(before.path) as db:
+        assert db.execute("select count(*) from customers_customer").fetchone() == (2,)
+    # Still signed in, since the account exists in the backup.
+    assert admin.get("/einstellungen/sicherungen/").status_code == 200
+
+
+def test_restore_refuses_files_that_are_not_a_lextracker_database(admin, settings):
+    settings.BACKUP_DIR.mkdir(parents=True)
+    garbage = settings.BACKUP_DIR / "db-2026-10-20-030000.sqlite3"
+    garbage.write_bytes(b"not a database" * 100)
+    foreign = settings.BACKUP_DIR / "db-2026-10-21-030000.sqlite3"
+    with sqlite3.connect(foreign) as db:
+        db.execute("create table other (x)")
+    Customer.objects.create(name="ACME GmbH")
+
+    for path in (garbage, foreign):
+        response = admin.post(f"/einstellungen/sicherungen/{path.name}/wiederherstellen/", {"bestaetigt": "1"})
+        assert response.status_code == 200
+        assert 'role="alert"' in response.text
+    assert Customer.objects.count() == 1
+    assert not any(b.before_restore for b in backup.listing())
+
+
+def test_backups_are_for_admins_only(client, user):
+    user.role = user.Role.EMPLOYEE
+    user.save()
+    client.force_login(user)
+    assert client.get("/einstellungen/sicherungen/").status_code == 403
+    assert client.post("/einstellungen/sicherungen/neu/").status_code == 403

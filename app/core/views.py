@@ -1,19 +1,23 @@
+import asyncio
 from datetime import datetime, time, timedelta
+from pathlib import Path
 
 from asgiref.sync import sync_to_async
 from django.conf import settings
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.db import connection
-from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.http import Http404, HttpRequest, HttpResponse, JsonResponse, StreamingHttpResponse
 from django.shortcuts import redirect, render
 from django.templatetags.static import static
 from django.utils import timezone
-from django.views.decorators.http import require_GET, require_http_methods
+from django.utils.http import content_disposition_header
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
 from django.views.generic import RedirectView
 
 from accounts.models import User
 from core import backup
+from core.dialogs import navigate
 from core.forms import AppSettingsForm
 from core.models import AppSettings
 from tracking.forms import task_choices
@@ -61,10 +65,14 @@ async def health(request: HttpRequest) -> JsonResponse:
     return JsonResponse({"status": "ok" if ok else "error"}, status=200 if ok else 503)
 
 
-@require_http_methods(["GET", "POST"])
-async def app_settings(request: HttpRequest) -> HttpResponse:
+def _require_admin(request: HttpRequest) -> None:
     if request.user.role != User.Role.ADMIN:
         raise PermissionDenied
+
+
+@require_http_methods(["GET", "POST"])
+async def app_settings(request: HttpRequest) -> HttpResponse:
+    _require_admin(request)
     form = AppSettingsForm(request.POST or None, instance=await AppSettings.aload())
     if request.method == "POST" and await sync_to_async(form.is_valid)():
         # Save only the fields on the page; the import writes its status columns itself.
@@ -98,6 +106,85 @@ async def app_settings(request: HttpRequest) -> HttpResponse:
         "failed": current.backup_failed,
     }
     return render(request, "core/settings.html", {"form": form, "sync_jobs": sync_jobs, "backup": backup_info})
+
+
+async def _get_backup(name: str) -> Path:
+    path = await sync_to_async(backup.get)(name)
+    if path is None:
+        raise Http404
+    return path
+
+
+@require_GET
+async def backup_list(request: HttpRequest) -> HttpResponse:
+    _require_admin(request)
+    context = {"backups": await sync_to_async(backup.listing)(), "dir": settings.BACKUP_DIR}
+    return render(request, "core/backups.html", context)
+
+
+@require_POST
+async def backup_create(request: HttpRequest) -> HttpResponse:
+    _require_admin(request)
+    try:
+        path = await sync_to_async(backup.backup_and_record)()
+    except Exception as exc:
+        messages.error(request, f"Die Sicherung ist fehlgeschlagen: {exc}")
+    else:
+        messages.success(request, f"Sicherung {path.name} erstellt.")
+    return redirect("core:backups")
+
+
+@require_GET
+async def backup_download(request: HttpRequest, name: str) -> HttpResponse:
+    _require_admin(request)
+    path = await _get_backup(name)
+
+    async def chunks():
+        file = await asyncio.to_thread(path.open, "rb")
+        try:
+            while chunk := await asyncio.to_thread(file.read, 1024 * 1024):
+                yield chunk
+        finally:
+            file.close()
+
+    response = StreamingHttpResponse(chunks(), content_type="application/vnd.sqlite3")
+    response["Content-Disposition"] = content_disposition_header(True, path.name)
+    response["Content-Length"] = str(path.stat().st_size)
+    return response
+
+
+@require_POST
+async def backup_delete(request: HttpRequest, name: str) -> HttpResponse:
+    _require_admin(request)
+    path = await _get_backup(name)
+    await asyncio.to_thread(path.unlink)
+    messages.success(request, f"Sicherung {name} gelöscht.")
+    return redirect("core:backups")
+
+
+@require_http_methods(["GET", "POST"])
+async def backup_restore(request: HttpRequest, name: str) -> HttpResponse:
+    _require_admin(request)
+    path = await _get_backup(name)
+    error = None
+    if request.method == "POST":
+        if request.POST.get("bestaetigt") != "1":
+            error = "Bitte bestätige, dass der aktuelle Stand ersetzt wird."
+        else:
+            try:
+                before = await sync_to_async(backup.restore)(path)
+            except backup.InvalidBackup as exc:
+                error = str(exc)
+            else:
+                # The restored sessions table may not have this session; a new key keeps you signed in,
+                # as long as your account exists in the backup with the same password.
+                await request.session.acycle_key()
+                messages.success(
+                    request,
+                    f"Sicherung {name} wiederhergestellt. Der vorherige Stand liegt als {before.name} im Ordner.",
+                )
+                return navigate("core:backups")
+    return render(request, "core/backup_restore.html", {"name": name, "error": error})
 
 
 class FaviconView(RedirectView):
