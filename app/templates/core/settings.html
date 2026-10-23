@@ -77,6 +77,7 @@
     <h2>Abrechnung</h2>
     {% include "core/_field.html" with field=form.default_hourly_rate %}
     {% include "core/_field.html" with field=form.time_rounding %}
+    {% include "core/_field.html" with field=form.invoice_detail %}
     <p class="text-sm text-muted">
       Die Umsatzsteuer auf Rechnungen richtet sich nach deinem Lexware-Konto: als Kleinunternehmer ohne Umsatzsteuer, sonst mit 19 %.
     </p>

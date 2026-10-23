@@ -109,10 +109,11 @@ Pro Kunde legst du unter **Abrechnung** eine Vereinbarung an:
 
 Für einen gewählten Zeitraum zeigt die Vorschau alle noch nicht abgerechneten, abrechenbaren Zeiten als Rechnungspositionen.
 **Rechnungsentwurf in Lexware anlegen** erstellt daraus einen Entwurf (nicht finalisiert), den du in Lexware prüfst und abschließt. Die Zeiten gelten danach als abgerechnet und tauchen in keiner weiteren Rechnung auf.
+Jede Position heißt wie die Aufgabe (Mehrstunden eines Retainers: „… (Mehrstunden)“), die Beschreibung darunter nennt Projekt und Zeitraum. Unter **Einstellungen → Allgemein** kannst du zusätzlich die Tätigkeiten (Datum, Dauer, Beschreibung des Zeiteintrags) in die Beschreibung schreiben lassen; der Kunde sieht sie dann auf der Rechnung.
 Der Kunde muss dafür mit einem Lexware-Kontakt verknüpft sein. Die Umsatzsteuer richtet sich nach deinem Lexware-Konto: Ist es als Kleinunternehmer (§ 19 UStG) eingerichtet, entsteht die Rechnung ohne Umsatzsteuer, sonst mit 19 %.
 
 Der Reiter **Rechnungen** listet alle Rechnungen mit Nummer, Status (Entwurf, offen, überfällig, bezahlt, storniert) und Fälligkeit, filterbar nach Status und Kunde und durchsuchbar nach Kunde oder Nummer. Die neuesten stehen oben (nach Rechnungsdatum, dann Rechnungsnummer).
-Der Rechnungsabgleich übernimmt auch Rechnungen, die du direkt in Lexware für einen importierten Kunden schreibst, mit Datum, Leistungszeitraum, Nettosumme und Status. Sie sind mit „in Lexware erstellt“ markiert, haben keine Zeiteinträge, erscheinen im Kundenzugang und zählen in den Auswertungen zum Umsatz. Löschst du eine solche Rechnung in Lexware, verschwindet sie auch hier.
+Der Rechnungsabgleich übernimmt auch Rechnungen, die du direkt in Lexware für einen importierten Kunden schreibst, mit Datum, Leistungszeitraum, Nettosumme und Status. Sie tragen in der Rechnungsliste ein kleines Label „Lexware“ (Tooltip: „In Lexware Office erstellt“), haben keine Zeiteinträge, erscheinen im Kundenzugang und zählen in den Auswertungen zum Umsatz. Löschst du eine solche Rechnung in Lexware, verschwindet sie auch hier.
 Den Status holt der Scheduler nach dem eingestellten Zeitplan aus der Belegliste von Lexware; **Status aktualisieren** gleicht sofort ab.
 Löschst du einen Entwurf in Lexware, wird die Rechnung hier als gelöscht markiert und ihre Zeiten sind wieder offen. Bei einer stornierten Rechnung gibst du die Zeiten mit **Zeiten freigeben** selbst wieder frei, falls du sie neu abrechnen willst.
 
@@ -199,7 +200,7 @@ Aufgeräumt wird stündlich im Scheduler: Gelesene Nachrichten bleiben bei Debug
 
 ## E-Mail
 
-Unter **Einstellungen → E-Mail-Versand verwalten** trägst du den SMTP-Server ein (Server, Port, Verschlüsselung, Zugangsdaten, Absender). Das Passwort wird wie der Lexware-Schlüssel verschlüsselt gespeichert. Eine **Testmail** geht sofort raus und zeigt direkt, was der Server antwortet.
+Unter **Einstellungen → E-Mail-Versand verwalten** trägst du den SMTP-Server ein (Server, Port, Verschlüsselung, Zugangsdaten, Absender). Das Passwort wird wie der Lexware-Schlüssel verschlüsselt gespeichert. Eine **Testmail** geht sofort raus und zeigt direkt, was der Server antwortet. Port 587 gehört zu STARTTLS, Port 465 zu SSL/TLS; passen Port und Verschlüsselung nicht zusammen, weist dich das Formular darauf hin, und ein TLS-Fehler der Testmail nennt die passende Einstellung.
 
 Alle anderen E-Mails legt die App in eine Warteschlange in der Datenbank, damit keine Seite auf den SMTP-Server wartet. Der Scheduler schaut alle fünf Sekunden hinein, verschickt, was ansteht, und versucht es bei Fehlern nach 1, 5, 15 und 60 Minuten erneut. Die letzten E-Mails mit Status und Fehlermeldung stehen auf derselben Seite unter **Postausgang**. Ohne laufenden Scheduler (`make scheduler` oder der Container `scheduler`) geht also nichts raus.
 

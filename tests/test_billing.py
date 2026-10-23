@@ -12,7 +12,7 @@ from django.utils import timezone
 
 from accounts.models import User
 from billing.calculation import build_draft
-from billing.lexware import invoice_payload
+from billing.lexware import DESCRIPTION_MAX, NAME_MAX, invoice_payload
 from billing.models import BillingAgreement, Invoice
 from billing.periods import Period, period_containing, periods_between, recent_periods
 from billing.services import create_invoice
@@ -81,9 +81,11 @@ def test_hourly_lines_grouped_by_task_with_rate_fallback(user, task, customer):
     draft = build_draft(customer, date(2026, 10, 1), date(2026, 10, 31))
 
     lines = {line.name: line for line in draft.lines}
-    assert lines["Website · Entwicklung"].quantity == Decimal("3.50")
-    assert lines["Website · Entwicklung"].unit_price == Decimal("100.00")
-    assert lines["Website · Design"].total == Decimal("120.00")
+    assert lines["Entwicklung"].quantity == Decimal("3.50")
+    assert lines["Entwicklung"].unit_price == Decimal("100.00")
+    assert lines["Entwicklung"].description == "Projekt: Website\nZeitraum: 05.10.2026 – 06.10.2026"
+    assert lines["Design"].total == Decimal("120.00")
+    assert lines["Design"].description == "Projekt: Website\nZeitraum: 07.10.2026"
     assert draft.total == Decimal("470.00")
     assert draft.can_be_invoiced
 
@@ -131,7 +133,11 @@ def test_retainer_overage_billed_at_overage_rate(user, task, customer):
     draft = build_draft(customer, date(2026, 10, 1), date(2026, 12, 31))
 
     overage = draft.lines[1]
-    assert overage.name == "Mehrstunden Q4/2026: Website · Entwicklung"
+    assert overage.name == "Entwicklung (Mehrstunden)"
+    assert overage.description == (
+        "Projekt: Website\nZeitraum: 02.11.2026\nÜber das Kontingent des Retainers Q4/2026 hinaus."
+    )
+    assert draft.lines[0].description == "Enthält 20 Stunden.\nZeitraum: 01.10.2026 – 31.12.2026"
     assert overage.quantity == Decimal("2.50")
     assert overage.unit_price == Decimal("110.00")
     assert draft.total == Decimal("2075.00")
@@ -190,6 +196,57 @@ def test_invoice_payload_for_small_business(user, task, customer):
     assert payload["lineItems"][0]["unitPrice"]["taxRatePercentage"] == 0.0
 
 
+def test_invoice_payload_names_the_service_and_describes_the_details(user, task, customer):
+    entry = work(user, task, "2026-10-05", 1.5)
+    entry.description = "Startseite **gestaltet**\n- und getestet"
+    entry.save()
+    work(user, task, "2026-10-12", 2)
+    draft = build_draft(customer, date(2026, 10, 1), date(2026, 10, 31))
+
+    item = invoice_payload(draft, date(2026, 11, 3), Profile())["lineItems"][0]
+    assert item["name"] == "Entwicklung"
+    assert item["description"] == "Projekt: Website\nZeitraum: 05.10.2026 – 12.10.2026"
+    assert (item["quantity"], item["unitName"]) == (3.5, "Stunden")
+
+    detailed = invoice_payload(draft, date(2026, 11, 3), Profile(), AppSettings.InvoiceDetail.ENTRIES)
+    assert detailed["lineItems"][0]["description"] == (
+        "Projekt: Website\nZeitraum: 05.10.2026 – 12.10.2026\n\n"
+        "- 05.10.2026, 1,5 Std.: Startseite gestaltet - und getestet\n"
+        "- 12.10.2026, 2 Std."
+    )
+    # Only the text changes, not what is calculated.
+    assert detailed["lineItems"][0]["quantity"] == item["quantity"]
+
+
+def test_invoice_payload_lists_the_work_behind_a_retainer(user, task, customer):
+    retainer(customer, included_hours=Decimal("1"))
+    work(user, task, "2026-10-05", 3)
+    draft = build_draft(customer, date(2026, 10, 1), date(2026, 12, 31))
+
+    items = invoice_payload(draft, date(2026, 11, 3), Profile(), AppSettings.InvoiceDetail.ENTRIES)["lineItems"]
+
+    assert items[0]["name"] == "Retainer Q4/2026"
+    assert items[0]["description"].endswith("\n\n- 05.10.2026, 1 Std., Entwicklung (Website)")
+    assert items[1]["name"] == "Entwicklung (Mehrstunden)"
+    assert items[1]["description"].endswith("\n\n- 05.10.2026, 2 Std.")
+
+
+def test_invoice_payload_keeps_texts_within_the_limits(user, task, customer):
+    task.name = "x" * 300
+    task.save()
+    for day in range(1, 29):
+        entry = work(user, task, f"2026-10-{day:02d}", 1)
+        entry.description = "Beschreibung " * 20
+        entry.save()
+    draft = build_draft(customer, date(2026, 10, 1), date(2026, 10, 31))
+
+    item = invoice_payload(draft, date(2026, 11, 3), Profile(), AppSettings.InvoiceDetail.ENTRIES)["lineItems"][0]
+
+    assert len(item["name"]) == NAME_MAX and item["name"].endswith("…")
+    assert len(item["description"]) <= DESCRIPTION_MAX
+    assert item["description"].splitlines()[-1].startswith("- … und ")
+
+
 def fake_lexware(requests: list):
     lexware_id = uuid.uuid4()
 
@@ -221,12 +278,33 @@ async def test_create_invoice_marks_entries_as_billed(user, task, customer):
     assert invoice.lexware_id == lexware_id
     assert invoice.total_net == Decimal("200.00")
     assert requests[0].method == "POST"
-    assert json.loads(requests[0].content)["lineItems"][0]["name"] == "Website · Entwicklung"
+    assert json.loads(requests[0].content)["lineItems"][0]["name"] == "Entwicklung"
+    assert json.loads(requests[0].content)["lineItems"][0]["description"] == ("Projekt: Website\nZeitraum: 05.10.2026")
 
     # Nothing left to bill for the same period.
     async with fake_lexware([])[0] as client:
         with pytest.raises(LexwareError, match="nichts abzurechnen"):
             await create_invoice(client, customer, date(2026, 10, 1), date(2026, 10, 31))
+
+
+@pytest.mark.django_db(transaction=True)
+async def test_create_invoice_uses_the_detail_setting(user, task, customer):
+    await TimeEntry.objects.acreate(
+        user=user,
+        task=task,
+        description="Startseite gestaltet",
+        started_at=datetime(2026, 10, 5, 9, tzinfo=timezone.get_current_timezone()),
+        ended_at=datetime(2026, 10, 5, 11, tzinfo=timezone.get_current_timezone()),
+    )
+    await AppSettings.objects.aupdate_or_create(pk=1, defaults={"invoice_detail": AppSettings.InvoiceDetail.ENTRIES})
+    requests = []
+    client, _ = fake_lexware(requests)
+
+    async with client:
+        await create_invoice(client, customer, date(2026, 10, 1), date(2026, 10, 31))
+
+    description = json.loads(requests[0].content)["lineItems"][0]["description"]
+    assert description.endswith("- 05.10.2026, 2 Std.: Startseite gestaltet")
 
 
 # Views

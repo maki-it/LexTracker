@@ -27,8 +27,21 @@ def _german_number(value: Decimal) -> str:
     return f"{value.normalize():f}".replace(".", ",")
 
 
+def _span(start: date, end: date) -> str:
+    """A single day as ``05.10.2026``, a range as ``05.10.2026 to 28.10.2026`` (with an en dash)."""
+    if start == end:
+        return f"{start:%d.%m.%Y}"
+    return f"{start:%d.%m.%Y} – {end:%d.%m.%Y}"
+
+
+def _worked_span(entries: list[TimeEntry]) -> str:
+    days = [timezone.localtime(e.started_at).date() for e in entries]
+    return _span(min(days), max(days))
+
+
 @dataclass
 class Line:
+    # What the customer reads on the invoice: a short name of the service, and the details below it.
     name: str
     quantity: Decimal
     unit: str
@@ -103,8 +116,12 @@ def active_agreement(customer: Customer, start: date, end: date) -> BillingAgree
     )
 
 
-def _hourly_lines(entries: list[TimeEntry], draft: Draft, label_prefix: str = "", rate: Decimal | None = None):
-    """Group entries by project, task and rate into lines of hours."""
+def _hourly_lines(entries: list[TimeEntry], draft: Draft, rate: Decimal | None = None, extra: str = ""):
+    """Group entries by project, task and rate into lines of hours.
+
+    A line is named after the task. The project and the days worked go into the description,
+    followed by ``extra`` if given. ``extra`` also marks the lines as extra hours.
+    """
     groups: dict[tuple, list[TimeEntry]] = defaultdict(list)
     for entry in entries:
         entry_rate = next(
@@ -118,8 +135,18 @@ def _hourly_lines(entries: list[TimeEntry], draft: Draft, label_prefix: str = ""
         groups[(entry.task.project.name, entry.task.name, entry_rate)].append(entry)
     for (project, task, entry_rate), group in groups.items():
         duration = sum((e.duration for e in group), timedelta())
+        description = [f"Projekt: {project}", f"Zeitraum: {_worked_span(group)}"]
+        if extra:
+            description.append(extra)
         draft.lines.append(
-            Line(f"{label_prefix}{project} · {task}", to_hours(duration), "Stunden", entry_rate, entries=group)
+            Line(
+                f"{task} (Mehrstunden)" if extra else task,
+                to_hours(duration),
+                "Stunden",
+                entry_rate,
+                description="\n".join(description),
+                entries=group,
+            )
         )
 
 
@@ -172,7 +199,8 @@ def build_draft(customer: Customer, start: date, end: date) -> Draft:
             Decimal("1"),
             "Pauschale",
             agreement.fixed_price,
-            description=f"Enthält {_german_number(agreement.included_hours)} Stunden.",
+            description=f"Enthält {_german_number(agreement.included_hours)} Stunden.\nZeitraum: "
+            f"{_span(period.start, period.end)}",
             fixed=True,
         )
         draft.lines.append(retainer)
@@ -188,7 +216,12 @@ def build_draft(customer: Customer, start: date, end: date) -> Draft:
                 retainer.entries.append(_part(entry, remaining))
             overage.append(_part(entry, entry.duration - remaining))
             remaining = timedelta()
-        _hourly_lines(overage, draft, label_prefix=f"Mehrstunden {period.label}: ", rate=agreement.overage_rate)
+        _hourly_lines(
+            overage,
+            draft,
+            rate=agreement.overage_rate,
+            extra=f"Über das Kontingent des Retainers {period.label} hinaus.",
+        )
     return draft
 
 

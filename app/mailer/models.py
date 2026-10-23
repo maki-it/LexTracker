@@ -5,6 +5,9 @@ from core import crypto
 from core.models import UUIDModel
 
 PASSWORD_PURPOSE = "smtp-password"
+# The usual ports: SSL/TLS from the first byte (SMTPS) and STARTTLS (submission). They are not interchangeable.
+SSL_PORT = 465
+STARTTLS_PORT = 587
 
 
 class MailSettings(models.Model):
