@@ -11,6 +11,7 @@ from django.http import Http404, HttpRequest, HttpResponse, JsonResponse, Stream
 from django.shortcuts import redirect, render
 from django.template.defaultfilters import filesizeformat
 from django.templatetags.static import static
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.http import content_disposition_header
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
@@ -76,15 +77,57 @@ def _require_admin(request: HttpRequest) -> None:
         raise PermissionDenied
 
 
+SETTINGS_TABS = [
+    ("allgemein", "Allgemein"),
+    ("lexware", "Lexware"),
+    ("e-mail", "E-Mail"),
+    ("datensicherung", "Datensicherung"),
+    ("sicherheit", "Sicherheit"),
+]
+_SETTINGS_TAB_FIELDS = {
+    "allgemein": ["default_hourly_rate", "time_rounding"],
+    "lexware": [
+        "lexware_sync_interval",
+        "lexware_sync_from",
+        "lexware_sync_until",
+        "invoice_sync_interval",
+        "invoice_sync_from",
+        "invoice_sync_until",
+    ],
+    "e-mail": [
+        "weekly_report_enabled",
+        "weekly_report_weekday",
+        "weekly_report_time",
+        "timer_reminder_hours",
+        "overdue_notice",
+        "overdue_notice_days",
+        "invite_by_mail",
+    ],
+    "datensicherung": ["backup_enabled", "backup_time", "backup_keep"],
+    "sicherheit": ["login_max_attempts", "login_lockout_minutes", "login_link_enabled"],
+}
+SETTINGS_FIELD_TABS = {field: tab for tab, fields in _SETTINGS_TAB_FIELDS.items() for field in fields}
+
+
+def settings_tab(name: str | None) -> str:
+    """The requested settings tab, or the first one for a missing or unknown name."""
+    return name if name in dict(SETTINGS_TABS) else SETTINGS_TABS[0][0]
+
+
 @require_http_methods(["GET", "POST"])
 async def app_settings(request: HttpRequest) -> HttpResponse:
     _require_admin(request)
     form = AppSettingsForm(request.POST or None, instance=await AppSettings.aload())
+    # The tab is only a view onto one long form: every tab's fields are always on the page and posted together.
+    tab = settings_tab(request.POST.get("tab") or request.GET.get("tab"))
     if request.method == "POST" and await sync_to_async(form.is_valid)():
         # Save only the fields on the page; the import writes its status columns itself.
         await form.instance.asave(update_fields=list(form.fields))
         messages.success(request, "Einstellungen gespeichert.")
-        return redirect("core:settings")
+        return redirect(f"{reverse('core:settings')}?tab={tab}")
+    if form.errors and not form.non_field_errors():
+        # Show the tab that holds the first mistake, whichever one was open.
+        tab = next((t for name in form.errors if (t := SETTINGS_FIELD_TABS.get(name))), tab)
     current = form.instance
     sync_jobs = [
         {
@@ -113,6 +156,8 @@ async def app_settings(request: HttpRequest) -> HttpResponse:
     }
     context = {
         "form": form,
+        "tab": tab,
+        "tabs": SETTINGS_TABS,
         "sync_jobs": sync_jobs,
         "backup": backup_info,
         "lexware": await credentials.astatus(),

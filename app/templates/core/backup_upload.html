@@ -2,7 +2,7 @@
 {% block title %}Sicherung hochladen · LexTracker{% endblock %}
 {% block content %}
 <div>
-  <p class="breadcrumb"><a href="{% url 'core:settings' %}">Einstellungen</a> / <a href="{% url 'core:backups' %}">Sicherungen</a></p>
+  <p class="breadcrumb"><a href="{% url 'core:settings' %}?tab=datensicherung">Einstellungen</a> / <a href="{% url 'core:backups' %}">Sicherungen</a></p>
   <h1>Sicherung hochladen</h1>
 </div>
 <form method="post" action="{% url 'core:backup_upload' %}" enctype="multipart/form-data" class="card flex max-w-2xl flex-col gap-4">

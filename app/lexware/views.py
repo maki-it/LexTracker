@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
+from django.urls import reverse
 from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.http import require_POST
 
@@ -34,7 +35,7 @@ async def save_key(request: HttpRequest) -> HttpResponse:
         messages.success(request, f"API-Schlüssel geprüft und gespeichert ({company_name or 'Lexware Office'}).")
     else:
         messages.error(request, form.errors["api_key"][0])
-    return redirect("core:settings")
+    return redirect(f"{reverse('core:settings')}?tab=lexware")
 
 
 @require_POST
@@ -50,11 +51,11 @@ async def test_key(request: HttpRequest) -> HttpResponse:
         messages.success(
             request, f"Verbindung zu Lexware Office klappt ({profile.company_name or 'ohne Firmennamen'})."
         )
-    return redirect("core:settings")
+    return redirect(f"{reverse('core:settings')}?tab=lexware")
 
 
 @require_POST
 async def remove_key(request: HttpRequest) -> HttpResponse:
     await credentials.aremove()
     messages.success(request, "API-Schlüssel entfernt.")
-    return redirect("core:settings")
+    return redirect(f"{reverse('core:settings')}?tab=lexware")

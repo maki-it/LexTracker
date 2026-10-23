@@ -325,3 +325,32 @@ async def test_oversized_uploads_are_refused_before_django_reads_them(settings):
     assert await call_limited(url, []) == ([413], False)
     # Other pages are not affected.
     assert await call_limited("/kunden/", [(b"content-length", big)]) == ([], True)
+
+
+def test_settings_page_shows_one_tab_and_keeps_it_after_saving(client, user):
+    client.force_login(user)
+    html = client.get("/einstellungen/", {"tab": "sicherheit"}).content.decode()
+    assert 'href="?tab=sicherheit" class="tab tab-active"' in html
+    # The other tabs stay in the form (so one save posts everything) and are only hidden.
+    assert "backup_keep" in html
+    assert 'id="e-mail" hidden>' in html
+
+    data = {
+        "tab": "datensicherung",
+        "time_rounding": 0,
+        "login_max_attempts": 5,
+        "login_lockout_minutes": 15,
+        "lexware_sync_interval": 60,
+        "invoice_sync_interval": 60,
+        "backup_time": "04:30",
+        "backup_keep": 7,
+        "weekly_report_weekday": 0,
+        "weekly_report_time": "07:00",
+        "timer_reminder_hours": 10,
+        "overdue_notice": "admins",
+        "overdue_notice_days": 3,
+    }
+    assert client.post("/einstellungen/", data)["Location"] == "/einstellungen/?tab=datensicherung"
+    page = client.post("/einstellungen/", data | {"tab": "allgemein", "backup_keep": 0})
+    assert page.status_code == 200
+    assert 'href="?tab=datensicherung" class="tab tab-active"' in page.content.decode()

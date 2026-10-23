@@ -11,7 +11,7 @@
 
 {% if lexware_missing %}
 <div role="alert" class="alert alert-warning">
-  Lexware Office ist noch nicht verbunden. Trag den API-Schlüssel in den <a href="{% url 'core:settings' %}#lexware">Einstellungen</a> ein, um Kunden zu importieren und Rechnungen zu erstellen.
+  Lexware Office ist noch nicht verbunden. Trag den API-Schlüssel in den <a href="{% url 'core:settings' %}?tab=lexware">Einstellungen</a> ein, um Kunden zu importieren und Rechnungen zu erstellen.
 </div>
 {% endif %}
 
