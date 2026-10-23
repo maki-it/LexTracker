@@ -9,6 +9,7 @@ from django.shortcuts import redirect, render
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from core.models import AppSettings
+from core.paging import apage, wants_rows
 from core.shortcuts import arender
 from customers.forms import CustomerForm
 from customers.lexware import LEXWARE_FIELDS, push_to_lexware
@@ -55,7 +56,7 @@ async def _customer_list_context(request: HttpRequest) -> dict:
     ansicht = "" if view == "aktiv" else view
     app_settings = await AppSettings.aload()
     return {
-        "customers": [c async for c in customers.order_by("is_archived", "name")],
+        "page": await apage(request, customers.order_by("is_archived", "name")),
         "query": query,
         "category": category,
         "view": view,
@@ -86,7 +87,10 @@ async def customer_list(request: HttpRequest) -> HttpResponse:
     # The list asks every 30 seconds with the time of the import it shows. Nothing new: no content, htmx keeps it.
     if "seit" in request.GET and request.GET["seit"] == _synced_marker(await AppSettings.aload()):
         return HttpResponse(status=204)
-    return render(request, "customers/list.html", await _customer_list_context(request))
+    context = await _customer_list_context(request)
+    if wants_rows(request):
+        return render(request, "customers/_rows.html", context)
+    return render(request, "customers/list.html", context)
 
 
 @require_POST

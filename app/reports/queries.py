@@ -5,6 +5,7 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 
 from django.db.models import Q, Sum
+from django.db.models.functions import TruncDate, TruncMonth
 from django.utils import timezone
 
 from billing.calculation import CENT, to_hours
@@ -123,7 +124,25 @@ def entries_in(start: date, end: date, customer_id: int | None = None):
     )
 
 
-def _buckets(entries: list[TimeEntry], rng: DateRange) -> list[Bucket]:
+# Which entries count as billable and as not yet billed, for the sums below.
+BILLABLE = {"is_billable": True, "task__is_billable": True}
+UNBILLED = {**BILLABLE, "invoice__isnull": True}
+
+
+def _sums(entries):
+    """Total, billable and unbilled time of ``entries``, summed in the database."""
+    return entries.annotate(
+        total=booked_time(), billable=booked_time(**BILLABLE), unbilled=booked_time(**UNBILLED)
+    ).order_by()
+
+
+def _add(target: Totals, sums: dict) -> None:
+    target.total += sums["total"] or timedelta()
+    target.billable += sums["billable"] or timedelta()
+    target.unbilled += sums["unbilled"] or timedelta()
+
+
+def _buckets(entries, rng: DateRange) -> list[Bucket]:
     """Hours per day for ranges up to a month, per month otherwise."""
     by_day = rng.days <= 31
     keys: list = []
@@ -134,13 +153,13 @@ def _buckets(entries: list[TimeEntry], rng: DateRange) -> list[Bucket]:
             keys.append(key)
         day += timedelta(days=1)
     totals = {key: [timedelta(), timedelta()] for key in keys}
-    for entry in entries:
-        local = timezone.localtime(entry.started_at).date()
-        key = local if by_day else (local.year, local.month)
+    trunc = (TruncDate if by_day else TruncMonth)("started_at", tzinfo=timezone.get_current_timezone())
+    for row in _sums(entries.annotate(bucket=trunc).values("bucket")):
+        bucket = row["bucket"]
+        key = bucket if by_day else (bucket.year, bucket.month)
         if key in totals:
-            totals[key][0] += entry.duration
-            if entry.is_billable and entry.task.is_billable:
-                totals[key][1] += entry.duration
+            totals[key][0] += row["total"] or timedelta()
+            totals[key][1] += row["billable"] or timedelta()
     longest = max((t for t, _ in totals.values()), default=timedelta()) or timedelta(hours=1)
     buckets = []
     for key, (total, billable) in totals.items():
@@ -176,16 +195,34 @@ def _retainers(today: date, customer_id: int | None) -> list[Retainer]:
 
 def build_report(rng: DateRange, customer_id: int | None = None, today: date | None = None) -> Report:
     today = today or timezone.localdate()
-    entries = list(entries_in(rng.start, rng.end, customer_id))
+    since, until = _bounds(rng.start, rng.end)
+    entries = TimeEntry.objects.filter(ended_at__isnull=False, started_at__gte=since, started_at__lt=until)
+    if customer_id:
+        entries = entries.filter(task__project__customer_id=customer_id)
+
+    # One row per task with its sums and what its hourly rate falls back to, instead of every entry.
+    per_task = list(
+        _sums(
+            entries.values(
+                "task_id",
+                "task__hourly_rate",
+                "task__project_id",
+                "task__project__hourly_rate",
+                "task__project__customer_id",
+                "task__project__customer__default_hourly_rate",
+            )
+        )
+    )
+    project_objects = Project.objects.select_related("customer").in_bulk({r["task__project_id"] for r in per_task})
 
     totals = Totals()
     customers: dict[int, Row] = {}
     projects: dict[int, Row] = {}
-    for entry in entries:
-        totals.add(entry)
-        project = entry.task.project
-        customers.setdefault(project.customer_id, Row(obj=project.customer)).add(entry)
-        projects.setdefault(project.pk, Row(obj=project)).add(entry)
+    for row in per_task:
+        project = project_objects[row["task__project_id"]]
+        _add(totals, row)
+        _add(customers.setdefault(project.customer_id, Row(obj=project.customer)), row)
+        _add(projects.setdefault(project.pk, Row(obj=project)), row)
 
     invoices = Invoice.objects.filter(period_end__gte=rng.start, period_end__lte=rng.end, status__in=BILLED_STATUSES)
     if customer_id:
@@ -211,14 +248,13 @@ def build_report(rng: DateRange, customer_id: int | None = None, today: date | N
     )
     fallback = AppSettings.load().default_hourly_rate
     unbilled_value = Decimal("0")
-    for entry in entries:
-        if not (entry.is_billable and entry.task.is_billable and entry.invoice_id is None):
+    for row in per_task:
+        if not row["unbilled"] or row["task__project__customer_id"] in retainer_customers:
             continue
-        if entry.task.project.customer_id in retainer_customers:
-            continue
-        rate = entry.task.effective_hourly_rate or fallback
+        rates = ("task__hourly_rate", "task__project__hourly_rate", "task__project__customer__default_hourly_rate")
+        rate = next((row[r] for r in rates if row[r] is not None), fallback)
         if rate is not None:
-            unbilled_value += to_hours(entry.duration) * rate
+            unbilled_value += to_hours(row["unbilled"]) * rate
 
     return Report(
         range=rng,
@@ -231,6 +267,6 @@ def build_report(rng: DateRange, customer_id: int | None = None, today: date | N
         open=sum((sums.get(s, Decimal("0")) for s in OPEN_STATUSES), Decimal("0")),
         drafts=sums.get(Invoice.Status.DRAFT, Decimal("0")),
         unbilled_value=unbilled_value.quantize(CENT),
-        unbilled_value_skips_retainers=bool(retainer_customers & {r.obj.pk for r in customers.values()}),
+        unbilled_value_skips_retainers=bool(retainer_customers & set(customers)),
         retainers=_retainers(today, customer_id),
     )

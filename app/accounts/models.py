@@ -27,11 +27,23 @@ class User(AbstractUser):
         CLOCK = "clock", "Stunden und Minuten (2:45)"
         DECIMAL = "decimal", "Dezimalstunden (2,75)"
 
+    class PageSize(models.IntegerChoices):
+        SMALL = 25, "25"
+        MEDIUM = 50, "50"
+        LARGE = 100, "100"
+        XLARGE = 200, "200"
+
     role = models.CharField("Rolle", max_length=20, choices=Role, default=Role.ADMIN)
     theme = models.CharField("Darstellung", max_length=10, choices=Theme, default=Theme.SYSTEM)
     date_format = models.CharField("Datumsformat", max_length=10, choices=DateFormat, default=DateFormat.NUMERIC)
     duration_format = models.CharField(
         "Zeitdauern anzeigen als", max_length=10, choices=DurationFormat, default=DurationFormat.CLOCK
+    )
+    list_page_size = models.PositiveSmallIntegerField(
+        "Einträge pro Seite",
+        choices=PageSize,
+        default=PageSize.MEDIUM,
+        help_text="Wie viele Kunden oder Projekte eine Liste auf einmal lädt. Beim Scrollen kommen weitere dazu.",
     )
     # Only set for customer logins: the customer whose data this user may see.
     customer = models.ForeignKey(
@@ -117,3 +129,19 @@ class ApiToken(models.Model):
         key = cls.PREFIX + secrets.token_urlsafe(32)
         token = cls.objects.create(user=user, name=name, key_hash=cls.hash(key), hint=key[:10])
         return token, key
+
+
+class LoginFailure(models.Model):
+    """A wrong password or code, for the login rate limit (see accounts.ratelimit)."""
+
+    ip_address = models.GenericIPAddressField("IP-Adresse")
+    username = models.CharField("Benutzername", max_length=150, blank=True)
+    at = models.DateTimeField("Zeitpunkt", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Fehlgeschlagene Anmeldung"
+        verbose_name_plural = "Fehlgeschlagene Anmeldungen"
+        indexes = [models.Index(fields=["ip_address", "at"])]
+
+    def __str__(self) -> str:
+        return f"{self.ip_address} {self.at:%d.%m.%Y %H:%M}"

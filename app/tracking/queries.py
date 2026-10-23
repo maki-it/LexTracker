@@ -1,7 +1,19 @@
-from django.db.models import DurationField, ExpressionWrapper, F, Q, Sum
+from django.db.models import DurationField, F, Func, Q, Sum
 
 from customers.models import Customer
 from projects.models import Project
+
+
+class Duration(Func):
+    """``end - start`` in SQLite itself, to the millisecond.
+
+    Django subtracts datetimes on SQLite with a Python function called for every row, which made
+    sums over many entries slow (see loadtest/). The result is in microseconds, as Django stores durations.
+    """
+
+    template = "(CAST(ROUND((julianday(%(expressions)s)) * 86400000) AS INTEGER) * 1000)"
+    arg_joiner = ") - julianday("
+    output_field = DurationField()
 
 
 def booked_time(prefix: str = "", **filters) -> Sum:
@@ -11,7 +23,7 @@ def booked_time(prefix: str = "", **filters) -> Sum:
     Extra ``filters`` are applied to the entries, without the prefix.
     """
     return Sum(
-        ExpressionWrapper(F(f"{prefix}ended_at") - F(f"{prefix}started_at"), output_field=DurationField()),
+        Duration(F(f"{prefix}ended_at"), F(f"{prefix}started_at")),
         filter=Q(**{f"{prefix}ended_at__isnull": False}, **{f"{prefix}{k}": v for k, v in filters.items()}),
     )
 

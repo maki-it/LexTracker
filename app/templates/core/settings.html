@@ -16,6 +16,14 @@
     </p>
   </section>
 
+  <section class="card flex flex-col gap-4">
+    <h2>Anmeldung</h2>
+    <div class="grid gap-3 sm:grid-cols-2">
+      {% include "core/_field.html" with field=form.login_max_attempts %}
+      {% include "core/_field.html" with field=form.login_lockout_minutes %}
+    </div>
+  </section>
+
   <section class="card flex flex-col gap-5">
     <div>
       <h2>Abgleich mit Lexware</h2>

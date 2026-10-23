@@ -38,6 +38,7 @@ def test_preferences_change_theme_and_date_format(logged_in, user):
             "theme": "dark",
             "date_format": "Y-m-d",
             "duration_format": "decimal",
+            "list_page_size": "25",
         },
     )
     assert response.status_code == 302
@@ -46,6 +47,7 @@ def test_preferences_change_theme_and_date_format(logged_in, user):
     assert 'data-theme="dark"' in page
     user.refresh_from_db()
     assert user.date_format == "Y-m-d"
+    assert user.list_page_size == 25
 
 
 def test_password_change_keeps_session(logged_in, user):

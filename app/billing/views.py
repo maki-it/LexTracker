@@ -6,7 +6,8 @@ from asgiref.sync import sync_to_async
 from django.conf import settings
 from django.contrib import messages
 from django.db.models import Count, Q
-from django.http import Http404, HttpRequest, HttpResponse
+from django.db.models.functions import Coalesce, TruncDate
+from django.http import Http404, HttpRequest, HttpResponse, QueryDict
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -19,6 +20,7 @@ from billing.periods import Period, period_containing, recent_periods
 from billing.services import create_invoice
 from billing.sync import sync_and_record
 from core.models import AppSettings
+from core.paging import apage, wants_rows
 from core.shortcuts import arender
 from customers.models import Customer
 from lexware.client import LexwareError, client_from_settings
@@ -32,8 +34,6 @@ async def _get_customer(pk: int) -> Customer:
     except Customer.DoesNotExist as exc:
         raise Http404 from exc
 
-
-INVOICES_PER_PAGE = 50
 
 # The status filters on the invoice list. "Offen" includes payments that are on their way.
 STATUS_FILTERS = {
@@ -88,26 +88,33 @@ async def invoice_list(request: HttpRequest) -> HttpResponse:
     status = request.GET.get("status", "")
     if status not in STATUS_FILTERS:
         status = ""
-    try:
-        page = max(1, int(request.GET.get("seite", 1)))
-    except ValueError:
-        page = 1
-    invoices = Invoice.objects.select_related("customer").annotate(entry_count=Count("time_entries"))
+    customer_id = request.GET.get("kunde", "")
+    customer_id = int(customer_id) if customer_id.isdigit() else None
+    # Newest first: by invoice date (the creation date until Lexware has one), then by number.
+    invoices = (
+        Invoice.objects.select_related("customer")
+        .annotate(entry_count=Count("time_entries"), date=Coalesce("voucher_date", TruncDate("created_at")))
+        .order_by("-date", "-voucher_number", "-pk")
+    )
     if status:
         invoices = invoices.filter(status__in=STATUS_FILTERS[status][1])
+    if customer_id:
+        invoices = invoices.filter(customer_id=customer_id)
     if query:
         invoices = invoices.filter(Q(customer__name__icontains=query) | Q(voucher_number__icontains=query))
-    offset = (page - 1) * INVOICES_PER_PAGE
-    # One more than fits on the page tells whether there is a next page.
-    rows = [i async for i in invoices[offset : offset + INVOICES_PER_PAGE + 1]]
+    page = await apage(request, invoices)
+    if wants_rows(request):
+        context = {"page": page, "invoices": page.items, "show_customer": True, "query": query, "status": status}
+        return render(request, "billing/_invoice_rows.html", context)
     app_settings = await AppSettings.aload()
     counts = await _invoice_counts()
     context = {
-        "invoices": rows[:INVOICES_PER_PAGE],
-        "has_next": len(rows) > INVOICES_PER_PAGE,
         "page": page,
+        "invoices": page.items,
         "query": query,
         "status": status,
+        "customer_id": customer_id,
+        "customers": [c async for c in Customer.objects.filter(invoices__isnull=False).distinct().order_by("name")],
         # Only filters that would show something, plus the one in use.
         "filters": [
             (key, label, counts[key]) for key, (label, _) in STATUS_FILTERS.items() if counts[key] or key == status
@@ -142,10 +149,12 @@ async def invoice_release(request: HttpRequest, invoice_pk: int) -> HttpResponse
 
 
 def _invoice_list_url(request: HttpRequest) -> str:
-    # Back to the list with the filter the form was sent from.
-    query = request.POST.get("return_query", "")
+    # Back to the list with the filter the form was sent from, from its first page.
+    params = QueryDict(request.POST.get("return_query", ""), mutable=True)
+    params.pop("seite", None)
+    query = params.urlencode()
     url = reverse("billing:invoices")
-    return f"{url}?{query}" if query and "//" not in query else url
+    return f"{url}?{query}" if query else url
 
 
 MAX_PERIOD_OPTIONS = 8
