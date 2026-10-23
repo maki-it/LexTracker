@@ -322,6 +322,11 @@
     @apply max-w-none border-0 bg-transparent p-0;
   }
 
+  /* The dialog scrolls its content, so suggestions of the task search push the form down instead of overlapping it. */
+  .dialog-content [data-task-search] [role="listbox"] {
+    @apply static! shadow-none!;
+  }
+
   .dialog-content .card ~ .card {
     @apply rounded-none border-t pt-5;
   }

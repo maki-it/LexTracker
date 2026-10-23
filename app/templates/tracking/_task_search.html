@@ -1,0 +1,13 @@
+{# Search field for a task: suggestions come from tracking:task_search, the picked task goes into the hidden field `name`. #}
+{# Optional: `task` (preselected), `id`, `label` (for a field without a visible label), `autofocus`. See app.js "Task search". #}
+<div class="relative w-full" data-task-search>
+  <input type="search" name="q" class="input" role="combobox" aria-autocomplete="list" aria-expanded="false" autocomplete="off"
+         {% if id %}id="{{ id }}"{% endif %} {% if label %}aria-label="{{ label }}"{% endif %} {% if autofocus %}autofocus{% endif %}
+         placeholder="Aufgabe, Projekt oder Kunde suchen"
+         value="{% if task %}{{ task.project.customer.name }} · {{ task.project.name }} · {{ task.name }}{% endif %}"
+         hx-get="{% url 'tracking:task_search' %}" hx-trigger="focus, input changed delay:200ms" hx-sync="this:replace"
+         hx-target="next [role=listbox]" hx-swap="innerHTML">
+  <input type="hidden" name="{{ name }}" value="{{ task.pk|default:'' }}">
+  <div role="listbox" aria-label="Vorschläge" hidden
+       class="absolute inset-x-0 top-full z-20 mt-1 flex max-h-80 flex-col overflow-y-auto rounded-lg border border-line bg-surface p-1 shadow-lg"></div>
+</div>
