@@ -204,6 +204,51 @@ def test_admin_cannot_lock_themself_out(client, user):
     assert user.is_admin and user.is_active
 
 
+def test_admin_deletes_a_user(client, user, employee):
+    ApiToken.objects.create(user=employee, name="Agent", key_hash="x" * 64, hint="lxt_test")
+    client.force_login(user)
+    assert "Benutzer löschen" in client.get(reverse("users:edit", args=[employee.pk])).text
+
+    response = client.post(reverse("users:delete", args=[employee.pk]))
+    assert response.url == reverse("users:list")
+    assert not User.objects.filter(pk=employee.pk).exists()
+    assert not ApiToken.objects.exists()
+    assert "mia gelöscht" in client.get(response.url).text
+
+
+def test_users_with_booked_time_cannot_be_deleted(client, user, employee, task):
+    entry(employee, task)
+    client.force_login(user)
+    form = client.get(reverse("users:edit", args=[employee.pk])).text
+    assert "Zeiten gebucht" in form and reverse("users:delete", args=[employee.pk]) not in form
+
+    client.post(reverse("users:delete", args=[employee.pk]))
+    assert User.objects.filter(pk=employee.pk).exists()
+
+
+def test_admin_cannot_delete_themself(client, user):
+    client.force_login(user)
+    assert "Benutzer löschen" not in client.get(reverse("users:edit", args=[user.pk])).text
+
+    response = client.post(reverse("users:delete", args=[user.pk]))
+    assert response.url == reverse("users:list")
+    assert User.objects.filter(pk=user.pk).exists()
+    assert "nicht selbst löschen" in client.get(response.url).text
+
+
+def test_only_admins_delete_users(client, user, employee):
+    client.force_login(employee)
+    assert client.post(reverse("users:delete", args=[user.pk])).status_code == 403
+    assert User.objects.filter(pk=user.pk).exists()
+
+
+def test_booking_lists_can_select_all(client, user, employee, task, other_task):
+    client.force_login(user)
+    form = client.get(reverse("users:edit", args=[employee.pk])).text
+    # Two customers and two projects: each list gets its own "select all" box.
+    assert form.count("data-select-all") == 2
+
+
 def test_health_check_stays_open_for_everyone(client, customer_user):
     client.force_login(customer_user)
     assert client.get(reverse("core:health")).status_code == 200

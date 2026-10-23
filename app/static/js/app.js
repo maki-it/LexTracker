@@ -74,6 +74,31 @@ document.addEventListener("change", (event) => {
   if (event.target.form) syncShownFor(event.target.form);
 });
 
+// A list of checkboxes with data-checkbox-group can have a checkbox with data-select-all that ticks or unticks
+// all others at once. It is half ticked while only some are, and has no name, so it is not sent.
+function syncSelectAll(group) {
+  const all = group.querySelector("input[data-select-all]");
+  if (!all) return;
+  const boxes = [...group.querySelectorAll("input[type=checkbox]:not([data-select-all])")];
+  const ticked = boxes.filter((box) => box.checked).length;
+  all.checked = ticked > 0 && ticked === boxes.length;
+  all.indeterminate = ticked > 0 && ticked < boxes.length;
+}
+document.addEventListener("change", (event) => {
+  const group = event.target.closest?.("[data-checkbox-group]");
+  if (!group) return;
+  if (event.target.matches("[data-select-all]")) {
+    for (const box of group.querySelectorAll("input[type=checkbox]:not([data-select-all])")) {
+      box.checked = event.target.checked;
+    }
+  }
+  syncSelectAll(group);
+});
+document.addEventListener("htmx:load", (event) => {
+  event.detail.elt.querySelectorAll?.("[data-checkbox-group]").forEach(syncSelectAll);
+});
+document.addEventListener("DOMContentLoaded", () => document.querySelectorAll("[data-checkbox-group]").forEach(syncSelectAll));
+
 // Menu button of the top bar on phones: shows or hides the navigation.
 document.addEventListener("click", (event) => {
   const toggle = event.target.closest("[data-nav-toggle]");
