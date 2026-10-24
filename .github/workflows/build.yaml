@@ -6,13 +6,13 @@ on:
   workflow_call:
     inputs:
       tag:
-        description: Release tag to build, e.g. v0.2.0
+        description: Release tag to build, e.g. lextracker-v0.2.0
         required: true
         type: string
   workflow_dispatch:
     inputs:
       tag:
-        description: Release tag to build, e.g. v0.2.0
+        description: Release tag to build, e.g. lextracker-v0.2.0
         required: true
         type: string
 
@@ -45,17 +45,28 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
+      # release-please names the tag after the package, e.g. lextracker-v0.2.0. The semver
+      # patterns below only understand the part from the "v" on.
+      - name: Get the version from the tag
+        id: version
+        run: |
+          version=$(echo "$TAG" | sed -E 's/^[A-Za-z0-9_.]*-(v[0-9])/\1/')
+          echo "$version" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+' || { echo "No version in tag $TAG" >&2; exit 1; }
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+        env:
+          TAG: ${{ inputs.tag }}
+
       - name: Extract metadata for the Docker image
         id: meta
         uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository }}
-          # The event is not a tag push, so the tag is passed in by hand and `latest` is set explicitly.
+          # The event is not a tag push, so the version is passed in by hand and `latest` is set explicitly.
           flavor: latest=false
           tags: |
-            type=semver,pattern={{version}},value=${{ inputs.tag }}
-            type=semver,pattern={{major}}.{{minor}},value=${{ inputs.tag }}
-            type=semver,pattern={{major}},value=${{ inputs.tag }},enable=${{ !startsWith(inputs.tag, 'v0.') }}
+            type=semver,pattern={{version}},value=${{ steps.version.outputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ steps.version.outputs.version }}
+            type=semver,pattern={{major}},value=${{ steps.version.outputs.version }},enable=${{ !startsWith(steps.version.outputs.version, 'v0.') }}
             type=raw,value=latest
 
       - name: Build and push Docker image
