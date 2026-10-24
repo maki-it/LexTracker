@@ -23,12 +23,17 @@ jobs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
+      # A pull request opened with GITHUB_TOKEN does not trigger CI, one opened by a GitHub App does.
+      - id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
       - id: release
         uses: googleapis/release-please-action@v4
         with:
-          # A pull request opened with GITHUB_TOKEN does not trigger CI. Set the secret
-          # RELEASE_PLEASE_TOKEN (a PAT or app token) if the release pull request needs its checks.
-          token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          token: ${{ steps.app-token.outputs.token }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
