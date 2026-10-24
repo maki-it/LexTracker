@@ -5,6 +5,8 @@ from django_otp.plugins.otp_static.models import StaticToken
 from django_otp.plugins.otp_totp.models import TOTPDevice
 
 from accounts import mfa
+from accounts.models import User
+from customers.models import Customer
 
 pytestmark = pytest.mark.django_db
 
@@ -130,3 +132,67 @@ def test_admin_login_goes_through_app_login(client, user):
     response = client.get("/admin/login/?next=/admin/")
     assert response.status_code == 302
     assert response.url == f"{reverse('accounts:login')}?next=/admin/"
+
+
+PREFERENCES = {
+    "first_name": "Kim",
+    "email": "",
+    "theme": "system",
+    "date_format": "d.m.Y",
+    "duration_format": "clock",
+    "list_page_size": "50",
+    "message_level": "20",
+    "message_email_level": "40",
+}
+
+
+def test_account_page_shows_one_tab_and_keeps_it_after_saving(logged_in):
+    html = logged_in.get(reverse("account:settings"), {"tab": "sicherheit"}).content.decode()
+    assert 'href="/konto/?tab=sicherheit" class="tab tab-active"' in html
+    # The fields of the other tabs stay in the form (so one save posts everything) and are only hidden.
+    assert 'id="id_theme"' in html and "<h2>Passwort</h2>" in html
+    assert 'id="api-tokens" hidden>' in html
+
+    # An unknown tab falls back to the first one.
+    assert (
+        'href="/konto/?tab=profil" class="tab tab-active"'
+        in logged_in.get(reverse("account:settings"), {"tab": "x"}).text
+    )
+
+    response = logged_in.post(reverse("account:settings"), PREFERENCES | {"tab": "darstellung"})
+    assert response["Location"] == "/konto/?tab=darstellung"
+
+
+def test_account_page_opens_the_tab_with_the_mistake(logged_in):
+    page = logged_in.post(reverse("account:settings"), PREFERENCES | {"tab": "profil", "list_page_size": "7"})
+    assert page.status_code == 200
+    assert 'href="/konto/?tab=darstellung" class="tab tab-active"' in page.content.decode()
+
+
+def test_account_tabs_link_to_the_account_page_itself(logged_in):
+    # Inside the dialog the address bar shows the page behind it, so a bare "?tab=" would leave the dialog.
+    response = logged_in.get(reverse("account:settings"), headers={"HX-Request": "true", "HX-Target": "dialog-body"})
+    assert 'href="/konto/?tab=agenten"' in response.text
+
+
+def test_customers_have_no_notification_or_agent_tab(client):
+    customer = Customer.objects.create(name="ACME GmbH")
+    client.force_login(
+        User.objects.create_user("acme", password="geheim-123", role=User.Role.CUSTOMER, customer=customer)
+    )
+    html = client.get(reverse("account:settings"), {"tab": "agenten"}).content.decode()
+    assert "?tab=benachrichtigungen" not in html and "?tab=agenten" not in html
+    assert 'href="/konto/?tab=profil" class="tab tab-active"' in html
+
+
+def test_password_change_and_token_pages_return_to_their_tab(logged_in):
+    data = {
+        "old_password": "geheim-123",
+        "new_password1": "ein-neues-Passwort-42",
+        "new_password2": "ein-neues-Passwort-42",
+    }
+    assert logged_in.post(reverse("account:password"), data)["Location"] == "/konto/?tab=sicherheit"
+    assert (
+        'href="/konto/?tab=agenten" class="tab tab-active"'
+        in logged_in.post(reverse("account:token_create"), {"name": "x"}).text
+    )
