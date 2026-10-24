@@ -13,7 +13,7 @@ from asgiref.sync import sync_to_async
 from django.utils import timezone
 
 from billing import sync as invoice_sync
-from core import backup
+from core import backup, jobs
 from core.models import AppSettings
 from customers import sync as customer_sync
 from inbox import events as inbox_events
@@ -113,7 +113,9 @@ async def run_due_jobs(now: datetime) -> list[str]:
         ran.append(job.name)
         # One job failing must not stop the others.
         try:
-            result = await job.run()
+            async with jobs.tracked(job.key) as tracking:
+                result = await job.run()
+                tracking.result = result.summary
         except LexwareError as exc:
             logger.warning("Automatic %s failed: %s", job.name, exc)
             await inbox_events.job_failed(job.key, job.label, exc)
@@ -129,7 +131,11 @@ async def send_mail(stop: asyncio.Event) -> None:
     """Send the queued e-mails, every few seconds."""
     while not stop.is_set():
         try:
-            if sent := await outbox.send_due(on_failed=inbox_events.mail_failed):
+            async with jobs.tracked("mail-queue") as tracking:
+                sent = await outbox.send_due(on_failed=inbox_events.mail_failed)
+                tracking.result = f"{sent} gesendet"
+                tracking.idle = not sent
+            if sent:
                 logger.info("Sent %s e-mail%s", sent, "s" if sent > 1 else "")
         except Exception:
             logger.exception("Sending e-mails failed")
@@ -141,9 +147,12 @@ async def run(stop: asyncio.Event) -> None:
     logger.info("Scheduler started")
     mailer = asyncio.create_task(send_mail(stop))
     last_prune = None
+    first = True
     while not stop.is_set():
         HEARTBEAT.touch()
         now = timezone.now()
+        await jobs.beat(now, started=first)
+        first = False
         try:
             await run_due_jobs(now)
         except Exception:
@@ -151,27 +160,39 @@ async def run(stop: asyncio.Event) -> None:
             logger.exception("Scheduled job failed")
         try:
             if backup.is_due(now, await AppSettings.aload()):
-                path = await sync_to_async(backup.backup_and_record)(now)
+                async with jobs.tracked("backup") as tracking:
+                    path = await sync_to_async(backup.backup_and_record)(now)
+                    tracking.result = path.name
                 logger.info("Database backup written to %s", path)
                 await inbox_events.backup_done(path.name)
         except Exception as exc:
             logger.exception("Database backup failed")
             await inbox_events.backup_failed(exc)
         try:
-            for name, count in (await mail_jobs.run_due(now)).items():
-                if count:
-                    logger.info("Queued %s %s e-mail%s", count, name, "s" if count > 1 else "")
+            async with jobs.tracked("mail-reports") as tracking:
+                queued = {name: count for name, count in (await mail_jobs.run_due(now)).items() if count}
+                tracking.result = ", ".join(f"{count} {name}" for name, count in queued.items())
+                tracking.idle = not queued
+            for name, count in queued.items():
+                logger.info("Queued %s %s e-mail%s", count, name, "s" if count > 1 else "")
         except Exception:
             logger.exception("Queueing reports and reminders failed")
         try:
-            for name, count in (await inbox_jobs.run_due(now)).items():
-                if count:
-                    logger.info("Created %s %s message%s", count, name, "s" if count > 1 else "")
+            async with jobs.tracked("timer-messages") as tracking:
+                created = {name: count for name, count in (await inbox_jobs.run_due(now)).items() if count}
+                tracking.result = ", ".join(f"{count} {name}" for name, count in created.items())
+                tracking.idle = not created
+            for name, count in created.items():
+                logger.info("Created %s %s message%s", count, name, "s" if count > 1 else "")
+        except Exception:
+            logger.exception("Creating messages failed")
+        try:
             if last_prune is None or now - last_prune >= PRUNE_INTERVAL:
-                await inbox.prune(now)
+                async with jobs.tracked("prune") as tracking:
+                    tracking.result = f"{await inbox.prune(now)} gelöscht"
                 last_prune = now
         except Exception:
-            logger.exception("Creating or deleting messages failed")
+            logger.exception("Deleting messages failed")
         with suppress(TimeoutError):
             await asyncio.wait_for(stop.wait(), CHECK_INTERVAL)
     await mailer

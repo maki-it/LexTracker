@@ -8,6 +8,7 @@ urlpatterns = [
     path("", views.dashboard, name="dashboard"),
     path("health/", views.health, name="health"),
     path("einstellungen/", views.app_settings, name="settings"),
+    path("einstellungen/aufgaben/", views.job_list, name="jobs"),
     path("einstellungen/sicherungen/", views.backup_list, name="backups"),
     path("einstellungen/sicherungen/neu/", views.backup_create, name="backup_create"),
     path("einstellungen/sicherungen/hochladen/", views.backup_upload, name="backup_upload"),
