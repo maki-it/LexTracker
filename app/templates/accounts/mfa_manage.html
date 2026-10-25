@@ -2,7 +2,7 @@
 {% block title %}Zwei-Faktor-Anmeldung · LexTracker{% endblock %}
 {% block content %}
 <div>
-  <p class="breadcrumb"><a href="{% url 'account:settings' %}?tab=sicherheit">Konto</a></p>
+  <p class="breadcrumb"><a href="{% url 'account:settings' %}?tab=security">Konto</a></p>
   <h1>Zwei-Faktor-Anmeldung</h1>
 </div>
 <form method="post" action="{{ request.get_full_path }}" class="card flex max-w-2xl flex-col gap-4">
@@ -12,7 +12,7 @@
   <div class="flex flex-wrap gap-2 border-t border-line pt-4">
     <button type="submit" name="action" value="codes" class="btn btn-primary">Neue Wiederherstellungscodes</button>
     <button type="submit" name="action" value="disable" class="btn">Ausschalten</button>
-    <a href="{% url 'account:settings' %}?tab=sicherheit" class="btn btn-ghost">Abbrechen</a>
+    <a href="{% url 'account:settings' %}?tab=security" class="btn btn-ghost">Abbrechen</a>
   </div>
 </form>
 {% endblock %}

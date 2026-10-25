@@ -9,7 +9,7 @@
       <input type="search" name="q" value="{{ query }}" placeholder="Kunde oder Rechnungsnummer suchen" aria-label="Rechnungen suchen" class="input max-w-sm"
              hx-get="{% url 'billing:invoices' %}" hx-trigger="input changed delay:250ms, search" hx-include="closest form"
              hx-target="#invoice-table" hx-select="#invoice-table" hx-swap="outerHTML" hx-push-url="true">
-      <select name="kunde" class="input max-w-xs" aria-label="Nach Kunde filtern"
+      <select name="customer" class="input max-w-xs" aria-label="Nach Kunde filtern"
               hx-get="{% url 'billing:invoices' %}" hx-trigger="change" hx-include="closest form"
               hx-target="#invoice-table" hx-select="#invoice-table" hx-swap="outerHTML" hx-push-url="true">
         <option value="">Alle Kunden</option>

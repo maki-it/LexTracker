@@ -6,11 +6,11 @@ app_name = "tracking"
 
 urlpatterns = [
     path("", views.entry_list, name="list"),
-    path("neu/", views.entry_form, name="create"),
+    path("new/", views.entry_form, name="create"),
     path("<uuid:pk>/", views.entry_form, name="edit"),
-    path("<uuid:pk>/loeschen/", views.entry_delete, name="delete"),
+    path("<uuid:pk>/delete/", views.entry_delete, name="delete"),
     path("timer/", views.timer, name="timer"),
     path("timer/start/", views.timer_start, name="timer_start"),
     path("timer/stop/", views.timer_stop, name="timer_stop"),
-    path("aufgaben/", views.task_search, name="task_search"),
+    path("search/", views.task_search, name="task_search"),
 ]

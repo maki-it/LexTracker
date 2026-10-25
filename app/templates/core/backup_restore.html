@@ -2,7 +2,7 @@
 {% block title %}Sicherung wiederherstellen · LexTracker{% endblock %}
 {% block content %}
 <div>
-  <p class="breadcrumb"><a href="{% url 'core:settings' %}?tab=datensicherung">Einstellungen</a> / <a href="{% url 'core:backups' %}">Sicherungen</a></p>
+  <p class="breadcrumb"><a href="{% url 'core:settings' %}?tab=backup">Einstellungen</a> / <a href="{% url 'core:backups' %}">Sicherungen</a></p>
   <h1>Sicherung wiederherstellen</h1>
 </div>
 <form method="post" action="{% url 'core:backup_restore' name %}" class="card flex max-w-2xl flex-col gap-4">
@@ -17,7 +17,7 @@
     In Lexware Office ändert sich nichts. Gab es dein Konto damals noch nicht oder hatte es ein anderes Passwort, meldest du dich danach neu an.
   </p>
   <label class="flex items-center gap-2 text-sm font-medium">
-    <input type="checkbox" name="bestaetigt" value="1" class="size-4 accent-primary" required>
+    <input type="checkbox" name="confirmed" value="1" class="size-4 accent-primary" required>
     Ich möchte den aktuellen Stand ersetzen.
   </label>
   <div class="flex gap-2 border-t border-line pt-4">

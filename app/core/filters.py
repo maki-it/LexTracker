@@ -1,6 +1,6 @@
 """Status filters of a list that can be combined.
 
-The selection lives in the URL as a repeated parameter (``?status=offen&status=ueberfaellig``) and every filter
+The selection lives in the URL as a repeated parameter (``?status=open&status=overdue``) and every filter
 pill is a plain link that adds or removes its own key, so it works without JavaScript. The selected filters are
 combined with OR.
 """
@@ -29,7 +29,7 @@ def selected_filters(request: HttpRequest, keys, param: str = "status") -> list[
 def query_with(request: HttpRequest, values: list[str], param: str = "status") -> str:
     """The current query string with the filter set to ``values``, from the first page."""
     params = request.GET.copy()
-    params.pop("seite", None)
+    params.pop("page", None)
     params.setlist(param, values)
     return params.urlencode()
 

@@ -174,8 +174,8 @@ def test_invoice_number_links_to_the_pdf_and_replaces_online_view(client, custom
 
     text = client.get(reverse("portal:invoices")).text
     pdf = reverse("portal:invoice_pdf", args=[inv.voucher_number])
-    assert pdf == "/portal/rechnungen/RE-2026-07-00403/pdf/"
-    assert f'href="{pdf}?ansehen=1"' in text and f'href="{pdf}"' in text
+    assert pdf == "/portal/invoices/RE-2026-07-00403/pdf/"
+    assert f'href="{pdf}?inline=1"' in text and f'href="{pdf}"' in text
     assert "Online ansehen" not in text
 
 
@@ -239,7 +239,7 @@ def test_invoice_without_a_number_has_no_links(client, customer_user, task):
 
     text = client.get(reverse("portal:invoices")).text
     table = text.split("<tbody>", 1)[1]
-    assert "/pdf/" not in table and "/zeiten/" not in table
+    assert "/pdf/" not in table and "/time/" not in table
     assert "abgerechnet</span>" in client.get(reverse("portal:entries")).text
 
 
@@ -248,8 +248,8 @@ def test_old_numeric_id_urls_are_not_found(client, customer_user, task):
     client.force_login(customer_user)
 
     # Links from before the number was used in the URL carried the counter, which no longer exists.
-    assert client.get("/portal/rechnungen/12/pdf/").status_code == 404
-    assert client.get("/portal/rechnungen/12/zeiten/").status_code == 404
+    assert client.get("/portal/invoices/12/pdf/").status_code == 404
+    assert client.get("/portal/invoices/12/time/").status_code == 404
 
 
 def test_a_number_that_looks_like_an_id_is_still_a_number(client, customer_user, task):

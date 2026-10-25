@@ -84,7 +84,7 @@ def test_link_must_be_a_path_in_the_app(admin):
     for url in ("https://evil.example/", "//evil.example/"):
         with pytest.raises(ValueError):
             notify(Level.INFO, "x", "Hallo", url=url)
-    notify(Level.INFO, "x", "Hallo", url="/einstellungen/")
+    notify(Level.INFO, "x", "Hallo", url="/settings/")
 
 
 def test_same_unread_message_is_counted_not_repeated(admin):
@@ -297,10 +297,10 @@ def test_panel_in_dialog_has_no_sidebar(logged_in, admin):
 
 
 def test_open_marks_read_and_goes_to_the_target(logged_in, admin):
-    notify(Level.WARNING, "x", "Warnung", url="/einstellungen/")
+    notify(Level.WARNING, "x", "Warnung", url="/settings/")
     message = Message.objects.get()
     response = logged_in.get(reverse("inbox:open", args=[message.pk]))
-    assert response.status_code == 302 and response["Location"] == "/einstellungen/"
+    assert response.status_code == 302 and response["Location"] == "/settings/"
     message.refresh_from_db()
     assert message.read_at
 
@@ -337,8 +337,8 @@ def test_redirect_after_action_stays_in_the_inbox(logged_in, admin):
     pk = Message.objects.get().pk
     response = logged_in.post(reverse("inbox:read", args=[pk]), {"next": "https://evil.example/"})
     assert response["Location"] == reverse("inbox:all")
-    response = logged_in.post(reverse("inbox:read", args=[pk]), {"next": reverse("inbox:all") + "?filter=kritisch"})
-    assert response["Location"] == reverse("inbox:all") + "?filter=kritisch"
+    response = logged_in.post(reverse("inbox:read", args=[pk]), {"next": reverse("inbox:all") + "?filter=critical"})
+    assert response["Location"] == reverse("inbox:all") + "?filter=critical"
 
 
 def test_nobody_touches_the_messages_of_others(client, admin, employee):
@@ -357,9 +357,9 @@ def test_all_page_filters_by_level(logged_in, admin):
     Message.objects.filter(title="Eine Info").update(read_at=timezone.now())
     everything = logged_in.get(reverse("inbox:all")).text
     assert "Ein Kritischer" in everything and "Eine Info" in everything
-    critical = logged_in.get(reverse("inbox:all"), {"filter": "kritisch"}).text
+    critical = logged_in.get(reverse("inbox:all"), {"filter": "critical"}).text
     assert "Ein Kritischer" in critical and "Eine Info" not in critical
-    unread = logged_in.get(reverse("inbox:all"), {"filter": "ungelesen"}).text
+    unread = logged_in.get(reverse("inbox:all"), {"filter": "unread"}).text
     assert "Ein Kritischer" in unread and "Eine Info" not in unread
 
 
@@ -377,7 +377,7 @@ def test_all_page_loads_more_while_scrolling(logged_in, admin):
         notify(Level.INFO, "x", f"Nachricht {n:02}")
     first = logged_in.get(reverse("inbox:all")).text
     assert "Weitere laden" in first
-    more = logged_in.get(reverse("inbox:all"), {"seite": 2}, headers={"HX-Request": "true"}).text
+    more = logged_in.get(reverse("inbox:all"), {"page": 2}, headers={"HX-Request": "true"}).text
     assert "Weitere laden" not in more
     assert more.count("<li") == 5
 
@@ -431,7 +431,7 @@ def test_failed_job_warns_and_turns_critical_when_it_keeps_failing(admin):
     [message] = stored(admin)
     assert (message.level, message.count, message.title) == (Level.CRITICAL, 3, "Kundenimport fehlgeschlagen")
     assert message.body == "Zeitüberschreitung"
-    assert message.url == "/einstellungen/?tab=lexware"
+    assert message.url == "/settings/?tab=lexware"
 
 
 def test_first_failure_is_a_warning(admin):

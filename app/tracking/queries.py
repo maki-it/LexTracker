@@ -30,12 +30,12 @@ def booked_time(prefix: str = "", **filters) -> Sum:
 
 
 async def entry_filter(request) -> dict:
-    """The customer or project filter of a time entry list (``?kunde=`` or ``?projekt=``).
+    """The customer or project filter of a time entry list (``?customer=`` or ``?project=``).
 
     Returns the queryset filters plus what the template needs to show the active filter.
     """
-    project_id = parse_uuid(request.GET.get("projekt", ""))
-    customer_id = parse_uuid(request.GET.get("kunde", ""))
+    project_id = parse_uuid(request.GET.get("project", ""))
+    customer_id = parse_uuid(request.GET.get("customer", ""))
     if project_id:
         project = await Project.objects.select_related("customer").filter(pk=project_id).afirst()
         if project:

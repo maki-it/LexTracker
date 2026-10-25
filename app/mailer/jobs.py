@@ -130,7 +130,7 @@ async def queue_weekly_reports(slot: datetime) -> int:
         if not base_url:
             url = ""
         elif user.is_admin:
-            query = urlencode({"von": rng.start.isoformat(), "bis": rng.end.isoformat()})
+            query = urlencode({"from": rng.start.isoformat(), "to": rng.end.isoformat()})
             url = f"{base_url}{reverse('reports:overview')}?{query}"
         else:
             url = f"{base_url}{reverse('tracking:list')}"

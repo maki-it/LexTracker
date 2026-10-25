@@ -52,14 +52,14 @@ def setup(user, task):
 def test_ranges():
     today = date(2026, 10, 22)
     keys = {r.key: r for r in presets(today)}
-    assert (keys["vormonat"].start, keys["vormonat"].end) == (date(2026, 9, 1), date(2026, 9, 30))
-    assert keys["vorquartal"].start == date(2026, 7, 1)
-    assert keys["vorjahr"].end == date(2025, 12, 31)
-    assert selected_range({}, today).key == "monat"
-    assert selected_range({"zeitraum": "jahr"}, today).start == date(2026, 1, 1)
-    custom = selected_range({"von": "2026-10-05", "bis": "2026-10-11"}, today)
+    assert (keys["last-month"].start, keys["last-month"].end) == (date(2026, 9, 1), date(2026, 9, 30))
+    assert keys["last-quarter"].start == date(2026, 7, 1)
+    assert keys["last-year"].end == date(2025, 12, 31)
+    assert selected_range({}, today).key == "month"
+    assert selected_range({"range": "year"}, today).start == date(2026, 1, 1)
+    custom = selected_range({"from": "2026-10-05", "to": "2026-10-11"}, today)
     assert (custom.start, custom.end, custom.days) == (date(2026, 10, 5), date(2026, 10, 11), 7)
-    assert selected_range({"von": "2026-10-11", "bis": "2026-10-05"}, today).key == "monat"
+    assert selected_range({"from": "2026-10-11", "to": "2026-10-05"}, today).key == "month"
 
 
 def test_report_totals_and_rows(user, setup):
@@ -115,7 +115,7 @@ def test_report_for_one_customer_and_by_month(user, setup):
     work(user, task, "2026-03-05", 2)
     work(user, retainer_task, "2026-03-06", 1)
 
-    year = DateRange("jahr", "Jahr", date(2026, 1, 1), date(2026, 12, 31))
+    year = DateRange("year", "Jahr", date(2026, 1, 1), date(2026, 12, 31))
     report = build_report(year, customer_id=acme.pk, today=date(2026, 10, 22))
 
     assert report.totals.total == timedelta(hours=2)
@@ -143,7 +143,7 @@ def test_csv_export(client, user, setup):
     client.force_login(user)
     work(user, task, "2026-10-05", 1.25, description="Logo; Farben")
 
-    response = client.get(reverse("reports:entries_csv"), {"von": "2026-10-01", "bis": "2026-10-31"})
+    response = client.get(reverse("reports:entries_csv"), {"from": "2026-10-01", "to": "2026-10-31"})
 
     assert response["Content-Disposition"] == 'attachment; filename="zeiten-2026-10-01-2026-10-31.csv"'
     rows = list(csv.reader(io.StringIO(response.content.decode("utf-8-sig")), delimiter=";"))

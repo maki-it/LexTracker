@@ -5,7 +5,7 @@
 <div class="page-header">
   <div>
     <h1>Projekte</h1>
-    <p class="page-subtitle">{{ count }} Projekte{% if "alle" not in statuses %} · {{ selected_labels|join:", " }}{% endif %}</p>
+    <p class="page-subtitle">{{ count }} Projekte{% if "all" not in statuses %} · {{ selected_labels|join:", " }}{% endif %}</p>
   </div>
   <div class="toolbar">
     <a href="{% url 'projects:templates' %}" class="btn">Aufgabenvorlagen</a>

@@ -228,10 +228,10 @@ def test_invoice_list_filters_by_status(logged_in, billed):
     assert "RE0001" in response.text and "200,00 €" in response.text
     assert "Entwürfe" in response.text and "Bezahlt" in response.text
 
-    response = logged_in.get(url, {"status": "bezahlt"})
+    response = logged_in.get(url, {"status": "paid"})
     assert "RE0001" in response.text and "200,00 €" not in response.text
 
-    response = logged_in.get(url, {"status": "entwurf"})
+    response = logged_in.get(url, {"status": "draft"})
     assert "RE0001" not in response.text and "200,00 €" in response.text
 
     response = logged_in.get(url, {"q": "RE0001"})
@@ -320,7 +320,7 @@ def test_overview_lists_only_customers_with_open_time(logged_in, billed):
     # The only entry is billed, so nothing is open.
     response = logged_in.get(url)
     assert "Kein Kunde hat offene Zeiten" in response.text
-    assert "Ohne Zeiten AG" in logged_in.get(url, {"alle": "1"}).text
+    assert "Ohne Zeiten AG" in logged_in.get(url, {"all": "1"}).text
 
     TimeEntry.objects.filter(pk=entry.pk).update(invoice=None)
     response = logged_in.get(url)
@@ -336,8 +336,8 @@ def test_voided_invoice_time_can_be_released(logged_in, billed):
 
     Invoice.objects.filter(pk=invoice.pk).update(status=Invoice.Status.VOIDED)
     assert "Zeiten freigeben" in logged_in.get(reverse("billing:invoices")).text
-    response = logged_in.post(url, {"return_query": "status=storniert"})
-    assert response.url == reverse("billing:invoices") + "?status=storniert"
+    response = logged_in.post(url, {"return_query": "status=voided"})
+    assert response.url == reverse("billing:invoices") + "?status=voided"
     entry.refresh_from_db()
     assert entry.invoice_id is None
     assert "Zeiten freigeben" not in logged_in.get(reverse("billing:invoices")).text
@@ -404,9 +404,9 @@ def test_deleted_draft_is_listed_under_drafts_and_deleted(logged_in, billed):
         return {amount for amount in ("200,00", "70,00", "20,00") if f"{amount} €" in text}, response
 
     # A deleted draft is still a draft, a deleted invoice that had a number is not.
-    assert shown("entwurf")[0] == {"200,00", "70,00"}
-    assert shown("geloescht")[0] == {"200,00", "20,00"}
-    both, response = shown("entwurf", "geloescht")
+    assert shown("draft")[0] == {"200,00", "70,00"}
+    assert shown("deleted")[0] == {"200,00", "20,00"}
+    both, response = shown("draft", "deleted")
     assert both == {"200,00", "70,00", "20,00"} and response.text.count("200,00 €") == 1
     counts = {pill.key: pill.count for pill in response.context["filters"]}
-    assert counts["entwurf"] == 2 and counts["geloescht"] == 2
+    assert counts["draft"] == 2 and counts["deleted"] == 2

@@ -120,12 +120,12 @@ def test_project_list_shows_active_projects_and_loads_more(logged_in, task):
 
     page = logged_in.get(reverse("projects:list")).text
     assert "P00" in page and "P23" in page and "P24" not in page and ">Fertig<" not in page
-    assert 'hx-get="?seite=2"' in page
+    assert 'hx-get="?page=2"' in page
 
-    rows = logged_in.get(reverse("projects:list"), {"status": "aktiv", "seite": 2}, headers=HTMX).text
+    rows = logged_in.get(reverse("projects:list"), {"status": "active", "page": 2}, headers=HTMX).text
     assert "P24" in rows and "<html" not in rows and "seite=3" not in rows
 
-    done = logged_in.get(reverse("projects:list"), {"status": "abgeschlossen"}).text
+    done = logged_in.get(reverse("projects:list"), {"status": "done"}).text
     assert ">Fertig<" in done and "P00" not in done
 
 
@@ -140,19 +140,19 @@ def test_project_list_combines_status_filters(logged_in, task):
         Project.objects.create(customer=customer, name=name, status=status)
 
     url = reverse("projects:list")
-    page = logged_in.get(url, [("status", "aktiv"), ("status", "pausiert")]).text
+    page = logged_in.get(url, [("status", "active"), ("status", "paused")]).text
     assert ">Läuft<" in page and ">Wartet<" in page and ">Kommt<" not in page and ">Fertig<" not in page
     # Each pill toggles its own filter; the last one off falls back to all projects.
-    assert 'href="?status=aktiv&amp;status=geplant&amp;status=pausiert"' in page
-    assert 'href="?status=pausiert"' in page
-    assert 'href="?status=alle"' in page
+    assert 'href="?status=active&amp;status=planned&amp;status=paused"' in page
+    assert 'href="?status=paused"' in page
+    assert 'href="?status=all"' in page
 
-    only = logged_in.get(url, {"status": "aktiv"}).text
-    assert 'href="?status=alle"' in only
+    only = logged_in.get(url, {"status": "active"}).text
+    assert 'href="?status=all"' in only
 
-    everything = logged_in.get(url, [("status", "alle"), ("status", "aktiv")]).text
+    everything = logged_in.get(url, [("status", "all"), ("status", "active")]).text
     assert ">Fertig<" in everything and ">Kommt<" in everything
-    assert 'href="?status=geplant"' in everything
+    assert 'href="?status=planned"' in everything
 
 
 def test_invoice_list_combines_status_filters(logged_in, task):
@@ -172,15 +172,15 @@ def test_invoice_list_combines_status_filters(logged_in, task):
     invoice("RE-PAID", Invoice.Status.PAID)
 
     url = reverse("billing:invoices")
-    page = logged_in.get(url, [("status", "offen"), ("status", "ueberfaellig")]).text
+    page = logged_in.get(url, [("status", "open"), ("status", "overdue")]).text
     assert "RE-OPEN" in page and "RE-LATE" in page and "RE-PAID" not in page
     # Each pill toggles one filter.
-    assert 'href="?status=ueberfaellig"' in page and 'href="?status=offen"' in page
-    assert 'href="?status=offen&amp;status=ueberfaellig&amp;status=bezahlt"' in page
+    assert 'href="?status=overdue"' in page and 'href="?status=open"' in page
+    assert 'href="?status=open&amp;status=overdue&amp;status=paid"' in page
     assert page.count('name="status"') == 2
 
-    page = logged_in.get(url, {"status": "bezahlt", "q": "RE", "seite": 1}).text
-    assert 'href="?status=offen&amp;status=bezahlt&amp;q=RE"' in page
+    page = logged_in.get(url, {"status": "paid", "q": "RE", "page": 1}).text
+    assert 'href="?status=open&amp;status=paid&amp;q=RE"' in page
     assert 'href="?q=RE"' in page
 
 
@@ -190,7 +190,7 @@ def test_customer_list_loads_more(logged_in):
     page = logged_in.get(reverse("customers:list")).text
     assert "Kunde 24" in page and "Kunde 25" not in page
 
-    rows = logged_in.get(reverse("customers:list"), {"seite": 2}, headers=HTMX).text
+    rows = logged_in.get(reverse("customers:list"), {"page": 2}, headers=HTMX).text
     assert "Kunde 25" in rows and "Kunde 29" in rows and "<html" not in rows
 
 
@@ -216,7 +216,7 @@ def test_invoice_list_filters_by_customer_and_sorts_newest_first(logged_in, task
     page = logged_in.get(reverse("billing:invoices")).text
     assert page.index("RE-3") < page.index("RE-2") < page.index("RE-1") < page.index("RE-9")
 
-    page = logged_in.get(reverse("billing:invoices"), {"kunde": other.pk}).text
+    page = logged_in.get(reverse("billing:invoices"), {"customer": other.pk}).text
     assert "RE-9" in page and "RE-1" not in page
 
 
@@ -235,7 +235,7 @@ def test_invoice_list_loads_more(logged_in, task):
     page = logged_in.get(reverse("billing:invoices")).text
     assert "RE-29" in page and "RE-05" in page and "RE-04" not in page
 
-    rows = logged_in.get(reverse("billing:invoices"), {"seite": 2}, headers=HTMX).text
+    rows = logged_in.get(reverse("billing:invoices"), {"page": 2}, headers=HTMX).text
     assert "RE-04" in rows and "RE-00" in rows and "<html" not in rows
 
 

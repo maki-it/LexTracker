@@ -114,7 +114,7 @@ Ob Dauern als `2:45` oder als Dezimalstunden `2,75` angezeigt werden, stellt jed
 ## Bedienung
 
 Bearbeiten-Masken (Zeiteinträge, Projekte, Aufgaben, Kunden, Abrechnungsvereinbarungen) und **Timer starten** in der Seitenleiste öffnen sich als Dialog über der aktuellen Seite. Nach dem Speichern lädt die Seite dahinter neu; Esc, das X oder ein Klick daneben schließt den Dialog. Jeder dieser Links funktioniert auch als eigene Seite (z. B. in einem neuen Tab).
-In der Übersicht und unter **Zeiten** filtert ein Klick auf Kunde oder Projekt eines Eintrags die Liste. Projekte ohne gebuchte Zeiten lassen sich in ihrer Bearbeiten-Maske löschen.
+In der Übersicht und unter **Aufgaben** filtert ein Klick auf Kunde oder Projekt eines Eintrags die Liste. Projekte ohne gebuchte Zeiten lassen sich in ihrer Bearbeiten-Maske löschen.
 Beim Zeitbuchen (Übersicht, Timer starten, Zeiteintrag) stehen nur Aufgaben aktiver Projekte zur Wahl, die zuletzt benutzten zuerst.
 Die Listen der Kunden, Projekte und Rechnungen laden beim Scrollen weitere Einträge nach. Wie viele auf einmal, stellt jeder im Konto ein (25, 50, 100 oder 200). Die Projektliste zeigt zuerst die aktiven Projekte; geplante, pausierte, abgeschlossene oder alle wählst du darüber aus.
 

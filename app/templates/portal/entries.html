@@ -12,15 +12,15 @@
 <div class="flex flex-col gap-3">
   <nav aria-label="Zeitraum" class="flex flex-wrap gap-1.5">
     {% for preset in presets %}
-    <a href="?zeitraum={{ preset.key }}{% if project_id %}&projekt={{ project_id }}{% endif %}" class="pill{% if preset.key == range.key %} pill-active{% endif %}">{{ preset.label }}</a>
+    <a href="?range={{ preset.key }}{% if project_id %}&project={{ project_id }}{% endif %}" class="pill{% if preset.key == range.key %} pill-active{% endif %}">{{ preset.label }}</a>
     {% endfor %}
   </nav>
   <form method="get" class="flex flex-wrap items-end gap-3"
         hx-get="{% url 'portal:entries' %}" hx-trigger="change" hx-target="main" hx-select="main" hx-swap="outerHTML" hx-push-url="true">
-    <label class="field"><span>Von</span><input type="date" name="von" value="{{ range.start|date:'Y-m-d' }}" class="input"></label>
-    <label class="field"><span>Bis</span><input type="date" name="bis" value="{{ range.end|date:'Y-m-d' }}" class="input"></label>
+    <label class="field"><span>Von</span><input type="date" name="from" value="{{ range.start|date:'Y-m-d' }}" class="input"></label>
+    <label class="field"><span>Bis</span><input type="date" name="to" value="{{ range.end|date:'Y-m-d' }}" class="input"></label>
     <label class="field min-w-56"><span>Projekt</span>
-      <select name="projekt" class="input">
+      <select name="project" class="input">
         <option value="">Alle Projekte</option>
         {% for p in projects %}<option value="{{ p.pk }}"{% if p.pk == project_id %} selected{% endif %}>{{ p.name }}</option>{% endfor %}
       </select>

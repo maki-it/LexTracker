@@ -16,14 +16,14 @@ from inbox import service
 from inbox.levels import Level
 from inbox.models import Message
 
-# How many messages the panel behind the bell lists. The page "alle" has the rest.
+# How many messages the panel behind the bell lists. The page "all" has the rest.
 PANEL_SIZE = 8
 
 # The filters on the page with all messages: the key in the URL, its label and what it selects.
 FILTERS = {
-    "ungelesen": ("Ungelesen", Q(read_at__isnull=True)),
-    "kritisch": (Level.CRITICAL.label, Q(level=Level.CRITICAL)),
-    "warnung": (Level.WARNING.label, Q(level=Level.WARNING)),
+    "unread": ("Ungelesen", Q(read_at__isnull=True)),
+    "critical": (Level.CRITICAL.label, Q(level=Level.CRITICAL)),
+    "warning": (Level.WARNING.label, Q(level=Level.WARNING)),
     "info": (Level.INFO.label, Q(level=Level.INFO)),
     "debug": (Level.DEBUG.label, Q(level=Level.DEBUG)),
 }

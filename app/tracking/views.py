@@ -82,8 +82,8 @@ async def timer_stop(request: HttpRequest) -> HttpResponse:
 
 
 def _filter_query(request: HttpRequest) -> str:
-    """``&kunde=…`` or ``&projekt=…`` of the current filter, to append to other links."""
-    params = {k: request.GET[k] for k in ("kunde", "projekt") if parse_uuid(request.GET.get(k, ""))}
+    """``&customer=…`` or ``&project=…`` of the current filter, to append to other links."""
+    params = {k: request.GET[k] for k in ("customer", "project") if parse_uuid(request.GET.get(k, ""))}
     return f"&{urlencode(params)}" if params else ""
 
 
@@ -104,7 +104,7 @@ def _week_param(monday: date) -> str:
 
 @require_GET
 async def entry_list(request: HttpRequest) -> HttpResponse:
-    monday = _parse_week(request.GET.get("woche"))
+    monday = _parse_week(request.GET.get("week"))
     tz = timezone.get_current_timezone()
     start = datetime.combine(monday, time.min, tzinfo=tz)
     active_filter = await entry_filter(request)
@@ -142,7 +142,7 @@ async def entry_list(request: HttpRequest) -> HttpResponse:
             "this_week": _week_param(monday),
             "filter_label": active_filter["label"],
             # Filter links keep the week; the week links keep the filter.
-            "filter_base": f"woche={_week_param(monday)}&",
+            "filter_base": f"week={_week_param(monday)}&",
             "filter_query": _filter_query(request),
         },
     )
@@ -156,7 +156,7 @@ async def _get_entry(request: HttpRequest, pk: UUID) -> TimeEntry:
 
 
 def _back_to_week(entry: TimeEntry) -> str:
-    return f"{reverse('tracking:list')}?woche={_week_param(timezone.localtime(entry.started_at).date())}"
+    return f"{reverse('tracking:list')}?week={_week_param(timezone.localtime(entry.started_at).date())}"
 
 
 @require_http_methods(["GET", "POST"])
@@ -165,7 +165,7 @@ async def entry_form(request: HttpRequest, pk: UUID | None = None) -> HttpRespon
     initial = None
     if not pk:
         now = timezone.localtime().replace(second=0, microsecond=0)
-        initial = {"started_at": now - timedelta(hours=1), "ended_at": now, "task": request.GET.get("aufgabe")}
+        initial = {"started_at": now - timedelta(hours=1), "ended_at": now, "task": request.GET.get("task")}
     rounding = (await AppSettings.aload()).time_rounding
     form = TimeEntryForm(request.POST or None, instance=entry, initial=initial, user=request.user, rounding=rounding)
     if request.method == "POST" and await sync_to_async(form.is_valid)():

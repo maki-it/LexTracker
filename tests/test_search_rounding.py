@@ -116,7 +116,7 @@ def test_decimal_hours_preference_is_used(logged_in, user, task):
     start = datetime(2026, 10, 20, 9, 0, tzinfo=TZ)
     TimeEntry.objects.create(user=user, task=task, started_at=start, ended_at=start + timedelta(hours=2, minutes=45))
 
-    response = logged_in.get(reverse("tracking:list"), {"woche": "2026-W43"})
+    response = logged_in.get(reverse("tracking:list"), {"week": "2026-W43"})
 
     assert "2,75" in response.text
 
@@ -153,7 +153,7 @@ def test_customer_search_and_category_filter(logged_in):
     page_text = logged_in.get(reverse("customers:list"), {"q": "acme"}).text
     assert "ACME GmbH" in page_text and "Muster AG" not in page_text
 
-    page_text = logged_in.get(reverse("customers:list"), {"kategorie": hosting.pk}).text
+    page_text = logged_in.get(reverse("customers:list"), {"category": hosting.pk}).text
     assert "ACME GmbH" in page_text and "Muster AG" not in page_text
 
 

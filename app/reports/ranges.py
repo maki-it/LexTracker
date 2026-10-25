@@ -26,23 +26,23 @@ def presets(today: date) -> list[DateRange]:
     year = period_containing(today, Period.YEAR)
     last_year = period_containing(year.start - timedelta(days=1), Period.YEAR)
     return [
-        DateRange("monat", "Dieser Monat", month.start, month.end),
-        DateRange("vormonat", "Letzter Monat", last_month.start, last_month.end),
-        DateRange("quartal", "Dieses Quartal", quarter.start, quarter.end),
-        DateRange("vorquartal", "Letztes Quartal", last_quarter.start, last_quarter.end),
-        DateRange("jahr", "Dieses Jahr", year.start, year.end),
-        DateRange("vorjahr", "Letztes Jahr", last_year.start, last_year.end),
+        DateRange("month", "Dieser Monat", month.start, month.end),
+        DateRange("last-month", "Letzter Monat", last_month.start, last_month.end),
+        DateRange("quarter", "Dieses Quartal", quarter.start, quarter.end),
+        DateRange("last-quarter", "Letztes Quartal", last_quarter.start, last_quarter.end),
+        DateRange("year", "Dieses Jahr", year.start, year.end),
+        DateRange("last-year", "Letztes Jahr", last_year.start, last_year.end),
     ]
 
 
 def selected_range(params, today: date) -> DateRange:
-    """The range from ``?zeitraum=`` or ``?von=``/``?bis=``; this month by default."""
+    """The range from ``?range=`` or ``?from=``/``?to=``; this month by default."""
     options = presets(today)
     try:
-        start, end = date.fromisoformat(params.get("von", "")), date.fromisoformat(params.get("bis", ""))
+        start, end = date.fromisoformat(params.get("from", "")), date.fromisoformat(params.get("to", ""))
     except ValueError:
         pass
     else:
         if start <= end:
             return DateRange("", f"{start:%d.%m.%Y} – {end:%d.%m.%Y}", start, end)
-    return next((r for r in options if r.key == params.get("zeitraum")), options[0])
+    return next((r for r in options if r.key == params.get("range")), options[0])

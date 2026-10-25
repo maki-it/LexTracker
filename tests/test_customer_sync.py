@@ -78,14 +78,14 @@ def test_import_view_shows_result(client, user, monkeypatch, settings):
 def test_customer_list_reloads_only_after_an_import(client, user):
     client.force_login(user)
     url = reverse("customers:list")
-    marker = re.search(r"seit=([^\"]*)\"", client.get(url).text).group(1)
+    marker = re.search(r"since=([^\"]*)\"", client.get(url).text).group(1)
 
-    assert client.get(url, {"seit": unquote(marker)}).status_code == 204
+    assert client.get(url, {"since": unquote(marker)}).status_code == 204
 
     app_settings = AppSettings.load()
     app_settings.lexware_synced_at = timezone.now()
     app_settings.save()
-    response = client.get(url, {"seit": unquote(marker)})
+    response = client.get(url, {"since": unquote(marker)})
     assert response.status_code == 200 and 'id="customer-list"' in response.text
 
 

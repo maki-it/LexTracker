@@ -17,7 +17,7 @@ from reports.ranges import presets, selected_range
 
 
 def _customer_id(request: HttpRequest) -> UUID | None:
-    return parse_uuid(request.GET.get("kunde", ""))
+    return parse_uuid(request.GET.get("customer", ""))
 
 
 @require_GET
@@ -27,7 +27,7 @@ async def overview(request: HttpRequest) -> HttpResponse:
     customer_id = _customer_id(request)
     report = await sync_to_async(build_report)(rng, customer_id, today)
     # The range as query string, for the export and the customer filter.
-    range_query = urlencode({"zeitraum": rng.key} if rng.key else {"von": rng.start, "bis": rng.end})
+    range_query = urlencode({"range": rng.key} if rng.key else {"from": rng.start, "to": rng.end})
     return render(
         request,
         "reports/overview.html",
@@ -37,7 +37,7 @@ async def overview(request: HttpRequest) -> HttpResponse:
             "customers": [c async for c in Customer.objects.filter(is_archived=False).order_by("name")],
             "customer_id": customer_id,
             "range_query": range_query,
-            "customer_query": f"&kunde={customer_id}" if customer_id else "",
+            "customer_query": f"&customer={customer_id}" if customer_id else "",
         },
     )
 

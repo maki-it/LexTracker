@@ -174,7 +174,7 @@ def test_admin_invites_a_user(client, user, task):
     assert response.url == reverse("users:invite", args=[mia.pk])
     assert not mia.has_usable_password()
 
-    link = re.search(r"http://testserver(/accounts/einladung/[^<\s]+)", client.get(response.url).text).group(1)
+    link = re.search(r"http://testserver(/accounts/invite/[^<\s]+)", client.get(response.url).text).group(1)
     client.logout()
 
     assert "Passwort festlegen" in client.get(link).text
@@ -350,7 +350,7 @@ def test_customer_downloads_the_invoice_pdf(client, customer_user, other_task, m
     assert 'filename="Rechnung-RE0042.pdf"' in response["Content-Disposition"]
     assert requests[0].headers["Accept"] == "application/pdf"
     # The invoice number in the list opens the same PDF in the browser.
-    response = client.get(reverse("portal:invoice_pdf", args=[own.voucher_number]), {"ansehen": "1"})
+    response = client.get(reverse("portal:invoice_pdf", args=[own.voucher_number]), {"inline": "1"})
     assert response["Content-Disposition"].startswith("inline")
 
     # Drafts and other customers' invoices are not to be had.
@@ -471,15 +471,15 @@ def test_portal_invoices_filter_by_status_and_date(client, customer_user):
 
     text = client.get(url).text
     assert "RE-ALT" in text and "RE-NEU" in text
-    text = client.get(url, {"status": "bezahlt"}).text
+    text = client.get(url, {"status": "paid"}).text
     assert "RE-ALT" in text and "RE-NEU" not in text
-    text = client.get(url, {"von": "2026-01-01", "bis": "2026-12-31"}).text
+    text = client.get(url, {"from": "2026-01-01", "to": "2026-12-31"}).text
     assert "RE-ALT" not in text and "RE-NEU" in text
-    text = client.get(url, {"von": "2026-01-01", "bis": "2026-12-31", "status": "bezahlt"}).text
+    text = client.get(url, {"from": "2026-01-01", "to": "2026-12-31", "status": "paid"}).text
     assert "Keine Rechnung passt zum Filter" in text
     # Drafts cannot be picked.
-    assert "RE-NEU" in client.get(url, {"status": "entwurf"}).text
+    assert "RE-NEU" in client.get(url, {"status": "draft"}).text
 
     text = client.get(url).text
-    assert f'href="{reverse("portal:invoice_pdf", args=[current.voucher_number])}?ansehen=1"' in text
+    assert f'href="{reverse("portal:invoice_pdf", args=[current.voucher_number])}?inline=1"' in text
     assert "Online ansehen" not in text

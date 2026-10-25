@@ -178,20 +178,20 @@ async def logout_view(request: HttpRequest) -> HttpResponse:
 
 
 ACCOUNT_TABS = [
-    ("profil", "Profil"),
-    ("darstellung", "Darstellung"),
-    ("benachrichtigungen", "Benachrichtigungen"),
-    ("sicherheit", "Sicherheit"),
-    ("agenten", "KI-Agenten"),
+    ("profile", "Profil"),
+    ("appearance", "Darstellung"),
+    ("notifications", "Benachrichtigungen"),
+    ("security", "Sicherheit"),
+    ("agents", "KI-Agenten"),
 ]
 _ACCOUNT_TAB_FIELDS = {
-    "profil": ["first_name", "last_name", "email"],
-    "darstellung": ["theme", "date_format", "duration_format", "list_page_size"],
-    "benachrichtigungen": ["weekly_report", "timer_reminder", "message_level", "message_email_level"],
+    "profile": ["first_name", "last_name", "email"],
+    "appearance": ["theme", "date_format", "duration_format", "list_page_size"],
+    "notifications": ["weekly_report", "timer_reminder", "message_level", "message_email_level"],
 }
 ACCOUNT_FIELD_TABS = {field: tab for tab, fields in _ACCOUNT_TAB_FIELDS.items() for field in fields}
 # Customers do not book time: no reports, reminders or messages, and no agents working for them.
-_CUSTOMER_HIDDEN_TABS = {"benachrichtigungen", "agenten"}
+_CUSTOMER_HIDDEN_TABS = {"notifications", "agents"}
 
 
 def account_tabs(user: User) -> list[tuple[str, str]]:
@@ -252,7 +252,7 @@ async def token_create(request: HttpRequest) -> HttpResponse:
         token_form = None
     # Rendered, not redirected: the key is shown only on this response.
     return await _account_page(
-        request, PreferencesForm(instance=request.user), account_tab(request.user, "agenten"), token_form, new_key
+        request, PreferencesForm(instance=request.user), account_tab(request.user, "agents"), token_form, new_key
     )
 
 
@@ -261,7 +261,7 @@ async def token_revoke(request: HttpRequest, pk: UUID) -> HttpResponse:
     deleted, _ = await request.user.api_tokens.filter(pk=pk).adelete()
     if deleted:
         messages.success(request, "Token widerrufen. Programme, die ihn nutzen, haben keinen Zugriff mehr.")
-    return redirect(account_url("agenten"))
+    return redirect(account_url("agents"))
 
 
 @require_http_methods(["GET", "POST"])
@@ -272,7 +272,7 @@ async def password_change(request: HttpRequest) -> HttpResponse:
         # Keep this session signed in; other sessions are signed out by the new password.
         await aupdate_session_auth_hash(request, form.user)
         messages.success(request, "Passwort geändert.")
-        return redirect(account_url("sicherheit"))
+        return redirect(account_url("security"))
     return render(request, "accounts/password.html", {"form": form})
 
 
@@ -306,7 +306,7 @@ async def mfa_manage(request: HttpRequest) -> HttpResponse:
             return render(request, "accounts/recovery_codes.html", {"codes": codes})
         await sync_to_async(mfa.disable)(request.user)
         messages.success(request, "Zwei-Faktor-Anmeldung ist ausgeschaltet.")
-        return redirect(account_url("sicherheit"))
+        return redirect(account_url("security"))
     return render(request, "accounts/mfa_manage.html", {"form": form})
 
 

@@ -22,12 +22,12 @@ def local(hour: int, minute: int = 0, day: int = 22) -> datetime:
 
 def test_only_admins_see_the_jobs(client, employee):
     client.force_login(employee)
-    assert client.get("/einstellungen/aufgaben/").status_code == 403
+    assert client.get("/settings/jobs/").status_code == 403
 
 
 def test_page_without_scheduler(client, user):
     client.force_login(user)
-    page = client.get("/einstellungen/aufgaben/")
+    page = client.get("/settings/jobs/")
     assert page.status_code == 200
     assert "noch nie gemeldet" in page.text
     assert "Kundenimport" in page.text and "noch nicht gelaufen" in page.text
@@ -50,7 +50,7 @@ def test_page_shows_results_and_errors(client, user):
     )
 
     client.force_login(user)
-    page = client.get("/einstellungen/aufgaben/")
+    page = client.get("/settings/jobs/")
     assert "läuft" in page.text
     assert "12 Kunden, 2 neu" in page.text
     assert "LexwareError: Zeitüberschreitung" in page.text
@@ -61,7 +61,7 @@ def test_stopped_scheduler_is_flagged(client, user):
     client.force_login(user)
     AppSettings.load()
     AppSettings.objects.filter(pk=1).update(scheduler_seen_at=timezone.now() - timedelta(hours=1))
-    assert "meldet sich nicht" in client.get("/einstellungen/aufgaben/").text
+    assert "meldet sich nicht" in client.get("/settings/jobs/").text
     assert "meldet sich nicht mehr" in client.get("/").text
 
 

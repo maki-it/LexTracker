@@ -85,14 +85,14 @@ def _require_admin(request: HttpRequest) -> None:
 
 
 SETTINGS_TABS = [
-    ("allgemein", "Allgemein"),
+    ("general", "Allgemein"),
     ("lexware", "Lexware"),
-    ("e-mail", "E-Mail"),
-    ("datensicherung", "Datensicherung"),
-    ("sicherheit", "Sicherheit"),
+    ("email", "E-Mail"),
+    ("backup", "Datensicherung"),
+    ("security", "Sicherheit"),
 ]
 _SETTINGS_TAB_FIELDS = {
-    "allgemein": ["default_hourly_rate", "time_rounding", "invoice_detail"],
+    "general": ["default_hourly_rate", "time_rounding", "invoice_detail"],
     "lexware": [
         "lexware_sync_interval",
         "lexware_sync_from",
@@ -101,7 +101,7 @@ _SETTINGS_TAB_FIELDS = {
         "invoice_sync_from",
         "invoice_sync_until",
     ],
-    "e-mail": [
+    "email": [
         "weekly_report_enabled",
         "weekly_report_weekday",
         "weekly_report_time",
@@ -110,8 +110,8 @@ _SETTINGS_TAB_FIELDS = {
         "overdue_notice_days",
         "invite_by_mail",
     ],
-    "datensicherung": ["backup_enabled", "backup_time", "backup_keep"],
-    "sicherheit": ["login_max_attempts", "login_lockout_minutes", "login_link_enabled"],
+    "backup": ["backup_enabled", "backup_time", "backup_keep"],
+    "security": ["login_max_attempts", "login_lockout_minutes", "login_link_enabled"],
 }
 SETTINGS_FIELD_TABS = {field: tab for tab, fields in _SETTINGS_TAB_FIELDS.items() for field in fields}
 
@@ -229,7 +229,7 @@ async def backup_upload(request: HttpRequest) -> HttpResponse:
     _require_admin(request)
     error = None
     if request.method == "POST":
-        file = request.FILES.get("datei")
+        file = request.FILES.get("file")
         if file is None:
             error = "Bitte wähle eine Datei aus."
         elif file.size > settings.BACKUP_UPLOAD_MAX_SIZE:
@@ -281,7 +281,7 @@ async def backup_restore(request: HttpRequest, name: str) -> HttpResponse:
     path = await _get_backup(name)
     error = None
     if request.method == "POST":
-        if request.POST.get("bestaetigt") != "1":
+        if request.POST.get("confirmed") != "1":
             error = "Bitte bestätige, dass der aktuelle Stand ersetzt wird."
         else:
             try:

@@ -2,7 +2,7 @@
 {% block title %}Sicherung hochladen · LexTracker{% endblock %}
 {% block content %}
 <div>
-  <p class="breadcrumb"><a href="{% url 'core:settings' %}?tab=datensicherung">Einstellungen</a> / <a href="{% url 'core:backups' %}">Sicherungen</a></p>
+  <p class="breadcrumb"><a href="{% url 'core:settings' %}?tab=backup">Einstellungen</a> / <a href="{% url 'core:backups' %}">Sicherungen</a></p>
   <h1>Sicherung hochladen</h1>
 </div>
 <form method="post" action="{% url 'core:backup_upload' %}" enctype="multipart/form-data" class="card flex max-w-2xl flex-col gap-4">
@@ -18,7 +18,7 @@
   </p>
   <label class="flex flex-col gap-1 text-sm font-medium">
     Datei
-    <input type="file" name="datei" accept=".sqlite3,.sqlite,.db,application/vnd.sqlite3" required data-max-size="{{ max_size }}"
+    <input type="file" name="file" accept=".sqlite3,.sqlite,.db,application/vnd.sqlite3" required data-max-size="{{ max_size }}"
            data-max-size-message="Die Datei ist größer als {{ max_size|filesizeformat }}." class="input">
   </label>
   <div class="flex gap-2 border-t border-line pt-4">

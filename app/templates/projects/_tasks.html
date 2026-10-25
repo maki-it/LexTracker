@@ -26,7 +26,7 @@
           <td>
             <div class="flex justify-end gap-1.5">
               {% if task.status != 'done' %}{% include "tracking/_start_button.html" %}{% endif %}
-              <a {% dialog_link "tracking:create" aufgabe=task.pk %} class="btn btn-ghost btn-sm" title="Zeit nachtragen">{% icon "plus" size=14 %}Zeit</a>
+              <a {% dialog_link "tracking:create" task=task.pk %} class="btn btn-ghost btn-sm" title="Zeit nachtragen">{% icon "plus" size=14 %}Zeit</a>
               <a {% dialog_link "projects:task_edit" project.pk task.pk %} class="btn btn-ghost btn-sm btn-icon size-8" title="Bearbeiten" aria-label="Aufgabe {{ task.name }} bearbeiten">{% icon "pencil" %}</a>
             </div>
           </td>
@@ -49,7 +49,7 @@
     <div class="flex flex-wrap gap-x-4 gap-y-2">
       {% for template, in_project in templates %}
       <label class="flex items-center gap-2 text-sm{% if in_project %} text-muted{% endif %}"{% if in_project %} title="Schon im Projekt"{% endif %}>
-        <input type="checkbox" name="vorlage" value="{{ template.pk }}" class="size-4 accent-primary"{% if in_project %} disabled{% endif %}>
+        <input type="checkbox" name="template" value="{{ template.pk }}" class="size-4 accent-primary"{% if in_project %} disabled{% endif %}>
         {{ template.name }}
       </label>
       {% endfor %}

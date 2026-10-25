@@ -91,7 +91,7 @@ async def entries(request: HttpRequest) -> HttpResponse:
     queryset = _customer_entries(user).filter(
         started_at__date__gte=date_range.start, started_at__date__lte=date_range.end
     )
-    project_id = parse_uuid(request.GET.get("projekt", ""))
+    project_id = parse_uuid(request.GET.get("project", ""))
     if project_id:
         queryset = queryset.filter(task__project_id=project_id)
     rows = [e async for e in queryset.select_related("task", "task__project", "invoice").order_by("-started_at")]
@@ -111,7 +111,7 @@ async def entries(request: HttpRequest) -> HttpResponse:
 
 
 # The status filters the customer can pick. Drafts and deleted invoices never show up here.
-INVOICE_STATUS_FILTERS = {key: STATUS_FILTERS[key] for key in ("offen", "ueberfaellig", "bezahlt", "storniert")}
+INVOICE_STATUS_FILTERS = {key: STATUS_FILTERS[key] for key in ("open", "overdue", "paid", "voided")}
 
 
 @require_GET
@@ -127,7 +127,7 @@ async def invoices(request: HttpRequest) -> HttpResponse:
         status = ""
     today = timezone.localdate()
     # All invoices unless a range is picked, by invoice date (the creation day for invoices without one).
-    date_range = selected_range(request.GET, today) if {"zeitraum", "von", "bis"} & set(request.GET) else None
+    date_range = selected_range(request.GET, today) if {"range", "from", "to"} & set(request.GET) else None
     if date_range:
         span = (date_range.start, date_range.end)
         queryset = queryset.filter(
@@ -201,8 +201,8 @@ async def invoice_pdf(request: HttpRequest, number: str) -> HttpResponse:
     response = HttpResponse(pdf, content_type="application/pdf")
     # Numbers are free-form in Lexware and may hold a slash.
     name = re.sub(r"[\\/]", "-", f"Rechnung-{invoice.voucher_number}.pdf")
-    # ?ansehen=1 opens it in the browser instead of downloading it.
-    response["Content-Disposition"] = content_disposition_header(request.GET.get("ansehen") != "1", name)
+    # ?inline=1 opens it in the browser instead of downloading it.
+    response["Content-Disposition"] = content_disposition_header(request.GET.get("inline") != "1", name)
     return response
 
 

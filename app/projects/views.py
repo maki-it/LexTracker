@@ -29,21 +29,21 @@ async def _get_project(pk: UUID) -> Project:
 # The status filters on the project list: key in the URL, label, statuses. Active projects come first.
 # They can be combined, except "Alle".
 STATUS_FILTERS = {
-    "aktiv": ("Aktiv", [Project.Status.ACTIVE]),
-    "geplant": ("Geplant", [Project.Status.PLANNED]),
-    "pausiert": ("Pausiert", [Project.Status.PAUSED]),
-    "abgeschlossen": ("Abgeschlossen", [Project.Status.DONE]),
-    "alle": ("Alle", list(Project.Status.values)),
+    "active": ("Aktiv", [Project.Status.ACTIVE]),
+    "planned": ("Geplant", [Project.Status.PLANNED]),
+    "paused": ("Pausiert", [Project.Status.PAUSED]),
+    "done": ("Abgeschlossen", [Project.Status.DONE]),
+    "all": ("Alle", list(Project.Status.values)),
 }
 
 
 @require_GET
 async def project_list(request: HttpRequest) -> HttpResponse:
     selected = selected_filters(request, STATUS_FILTERS)
-    if "alle" in selected:
-        selected = ["alle"]
+    if "all" in selected:
+        selected = ["all"]
     elif not selected:
-        selected = ["aktiv"]
+        selected = ["active"]
     query = request.GET.get("q", "").strip()
     projects = Project.objects.all()
     if query:
@@ -67,7 +67,7 @@ async def project_list(request: HttpRequest) -> HttpResponse:
         "query": query,
         "count": sum(counts[key] for key in selected),
         "selected_labels": [STATUS_FILTERS[key][0] for key in selected],
-        "filters": filter_pills(request, STATUS_FILTERS, counts, selected, exclusive="alle", when_empty=["alle"]),
+        "filters": filter_pills(request, STATUS_FILTERS, counts, selected, exclusive="all", when_empty=["all"]),
     }
     return render(request, "projects/list.html", context)
 
@@ -75,7 +75,7 @@ async def project_list(request: HttpRequest) -> HttpResponse:
 @require_http_methods(["GET", "POST"])
 async def project_form(request: HttpRequest, pk: UUID | None = None) -> HttpResponse:
     project = await _get_project(pk) if pk else None
-    initial = {"customer": request.GET.get("kunde")} if not project else None
+    initial = {"customer": request.GET.get("customer")} if not project else None
     offer_templates = not project and await TaskTemplate.objects.aexists()
     form = ProjectForm(request.POST or None, instance=project, initial=initial, offer_templates=offer_templates)
     if request.method == "POST" and await sync_to_async(form.is_valid)():
@@ -140,7 +140,7 @@ async def task_create(request: HttpRequest, pk: UUID) -> HttpResponse:
 async def task_from_templates(request: HttpRequest, pk: UUID) -> HttpResponse:
     """Add a task for each chosen template and return the refreshed task list (htmx)."""
     project = await _get_project(pk)
-    ids = [i for value in request.POST.getlist("vorlage") if (i := parse_uuid(value))]
+    ids = [i for value in request.POST.getlist("template") if (i := parse_uuid(value))]
     existing = {name async for name in project.tasks.values_list("name", flat=True)}
     new_tasks = [t.to_task(project) async for t in TaskTemplate.objects.filter(pk__in=ids) if t.name not in existing]
     await Task.objects.abulk_create(new_tasks)
