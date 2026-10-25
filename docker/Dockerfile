@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM python:3.14-slim AS build
+FROM python:3.15-slim AS build
 
 COPY --from=ghcr.io/astral-sh/uv:0.9 /uv /bin/uv
 ENV UV_COMPILE_BYTECODE=1 \
@@ -25,7 +25,7 @@ RUN --mount=type=cache,target=/srv/app/.django_tailwind_cli \
       && /srv/.venv/bin/python manage.py collectstatic --noinput"
 
 
-FROM python:3.14-slim AS runtime
+FROM python:3.15-slim AS runtime
 
 RUN useradd --uid 1000 --create-home --shell /usr/sbin/nologin app \
     && mkdir -p /data /backups && chown app:app /data /backups
