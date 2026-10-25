@@ -33,6 +33,10 @@ class SyncResult:
         return self.created + self.updated + self.unchanged
 
     @property
+    def has_changes(self) -> bool:
+        return bool(self.created or self.updated or self.removed)
+
+    @property
     def summary(self) -> str:
         summary = f"{self.created} neu, {self.updated} aktualisiert, {self.unchanged} unverändert"
         if self.removed:

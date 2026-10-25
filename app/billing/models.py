@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 from core.models import TimeStampedModel
 
@@ -110,6 +111,30 @@ class Invoice(TimeStampedModel):
         return f"https://app.lexware.de/permalink/invoices/{action}/{self.lexware_id}"
 
     @property
+    def shows_due_date(self) -> bool:
+        """Whether the due date is worth showing: only while the invoice still waits for its payment."""
+        return bool(self.due_date) and self.status in (self.Status.OPEN, self.Status.OVERDUE)
+
+    @property
+    def days_overdue(self) -> int:
+        """Days since the due date, 0 if the invoice is not overdue."""
+        if self.status != self.Status.OVERDUE or not self.due_date:
+            return 0
+        return max((timezone.localdate() - self.due_date).days, 0)
+
+    @property
+    def was_draft_when_deleted(self) -> bool:
+        """Whether the invoice was deleted in Lexware as a draft: a draft has no voucher number yet."""
+        return self.status == self.Status.DELETED and not self.voucher_number
+
+    @property
+    def status_label(self) -> str:
+        """The status as shown in the list; a deleted draft says it was a draft."""
+        if self.was_draft_when_deleted:
+            return "Entwurf gelöscht"
+        return self.get_status_display()
+
+    @property
     def status_badge(self) -> str:
         """The badge class that goes with the status."""
         return {
@@ -120,5 +145,5 @@ class Invoice(TimeStampedModel):
             self.Status.OVERDUE: "badge-danger",
             self.Status.PAID: "badge-success",
             self.Status.VOIDED: "badge-warning",
-            self.Status.DELETED: "badge-warning",
+            self.Status.DELETED: "",  # Not the warning color of a voided invoice.
         }.get(self.status, "")

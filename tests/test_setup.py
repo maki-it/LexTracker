@@ -5,7 +5,9 @@ from asgiref.sync import async_to_sync
 from django.core import mail
 from django.core.management import call_command
 from django.urls import reverse
+from django_otp.oath import totp
 
+from accounts import mfa
 from accounts.models import User
 from core.models import AppSettings
 from customers.sync import SyncResult
@@ -21,6 +23,7 @@ API_KEY = "lx-secret-key-0123456789abcdef"
 ACCOUNT = {
     "username": "kim",
     "first_name": "Kim",
+    "last_name": "Mustermann",
     "email": "kim@example.com",
     "password1": "ein-langes-passwort-42",
     "password2": "ein-langes-passwort-42",
@@ -33,6 +36,17 @@ def unlocked(client):
     response = client.get(setup_path())
     assert response.url == reverse("setup:account")
     return client
+
+
+def current_code(device) -> str:
+    return f"{totp(device.bin_key, step=device.step, t0=device.t0, digits=device.digits):06d}"
+
+
+def create_admin(client):
+    """Create the first account and turn on two-factor login, the way the setup requires."""
+    client.post(reverse("setup:account"), ACCOUNT)
+    device = mfa.pending_device(User.objects.get())
+    client.post(reverse("setup:mfa"), {"code": current_code(device)})
 
 
 @pytest.fixture
@@ -60,12 +74,13 @@ def test_setup_creates_admin_and_logs_in(unlocked, client, settings, accept_key)
 
     response = client.post(reverse("setup:account"), ACCOUNT)
 
-    assert response.url == reverse("setup:lexware")
+    assert response.url == reverse("setup:mfa")
     user = User.objects.get()
     assert user.role == User.Role.ADMIN and user.is_superuser and user.is_staff
     assert user.check_password(ACCOUNT["password1"])
-    # The new administrator is logged in and goes on with the Lexware key.
-    assert "Lexware Office verbinden" in client.get(response.url).text
+    assert (user.first_name, user.last_name) == ("Kim", "Mustermann")
+    # The new administrator is logged in and has to set up two-factor login first.
+    assert "Zwei-Faktor-Anmeldung einrichten" in client.get(response.url).text
 
 
 def test_full_setup_ends_on_start_page(unlocked, client, settings, accept_key, monkeypatch):
@@ -77,7 +92,7 @@ def test_full_setup_ends_on_start_page(unlocked, client, settings, accept_key, m
         return SyncResult(created=3)
 
     monkeypatch.setattr("setup.views.sync_and_record", fake_sync)
-    client.post(reverse("setup:account"), ACCOUNT)
+    create_admin(client)
 
     response = client.post(reverse("setup:lexware"), {"api_key": API_KEY})
     assert response.url == reverse("setup:mail")
@@ -115,7 +130,7 @@ def test_full_setup_ends_on_start_page(unlocked, client, settings, accept_key, m
 
 def test_lexware_step_can_be_skipped(unlocked, client, settings):
     settings.LEXWARE_API_KEY = ""
-    client.post(reverse("setup:account"), ACCOUNT)
+    create_admin(client)
     assert reverse("setup:mail") in client.get(reverse("setup:lexware")).text
     # Empty: no e-mail, on to the backup.
     response = client.post(reverse("setup:mail"), {"port": "587", "security": "starttls"})
@@ -136,7 +151,7 @@ def test_lexware_step_can_be_skipped(unlocked, client, settings):
 
 def test_mail_step_sends_a_test_mail_to_the_admin(unlocked, client, settings):
     settings.LEXWARE_API_KEY = ""
-    client.post(reverse("setup:account"), ACCOUNT)
+    create_admin(client)
     data = {
         "host": "smtp.example.de",
         "port": "587",
@@ -156,13 +171,24 @@ def test_mail_step_sends_a_test_mail_to_the_admin(unlocked, client, settings):
 
 
 def test_mail_step_shows_the_server_error(unlocked, client, monkeypatch):
-    client.post(reverse("setup:account"), ACCOUNT)
+    create_admin(client)
     monkeypatch.setattr(outbox, "deliver", lambda config, messages: ["Connection refused"])
-    data = {"host": "smtp.example.de", "port": "587", "security": "ssl", "from_address": "zeit@example.de", "test": "1"}
+    data = {"host": "smtp.example.de", "port": "465", "security": "ssl", "from_address": "zeit@example.de", "test": "1"}
 
     response = client.post(reverse("setup:mail"), data)
 
     assert "nicht verschickt: Connection refused" in response.text
+
+
+def test_mail_step_warns_about_port_and_encryption_that_do_not_fit(unlocked, client):
+    create_admin(client)
+    data = {"host": "smtp.example.de", "port": "587", "security": "ssl", "from_address": "zeit@example.de", "test": "1"}
+
+    response = client.post(reverse("setup:mail"), data)
+
+    assert response.status_code == 200
+    assert "Port 587 nutzt STARTTLS" in response.text
+    assert not MailSettings.objects.get().host
 
 
 def test_setup_is_closed_once_an_account_exists(client, user):
@@ -172,6 +198,33 @@ def test_setup_is_closed_once_an_account_exists(client, user):
 
     client.post(reverse("setup:account"), ACCOUNT)
     assert User.objects.count() == 1
+
+
+def test_two_factor_is_required_before_the_later_steps(unlocked, client):
+    client.post(reverse("setup:account"), ACCOUNT)
+    admin = User.objects.get()
+    for step in ["lexware", "mail", "backup", "done"]:
+        assert client.get(reverse(f"setup:{step}")).url == reverse("setup:mfa")
+
+    page = client.get(reverse("setup:mfa")).text
+    assert "<svg" in page and "Zwei-Faktor-Anmeldung einrichten" in page
+
+    response = client.post(reverse("setup:mfa"), {"code": "000000"})
+    assert "Der Code stimmt nicht" in response.text
+    assert not mfa.has_mfa(admin)
+    assert client.get(reverse("setup:lexware")).url == reverse("setup:mfa")
+
+    response = client.post(reverse("setup:mfa"), {"code": current_code(mfa.pending_device(admin))})
+
+    assert response.status_code == 200
+    assert "Wiederherstellungscodes" in response.text
+    assert mfa.has_mfa(admin)
+    assert client.get(reverse("setup:mfa")).url == reverse("setup:lexware")
+    assert client.get(reverse("setup:lexware")).status_code == 200
+
+
+def test_two_factor_step_needs_the_setup_account(client):
+    assert client.get(reverse("setup:mfa")).url == reverse("setup:account")
 
 
 def test_later_steps_need_the_setup_account(client):

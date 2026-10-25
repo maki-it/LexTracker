@@ -1,8 +1,24 @@
 name: Release Image
-run-name: ${{ github.actor }} builds new container image
+run-name: Build container image ${{ inputs.tag }}
+
+# Called by release.yaml for every new release. Run it by hand to rebuild the image of an existing tag.
 on:
-  release:
-    types: [published]
+  workflow_call:
+    inputs:
+      tag:
+        description: Release tag to build, e.g. lextracker-v0.2.0
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to build, e.g. lextracker-v0.2.0
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: write
 
 env:
   REGISTRY: ghcr.io
@@ -13,6 +29,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag }}
 
       - name: Log in to the Container registry
         uses: docker/login-action@v4.6.0
@@ -27,15 +45,29 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
+      # release-please names the tag after the package, e.g. lextracker-v0.2.0. The semver
+      # patterns below only understand the part from the "v" on.
+      - name: Get the version from the tag
+        id: version
+        run: |
+          version=$(echo "$TAG" | sed -E 's/^[A-Za-z0-9_.]*-(v[0-9])/\1/')
+          echo "$version" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+' || { echo "No version in tag $TAG" >&2; exit 1; }
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+        env:
+          TAG: ${{ inputs.tag }}
+
       - name: Extract metadata for the Docker image
         id: meta
         uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository }}
+          # The event is not a tag push, so the version is passed in by hand and `latest` is set explicitly.
+          flavor: latest=false
           tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}},enable=${{ !startsWith(github.ref, 'refs/tags/0.') }}
+            type=semver,pattern={{version}},value=${{ steps.version.outputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ steps.version.outputs.version }}
+            type=semver,pattern={{major}},value=${{ steps.version.outputs.version }},enable=${{ !startsWith(steps.version.outputs.version, 'v0.') }}
+            type=raw,value=latest
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v7
@@ -45,7 +77,9 @@ jobs:
           platforms: |
             linux/amd64
             linux/arm64
-          push: ${{ github.event_name != 'pull_request' }}
+          push: true
+          build-args: |
+            VERSION=${{ steps.meta.outputs.version }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           provenance: false # Fix for unknown/unknown image build

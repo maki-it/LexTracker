@@ -5,7 +5,7 @@
 <div class="page-header">
   <div>
     <h1>Projekte</h1>
-    <p class="page-subtitle">{{ count }} {{ subtitle }}</p>
+    <p class="page-subtitle">{{ count }} Projekte{% if "all" not in statuses %} · {{ selected_labels|join:", " }}{% endif %}</p>
   </div>
   <div class="toolbar">
     <a href="{% url 'projects:templates' %}" class="btn">Aufgabenvorlagen</a>
@@ -17,14 +17,14 @@
     <input type="search" name="q" value="{{ query }}" placeholder="Projekt, Kunde oder Beschreibung suchen" aria-label="Projekte suchen" class="input max-w-sm"
            hx-get="{% url 'projects:list' %}" hx-trigger="input changed delay:250ms, search" hx-include="closest form"
            hx-target="#project-list" hx-select="#project-list" hx-swap="outerHTML" hx-push-url="true">
-    <input type="hidden" name="status" value="{{ status }}">
+    {% for key in statuses %}<input type="hidden" name="status" value="{{ key }}">{% endfor %}
     <noscript><button type="submit" class="btn">Suchen</button></noscript>
   </form>
 </div>
 <div id="project-list" class="flex flex-col gap-3">
   <nav aria-label="Nach Status filtern" class="flex flex-wrap gap-1.5">
-    {% for key, label, n, link in filters %}
-    <a href="{{ link }}" class="pill gap-1.5{% if status == key %} pill-active{% endif %}">{{ label }}<span class="text-muted tabular-nums">{{ n }}</span></a>
+    {% for pill in filters %}
+    <a href="?{{ pill.query }}" class="pill gap-1.5{% if pill.active %} pill-active{% endif %}"{% if pill.active %} aria-current="true"{% endif %}>{{ pill.label }}<span class="text-muted tabular-nums">{{ pill.count }}</span></a>
     {% endfor %}
   </nav>
   <div class="table-wrap" id="project-table">

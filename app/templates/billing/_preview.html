@@ -42,7 +42,7 @@
             <details class="group">
               <summary class="flex cursor-pointer list-none items-start gap-1.5 [&::-webkit-details-marker]:hidden">
                 <span class="mt-0.5 inline-flex shrink-0 text-muted transition-transform group-open:rotate-90">{% icon "chevron-right" size=14 %}</span>
-                <span>{{ line.name }}{% if line.description %}<span class="block text-xs text-muted">{{ line.description }}</span>{% endif %}<span class="block text-xs text-muted">{{ line.entries|length }} Zeiteintr{{ line.entries|length|pluralize:"ag,äge" }}</span></span>
+                <span>{{ line.name }}{% if line.description %}<span class="block text-xs text-muted whitespace-pre-line">{{ line.description }}</span>{% endif %}<span class="block text-xs text-muted">{{ line.entries|length }} Zeiteintr{{ line.entries|length|pluralize:"ag,äge" }}</span></span>
               </summary>
               <ul class="mt-2 ml-5 flex flex-col divide-y divide-line border-l border-line pl-3 text-[13px]">
                 {% for entry in line.entries %}
@@ -56,7 +56,7 @@
               </ul>
             </details>
             {% else %}
-            {{ line.name }}{% if line.description %}<div class="text-xs text-muted">{{ line.description }}</div>{% endif %}
+            {{ line.name }}{% if line.description %}<div class="text-xs text-muted whitespace-pre-line">{{ line.description }}</div>{% endif %}
             {% endif %}
           </td>
           <td class="text-right whitespace-nowrap tabular-nums">{{ line.quantity }} {{ line.unit }}</td>

@@ -36,6 +36,10 @@ class LexwareError(Exception):
     """The Lexware Office API could not be reached or answered with an error."""
 
 
+class LexwareUnauthorized(LexwareError):
+    """Lexware rejects the API key (HTTP 401), e.g. because it was revoked."""
+
+
 class LexwareNotFound(LexwareError):
     """Lexware does not know the requested resource (HTTP 404), for example a deleted draft."""
 
@@ -113,7 +117,7 @@ class LexwareClient:
                 await asyncio.sleep(retry_after)
                 continue
             if response.status_code == httpx.codes.UNAUTHORIZED:
-                raise LexwareError("Lexware hat den API-Schlüssel abgelehnt.")
+                raise LexwareUnauthorized("Lexware hat den API-Schlüssel abgelehnt.")
             if response.status_code == httpx.codes.NOT_FOUND:
                 raise LexwareNotFound(f"Lexware kennt {path} nicht (HTTP 404).")
             if response.is_error:

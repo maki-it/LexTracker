@@ -7,6 +7,7 @@ from django.utils import timezone
 from billing.calculation import Draft, build_draft
 from billing.lexware import invoice_payload
 from billing.models import Invoice
+from core.models import AppSettings
 from customers.models import Customer
 from lexware.client import LexwareClient, LexwareError
 from tracking.models import TimeEntry
@@ -40,5 +41,6 @@ async def create_invoice(client: LexwareClient, customer: Customer, start: date,
     if not draft.can_be_invoiced:
         raise LexwareError(" ".join(draft.problems) or "Für diesen Zeitraum gibt es nichts abzurechnen.")
     profile = await client.get_profile()
-    lexware_id = await client.create_invoice(invoice_payload(draft, timezone.localdate(), profile))
+    detail = (await AppSettings.aload()).invoice_detail
+    lexware_id = await client.create_invoice(invoice_payload(draft, timezone.localdate(), profile, detail))
     return await sync_to_async(_record_invoice)(draft, lexware_id)

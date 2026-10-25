@@ -71,7 +71,11 @@ def old_state(backups, tmp_path, django_db_blocker):
 
 
 def convert():
-    MigrationExecutor(connections[DB]).migrate([REKEY])
+    """Run the conversion, then the migrations after it, so the current models fit the tables."""
+    executor = MigrationExecutor(connections[DB])
+    executor.migrate([REKEY])
+    executor = MigrationExecutor(connections[DB])
+    executor.migrate(executor.loader.graph.leaf_nodes())
 
 
 def test_every_key_and_reference_is_converted(old_state, backups):

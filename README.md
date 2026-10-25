@@ -14,6 +14,7 @@ Zeiterfassung und Projektsteuerung mit Anbindung an die [Lexware Office Public A
 6. **MCP-Server** ✓: KI-Agenten erfassen Zeiten über das Model Context Protocol.
 7. **Zugänge** ✓: Mitarbeiter und Kunden mit eigenen Rechten, Einladung per Link.
 8. **E-Mail** ✓: Passwort zurücksetzen, Anmeldelink ohne Passwort, Einladung neuer Benutzer, Wochenbericht, Erinnerung an laufende Timer und Hinweis auf überfällige Rechnungen.
+9. **Nachrichten** ✓: Glocke und Postfach für Meldungen der App (Sicherung, Lexware-Abgleich, E-Mail-Versand, Timer) mit Prioritäten Kritisch, Warnung, Info und Debug, pro Benutzer einstellbar.
 
 ## Technik
 
@@ -42,7 +43,8 @@ app/
   mcpserver/   MCP-Server für KI-Agenten
   portal/      Kundenportal (nur lesen)
   mailer/      E-Mail-Versand: SMTP-Einstellungen, Warteschlange, Wochenbericht, Erinnerungen und Hinweise
-  setup/       Einrichtung einer neuen Instanz (Admin-Konto, Lexware-Schlüssel, Datensicherung)
+  inbox/       Nachrichten an Benutzer: Glocke, Postfach, Prioritäten, Weitergabe per E-Mail
+  setup/       Einrichtung einer neuen Instanz (Admin-Konto mit Zwei-Faktor-Anmeldung, Lexware-Schlüssel, Datensicherung)
   templates/   HTML-Templates
   assets/      Tailwind-Quelle mit Farben und eigenen Komponenten
   static/      Statische Dateien (htmx, gebautes CSS)
@@ -52,7 +54,7 @@ docker/
 
 ## Entwicklung
 
-Voraussetzung: [uv](https://docs.astral.sh/uv/getting-started/installation/) (installiert Python 3.14 bei Bedarf selbst).
+Voraussetzung: [uv](https://docs.astral.sh/uv/getting-started/installation/) (installiert Python 3.15 bei Bedarf selbst).
 
 ```sh
 make install     # Abhängigkeiten installieren, .env anlegen
@@ -61,13 +63,31 @@ make migrate     # Datenbank anlegen (liegt in ./data)
 make run         # http://localhost:8000
 ```
 
-Beim ersten Aufruf führt die **Einrichtung** durch das Anlegen des Admin-Kontos, das Verbinden mit Lexware Office und die Datensicherung (das Konto alternativ mit `make superuser`).
+Beim ersten Aufruf führt die **Einrichtung** durch das Anlegen des Admin-Kontos (mit verpflichtender Zwei-Faktor-Anmeldung per Authenticator-App), das Verbinden mit Lexware Office und die Datensicherung (das Konto alternativ mit `make superuser`).
 Solange es kein Konto gibt, leitet jede Seite dorthin. Damit niemand anderes eine frische Instanz übernehmen kann, öffnet sich die Einrichtung nur mit einem Code: Die App schreibt den Einrichtungslink beim ersten Aufruf ins Log (`docker compose logs app`), alternativ zeigt ihn `manage.py setup_link` (`docker compose exec app python manage.py setup_link`). Der Code ist aus `APP_SECRET_KEY` abgeleitet und nach dem ersten Konto wertlos.
 
 Während du an Templates arbeitest, hält `make css-watch` in einem zweiten Terminal das Stylesheet aktuell.
 Den automatischen Kundenimport und den E-Mail-Versand startest du lokal bei Bedarf mit `make scheduler`.
 `make test` startet die Tests, `make lint` prüft den Code-Stil. `make help` zeigt alle Befehle.
 Einen Last- und Performancetest mit Testdaten beschreibt [loadtest/README.md](loadtest/README.md).
+
+### Entwicklung mit Docker
+
+Wer lieber im Container entwickelt (gleiches Image und Python wie in Produktion), startet die Entwicklungsumgebung aus [dev.compose.yaml](dev.compose.yaml). Sie baut mit `extends` auf der `compose.yaml` auf und braucht ein aktuelles Docker Compose (getestet mit v5.6):
+
+```sh
+cp .env.example .env    # APP_SECRET_KEY setzen, für die Entwicklung genügt ein beliebiger Wert
+make docker-dev         # oder: docker compose -f dev.compose.yaml watch
+```
+
+Das baut das Image, startet App und Scheduler auf http://localhost:8000 und beobachtet danach den Code:
+
+- Änderungen unter `app/` werden in den Container kopiert; `uvicorn --reload` lädt bei Python-Dateien selbst neu, der Scheduler startet neu.
+- Bei Änderungen an Templates, Skripten oder `assets/tailwind.css` wird zusätzlich das Stylesheet neu gebaut (`manage.py tailwind build`). Beim ersten Mal lädt das das Tailwind-CLI herunter; es bleibt in einem Volume erhalten. Die Seite lädst du selbst neu.
+- Änderungen an `pyproject.toml`, `uv.lock` oder `docker/Dockerfile` bauen das Image neu.
+
+Die Umgebung läuft als eigenes Compose-Projekt `lextracker-dev` mit eigenen Volumes und Containernamen, berührt also keine Produktionsdaten auf demselben Rechner. Sie nutzt `APP_ENVIRONMENT=development`, hört nur auf `127.0.0.1:8000`, und das Dateisystem ist beschreibbar, weil `watch` Dateien hineinkopiert.
+Neue Migrationen wendest du mit `docker compose -f dev.compose.yaml exec app python manage.py migrate` an (beim Neustart laufen sie ohnehin). Zum Aufräumen: `make docker-dev-down`, mit `-v` an `docker compose -f dev.compose.yaml down` auch die Daten.
 
 ## Lexware Office
 
@@ -107,10 +127,11 @@ Pro Kunde legst du unter **Abrechnung** eine Vereinbarung an:
 
 Für einen gewählten Zeitraum zeigt die Vorschau alle noch nicht abgerechneten, abrechenbaren Zeiten als Rechnungspositionen.
 **Rechnungsentwurf in Lexware anlegen** erstellt daraus einen Entwurf (nicht finalisiert), den du in Lexware prüfst und abschließt. Die Zeiten gelten danach als abgerechnet und tauchen in keiner weiteren Rechnung auf.
+Jede Position heißt wie die Aufgabe (Mehrstunden eines Retainers: „… (Mehrstunden)“), die Beschreibung darunter nennt Projekt und Zeitraum. Unter **Einstellungen → Allgemein** kannst du zusätzlich die Tätigkeiten (Datum, Dauer, Beschreibung des Zeiteintrags) in die Beschreibung schreiben lassen; der Kunde sieht sie dann auf der Rechnung.
 Der Kunde muss dafür mit einem Lexware-Kontakt verknüpft sein. Die Umsatzsteuer richtet sich nach deinem Lexware-Konto: Ist es als Kleinunternehmer (§ 19 UStG) eingerichtet, entsteht die Rechnung ohne Umsatzsteuer, sonst mit 19 %.
 
 Der Reiter **Rechnungen** listet alle Rechnungen mit Nummer, Status (Entwurf, offen, überfällig, bezahlt, storniert) und Fälligkeit, filterbar nach Status und Kunde und durchsuchbar nach Kunde oder Nummer. Die neuesten stehen oben (nach Rechnungsdatum, dann Rechnungsnummer).
-Der Rechnungsabgleich übernimmt auch Rechnungen, die du direkt in Lexware für einen importierten Kunden schreibst, mit Datum, Leistungszeitraum, Nettosumme und Status. Sie sind mit „in Lexware erstellt“ markiert, haben keine Zeiteinträge, erscheinen im Kundenzugang und zählen in den Auswertungen zum Umsatz. Löschst du eine solche Rechnung in Lexware, verschwindet sie auch hier.
+Der Rechnungsabgleich übernimmt auch Rechnungen, die du direkt in Lexware für einen importierten Kunden schreibst, mit Datum, Leistungszeitraum, Nettosumme und Status. Sie tragen in der Rechnungsliste ein kleines Label „Lexware“ (Tooltip: „In Lexware Office erstellt“), haben keine Zeiteinträge, erscheinen im Kundenzugang und zählen in den Auswertungen zum Umsatz. Löschst du eine solche Rechnung in Lexware, verschwindet sie auch hier.
 Den Status holt der Scheduler nach dem eingestellten Zeitplan aus der Belegliste von Lexware; **Status aktualisieren** gleicht sofort ab.
 Löschst du einen Entwurf in Lexware, wird die Rechnung hier als gelöscht markiert und ihre Zeiten sind wieder offen. Bei einer stornierten Rechnung gibst du die Zeiten mit **Zeiten freigeben** selbst wieder frei, falls du sie neu abrechnen willst.
 
@@ -173,9 +194,31 @@ Dort schaltest du auch die **Zwei-Faktor-Anmeldung** mit einer Authenticator-App
 Auch die Verwaltung unter `/admin/` meldet über diese Anmeldung an, damit der zweite Faktor dort nicht umgangen wird.
 Nach zu vielen falschen Passwörtern oder Codes von einer IP-Adresse ist die Anmeldung von dort eine Weile gesperrt. Wie viele Fehlversuche und wie lange, legst du unter **Einstellungen** fest (Standard: 5 Versuche, 15 Minuten; 0 Versuche schaltet die Sperre aus). Hinter einem Reverse Proxy muss `FORWARDED_ALLOW_IPS` stimmen, sonst sehen alle Anfragen wie die IP des Proxys aus.
 
+## Nachrichten
+
+Die App meldet sich bei dir, wenn im Hintergrund etwas passiert: Die **Glocke** oben in der Seitenleiste zeigt, wie viele Nachrichten ungelesen sind, und öffnet sie als Fenster. Dort liest, löscht und öffnest du sie (der Titel führt zur passenden Seite); **Als Seite öffnen** zeigt alle mit Filtern nach Priorität. Eine ungelesene kritische Nachricht steht zusätzlich als Banner auf jeder Seite, bis du sie gelesen hast.
+
+Es gibt vier Prioritäten: **Kritisch**, **Warnung**, **Info** und **Debug**. Im Konto stellst du ein, ab welcher Priorität du Nachrichten siehst (Standard: Info) und ab welcher du sie zusätzlich per E-Mail bekommst (Standard: Kritisch, nur wenn der E-Mail-Versand eingerichtet ist). Kritische Nachrichten siehst du immer. Die Einstellung filtert beim Anzeigen: Stellst du später auf Debug um, erscheinen auch die älteren.
+
+Was die App meldet, und an wen (Administratoren, außer wo es dich selbst betrifft):
+
+| Ereignis | Priorität |
+| --- | --- |
+| Datensicherung fehlgeschlagen | Kritisch |
+| Lexware lehnt den API-Schlüssel ab | Kritisch |
+| Kundenimport oder Rechnungsabgleich fehlgeschlagen | Warnung, ab dem dritten Fehlschlag in Folge Kritisch |
+| E-Mail endgültig nicht zugestellt | Warnung |
+| Dein Timer läuft länger als eingestellt (an den Mitarbeiter selbst) | Warnung |
+| Kundenimport oder Rechnungsabgleich mit Änderungen, Sicherung hochgeladen oder wiederhergestellt | Info |
+| Sicherung erstellt, Import oder Abgleich ohne Änderungen | Debug |
+
+Gleiche Meldungen werden zusammengefasst: Scheitert der stündliche Abgleich einen Tag lang, steht dort eine Nachricht mit „24×“, und es geht nur eine E-Mail raus. Sobald der Job wieder läuft, gilt sie als gelesen. Andere Programmteile melden über `inbox.service.anotify(level, kind, title, body, url=…, to=…, dedupe_key=…)`; der Scheduler läuft in einem eigenen Prozess, deshalb geht jede Nachricht über die Datenbank, und die Glocke fragt jede Minute nach.
+
+Aufgeräumt wird stündlich im Scheduler: Gelesene Nachrichten bleiben bei Debug 3 Tage, Info 30, Warnung 90 und Kritisch 365 Tage; ungelesene Debug- und Info-Nachrichten gehen nach der doppelten Zeit, ungelesene Warnungen und kritische bleiben, bis du sie liest. Mehr als 1000 Nachrichten pro Benutzer werden nicht aufbewahrt. Kunden haben (noch) kein Postfach.
+
 ## E-Mail
 
-Unter **Einstellungen → E-Mail-Versand verwalten** trägst du den SMTP-Server ein (Server, Port, Verschlüsselung, Zugangsdaten, Absender). Das Passwort wird wie der Lexware-Schlüssel verschlüsselt gespeichert. Eine **Testmail** geht sofort raus und zeigt direkt, was der Server antwortet.
+Unter **Einstellungen → E-Mail-Versand verwalten** trägst du den SMTP-Server ein (Server, Port, Verschlüsselung, Zugangsdaten, Absender). Das Passwort wird wie der Lexware-Schlüssel verschlüsselt gespeichert. Eine **Testmail** geht sofort raus und zeigt direkt, was der Server antwortet. Port 587 gehört zu STARTTLS, Port 465 zu SSL/TLS; passen Port und Verschlüsselung nicht zusammen, weist dich das Formular darauf hin, und ein TLS-Fehler der Testmail nennt die passende Einstellung.
 
 Alle anderen E-Mails legt die App in eine Warteschlange in der Datenbank, damit keine Seite auf den SMTP-Server wartet. Der Scheduler schaut alle fünf Sekunden hinein, verschickt, was ansteht, und versucht es bei Fehlern nach 1, 5, 15 und 60 Minuten erneut. Die letzten E-Mails mit Status und Fehlermeldung stehen auf derselben Seite unter **Postausgang**. Ohne laufenden Scheduler (`make scheduler` oder der Container `scheduler`) geht also nichts raus.
 
@@ -208,6 +251,7 @@ Seiten gehen mit Brotli oder gzip komprimiert an den Browser.
 Ein Worker (`UVICORN_WORKERS`) nutzt höchstens einen CPU-Kern und braucht etwa 80 bis 200 MB RAM; bei mehreren Kernen und mehreren gleichzeitigen Benutzern lohnt einer pro Kern (siehe [loadtest/README.md](loadtest/README.md)).
 Die App lauscht auf Port 8000 (über `APP_PORT` änderbar, z. B. `127.0.0.1:8000`, wenn nur ein Reverse Proxy auf demselben Server sie erreichen soll). Datenbank und alle Daten liegen im Volume `lextracker-data` (`/data` im Container), Backups im Volume `lextracker-backups` (`/backups`).
 Neben der App startet ein zweiter Container `scheduler` aus demselben Image, sobald die App gesund ist. Er führt wiederkehrende Aufgaben wie den automatischen Kundenimport, den Rechnungsabgleich, das tägliche Backup, Wochenberichte und Erinnerungen aus und prüft dafür jede Minute, was fällig ist. Außerdem verschickt er die E-Mails aus der Warteschlange. Sein Healthcheck schlägt an, wenn er länger als fünf Minuten nicht mehr geprüft hat.
+Unter Einstellungen → Hintergrundaufgaben (oben rechts) siehst du als Admin, ob der Scheduler lebt (er meldet sich bei jeder Prüfung in der Datenbank; nach fünf Minuten Stille warnt die Seite und die Übersicht) und für jede Aufgabe Zeitplan, nächsten und letzten Lauf mit Dauer, Ergebnis, letzter Fehlermeldung und Fehlschlägen in Folge. Fehler kommen weiterhin als Nachricht in die Glocke; die Seite legt keine eigenen an. Prüfungen, die nichts zu tun hatten (E-Mail-Warteschlange, Berichte, Timer-Nachrichten), hinterlassen keine Spur, außer sie folgen auf einen Fehler.
 Vor jedem Start führt Compose über `pre_start`-Hooks die Migrationen aus und legt, falls `DJANGO_SUPERUSER_USERNAME` und `DJANGO_SUPERUSER_PASSWORD` gesetzt sind, das Admin-Konto an (sofern es noch nicht existiert). Schlägt ein Hook fehl, startet die App nicht. Dafür ist ein aktuelles Docker Compose nötig (getestet mit v5.6).
 Beide Container laufen ohne Root, mit schreibgeschütztem Dateisystem (beschreibbar sind nur `/data`, `/backups` und `/tmp`), ohne Linux-Capabilities und mit begrenzten Logs (5 × 10 MB).
 
@@ -237,3 +281,11 @@ services:
 Beim Wiederherstellen in der Oberfläche sichert die App zuerst den aktuellen Stand (Datei mit `-vorher` im Namen), schreibt die Kopie mit der Backup-Funktion von SQLite in die laufende Datenbank und führt danach die Migrationen aus. App und Scheduler laufen dabei weiter. Kopien aus einer neueren Version der App lehnt sie ab. Startet die App gar nicht mehr, geht es auch von Hand: App stoppen (`docker compose down`), die gewünschte Kopie als `/data/db.sqlite3` zurückspielen und dabei `db.sqlite3-wal` und `db.sqlite3-shm` löschen, dann wieder starten.
 
 **IDs:** Alle Datensätze (Kunden, Projekte, Aufgaben, Zeiteinträge, Rechnungen, Benutzer …) haben eine UUID (Version 7, zeitlich sortierbar) als ID, auch in URLs, Formularen und im MCP-Server. Nur die Einzeleinträge der Einstellungen (Einstellungen, E-Mail-Versand, Lexware-Verbindung) behalten ihre feste interne Nummer 1. Beim Update einer älteren Instanz stellt die Migration `core.0011` alle IDs und Verweise um (auch in den Tabellen von django-otp und dem Admin-Log). Vorher legt `core.0010` eine Kopie mit `-vor-umstellung` im Namen im Backup-Ordner an. Danach sind alle angemeldeten Sitzungen ungültig (einmal neu anmelden), und Links mit den alten Nummern (Lesezeichen, verschickte Einladungen) liefern 404. Zurück auf die alte Version geht nur mit dieser Kopie: erst die alte Version starten, dann die Kopie wiederherstellen; in der neuen Version würde die Wiederherstellung sie sofort wieder umstellen.
+
+## Releases
+
+Versionen entstehen aus den Commit-Nachrichten ([Conventional Commits](https://www.conventionalcommits.org/)): `fix:` erhöht die Patch-Version, `feat:` die Minor-Version, ein Breaking Change (`!` oder `BREAKING CHANGE:`) vor 1.0 ebenfalls die Minor-Version.
+Auf `main` hält [release-please](https://github.com/googleapis/release-please) einen Pull Request „chore(main): release x.y.z“ aktuell. Mit seinem Merge steigt die Version in `pyproject.toml` und `uv.lock`, `CHANGELOG.md` wird ergänzt, und es entstehen der Tag `lextracker-vx.y.z` und das GitHub-Release.
+Danach baut [build.yaml](.github/workflows/build.yaml) das Image für `linux/amd64` und `linux/arm64` und lädt es als `ghcr.io/maki-it/lextracker` mit den Tags `x.y.z`, `x.y` (ab 1.0 auch `x`) und `latest` hoch. Dasselbe Image lässt sich über „Run workflow“ für einen bestehenden Tag neu bauen.
+Den Release-PR mergst du entweder selbst oder über Actions → Publish Release → Run workflow: Ohne Eingabe mergt der Workflow den offenen Release-PR mit der vorgeschlagenen Version, mit einer Version (z. B. `1.0.0`) setzt er sie zuerst per `Release-As`-Commit auf `main`, wartet, bis der Release-PR darauf umgestellt ist, und mergt ihn dann. Sind für `main` Checks als Pflicht eingestellt, schlägt das Mergen fehl, solange sie auf dem Release-PR nicht grün sind.
+Damit das klappt, braucht das Repo eine GitHub App (Contents und Pull requests jeweils Read and write), die den Release-PR anlegt und dadurch auch CI darauf auslöst. Ihre App-ID steht als Variable `RELEASE_APP_ID`, ihr privater Schlüssel als Secret `RELEASE_APP_PRIVATE_KEY` unter Settings → Secrets and variables → Actions.

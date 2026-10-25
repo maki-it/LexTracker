@@ -18,6 +18,7 @@ urlpatterns = [
     path("tasks/", include("tracking.urls")),
     path("billing/", include("billing.urls")),
     path("reports/", include("reports.urls")),
+    path("messages/", include("inbox.urls")),
     path("settings/lexware/", include("lexware.urls")),
     path("settings/email/", include("mailer.urls")),
     path("setup/", include("setup.urls")),

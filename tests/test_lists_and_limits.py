@@ -129,6 +129,61 @@ def test_project_list_shows_active_projects_and_loads_more(logged_in, task):
     assert ">Fertig<" in done and "P00" not in done
 
 
+def test_project_list_combines_status_filters(logged_in, task):
+    customer = task.project.customer
+    for name, status in [
+        ("Läuft", Project.Status.ACTIVE),
+        ("Kommt", Project.Status.PLANNED),
+        ("Wartet", Project.Status.PAUSED),
+        ("Fertig", Project.Status.DONE),
+    ]:
+        Project.objects.create(customer=customer, name=name, status=status)
+
+    url = reverse("projects:list")
+    page = logged_in.get(url, [("status", "active"), ("status", "paused")]).text
+    assert ">Läuft<" in page and ">Wartet<" in page and ">Kommt<" not in page and ">Fertig<" not in page
+    # Each pill toggles its own filter; the last one off falls back to all projects.
+    assert 'href="?status=active&amp;status=planned&amp;status=paused"' in page
+    assert 'href="?status=paused"' in page
+    assert 'href="?status=all"' in page
+
+    only = logged_in.get(url, {"status": "active"}).text
+    assert 'href="?status=all"' in only
+
+    everything = logged_in.get(url, [("status", "all"), ("status", "active")]).text
+    assert ">Fertig<" in everything and ">Kommt<" in everything
+    assert 'href="?status=planned"' in everything
+
+
+def test_invoice_list_combines_status_filters(logged_in, task):
+    def invoice(number, status):
+        return Invoice.objects.create(
+            customer=task.project.customer,
+            period_start=date(2026, 10, 1),
+            period_end=date(2026, 10, 31),
+            total_net=Decimal(1),
+            voucher_number=number,
+            voucher_date=date(2026, 10, 1),
+            status=status,
+        )
+
+    invoice("RE-OPEN", Invoice.Status.OPEN)
+    invoice("RE-LATE", Invoice.Status.OVERDUE)
+    invoice("RE-PAID", Invoice.Status.PAID)
+
+    url = reverse("billing:invoices")
+    page = logged_in.get(url, [("status", "open"), ("status", "overdue")]).text
+    assert "RE-OPEN" in page and "RE-LATE" in page and "RE-PAID" not in page
+    # Each pill toggles one filter.
+    assert 'href="?status=overdue"' in page and 'href="?status=open"' in page
+    assert 'href="?status=open&amp;status=overdue&amp;status=paid"' in page
+    assert page.count('name="status"') == 2
+
+    page = logged_in.get(url, {"status": "paid", "q": "RE", "page": 1}).text
+    assert 'href="?status=open&amp;status=paid&amp;q=RE"' in page
+    assert 'href="?q=RE"' in page
+
+
 def test_customer_list_loads_more(logged_in):
     Customer.objects.bulk_create(Customer(name=f"Kunde {i:02d}") for i in range(30))
 

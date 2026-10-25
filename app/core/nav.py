@@ -1,10 +1,11 @@
-"""What the sidebar shows besides its links: the running timer and the numbers next to the links."""
+"""What the sidebar shows besides its links: the running timer, the bell and the numbers next to the links."""
 
 from collections.abc import Awaitable, Callable
 
 from django.http import HttpRequest, HttpResponse
 from django.utils.decorators import async_only_middleware
 
+from inbox import service as inbox
 from projects.models import Project
 from tracking.models import TimeEntry
 
@@ -43,6 +44,7 @@ def NavCountsMiddleware(get_response: Callable[[HttpRequest], Awaitable[HttpResp
         if user.is_authenticated and not request.htmx and not request.path.startswith(SKIPPED):
             if not user.is_customer:
                 request.nav_timer = {"running_entry": await running_entry(user)}
+                request.nav_inbox = await inbox.summary(user)
             if user.is_admin:
                 request.nav_counts = await nav_counts()
         return await get_response(request)

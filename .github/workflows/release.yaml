@@ -1,0 +1,50 @@
+name: Release
+
+# Keeps a release pull request up to date from the Conventional Commits on main.
+# Merging it bumps the version in pyproject.toml and uv.lock, updates CHANGELOG.md, creates the
+# tag and the GitHub release, and then builds and pushes the image for that tag.
+on:
+  push:
+    branches: [main]
+
+permissions: {}
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+    steps:
+      # A pull request opened with GITHUB_TOKEN does not trigger CI, one opened by a GitHub App does.
+      - id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      - id: release
+        uses: googleapis/release-please-action@v4
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  # A release created with GITHUB_TOKEN does not trigger a `release` event, so the image build
+  # is called from here instead of listening for the release.
+  image:
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/build.yaml
+    with:
+      tag: ${{ needs.release-please.outputs.tag_name }}

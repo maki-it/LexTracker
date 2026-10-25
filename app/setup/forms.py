@@ -12,7 +12,7 @@ class AdminAccountForm(StyledFormMixin, BaseUserCreationForm):
 
     class Meta(BaseUserCreationForm.Meta):
         model = User
-        fields = ("username", "first_name", "email")
+        fields = ("username", "first_name", "last_name", "email")
 
     def save(self, commit: bool = True) -> User:
         user = super().save(commit=False)

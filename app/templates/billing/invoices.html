@@ -15,7 +15,7 @@
         <option value="">Alle Kunden</option>
         {% for c in customers %}<option value="{{ c.pk }}"{% if c.pk == customer_id %} selected{% endif %}>{{ c.name }}</option>{% endfor %}
       </select>
-      {% if status %}<input type="hidden" name="status" value="{{ status }}">{% endif %}
+      {% for key in statuses %}<input type="hidden" name="status" value="{{ key }}">{% endfor %}
       <noscript><button type="submit" class="btn">Suchen</button></noscript>
     </form>
     {% if lexware_configured %}
@@ -32,9 +32,9 @@
     {% endif %}
   </div>
   <nav aria-label="Nach Status filtern" class="flex flex-wrap gap-1.5">
-    <a href="?{% if query %}q={{ query|urlencode }}{% endif %}{% if customer_id %}&customer={{ customer_id }}{% endif %}" class="pill{% if not status %} pill-active{% endif %}">Alle</a>
-    {% for key, label, count in filters %}
-    <a href="?status={{ key }}{% if query %}&q={{ query|urlencode }}{% endif %}{% if customer_id %}&customer={{ customer_id }}{% endif %}" class="pill gap-1.5{% if status == key %} pill-active{% endif %}">{{ label }}<span class="text-muted tabular-nums">{{ count }}</span></a>
+    <a href="?{{ all_query }}" class="pill{% if not statuses %} pill-active{% endif %}">Alle</a>
+    {% for pill in filters %}
+    <a href="?{{ pill.query }}" class="pill gap-1.5{% if pill.active %} pill-active{% endif %}"{% if pill.active %} aria-current="true"{% endif %}>{{ pill.label }}<span class="text-muted tabular-nums">{{ pill.count }}</span></a>
     {% endfor %}
   </nav>
 </div>

@@ -101,6 +101,7 @@ def test_settings_page_saves_the_backup_settings(client, settings, user):
 
     data = {
         "time_rounding": 0,
+        "invoice_detail": "summary",
         "login_max_attempts": 5,
         "login_lockout_minutes": 15,
         "lexware_sync_interval": 60,
@@ -352,6 +353,7 @@ def test_settings_page_shows_one_tab_and_keeps_it_after_saving(client, user):
     data = {
         "tab": "backup",
         "time_rounding": 0,
+        "invoice_detail": "summary",
         "login_max_attempts": 5,
         "login_lockout_minutes": 15,
         "lexware_sync_interval": 60,

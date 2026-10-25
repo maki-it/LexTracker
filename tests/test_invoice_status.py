@@ -276,6 +276,42 @@ def test_invoice_with_a_single_service_date_shows_only_that_date(logged_in, bill
     assert "01.10.2026 – 31.10.2026" in text
 
 
+def test_invoice_list_shows_due_date_and_days_overdue_below_the_badge(logged_in, billed):
+    _, invoice, _ = billed
+    today = timezone.localdate()
+
+    def make(number, status, due_date, origin=Invoice.Origin.APP):
+        return Invoice.objects.create(
+            customer=invoice.customer,
+            period_start=date(2026, 9, 1),
+            period_end=date(2026, 9, 30),
+            total_net=Decimal("10.00"),
+            status=status,
+            voucher_number=number,
+            due_date=due_date,
+            origin=origin,
+        )
+
+    make("RE-OPEN", Invoice.Status.OPEN, date(2031, 3, 5))
+    make("RE-LATE", Invoice.Status.OVERDUE, today - timedelta(days=3), origin=Invoice.Origin.LEXWARE)
+    make("RE-PAID", Invoice.Status.PAID, date(2031, 4, 6))
+
+    text = logged_in.get(reverse("billing:invoices")).text
+    assert "Fällig 05.03.2031" in text and "seit" not in text.split("Fällig 05.03.2031")[1].split("</span>")[0]
+    assert f"Fällig {(today - timedelta(days=3)):%d.%m.%Y} · seit 3 Tagen" in text
+    # Paid invoices need no due date; the Lexware origin is a small label with a tooltip, not running text.
+    assert "06.04.2031" not in text
+    assert text.count("badge-outline") == 1 and text.count("In Lexware Office erstellt") == 1
+
+
+def test_days_overdue_counts_only_for_overdue_invoices():
+    today = timezone.localdate()
+    overdue = Invoice(status=Invoice.Status.OVERDUE, due_date=today - timedelta(days=1))
+    assert overdue.days_overdue == 1
+    assert Invoice(status=Invoice.Status.OVERDUE, due_date=None).days_overdue == 0
+    assert Invoice(status=Invoice.Status.OPEN, due_date=today - timedelta(days=5)).days_overdue == 0
+
+
 def test_overview_lists_only_customers_with_open_time(logged_in, billed):
     entry = billed[2]
     Customer.objects.create(name="Ohne Zeiten AG")
@@ -325,3 +361,52 @@ def test_due_dates_without_time_zone_are_accepted(billed):
 
     v = Voucher.model_validate({"id": str(uuid.uuid4()), "voucherStatus": "open", "dueDate": "2026-11-01T00:00:00"})
     assert _due_date(v) == datetime(2026, 11, 1).date()
+
+
+def test_deleted_draft_is_labelled_as_a_draft_with_its_time_hint_in_the_status_cell(logged_in, billed):
+    _, invoice, _ = billed
+    other = dict(customer=invoice.customer, period_start=date(2026, 9, 1), period_end=date(2026, 9, 30))
+    Invoice.objects.filter(pk=invoice.pk).update(status=Invoice.Status.DELETED)
+    Invoice.objects.create(**other, total_net=Decimal("10.00"), status=Invoice.Status.VOIDED, voucher_number="RE-V")
+    Invoice.objects.create(**other, total_net=Decimal("20.00"), status=Invoice.Status.DELETED, voucher_number="RE-SENT")
+
+    text = logged_in.get(reverse("billing:invoices")).text
+    rows = {row.split("</tr>")[0] for row in text.split("<tr>")[2:]}
+    deleted_draft = next(r for r in rows if "Entwurf gelöscht" in r)
+    voided = next(r for r in rows if "RE-V" in r)
+    deleted_sent = next(r for r in rows if "RE-SENT" in r)
+
+    # The draft says so in its badge, and the hint sits in the status cell, not in an extra column.
+    assert "Entwurf gelöscht" in deleted_draft and "In Lexware gelöscht" not in deleted_draft.replace(
+        'title="In Lexware gelöscht"', ""
+    )
+    assert deleted_draft.count("Zeiten wieder offen") == 1
+    assert deleted_draft.index("Zeiten wieder offen") < deleted_draft.index("line-through")
+    # A voided invoice stays apart: its own label and color, no "time open" hint.
+    assert "Storniert" in voided and "badge-warning" in voided and "Zeiten wieder offen" not in voided
+    # Deleted after it got a number: no draft label, but time is open again too.
+    assert "Entwurf gelöscht" not in deleted_sent and ">In Lexware gelöscht<" in deleted_sent
+    assert "Zeiten wieder offen" in deleted_sent
+    assert "badge-warning" not in deleted_draft and "badge-warning" not in deleted_sent
+
+
+def test_deleted_draft_is_listed_under_drafts_and_deleted(logged_in, billed):
+    _, invoice, _ = billed
+    other = dict(customer=invoice.customer, period_start=date(2026, 9, 1), period_end=date(2026, 9, 30))
+    Invoice.objects.filter(pk=invoice.pk).update(status=Invoice.Status.DELETED)  # 200,00 €, never had a number
+    Invoice.objects.create(**other, total_net=Decimal("70.00"), status=Invoice.Status.DRAFT)
+    Invoice.objects.create(**other, total_net=Decimal("20.00"), status=Invoice.Status.DELETED, voucher_number="RE-SENT")
+    url = reverse("billing:invoices")
+
+    def shown(*statuses):
+        response = logged_in.get(url, {"status": list(statuses)})
+        text = response.text
+        return {amount for amount in ("200,00", "70,00", "20,00") if f"{amount} €" in text}, response
+
+    # A deleted draft is still a draft, a deleted invoice that had a number is not.
+    assert shown("draft")[0] == {"200,00", "70,00"}
+    assert shown("deleted")[0] == {"200,00", "20,00"}
+    both, response = shown("draft", "deleted")
+    assert both == {"200,00", "70,00", "20,00"} and response.text.count("200,00 €") == 1
+    counts = {pill.key: pill.count for pill in response.context["filters"]}
+    assert counts["draft"] == 2 and counts["deleted"] == 2

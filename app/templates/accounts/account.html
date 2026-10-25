@@ -2,21 +2,55 @@
 {% block title %}Konto · LexTracker{% endblock %}
 {% block content %}
 <h1>Konto</h1>
+<nav class="tabs flex-wrap gap-x-4 sm:gap-x-5" aria-label="Konto">
+  {# Absolute, so the links also work inside the dialog, where the address bar shows the page behind it. #}
+  {% for key, label in tabs %}
+  <a href="{% url 'account:settings' %}?tab={{ key }}" class="tab{% if key == tab %} tab-active{% endif %}"{% if key == tab %} aria-current="page"{% endif %}>{{ label }}</a>
+  {% endfor %}
+</nav>
 <div class="grid max-w-2xl grid-cols-1 gap-6">
-  <form method="post" action="{% url 'account:settings' %}" class="card flex flex-col gap-4">
+  {# One form for the three tabs with fields, so saving never loses what was changed on another tab. #}
+  <form method="post" action="{% url 'account:settings' %}" class="grid grid-cols-1 gap-6"{% if tab == "security" or tab == "agents" %} hidden{% endif %}>
     {% csrf_token %}
-    <h2>Profil und Anzeige</h2>
-    {% include "core/_form_fields.html" %}
-    <div class="border-t border-line pt-4"><button type="submit" class="btn btn-primary">Speichern</button></div>
+    <input type="hidden" name="tab" value="{{ tab }}">
+    {% for error in form.non_field_errors %}<div role="alert" class="alert alert-error">{{ error }}</div>{% endfor %}
+    <section class="card flex flex-col gap-4"{% if tab != "profile" %} hidden{% endif %}>
+      <h2>Profil</h2>
+      {% include "core/_field.html" with field=form.first_name %}
+      {% include "core/_field.html" with field=form.last_name %}
+      {% include "core/_field.html" with field=form.email %}
+    </section>
+
+    <section class="card flex flex-col gap-4"{% if tab != "appearance" %} hidden{% endif %}>
+      <h2>Darstellung</h2>
+      {% include "core/_field.html" with field=form.theme %}
+      {% include "core/_field.html" with field=form.date_format %}
+      {% include "core/_field.html" with field=form.duration_format %}
+      {% include "core/_field.html" with field=form.list_page_size %}
+    </section>
+
+    {% if form.message_level %}
+    <section class="card flex flex-col gap-4"{% if tab != "notifications" %} hidden{% endif %}>
+      <h2>Benachrichtigungen</h2>
+      <label class="flex items-center gap-2 text-sm font-medium">{{ form.weekly_report }} {{ form.weekly_report.label }}</label>
+      {% for error in form.weekly_report.errors %}<p class="text-sm text-danger">{{ error }}</p>{% endfor %}
+      <label class="flex items-center gap-2 text-sm font-medium">{{ form.timer_reminder }} {{ form.timer_reminder.label }}</label>
+      {% for error in form.timer_reminder.errors %}<p class="text-sm text-danger">{{ error }}</p>{% endfor %}
+      {% include "core/_field.html" with field=form.message_level %}
+      {% include "core/_field.html" with field=form.message_email_level %}
+    </section>
+    {% endif %}
+
+    <div><button type="submit" class="btn btn-primary">Speichern</button></div>
   </form>
 
-  <section class="card flex flex-col gap-3">
+  <section class="card flex flex-col gap-3"{% if tab != "security" %} hidden{% endif %}>
     <h2>Passwort</h2>
     <p class="text-sm text-muted">Nach dem Ändern bleibst du hier angemeldet, andere Geräte werden abgemeldet.</p>
     <div><a href="{% url 'account:password' %}" class="btn">Passwort ändern</a></div>
   </section>
 
-  <section class="card flex flex-col gap-3">
+  <section class="card flex flex-col gap-3"{% if tab != "security" %} hidden{% endif %}>
     <h2>Zwei-Faktor-Anmeldung</h2>
     {% if has_mfa %}
     <p class="text-sm"><span class="font-medium text-success">Eingeschaltet.</span> Beim Anmelden fragt LexTracker nach dem Code aus deiner Authenticator-App.</p>
@@ -28,7 +62,7 @@
   </section>
 
   {% if not user.is_customer %}
-  <section class="card flex flex-col gap-4" id="api-tokens">
+  <section class="card flex flex-col gap-4" id="api-tokens"{% if tab != "agents" %} hidden{% endif %}>
     <div>
       <h2>KI-Agenten und API-Tokens</h2>
       <p class="mt-1 text-sm text-muted">

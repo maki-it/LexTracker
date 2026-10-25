@@ -177,23 +177,61 @@ async def logout_view(request: HttpRequest) -> HttpResponse:
 # Account settings
 
 
+ACCOUNT_TABS = [
+    ("profile", "Profil"),
+    ("appearance", "Darstellung"),
+    ("notifications", "Benachrichtigungen"),
+    ("security", "Sicherheit"),
+    ("agents", "KI-Agenten"),
+]
+_ACCOUNT_TAB_FIELDS = {
+    "profile": ["first_name", "last_name", "email"],
+    "appearance": ["theme", "date_format", "duration_format", "list_page_size"],
+    "notifications": ["weekly_report", "timer_reminder", "message_level", "message_email_level"],
+}
+ACCOUNT_FIELD_TABS = {field: tab for tab, fields in _ACCOUNT_TAB_FIELDS.items() for field in fields}
+# Customers do not book time: no reports, reminders or messages, and no agents working for them.
+_CUSTOMER_HIDDEN_TABS = {"notifications", "agents"}
+
+
+def account_tabs(user: User) -> list[tuple[str, str]]:
+    return [(key, label) for key, label in ACCOUNT_TABS if not (user.is_customer and key in _CUSTOMER_HIDDEN_TABS)]
+
+
+def account_tab(user: User, name: str | None) -> str:
+    """The requested account tab, or the first one for a missing or unknown name."""
+    tabs = account_tabs(user)
+    return name if name in dict(tabs) else tabs[0][0]
+
+
+def account_url(tab: str) -> str:
+    return f"{reverse('account:settings')}?tab={tab}"
+
+
 @require_http_methods(["GET", "POST"])
 async def account(request: HttpRequest) -> HttpResponse:
     form = PreferencesForm(request.POST or None, instance=request.user)
+    # The tab is only a view onto one form: the fields of every tab are always on the page and posted together.
+    tab = account_tab(request.user, request.POST.get("tab") or request.GET.get("tab"))
     if request.method == "POST" and await sync_to_async(form.is_valid)():
         await sync_to_async(form.save)()
         messages.success(request, "Einstellungen gespeichert.")
-        return redirect("account:settings")
-    return await _account_page(request, form)
+        return redirect(account_url(tab))
+    if form.errors:
+        # Show the tab that holds the first mistake, whichever one was open.
+        tab = next((t for name in form.errors if (t := ACCOUNT_FIELD_TABS.get(name))), tab)
+    return await _account_page(request, form, tab)
 
 
-async def _account_page(request: HttpRequest, form, token_form=None, new_key: str = "") -> HttpResponse:
+async def _account_page(request: HttpRequest, form, tab: str, token_form=None, new_key: str = "") -> HttpResponse:
     mcp_url = request.build_absolute_uri(reverse("mcp:endpoint"))
     return render(
         request,
         "accounts/account.html",
         {
             "form": form,
+            "tab": tab,
+            "tabs": account_tabs(request.user),
             "has_mfa": await sync_to_async(mfa.has_mfa)(request.user),
             "tokens": [t async for t in request.user.api_tokens.all()],
             "token_form": token_form or ApiTokenForm(),
@@ -213,7 +251,9 @@ async def token_create(request: HttpRequest) -> HttpResponse:
         _, new_key = await sync_to_async(ApiToken.issue)(request.user, token_form.cleaned_data["name"])
         token_form = None
     # Rendered, not redirected: the key is shown only on this response.
-    return await _account_page(request, PreferencesForm(instance=request.user), token_form, new_key)
+    return await _account_page(
+        request, PreferencesForm(instance=request.user), account_tab(request.user, "agents"), token_form, new_key
+    )
 
 
 @require_POST
@@ -221,7 +261,7 @@ async def token_revoke(request: HttpRequest, pk: UUID) -> HttpResponse:
     deleted, _ = await request.user.api_tokens.filter(pk=pk).adelete()
     if deleted:
         messages.success(request, "Token widerrufen. Programme, die ihn nutzen, haben keinen Zugriff mehr.")
-    return redirect("account:settings")
+    return redirect(account_url("agents"))
 
 
 @require_http_methods(["GET", "POST"])
@@ -232,7 +272,7 @@ async def password_change(request: HttpRequest) -> HttpResponse:
         # Keep this session signed in; other sessions are signed out by the new password.
         await aupdate_session_auth_hash(request, form.user)
         messages.success(request, "Passwort geändert.")
-        return redirect("account:settings")
+        return redirect(account_url("security"))
     return render(request, "accounts/password.html", {"form": form})
 
 
@@ -266,7 +306,7 @@ async def mfa_manage(request: HttpRequest) -> HttpResponse:
             return render(request, "accounts/recovery_codes.html", {"codes": codes})
         await sync_to_async(mfa.disable)(request.user)
         messages.success(request, "Zwei-Faktor-Anmeldung ist ausgeschaltet.")
-        return redirect("account:settings")
+        return redirect(account_url("security"))
     return render(request, "accounts/mfa_manage.html", {"form": form})
 
 

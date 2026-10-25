@@ -1,0 +1,6 @@
+{% for message in page.items %}{% include "inbox/_message.html" %}{% endfor %}
+{% if page.next_query %}
+<li hx-get="?{{ page.next_query }}" hx-trigger="intersect once" hx-target="this" hx-swap="outerHTML" hx-select="unset" hx-push-url="false" class="py-4 text-center text-sm text-muted">
+  <a href="?{{ page.next_query }}" class="hover:underline">Weitere laden</a>
+</li>
+{% endif %}

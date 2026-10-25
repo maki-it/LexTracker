@@ -5,6 +5,7 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 from core.models import UUIDModel
+from inbox.levels import EMAIL_CHOICES, Level
 
 
 class User(UUIDModel, AbstractUser):
@@ -54,6 +55,19 @@ class User(UUIDModel, AbstractUser):
         "Erinnerung, wenn mein Timer sehr lange läuft",
         default=True,
         help_text="Falls du vergessen hast, ihn zu stoppen.",
+    )
+    message_level = models.SmallIntegerField(
+        "Nachrichten anzeigen ab",
+        choices=Level,
+        default=Level.INFO,
+        help_text="Welche Nachrichten in der Glocke stehen. Kritische siehst du immer.",
+    )
+    message_email_level = models.SmallIntegerField(
+        "Nachrichten auch per E-Mail ab",
+        choices=EMAIL_CHOICES,
+        default=Level.CRITICAL,
+        help_text="Gilt nur, wenn der E-Mail-Versand eingerichtet ist. "
+        "Eine Meldung, die sich wiederholt, schickt nur eine E-Mail.",
     )
     # Only set for customer logins: the customer whose data this user may see.
     customer = models.ForeignKey(

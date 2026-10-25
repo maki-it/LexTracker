@@ -5,6 +5,9 @@ from core import crypto
 from core.models import UUIDModel
 
 PASSWORD_PURPOSE = "smtp-password"
+# The usual ports: SSL/TLS from the first byte (SMTPS) and STARTTLS (submission). They are not interchangeable.
+SSL_PORT = 465
+STARTTLS_PORT = 587
 
 
 class MailSettings(models.Model):
@@ -79,6 +82,7 @@ class OutgoingMail(UUIDModel):
         TIMER_REMINDER = "timer_reminder", "Erinnerung an laufenden Timer"
         INVITATION = "invitation", "Einladung"
         INVOICE_OVERDUE = "invoice_overdue", "Hinweis auf überfällige Rechnung"
+        NOTIFICATION = "notification", "Nachricht"
 
     # Their links sign in or set a password, so their text is not kept once it no longer needs sending.
     SECRET_KINDS = (Kind.PASSWORD_RESET, Kind.LOGIN_LINK, Kind.INVITATION)

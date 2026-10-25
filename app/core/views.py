@@ -18,10 +18,11 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 from django.views.generic import RedirectView
 
 from accounts.models import User
-from core import backup
+from core import backup, jobs, jobs_overview
 from core.dialogs import navigate
 from core.forms import AppSettingsForm
 from core.models import AppSettings
+from inbox import events as inbox_events
 from lexware import credentials
 from lexware.forms import ApiKeyForm
 from mailer.models import MailSettings, OutgoingMail
@@ -53,8 +54,14 @@ async def dashboard(request: HttpRequest) -> HttpResponse:
             "filter_label": active_filter["label"],
             "filter_base": "",
             "lexware_missing": request.user.is_admin and not await credentials.ais_configured(),
+            "scheduler_stopped": request.user.is_admin and await _scheduler_stopped(),
         },
     )
+
+
+async def _scheduler_stopped() -> bool:
+    """Whether the scheduler reported once and then stopped. One that never did is not a reason to warn."""
+    return jobs.is_alive(await AppSettings.aload(), timezone.now()) is False
 
 
 def _database_ok() -> bool:
@@ -85,7 +92,7 @@ SETTINGS_TABS = [
     ("security", "Sicherheit"),
 ]
 _SETTINGS_TAB_FIELDS = {
-    "general": ["default_hourly_rate", "time_rounding"],
+    "general": ["default_hourly_rate", "time_rounding", "invoice_detail"],
     "lexware": [
         "lexware_sync_interval",
         "lexware_sync_from",
@@ -172,6 +179,21 @@ async def app_settings(request: HttpRequest) -> HttpResponse:
     return render(request, "core/settings.html", context)
 
 
+@require_GET
+async def job_list(request: HttpRequest) -> HttpResponse:
+    _require_admin(request)
+    now = timezone.now()
+    app_settings = await AppSettings.aload()
+    context = {
+        "now": now,
+        "alive": jobs.is_alive(app_settings, now),
+        "started_at": app_settings.scheduler_started_at,
+        "seen_at": app_settings.scheduler_seen_at,
+        "jobs": await jobs_overview.overview(now, app_settings),
+    }
+    return render(request, "core/jobs.html", context)
+
+
 async def _get_backup(name: str) -> Path:
     path = await sync_to_async(backup.get)(name)
     if path is None:
@@ -219,6 +241,7 @@ async def backup_upload(request: HttpRequest) -> HttpResponse:
                 error = str(exc)
             else:
                 messages.success(request, f"Sicherung hochgeladen und als {path.name} gespeichert.")
+                await inbox_events.backup_uploaded(path.name, request.user.get_username())
                 return navigate("core:backups")
     context = {"error": error, "max_size": settings.BACKUP_UPLOAD_MAX_SIZE}
     return render(request, "core/backup_upload.html", context)
@@ -269,6 +292,7 @@ async def backup_restore(request: HttpRequest, name: str) -> HttpResponse:
                 # The restored sessions table may not have this session; a new key keeps you signed in,
                 # as long as your account exists in the backup with the same password.
                 await request.session.acycle_key()
+                await inbox_events.backup_restored(name, request.user.get_username())
                 messages.success(
                     request,
                     f"Sicherung {name} wiederhergestellt. Der vorherige Stand liegt als {before.name} im Ordner.",

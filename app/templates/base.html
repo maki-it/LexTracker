@@ -19,10 +19,19 @@
   <div class="lg:flex">
     {# On phones this is a slim top bar (logo, timer, menu button); the menu button opens nav and user row. #}
     <aside class="sidebar group" id="sidebar">
-      <a href="{% url 'core:dashboard' %}" class="mr-auto flex items-center gap-2.5 px-1.5 py-1 text-[15px] font-semibold text-ink no-underline">
-        {% logo 28 %}
-        LexTracker
-      </a>
+      <div class="mr-auto flex items-center gap-1 lg:mr-0 lg:justify-between">
+        <a href="{% url 'core:dashboard' %}" class="flex items-center gap-2.5 px-1.5 py-1 text-[15px] font-semibold text-ink no-underline">
+          {% logo 28 %}
+          LexTracker
+        </a>
+        {% if not user.is_customer %}
+        {% if request.nav_inbox %}
+        {% include "inbox/_bell.html" with inbox=request.nav_inbox %}
+        {% else %}
+        <div id="nav-bell" hx-get="{% url 'inbox:bell' %}" hx-trigger="load" hx-swap="outerHTML"></div>
+        {% endif %}
+        {% endif %}
+      </div>
 
       {% if request.nav_timer %}
       {% include "tracking/_timer.html" with running_entry=request.nav_timer.running_entry %}
@@ -69,6 +78,18 @@
     </aside>
 
     <main class="mx-auto flex w-full max-w-6xl min-w-0 flex-col gap-6 px-4 py-6 sm:px-8 lg:py-8">
+      {% with critical=request.nav_inbox.critical %}
+      {% if critical %}
+      <div role="alert" class="alert alert-error flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <div class="min-w-0">
+          <span class="font-semibold">{{ critical.title }}</span>
+          {% if critical.body %}<span class="line-clamp-2 break-words">{{ critical.body }}</span>{% endif %}
+          {% if request.nav_inbox.critical_count > 1 %}<span class="text-[13px]">Und {{ request.nav_inbox.critical_count|add:"-1" }} weitere kritische Nachrichten.</span>{% endif %}
+        </div>
+        <a {% dialog_link "inbox:panel" %} class="font-medium text-current underline">Ansehen</a>
+      </div>
+      {% endif %}
+      {% endwith %}
       {% for message in messages %}
       <div role="alert" class="alert{% if message.tags %} alert-{{ message.tags }}{% endif %}">{{ message }}</div>
       {% endfor %}
