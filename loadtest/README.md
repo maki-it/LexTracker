@@ -33,7 +33,17 @@ docker rm -f lextracker-loadtest && docker volume rm lextracker-loadtest
 ```
 
 Die Größe der Testdaten stellst du mit `seed.py --customers 40 --projects-per-customer 2 --entries 5000` usw. ein (`--help` zeigt alles).
-Locust selbst wird über `uv run --with locust` geholt und ist keine Abhängigkeit der App. Mit `uv run --with locust locust -f loadtest/locustfile.py -H http://localhost:8000` gibt es die Weboberfläche unter http://localhost:8089.
+Locust selbst wird über `uv run --with locust` geholt und ist keine Abhängigkeit der App.
+
+## Weboberfläche
+
+Für Läufe von Hand gibt es die Weboberfläche von Locust mit Live-Diagrammen, Statistik pro Seite und CSV-Download:
+
+```sh
+make loadtest-ui                                  # oder: LOADTEST_WAIT=0 make loadtest-ui
+```
+
+Sie ist dann unter http://127.0.0.1:8089 erreichbar, gebunden nur an den eigenen Rechner. Dort trägst du Benutzerzahl, Anlaufrate (Benutzer pro Sekunde) und optional eine Laufzeit ein und startest den Lauf; Benutzerzahl und Host (Standard `http://localhost:8000`) lassen sich dort ändern. Die Zahlen beginnen wie bei `run.sh` erst, wenn alle Benutzer angemeldet sind. Läuft der Test auf einem anderen Rechner, hilft ein SSH-Tunnel (`ssh -L 8089:localhost:8089 server`) statt die Oberfläche ins Netz zu stellen.
 
 ## Ohne Docker
 

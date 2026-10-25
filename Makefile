@@ -1,6 +1,6 @@
 MANAGE = uv run app/manage.py
 
-.PHONY: help install run scheduler css css-watch migrate makemigrations superuser test lint format backup loadtest docker-dev docker-dev-down docker-up docker-down docker-logs docker-backup
+.PHONY: help install run scheduler css css-watch migrate makemigrations superuser test lint format backup loadtest loadtest-ui docker-dev docker-dev-down docker-up docker-down docker-logs docker-backup
 
 help: ## Show available commands
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  %-16s %s\n", $$1, $$2}'
@@ -46,6 +46,9 @@ format: ## Fix code style
 
 loadtest: ## Run the load test against http://localhost:8000 (see loadtest/README.md)
 	loadtest/run.sh
+
+loadtest-ui: ## Start the load test web UI on http://127.0.0.1:8089 (see loadtest/README.md)
+	uv run --with locust locust -f loadtest/locustfile.py --web-host 127.0.0.1 -H http://localhost:8000
 
 docker-dev: ## Run in Docker with code sync and reload (dev.compose.yaml)
 	docker compose -f dev.compose.yaml watch
