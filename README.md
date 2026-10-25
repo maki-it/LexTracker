@@ -23,6 +23,7 @@ Zeiterfassung und Projektsteuerung mit Anbindung an die [Lexware Office Public A
 | Backend | Django 6, async Views, ASGI mit uvicorn | Login, Benutzer, Admin und Migrationen sind eingebaut; async Views blockieren sich nicht gegenseitig, z. B. bei langsamen API-Aufrufen an Lexware. |
 | Oberfläche | Server-gerenderte Templates + [htmx](https://htmx.org) | Interaktive Seiten ohne eigenes JavaScript. |
 | Styling | Tailwind CSS 4 über [django-tailwind-cli](https://github.com/django-commons/django-tailwind-cli), eigene Komponenten | Nutzt das Standalone-CLI, also kein Node.js nötig. Farben und Komponenten (`.btn`, `.card`, `.table`, `.badge` …) stehen in `app/assets/tailwind.css`, Icons kommen über `{% icon "name" %}` (`core/templatetags/icons.py`). Schrift ist Inter, selbst gehostet statt über Google Fonts. Hell- und Dunkelmodus folgen der Systemeinstellung. |
+| Sprachen | Djangos i18n: Deutsch (Standard) und Englisch | Die Texte im Code und in den Templates sind deutsch, `app/locale/en` enthält die englische Übersetzung. Siehe [Sprachen](#sprachen). |
 | Datenbank | SQLite (WAL-Modus) | Kein extra DB-Server. WAL erlaubt Lesen während geschrieben wird; das reicht für wenige Benutzer locker. |
 | Statische Dateien | [ServeStatic](https://github.com/Archmonger/ServeStatic) | Liefert CSS/JS async, komprimiert und mit Cache-Headern aus. |
 | Pakete | [uv](https://docs.astral.sh/uv/) | Schnell, mit Lockfile. |
@@ -66,6 +67,7 @@ make run         # http://localhost:8000
 Beim ersten Aufruf führt die **Einrichtung** durch das Anlegen des Admin-Kontos (mit verpflichtender Zwei-Faktor-Anmeldung per Authenticator-App), das Verbinden mit Lexware Office und die Datensicherung (das Konto alternativ mit `make superuser`).
 Solange es kein Konto gibt, leitet jede Seite dorthin. Damit niemand anderes eine frische Instanz übernehmen kann, öffnet sich die Einrichtung nur mit einem Code: Die App schreibt den Einrichtungslink beim ersten Aufruf ins Log (`docker compose logs app`), alternativ zeigt ihn `manage.py setup_link` (`docker compose exec app python manage.py setup_link`). Der Code ist aus `APP_SECRET_KEY` abgeleitet und nach dem ersten Konto wertlos.
 
+Neue oder geänderte Texte übersetzt du mit `make messages` (siehe [Sprachen](#sprachen)).
 Während du an Templates arbeitest, hält `make css-watch` in einem zweiten Terminal das Stylesheet aktuell.
 Den automatischen Kundenimport und den E-Mail-Versand startest du lokal bei Bedarf mit `make scheduler`.
 `make test` startet die Tests, `make lint` prüft den Code-Stil. `make help` zeigt alle Befehle.
@@ -187,9 +189,21 @@ Unter **Benutzer** legst du Zugänge an. Danach zeigt die App einen Einladungsli
 
 Was ein Kundenzugang sieht, stellst du pro Zugang beim Benutzer ein. Welche Seiten eine Rolle öffnen darf, steht in `app/core/access.py`.
 
+## Sprachen
+
+Die Oberfläche gibt es auf Deutsch (Standard) und Englisch. Jeder Benutzer wählt seine Sprache unter **Konto → Darstellung**; E-Mails und Nachrichten der App kommen in der Sprache des Empfängers. Auf der Anmeldeseite gilt die Sprache, die der Browser verlangt, und nach dem Abmelden die zuletzt gewählte. Datumsformat und Dezimaltrenner richten sich nach Sprache und Kontoeinstellung.
+
+Die Quelltexte sind deutsch, `app/locale/en/LC_MESSAGES/django.po` enthält die englische Übersetzung. Nach Änderungen an Texten (`_("…")` im Code, `{% trans %}` und `{% blocktrans %}` in Templates):
+
+```bash
+make messages    # Texte einsammeln und die .po-Datei aktualisieren, dann kompilieren
+```
+
+Neue Einträge in `django.po` bekommen ihre englische Übersetzung (`msgstr`); die CI prüft, dass der Katalog aktuell und vollständig ist. Die kompilierten `.mo`-Dateien liegen nicht im Git: Das Docker-Image erzeugt sie beim Bauen (gettext steckt nur in der Build-Stufe), lokal und in der CI übernimmt das `compilemessages`. Absichtlich nicht übersetzt sind Texte, die in Lexware Office auf Rechnungen landen, und die Ausgaben des MCP-Servers.
+
 ## Konto und Sicherheit
 
-Unter deinem Namen oben rechts stellst du Darstellung (hell, dunkel oder wie das System) und Datumsformat ein und änderst dein Passwort.
+Unter deinem Namen oben rechts stellst du Sprache (Deutsch oder Englisch), Darstellung (hell, dunkel oder wie das System) und Datumsformat ein und änderst dein Passwort.
 Dort schaltest du auch die **Zwei-Faktor-Anmeldung** mit einer Authenticator-App ein (TOTP, über [django-otp](https://django-otp-official.readthedocs.io/)). Dabei entstehen zehn Wiederherstellungscodes, die je einmal statt des App-Codes funktionieren.
 Auch die Verwaltung unter `/admin/` meldet über diese Anmeldung an, damit der zweite Faktor dort nicht umgangen wird.
 Nach zu vielen falschen Passwörtern oder Codes von einer IP-Adresse ist die Anmeldung von dort eine Weile gesperrt. Wie viele Fehlversuche und wie lange, legst du unter **Einstellungen** fest (Standard: 5 Versuche, 15 Minuten; 0 Versuche schaltet die Sperre aus). Hinter einem Reverse Proxy muss `FORWARDED_ALLOW_IPS` stimmen, sonst sehen alle Anfragen wie die IP des Proxys aus.
