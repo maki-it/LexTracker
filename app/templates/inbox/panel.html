@@ -4,9 +4,13 @@
 {% block content %}
 <h1>Nachrichten</h1>
 <div class="-mt-2 flex flex-col gap-3">
+  <nav aria-label="Anzeige" class="flex flex-wrap gap-1.5">
+    <a {% dialog_link "inbox:panel" %} class="pill{% if not show_all %} pill-active{% endif %}">Ungelesen</a>
+    <a {% dialog_link "inbox:panel" filter="all" %} class="pill{% if show_all %} pill-active{% endif %}">Alle anzeigen</a>
+  </nav>
   {% if unread %}
   <form method="post" action="{% url 'inbox:read_all' %}">
-    {% csrf_token %}
+    {% csrf_token %}<input type="hidden" name="filter" value="{{ filter_key }}">
     <button type="submit" class="btn btn-sm">Alle als gelesen markieren</button>
   </form>
   {% endif %}
@@ -15,11 +19,11 @@
     {% for message in messages_list %}{% include "inbox/_message.html" %}{% endfor %}
   </ul>
   {% else %}
-  <p class="empty">Keine Nachrichten.</p>
+  <p class="empty">{% if show_all %}Keine Nachrichten.{% else %}Keine ungelesenen Nachrichten.{% endif %}</p>
   {% endif %}
   <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-[13px] text-muted">
     <span>Angezeigt ab Priorität „{{ user.get_message_level_display }}“. <a {% dialog_link "account:settings" tab="notifications" %}>Ändern</a></span>
-    <a href="{% url 'inbox:all' %}" hx-boost="false">{% if more %}Alle Nachrichten anzeigen{% else %}Als Seite öffnen{% endif %}</a>
+    <a href="{{ all_url }}" hx-boost="false">{% if more %}Weitere Nachrichten anzeigen{% else %}Als Seite öffnen{% endif %}</a>
   </div>
 </div>
 {% endblock %}

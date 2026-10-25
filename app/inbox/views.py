@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from django.db.models import Count, Q
+from django.db.models import Count, Q, QuerySet
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
@@ -19,7 +19,7 @@ from inbox.models import Message
 # How many messages the panel behind the bell lists. The page "all" has the rest.
 PANEL_SIZE = 8
 
-# The filters on the page with all messages: the key in the URL, its label and what it selects.
+# The filters of the panel and of the page with all messages: the key in the URL, its label and what it selects.
 FILTERS = {
     "unread": ("Ungelesen", Q(read_at__isnull=True)),
     "critical": (Level.CRITICAL.label, Q(level=Level.CRITICAL)),
@@ -27,6 +27,23 @@ FILTERS = {
     "info": (Level.INFO.label, Q(level=Level.INFO)),
     "debug": (Level.DEBUG.label, Q(level=Level.DEBUG)),
 }
+# Both start with the unread messages. This key in the URL selects everything instead.
+DEFAULT_FILTER = "unread"
+SHOW_ALL = "all"
+
+
+def _filter_key(request: HttpRequest) -> str:
+    """The filter of the request: from the URL, or from the form of an action in the panel."""
+    key = request.GET.get("filter") or request.POST.get("filter") or DEFAULT_FILTER
+    return key if key in FILTERS or key == SHOW_ALL else DEFAULT_FILTER
+
+
+def _filtered(messages: QuerySet[Message], key: str) -> QuerySet[Message]:
+    return messages if key == SHOW_ALL else messages.filter(FILTERS[key][1])
+
+
+def _all_url(key: str) -> str:
+    return f"{reverse('inbox:all')}?filter={key}"
 
 
 async def _get_message(request: HttpRequest, pk: UUID) -> Message:
@@ -44,11 +61,15 @@ async def bell(request: HttpRequest) -> HttpResponse:
 
 
 async def _panel(request: HttpRequest) -> HttpResponse:
-    messages = [m async for m in service.visible_to(request.user)[: PANEL_SIZE + 1]]
+    key = _filter_key(request)
+    messages = [m async for m in _filtered(service.visible_to(request.user), key)[: PANEL_SIZE + 1]]
     context = {
         "messages_list": messages[:PANEL_SIZE],
         "more": len(messages) > PANEL_SIZE,
         "unread": await service.visible_to(request.user).filter(read_at__isnull=True).acount(),
+        "filter_key": key,
+        "show_all": key == SHOW_ALL,
+        "all_url": _all_url(key),
     }
     return render(request, "inbox/panel.html", context)
 
@@ -62,27 +83,22 @@ async def panel(request: HttpRequest) -> HttpResponse:
 @require_GET
 async def all_messages(request: HttpRequest) -> HttpResponse:
     visible = service.visible_to(request.user)
-    key = request.GET.get("filter", "")
-    messages = visible.filter(FILTERS[key][1]) if key in FILTERS else visible
-    page = await apage(request, messages)
+    key = _filter_key(request)
+    page = await apage(request, _filtered(visible, key))
     # Where the forms on the page return to: this page with its filter, but not scrolled to a later batch.
-    next_url = f"{reverse('inbox:all')}?filter={key}" if key in FILTERS else reverse("inbox:all")
+    next_url = _all_url(key)
     if wants_rows(request):
         return render(request, "inbox/_rows.html", {"page": page, "next_url": next_url})
     counts = await visible.aaggregate(total=Count("pk"), **{k: Count("pk", filter=q) for k, (_, q) in FILTERS.items()})
-    # Debug is hidden by default; its filter would only ever be empty then.
-    filters = [
-        (k, label, counts[k])
-        for k, (label, _) in FILTERS.items()
-        if k != "debug" or request.user.message_level <= Level.DEBUG
-    ]
-    context = {
-        "page": page,
-        "filters": filters,
-        "active": key if key in FILTERS else "",
-        "total": counts["total"],
-        "next_url": next_url,
-    }
+    filters = []
+    for k, (label, _) in FILTERS.items():
+        # Debug is hidden by default; its filter would only ever be empty then.
+        if k == "debug" and request.user.message_level > Level.DEBUG:
+            continue
+        filters.append((k, label, counts[k]))
+        if k == DEFAULT_FILTER:
+            filters.append((SHOW_ALL, "Alle", counts["total"]))
+    context = {"page": page, "filters": filters, "active": key, "next_url": next_url}
     return render(request, "inbox/all.html", context)
 
 
@@ -90,7 +106,7 @@ def _back(request: HttpRequest) -> str:
     """Where a form on the page with all messages returns to: that page, with its filter."""
     target = request.POST.get("next", "")
     allowed = url_has_allowed_host_and_scheme(target, allowed_hosts=None) and target.startswith(reverse("inbox:all"))
-    return target if allowed else reverse("inbox:all")
+    return target if allowed else _all_url(_filter_key(request))
 
 
 async def _changed(request: HttpRequest) -> HttpResponse:
