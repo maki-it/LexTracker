@@ -71,6 +71,24 @@ Den automatischen Kundenimport und den E-Mail-Versand startest du lokal bei Beda
 `make test` startet die Tests, `make lint` prüft den Code-Stil. `make help` zeigt alle Befehle.
 Einen Last- und Performancetest mit Testdaten beschreibt [loadtest/README.md](loadtest/README.md).
 
+### Entwicklung mit Docker
+
+Wer lieber im Container entwickelt (gleiches Image und Python wie in Produktion), startet die Entwicklungsumgebung aus [dev.compose.yaml](dev.compose.yaml). Sie baut mit `extends` auf der `compose.yaml` auf und braucht ein aktuelles Docker Compose (getestet mit v5.6):
+
+```sh
+cp .env.example .env    # APP_SECRET_KEY setzen, für die Entwicklung genügt ein beliebiger Wert
+make docker-dev         # oder: docker compose -f dev.compose.yaml watch
+```
+
+Das baut das Image, startet App und Scheduler auf http://localhost:8000 und beobachtet danach den Code:
+
+- Änderungen unter `app/` werden in den Container kopiert; `uvicorn --reload` lädt bei Python-Dateien selbst neu, der Scheduler startet neu.
+- Bei Änderungen an Templates, Skripten oder `assets/tailwind.css` wird zusätzlich das Stylesheet neu gebaut (`manage.py tailwind build`). Beim ersten Mal lädt das das Tailwind-CLI herunter; es bleibt in einem Volume erhalten. Die Seite lädst du selbst neu.
+- Änderungen an `pyproject.toml`, `uv.lock` oder `docker/Dockerfile` bauen das Image neu.
+
+Die Umgebung läuft als eigenes Compose-Projekt `lextracker-dev` mit eigenen Volumes und Containernamen, berührt also keine Produktionsdaten auf demselben Rechner. Sie nutzt `APP_ENVIRONMENT=development`, hört nur auf `127.0.0.1:8000`, und das Dateisystem ist beschreibbar, weil `watch` Dateien hineinkopiert.
+Neue Migrationen wendest du mit `docker compose -f dev.compose.yaml exec app python manage.py migrate` an (beim Neustart laufen sie ohnehin). Zum Aufräumen: `make docker-dev-down`, mit `-v` an `docker compose -f dev.compose.yaml down` auch die Daten.
+
 ## Lexware Office
 
 Den API-Schlüssel erstellst du in Lexware Office unter *Erweiterungen > Public API* und trägst ihn bei der Einrichtung oder später unter **Einstellungen > Lexware Office** ein. Die App prüft ihn vorher mit einem Testaufruf.
