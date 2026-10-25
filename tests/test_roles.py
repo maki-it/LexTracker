@@ -105,6 +105,15 @@ def test_portal_shows_only_the_own_customer(client, customer_user, user, task, o
     assert "nicht berechnet" in entries
 
 
+def test_portal_entries_page_is_called_tasks(client, customer_user):
+    client.force_login(customer_user)
+    assert reverse("portal:entries") == "/portal/tasks/"
+    page = client.get("/portal/tasks/").text
+    assert "<h1>Aufgaben</h1>" in page
+    assert 'href="/portal/tasks/"' in page
+    assert client.get("/portal/time/").status_code == 404
+
+
 def test_portal_permissions_can_be_narrowed(client, customer_user, user, task):
     task.project.budget_hours = Decimal("10")
     task.project.save()

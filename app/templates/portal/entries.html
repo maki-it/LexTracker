@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% load i18n %}
 {% load timefmt %}
-{% block title %}{% trans "Zeiten" %} · LexTracker{% endblock %}
+{% block title %}{% trans "Aufgaben" %} · LexTracker{% endblock %}
 {% block content %}
 <div class="page-header">
   <div>
-    <h1>{% trans "Zeiten" %}</h1>
+    <h1>{% trans "Aufgaben" %}</h1>
     <p class="page-subtitle">{{ range.start|date:date_format }} – {{ range.end|date:date_format }} · {{ total|hours:duration_format }} h</p>
   </div>
 </div>
