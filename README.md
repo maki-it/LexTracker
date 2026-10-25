@@ -54,7 +54,7 @@ docker/
 
 ## Entwicklung
 
-Voraussetzung: [uv](https://docs.astral.sh/uv/getting-started/installation/) (installiert Python 3.14 bei Bedarf selbst).
+Voraussetzung: [uv](https://docs.astral.sh/uv/getting-started/installation/) (installiert Python 3.15 bei Bedarf selbst).
 
 ```sh
 make install     # Abhängigkeiten installieren, .env anlegen

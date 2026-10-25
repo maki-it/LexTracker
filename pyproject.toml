@@ -3,7 +3,7 @@ name = "lextracker"
 version = "0.2.0"
 description = "Zeiterfassung und Projektsteuerung mit Anbindung an Lexware Office"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.15.1"
 dependencies = [
     "django[argon2]>=6.0",
     "django-htmx>=1.29",
@@ -40,7 +40,7 @@ addopts = "--strict-markers"
 
 [tool.ruff]
 line-length = 120
-target-version = "py314"
+target-version = "py315"
 src = ["app", "tests"]
 extend-exclude = ["app/*/migrations"]
 
