@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: LexTracker\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-25 14:04+0100\n"
+"POT-Creation-Date: 2026-10-25 20:12+0000\n"
 "PO-Revision-Date: 2026-10-25 12:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: English\n"
@@ -2304,9 +2304,6 @@ msgstr "Main navigation"
 msgid "Übersicht"
 msgstr "Overview"
 
-msgid "Zeiten"
-msgstr "Time"
-
 msgid "Kontaktdaten"
 msgstr "Contact details"
 
@@ -3759,6 +3756,9 @@ msgstr[1] "%(counter)s invoices"
 
 msgid "Rechnungsdatum von"
 msgstr "Invoice date from"
+
+msgid "Zeiten"
+msgstr "Time"
 
 msgid "PDF"
 msgstr "PDF"
