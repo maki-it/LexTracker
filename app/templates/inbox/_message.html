@@ -1,4 +1,4 @@
-{# One message. Expects `message`; `next_url` when it is on the page with all messages. #}
+{# One message. Expects `message`; `next_url` when it is on the page with all messages, `filter_key` when it is in the panel. #}
 <li class="flex gap-3 border-b border-line-soft px-1 py-3 last:border-b-0">
   <span class="mt-1.5 size-2 shrink-0 rounded-full{% if message.is_unread %} bg-primary{% endif %}" {% if message.is_unread %}title="ungelesen"{% endif %}></span>
   <div class="flex min-w-0 flex-1 flex-col gap-1">
@@ -16,12 +16,12 @@
       <time datetime="{{ message.last_at|date:'c' }}" class="mr-2">{{ message.last_at|date:datetime_format }} Uhr</time>
       {% if message.is_unread %}
       <form method="post" action="{% url 'inbox:read' message.pk %}">
-        {% csrf_token %}{% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
+        {% csrf_token %}{% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}{% if filter_key %}<input type="hidden" name="filter" value="{{ filter_key }}">{% endif %}
         <button type="submit" class="btn btn-ghost btn-sm">Gelesen</button>
       </form>
       {% endif %}
       <form method="post" action="{% url 'inbox:delete' message.pk %}">
-        {% csrf_token %}{% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
+        {% csrf_token %}{% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}{% if filter_key %}<input type="hidden" name="filter" value="{{ filter_key }}">{% endif %}
         <button type="submit" class="btn btn-ghost btn-sm">Löschen</button>
       </form>
     </div>

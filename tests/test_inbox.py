@@ -281,13 +281,15 @@ def test_panel_lists_the_latest_messages(logged_in, admin):
 
 
 def test_panel_without_messages(logged_in):
-    assert "Keine Nachrichten." in logged_in.get(reverse("inbox:panel")).text
+    assert "Keine ungelesenen Nachrichten." in logged_in.get(reverse("inbox:panel")).text
+    assert "Keine Nachrichten." in logged_in.get(reverse("inbox:panel"), {"filter": "all"}).text
 
 
 def test_panel_links_to_the_page_when_there_are_more(logged_in, admin):
     for n in range(9):
         notify(Level.INFO, "x", f"Nr {n}")
-    assert "Alle Nachrichten anzeigen" in logged_in.get(reverse("inbox:panel")).text
+    text = logged_in.get(reverse("inbox:panel")).text
+    assert "Weitere Nachrichten anzeigen" in text and "/messages/all/?filter=unread" in text
 
 
 def test_panel_in_dialog_has_no_sidebar(logged_in, admin):
@@ -336,7 +338,7 @@ def test_redirect_after_action_stays_in_the_inbox(logged_in, admin):
     notify(Level.INFO, "x", "Eins")
     pk = Message.objects.get().pk
     response = logged_in.post(reverse("inbox:read", args=[pk]), {"next": "https://evil.example/"})
-    assert response["Location"] == reverse("inbox:all")
+    assert response["Location"] == reverse("inbox:all") + "?filter=unread"
     response = logged_in.post(reverse("inbox:read", args=[pk]), {"next": reverse("inbox:all") + "?filter=critical"})
     assert response["Location"] == reverse("inbox:all") + "?filter=critical"
 
@@ -355,12 +357,51 @@ def test_all_page_filters_by_level(logged_in, admin):
     notify(Level.CRITICAL, "x", "Ein Kritischer")
     notify(Level.INFO, "x", "Eine Info")
     Message.objects.filter(title="Eine Info").update(read_at=timezone.now())
-    everything = logged_in.get(reverse("inbox:all")).text
+    everything = logged_in.get(reverse("inbox:all"), {"filter": "all"}).text
     assert "Ein Kritischer" in everything and "Eine Info" in everything
     critical = logged_in.get(reverse("inbox:all"), {"filter": "critical"}).text
     assert "Ein Kritischer" in critical and "Eine Info" not in critical
     unread = logged_in.get(reverse("inbox:all"), {"filter": "unread"}).text
     assert "Ein Kritischer" in unread and "Eine Info" not in unread
+
+
+def test_all_page_shows_only_unread_by_default(logged_in, admin):
+    notify(Level.WARNING, "x", "Neu")
+    notify(Level.WARNING, "x", "Schon gesehen")
+    Message.objects.filter(title="Schon gesehen").update(read_at=timezone.now())
+    for params in ({}, {"filter": "unread"}, {"filter": "unbekannt"}):
+        text = logged_in.get(reverse("inbox:all"), params).text
+        assert "Neu" in text and "Schon gesehen" not in text
+    assert "Schon gesehen" in logged_in.get(reverse("inbox:all"), {"filter": "all"}).text
+
+
+def test_panel_shows_only_unread_unless_asked_for_all(logged_in, admin):
+    notify(Level.WARNING, "x", "Neu")
+    notify(Level.WARNING, "x", "Schon gesehen")
+    Message.objects.filter(title="Schon gesehen").update(read_at=timezone.now())
+    unread = logged_in.get(reverse("inbox:panel")).text
+    assert "Neu" in unread and "Schon gesehen" not in unread
+    everything = logged_in.get(reverse("inbox:panel"), {"filter": "all"}).text
+    assert "Neu" in everything and "Schon gesehen" in everything
+
+
+def test_panel_without_unread_says_so_and_offers_all(logged_in, admin):
+    notify(Level.WARNING, "x", "Schon gesehen")
+    Message.objects.update(read_at=timezone.now())
+    text = logged_in.get(reverse("inbox:panel")).text
+    assert "Keine ungelesenen Nachrichten." in text and "Schon gesehen" not in text
+    assert "filter=all" in text
+
+
+def test_action_in_panel_keeps_the_chosen_view(logged_in, admin):
+    notify(Level.INFO, "x", "Eins")
+    notify(Level.INFO, "x", "Zwei")
+    pk = Message.objects.get(title="Eins").pk
+    dialog = {"HX-Request": "true", "HX-Target": "dialog-body"}
+    unread = logged_in.post(reverse("inbox:read", args=[pk]), headers=dialog).text
+    assert "Eins" not in unread and "Zwei" in unread
+    everything = logged_in.post(reverse("inbox:read", args=[pk]), {"filter": "all"}, headers=dialog).text
+    assert "Eins" in everything and "Zwei" in everything
 
 
 def test_debug_filter_only_for_users_who_see_debug(logged_in, admin):

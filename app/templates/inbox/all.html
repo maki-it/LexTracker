@@ -12,7 +12,6 @@
   </form>
 </div>
 <nav aria-label="Nach Priorität filtern" class="flex flex-wrap gap-1.5">
-  <a href="{% url 'inbox:all' %}" class="pill gap-1.5{% if not active %} pill-active{% endif %}">Alle<span class="text-muted tabular-nums">{{ total }}</span></a>
   {% for key, label, count in filters %}
   <a href="?filter={{ key }}" class="pill gap-1.5{% if active == key %} pill-active{% endif %}">{{ label }}<span class="text-muted tabular-nums">{{ count }}</span></a>
   {% endfor %}
