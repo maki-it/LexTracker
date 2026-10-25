@@ -29,6 +29,9 @@ jobs:
         env:
           APP_ENVIRONMENT: development
 
+      - name: Install gettext
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends gettext
+
       - name: Check that the translations are up to date
         working-directory: app
         run: |
