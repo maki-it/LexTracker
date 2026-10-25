@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.3.0](https://github.com/maki-it/LexTracker/compare/lextracker-v0.2.0...lextracker-v0.3.0) (2026-10-25)
+
+
+### Bug Fixes
+
+* **ci:** read the image version from release-please's component tag ([#149](https://github.com/maki-it/LexTracker/issues/149)) ([cc02df7](https://github.com/maki-it/LexTracker/commit/cc02df712bf4dc46cc2dde2c9f7af1945293176d))
+
+
+### Dependencies
+
+* **python:** upgrade to Python 3.15 ([#152](https://github.com/maki-it/LexTracker/issues/152)) ([2bbc342](https://github.com/maki-it/LexTracker/commit/2bbc342a976c54d031d5d2e7ef4e997af0f95315))
+
+
+### Miscellaneous
+
+* release 0.3.0 ([c54df7c](https://github.com/maki-it/LexTracker/commit/c54df7c41d610c1c492a912cff51a252aa11b673))
+
 ## [0.2.0](https://github.com/maki-it/LexTracker/compare/lextracker-v0.1.0...lextracker-v0.2.0) (2026-10-24)
 
 
