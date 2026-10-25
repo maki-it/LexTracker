@@ -15,7 +15,7 @@ urlpatterns = [
     path("users/", include("accounts.user_urls")),
     path("customers/", include("customers.urls")),
     path("projects/", include("projects.urls")),
-    path("time-entries/", include("tracking.urls")),
+    path("time/", include("tracking.urls")),
     path("billing/", include("billing.urls")),
     path("reports/", include("reports.urls")),
     path("settings/lexware/", include("lexware.urls")),

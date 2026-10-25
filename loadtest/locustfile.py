@@ -54,9 +54,7 @@ class Kim(HttpUser):
         )
         self.csrf = self.client.cookies.get("csrftoken", "")
         if not _ids_cache:
-            start_form = self.client.get(
-                "/time-entries/timer/start/", headers=HTMX, name="/time-entries/timer/start/"
-            ).text
+            start_form = self.client.get("/time/timer/start/", headers=HTMX, name="/time/timer/start/").text
             _ids_cache["tasks"] = _ids(start_form, rf'<option value="{UUID}"')
             _ids_cache["projects"] = _ids(self.client.get("/projects/").text, rf'href="/projects/{UUID}/"')
             _ids_cache["customers"] = _ids(self.client.get("/customers/").text, rf'href="/customers/{UUID}/"')
@@ -83,34 +81,34 @@ class Kim(HttpUser):
     @task(6)
     def timer_badge(self) -> None:
         # The sidebar reloads it every minute in every open tab.
-        self.client.get("/time-entries/timer/", headers=HTMX, name="/time-entries/timer/")
+        self.client.get("/time/timer/", headers=HTMX, name="/time/timer/")
 
     @task(5)
     def week(self) -> None:
-        self.client.get("/time-entries/", name="/time-entries/")
+        self.client.get("/time/", name="/time/")
 
     @task(2)
     def older_week(self) -> None:
         day = date.today() - timedelta(weeks=random.randint(1, 100))
         year, week, _ = day.isocalendar()
-        self.client.get(f"/time-entries/?week={year}-W{week:02d}", name="/time-entries/?week=…")
+        self.client.get(f"/time/?week={year}-W{week:02d}", name="/time/?week=…")
 
     @task(3)
     def start_and_stop_timer(self) -> None:
         if not self.task_ids:
             return
-        self._post("/time-entries/timer/start/", {"task": random.choice(self.task_ids)}, headers=HTMX)
-        self._post("/time-entries/timer/stop/", headers=HTMX)
+        self._post("/time/timer/start/", {"task": random.choice(self.task_ids)}, headers=HTMX)
+        self._post("/time/timer/stop/", headers=HTMX)
 
     @task(2)
     def book_time(self) -> None:
         if not self.task_ids:
             return
-        self.client.get("/time-entries/new/", name="/time-entries/new/")
+        self.client.get("/time/new/", name="/time/new/")
         start = date.today() - timedelta(days=random.randint(0, 14))
         hour = random.randint(7, 17)
         self._post(
-            "/time-entries/new/",
+            "/time/new/",
             {
                 "task": random.choice(self.task_ids),
                 "started_at": f"{start}T{hour:02d}:00",
@@ -118,7 +116,7 @@ class Kim(HttpUser):
                 "description": "Lasttest",
                 "is_billable": "on",
             },
-            name="/time-entries/new/ [POST]",
+            name="/time/new/ [POST]",
         )
 
     @task(2)
@@ -159,4 +157,4 @@ class Kim(HttpUser):
     @task(1)
     def csv_export(self) -> None:
         if random.random() < 0.2:
-            self.client.get("/reports/time-entries.csv?range=year", name="/reports/time-entries.csv")
+            self.client.get("/reports/time.csv?range=year", name="/reports/time.csv")

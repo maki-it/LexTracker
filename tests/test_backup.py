@@ -168,7 +168,7 @@ def test_restore_replaces_the_data_and_keeps_the_previous_state(admin):
     assert "Bitte bestätige" in unconfirmed.text
     assert Customer.objects.count() == 2
 
-    assert admin.post(url, {"bestaetigt": "1"}).status_code == 302
+    assert admin.post(url, {"confirmed": "1"}).status_code == 302
     assert list(Customer.objects.values_list("name", flat=True)) == ["ACME GmbH"]
     [before] = [b for b in backup.listing() if b.before_restore]
     with sqlite3.connect(before.path) as db:
@@ -187,7 +187,7 @@ def test_restore_refuses_files_that_are_not_a_lextracker_database(admin, setting
     Customer.objects.create(name="ACME GmbH")
 
     for path in (garbage, foreign):
-        response = admin.post(f"/settings/backups/{path.name}/restore/", {"bestaetigt": "1"})
+        response = admin.post(f"/settings/backups/{path.name}/restore/", {"confirmed": "1"})
         assert response.status_code == 200
         assert 'role="alert"' in response.text
     assert Customer.objects.count() == 1
@@ -203,7 +203,7 @@ def test_backups_are_for_admins_only(client, user):
 
 
 def upload(admin, content: bytes, name: str = "db.sqlite3"):
-    return admin.post("/settings/backups/upload/", {"datei": SimpleUploadedFile(name, content)})
+    return admin.post("/settings/backups/upload/", {"file": SimpleUploadedFile(name, content)})
 
 
 def test_upload_stores_a_backup_from_elsewhere_and_it_can_be_restored(admin):
@@ -222,7 +222,7 @@ def test_upload_stores_a_backup_from_elsewhere_and_it_can_be_restored(admin):
     # Uploading does not touch the data yet.
     assert Customer.objects.count() == 2
 
-    admin.post(f"/settings/backups/{item.name}/restore/", {"bestaetigt": "1"})
+    admin.post(f"/settings/backups/{item.name}/restore/", {"confirmed": "1"})
     assert list(Customer.objects.values_list("name", flat=True)) == ["ACME GmbH"]
 
 

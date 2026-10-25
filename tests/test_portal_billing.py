@@ -239,7 +239,7 @@ def test_invoice_without_a_number_has_no_links(client, customer_user, task):
 
     text = client.get(reverse("portal:invoices")).text
     table = text.split("<tbody>", 1)[1]
-    assert "/pdf/" not in table and "/time-entries/" not in table
+    assert "/pdf/" not in table and "/time/" not in table
     assert "abgerechnet</span>" in client.get(reverse("portal:entries")).text
 
 
@@ -249,7 +249,7 @@ def test_old_numeric_id_urls_are_not_found(client, customer_user, task):
 
     # Links from before the number was used in the URL carried the counter, which no longer exists.
     assert client.get("/portal/invoices/12/pdf/").status_code == 404
-    assert client.get("/portal/invoices/12/time-entries/").status_code == 404
+    assert client.get("/portal/invoices/12/time/").status_code == 404
 
 
 def test_a_number_that_looks_like_an_id_is_still_a_number(client, customer_user, task):

@@ -207,7 +207,7 @@ async def backup_upload(request: HttpRequest) -> HttpResponse:
     _require_admin(request)
     error = None
     if request.method == "POST":
-        file = request.FILES.get("datei")
+        file = request.FILES.get("file")
         if file is None:
             error = "Bitte wähle eine Datei aus."
         elif file.size > settings.BACKUP_UPLOAD_MAX_SIZE:
@@ -258,7 +258,7 @@ async def backup_restore(request: HttpRequest, name: str) -> HttpResponse:
     path = await _get_backup(name)
     error = None
     if request.method == "POST":
-        if request.POST.get("bestaetigt") != "1":
+        if request.POST.get("confirmed") != "1":
             error = "Bitte bestätige, dass der aktuelle Stand ersetzt wird."
         else:
             try:

@@ -29,9 +29,7 @@ def test_a_new_instance_is_not_saved_although_it_has_a_key():
     assert new.pk is not None and new._state.adding
 
 
-@pytest.mark.parametrize(
-    "path", ["/projects/1/", "/customers/1/", "/time-entries/1/", "/users/1/", "/billing/customer/1/"]
-)
+@pytest.mark.parametrize("path", ["/projects/1/", "/customers/1/", "/time/1/", "/users/1/", "/billing/customer/1/"])
 def test_old_numeric_urls_are_not_found(client, user, path):
     client.force_login(user)
     assert client.get(path).status_code == 404

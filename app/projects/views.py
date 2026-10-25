@@ -146,7 +146,7 @@ async def task_create(request: HttpRequest, pk: UUID) -> HttpResponse:
 async def task_from_templates(request: HttpRequest, pk: UUID) -> HttpResponse:
     """Add a task for each chosen template and return the refreshed task list (htmx)."""
     project = await _get_project(pk)
-    ids = [i for value in request.POST.getlist("vorlage") if (i := parse_uuid(value))]
+    ids = [i for value in request.POST.getlist("template") if (i := parse_uuid(value))]
     existing = {name async for name in project.tasks.values_list("name", flat=True)}
     new_tasks = [t.to_task(project) async for t in TaskTemplate.objects.filter(pk__in=ids) if t.name not in existing]
     await Task.objects.abulk_create(new_tasks)

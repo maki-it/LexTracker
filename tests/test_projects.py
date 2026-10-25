@@ -92,7 +92,7 @@ def test_add_tasks_from_templates_copies_values_and_skips_existing(logged_in, ta
     existing = TaskTemplate.objects.create(name=task.name)
 
     response = logged_in.post(
-        reverse("projects:task_from_templates", args=[task.project.pk]), {"vorlage": [meeting.pk, existing.pk]}
+        reverse("projects:task_from_templates", args=[task.project.pk]), {"template": [meeting.pk, existing.pk]}
     )
 
     assert response.status_code == 200
@@ -137,7 +137,7 @@ def test_save_task_as_template(logged_in, task):
 
 def test_delete_template_keeps_tasks(logged_in, task):
     template = TaskTemplate.objects.create(name="Konzeption")
-    logged_in.post(reverse("projects:task_from_templates", args=[task.project.pk]), {"vorlage": [template.pk]})
+    logged_in.post(reverse("projects:task_from_templates", args=[task.project.pk]), {"template": [template.pk]})
 
     logged_in.post(reverse("projects:template_delete", args=[template.pk]))
 
