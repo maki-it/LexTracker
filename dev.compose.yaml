@@ -1,0 +1,108 @@
+# Local development: the production setup from compose.yaml, with code reload and a stylesheet rebuild.
+#
+#   docker compose -f dev.compose.yaml watch
+#
+# Needs APP_SECRET_KEY in .env (any value will do here), see .env.example.
+# It runs as its own project (own volumes, own container names), so it does not touch the production
+# data and can run on the same host. Stop it with `docker compose -f dev.compose.yaml down`.
+name: lextracker-dev
+
+x-environment: &environment
+  APP_ENVIRONMENT: development
+  # Plain HTTP on localhost, so no Secure cookies.
+  APP_SECURE_COOKIES: "false"
+  APP_LOG_LEVEL: debug
+  # uvicorn --reload runs a single process.
+  UVICORN_WORKERS: 1
+
+# The files that end up in the container, as in the Dockerfile: the app folder without what is
+# generated there (the stylesheet is built in the container, not taken from the host).
+x-app-sync: &app-sync
+  path: ./app
+  target: /srv/app
+  ignore:
+    - "**/__pycache__/"
+    - "**/*.py[cod]"
+    - .django_tailwind_cli/
+    - static/css/tailwind.css
+
+services:
+  app:
+    extends:
+      file: compose.yaml
+      service: app
+    container_name: lextracker-dev
+    image: lextracker:dev
+    environment: *environment
+    # Bound to localhost only, because the dev server runs with DEBUG on.
+    ports: !override
+      - "127.0.0.1:8000:8000"
+    # `watch` copies changed files into the container, which needs a writable file system.
+    read_only: false
+    # Same as the image's CMD, plus --reload. It restarts when a synced .py file changes.
+    command:
+      - uvicorn
+      - config.asgi:application
+      - --host=0.0.0.0
+      - --port=8000
+      - --proxy-headers
+      - --lifespan=off
+      - --no-server-header
+      - --reload
+      - --reload-dir=/srv/app
+    volumes:
+      # Keeps the Tailwind CLI (downloaded on the first stylesheet build) across container rebuilds.
+      - lextracker-tailwind:/srv/app/.django_tailwind_cli
+    develop:
+      watch:
+        # Templates and scripts can use new Tailwind classes: copy, then rebuild the stylesheet.
+        # Runs as root because the image's app folder belongs to root. The next page load picks up
+        # the new file (ServeStatic checks for changes in development).
+        - <<: *app-sync
+          action: sync+exec
+          include:
+            - "**/*.html"
+            - "**/*.js"
+            - assets/tailwind.css
+          exec:
+            command: python manage.py tailwind build
+            user: root
+        # Everything else is only copied. uvicorn picks up Python changes by itself.
+        - <<: *app-sync
+          action: sync
+        # New dependencies or a changed Dockerfile need a new image.
+        - path: ./pyproject.toml
+          action: rebuild
+        - path: ./uv.lock
+          action: rebuild
+        - path: ./docker/Dockerfile
+          action: rebuild
+
+  scheduler:
+    extends:
+      file: compose.yaml
+      service: scheduler
+    container_name: lextracker-dev-scheduler
+    image: lextracker:dev
+    environment: *environment
+    read_only: false
+    # `extends` does not take over depends_on.
+    depends_on:
+      app:
+        condition: service_healthy
+    develop:
+      watch:
+        # No reload here: restart the scheduler when the code changes.
+        - <<: *app-sync
+          action: sync+restart
+        - path: ./pyproject.toml
+          action: rebuild
+        - path: ./uv.lock
+          action: rebuild
+        - path: ./docker/Dockerfile
+          action: rebuild
+
+volumes:
+  lextracker-data:
+  lextracker-backups:
+  lextracker-tailwind:
