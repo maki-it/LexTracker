@@ -10,7 +10,7 @@ from tracking.models import TimeEntry
 
 pytestmark = pytest.mark.django_db
 
-DIALOG = {"HX-Request": "true", "HX-Target": "dialog-body", "HX-Current-URL": "http://testserver/time/"}
+DIALOG = {"HX-Request": "true", "HX-Target": "dialog-body", "HX-Current-URL": "http://testserver/tasks/"}
 
 
 @pytest.fixture

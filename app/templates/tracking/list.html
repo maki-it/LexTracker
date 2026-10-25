@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% load timefmt icons dialogs %}
-{% block title %}Zeiten · LexTracker{% endblock %}
+{% block title %}Aufgaben · LexTracker{% endblock %}
 {% block content %}
 <div class="page-header">
   <div>
-    <h1>Zeiten</h1>
+    <h1>Aufgaben</h1>
     <p class="page-subtitle">KW {{ monday|date:"W" }} · {{ monday|date:"d.m." }} – {{ sunday|date:date_format }} · <strong class="font-semibold text-ink tabular-nums">{{ week_total|hours:duration_format }} h</strong> erfasst</p>
   </div>
   <div class="toolbar">

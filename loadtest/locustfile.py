@@ -54,7 +54,7 @@ class Kim(HttpUser):
         )
         self.csrf = self.client.cookies.get("csrftoken", "")
         if not _ids_cache:
-            start_form = self.client.get("/time/timer/start/", headers=HTMX, name="/time/timer/start/").text
+            start_form = self.client.get("/tasks/timer/start/", headers=HTMX, name="/tasks/timer/start/").text
             _ids_cache["tasks"] = _ids(start_form, rf'<option value="{UUID}"')
             _ids_cache["projects"] = _ids(self.client.get("/projects/").text, rf'href="/projects/{UUID}/"')
             _ids_cache["customers"] = _ids(self.client.get("/customers/").text, rf'href="/customers/{UUID}/"')
@@ -81,34 +81,34 @@ class Kim(HttpUser):
     @task(6)
     def timer_badge(self) -> None:
         # The sidebar reloads it every minute in every open tab.
-        self.client.get("/time/timer/", headers=HTMX, name="/time/timer/")
+        self.client.get("/tasks/timer/", headers=HTMX, name="/tasks/timer/")
 
     @task(5)
     def week(self) -> None:
-        self.client.get("/time/", name="/time/")
+        self.client.get("/tasks/", name="/tasks/")
 
     @task(2)
     def older_week(self) -> None:
         day = date.today() - timedelta(weeks=random.randint(1, 100))
         year, week, _ = day.isocalendar()
-        self.client.get(f"/time/?week={year}-W{week:02d}", name="/time/?week=…")
+        self.client.get(f"/tasks/?week={year}-W{week:02d}", name="/tasks/?week=…")
 
     @task(3)
     def start_and_stop_timer(self) -> None:
         if not self.task_ids:
             return
-        self._post("/time/timer/start/", {"task": random.choice(self.task_ids)}, headers=HTMX)
-        self._post("/time/timer/stop/", headers=HTMX)
+        self._post("/tasks/timer/start/", {"task": random.choice(self.task_ids)}, headers=HTMX)
+        self._post("/tasks/timer/stop/", headers=HTMX)
 
     @task(2)
     def book_time(self) -> None:
         if not self.task_ids:
             return
-        self.client.get("/time/new/", name="/time/new/")
+        self.client.get("/tasks/new/", name="/tasks/new/")
         start = date.today() - timedelta(days=random.randint(0, 14))
         hour = random.randint(7, 17)
         self._post(
-            "/time/new/",
+            "/tasks/new/",
             {
                 "task": random.choice(self.task_ids),
                 "started_at": f"{start}T{hour:02d}:00",
@@ -116,7 +116,7 @@ class Kim(HttpUser):
                 "description": "Lasttest",
                 "is_billable": "on",
             },
-            name="/time/new/ [POST]",
+            name="/tasks/new/ [POST]",
         )
 
     @task(2)

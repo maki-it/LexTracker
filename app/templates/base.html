@@ -44,7 +44,7 @@
         {% if user.portal_contact %}<a href="{% url 'portal:contact' %}" class="nav-link{% if active == 'portal:contact' %} nav-link-active{% endif %}"{% if active == 'portal:contact' %} aria-current="page"{% endif %}>{% icon "building" %}Kontaktdaten</a>{% endif %}
         {% else %}
         <a href="{% url 'core:dashboard' %}" class="nav-link{% if section == 'core' %} nav-link-active{% endif %}"{% if section == 'core' %} aria-current="page"{% endif %}>{% icon "dashboard" %}Übersicht</a>
-        <a href="{% url 'tracking:list' %}" class="nav-link{% if section == 'tracking' %} nav-link-active{% endif %}"{% if section == 'tracking' %} aria-current="page"{% endif %}>{% icon "clock" %}Zeiten</a>
+        <a href="{% url 'tracking:list' %}" class="nav-link{% if section == 'tracking' %} nav-link-active{% endif %}"{% if section == 'tracking' %} aria-current="page"{% endif %}>{% icon "tasks" %}Aufgaben</a>
         {% if user.is_admin %}
         <a href="{% url 'projects:list' %}" class="nav-link{% if section == 'projects' %} nav-link-active{% endif %}"{% if section == 'projects' %} aria-current="page"{% endif %}>{% icon "folder" %}Projekte{% if request.nav_counts.projects %}<span class="nav-count" title="Aktive Projekte">{{ request.nav_counts.projects }}</span>{% endif %}</a>
         <a href="{% url 'customers:list' %}" class="nav-link{% if section == 'customers' %} nav-link-active{% endif %}"{% if section == 'customers' %} aria-current="page"{% endif %}>{% icon "users" %}Kunden</a>
