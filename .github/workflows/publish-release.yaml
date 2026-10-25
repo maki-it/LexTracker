@@ -1,0 +1,80 @@
+name: Publish Release
+run-name: Publish release ${{ inputs.version || '(version from commits)' }}
+
+# Merges the open release pull request, optionally after setting its version. The merge makes
+# release.yaml create the tag and the GitHub release and build the image.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to release, e.g. 1.0.0. Leave empty to use the version release-please proposes.
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+# Own group: release.yaml must be able to run while this workflow waits for it.
+concurrency:
+  group: publish-release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    # The release pull request and its version only exist on main.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      # Pushes and merges by a GitHub App trigger release.yaml, those by GITHUB_TOKEN would not.
+      - id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      - name: Check the version
+        if: inputs.version != ''
+        run: |
+          echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$' || { echo "Not a version like 1.0.0 - $VERSION" >&2; exit 1; }
+        env:
+          VERSION: ${{ inputs.version }}
+
+      - name: Check out main
+        if: inputs.version != ''
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          token: ${{ steps.app-token.outputs.token }}
+
+      # release-please reads the Release-As footer and updates the release pull request to this version.
+      - name: Push the Release-As commit
+        if: inputs.version != ''
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit --allow-empty -m "chore: release $VERSION" -m "Release-As: $VERSION"
+          git push origin HEAD:main
+        env:
+          VERSION: ${{ inputs.version }}
+
+      - name: Merge the release pull request
+        run: |
+          # After a new version, wait until release.yaml has updated the pull request to it.
+          attempts=1
+          [ -n "$VERSION" ] && attempts=30
+          for _ in $(seq "$attempts"); do
+            pr=$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --label "autorelease: pending" --json number,title --limit 1)
+            number=$(jq -r '.[0].number // empty' <<<"$pr")
+            title=$(jq -r '.[0].title // empty' <<<"$pr")
+            if [ -n "$number" ] && { [ -z "$VERSION" ] || [[ "$title" == *" $VERSION" ]]; }; then
+              echo "Merging #$number: $title"
+              gh pr merge "$number" --repo "$GITHUB_REPOSITORY" --squash
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "No release pull request${VERSION:+ for $VERSION} found." >&2
+          exit 1
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          VERSION: ${{ inputs.version }}
