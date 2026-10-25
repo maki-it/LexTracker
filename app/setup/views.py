@@ -1,4 +1,5 @@
-"""Setup of a fresh instance: the first administrator, the Lexware key, e-mail, backups, then on to the start page.
+"""Setup of a fresh instance: the first administrator with two-factor login, the Lexware key, e-mail, backups,
+then on to the start page.
 
 While no account exists, every page leads here (see core.middleware). The later steps need the new
 administrator's login, so they can also be opened again afterwards.
@@ -15,6 +16,8 @@ from django.utils import timezone
 from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.http import require_http_methods
 
+from accounts import mfa
+from accounts.forms import CodeForm
 from accounts.models import User
 from core.models import AppSettings
 from customers.sync import sync_and_record
@@ -31,6 +34,7 @@ from setup.forms import AdminAccountForm, AlreadySetUp, BackupForm
 # (URL name, label)
 STEPS = [
     ("setup:account", "Admin-Konto"),
+    ("setup:mfa", "Zwei-Faktor"),
     ("setup:lexware", "Lexware Office"),
     ("setup:mail", "E-Mail"),
     ("setup:backup", "Datensicherung"),
@@ -53,13 +57,18 @@ def _render(request: HttpRequest, template: str, step: str, context: dict) -> Ht
     return render(request, template, {**context, "steps": steps, "bare_layout": True})
 
 
-def _not_admin(request: HttpRequest) -> HttpResponse | None:
-    """Where to send someone who may not open the later steps, or None for the administrator."""
+async def _not_admin(request: HttpRequest) -> HttpResponse | None:
+    """Where to send someone who may not open the later steps, or None for the administrator.
+
+    The administrator has to set up two-factor login before anything else.
+    """
     if not request.user.is_authenticated:
         # Only possible while no account exists, see core.middleware.
         return redirect("setup:account")
     if not request.user.is_admin:
         raise PermissionDenied
+    if not await sync_to_async(mfa.has_mfa)(request.user):
+        return redirect("setup:mfa")
     return None
 
 
@@ -67,7 +76,7 @@ def _not_admin(request: HttpRequest) -> HttpResponse | None:
 @require_http_methods(["GET", "POST"])
 async def account(request: HttpRequest) -> HttpResponse:
     if not await is_fresh():
-        return redirect("setup:lexware" if request.user.is_authenticated and request.user.is_admin else "/")
+        return redirect("setup:mfa" if request.user.is_authenticated and request.user.is_admin else "/")
     if not await request.session.aget(setup_code.SESSION_KEY):
         return await _unlock(request)
     form = AdminAccountForm(request.POST or None)
@@ -78,8 +87,32 @@ async def account(request: HttpRequest) -> HttpResponse:
             messages.error(request, "Die App wurde in der Zwischenzeit schon eingerichtet. Bitte melde dich an.")
             return redirect("accounts:login")
         await alogin(request, user, backend="django.contrib.auth.backends.ModelBackend")
-        return redirect("setup:lexware")
+        return redirect("setup:mfa")
     return _render(request, "setup/account.html", "setup:account", {"form": form})
+
+
+@require_http_methods(["GET", "POST"])
+async def two_factor(request: HttpRequest) -> HttpResponse:
+    """Two-factor login with an authenticator app, required for the administrator before the setup goes on."""
+    if not request.user.is_authenticated:
+        return redirect("setup:account")
+    if not request.user.is_admin:
+        raise PermissionDenied
+    if await sync_to_async(mfa.has_mfa)(request.user):
+        return redirect("setup:lexware")
+    device = await sync_to_async(mfa.pending_device)(request.user)
+    form = CodeForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        codes = await sync_to_async(mfa.confirm)(device, form.cleaned_data["code"])
+        if codes is not None:
+            return _render(request, "setup/recovery_codes.html", "setup:mfa", {"codes": codes})
+        form.add_error("code", "Der Code stimmt nicht. Prüfe die Uhrzeit auf dem Handy und versuche es erneut.")
+    context = {
+        "form": form,
+        "qr_code": await sync_to_async(mfa.qr_code_svg)(device),
+        "secret": mfa.secret_for_manual_entry(device),
+    }
+    return _render(request, "setup/mfa.html", "setup:mfa", context)
 
 
 async def _unlock(request: HttpRequest) -> HttpResponse:
@@ -97,7 +130,7 @@ async def _unlock(request: HttpRequest) -> HttpResponse:
 @sensitive_post_parameters("api_key")
 @require_http_methods(["GET", "POST"])
 async def lexware(request: HttpRequest) -> HttpResponse:
-    if response := _not_admin(request):
+    if response := await _not_admin(request):
         return response
     form = ApiKeyForm(request.POST or None)
     if request.method == "POST" and form.is_valid() and await check_and_store(form) is not None:
@@ -110,7 +143,7 @@ async def lexware(request: HttpRequest) -> HttpResponse:
 @require_http_methods(["GET", "POST"])
 async def mail(request: HttpRequest) -> HttpResponse:
     """The SMTP server, optional. A test mail goes to the administrator's address before moving on."""
-    if response := _not_admin(request):
+    if response := await _not_admin(request):
         return response
     config = await MailSettings.aload()
     initial = {} if config.base_url else {"base_url": request.build_absolute_uri("/").rstrip("/")}
@@ -136,7 +169,7 @@ async def mail(request: HttpRequest) -> HttpResponse:
 
 @require_http_methods(["GET", "POST"])
 async def backup(request: HttpRequest) -> HttpResponse:
-    if response := _not_admin(request):
+    if response := await _not_admin(request):
         return response
     form = BackupForm(request.POST or None, instance=await AppSettings.aload())
     if request.method == "POST" and await sync_to_async(form.is_valid)():
@@ -147,7 +180,7 @@ async def backup(request: HttpRequest) -> HttpResponse:
 
 @require_http_methods(["GET", "POST"])
 async def done(request: HttpRequest) -> HttpResponse:
-    if response := _not_admin(request):
+    if response := await _not_admin(request):
         return response
     status = await credentials.astatus()
     if request.method == "POST":

@@ -44,7 +44,7 @@ app/
   portal/      Kundenportal (nur lesen)
   mailer/      E-Mail-Versand: SMTP-Einstellungen, Warteschlange, Wochenbericht, Erinnerungen und Hinweise
   inbox/       Nachrichten an Benutzer: Glocke, Postfach, Prioritäten, Weitergabe per E-Mail
-  setup/       Einrichtung einer neuen Instanz (Admin-Konto, Lexware-Schlüssel, Datensicherung)
+  setup/       Einrichtung einer neuen Instanz (Admin-Konto mit Zwei-Faktor-Anmeldung, Lexware-Schlüssel, Datensicherung)
   templates/   HTML-Templates
   assets/      Tailwind-Quelle mit Farben und eigenen Komponenten
   static/      Statische Dateien (htmx, gebautes CSS)
@@ -63,7 +63,7 @@ make migrate     # Datenbank anlegen (liegt in ./data)
 make run         # http://localhost:8000
 ```
 
-Beim ersten Aufruf führt die **Einrichtung** durch das Anlegen des Admin-Kontos, das Verbinden mit Lexware Office und die Datensicherung (das Konto alternativ mit `make superuser`).
+Beim ersten Aufruf führt die **Einrichtung** durch das Anlegen des Admin-Kontos (mit verpflichtender Zwei-Faktor-Anmeldung per Authenticator-App), das Verbinden mit Lexware Office und die Datensicherung (das Konto alternativ mit `make superuser`).
 Solange es kein Konto gibt, leitet jede Seite dorthin. Damit niemand anderes eine frische Instanz übernehmen kann, öffnet sich die Einrichtung nur mit einem Code: Die App schreibt den Einrichtungslink beim ersten Aufruf ins Log (`docker compose logs app`), alternativ zeigt ihn `manage.py setup_link` (`docker compose exec app python manage.py setup_link`). Der Code ist aus `APP_SECRET_KEY` abgeleitet und nach dem ersten Konto wertlos.
 
 Während du an Templates arbeitest, hält `make css-watch` in einem zweiten Terminal das Stylesheet aktuell.
