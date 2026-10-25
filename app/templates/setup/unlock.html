@@ -1,25 +1,26 @@
 {% extends "setup/_layout.html" %}
+{% load i18n %}
 {% block step %}
 <form method="post" class="card flex flex-col gap-4 p-6">
   <div>
-    <h1 class="text-lg">Willkommen bei LexTracker</h1>
+    <h1 class="text-lg">{% trans "Willkommen bei LexTracker" %}</h1>
     <p class="mt-1 text-sm text-muted">
-      Die App ist neu und hat noch kein Konto. Damit nur du sie einrichten kannst, steht ein Einrichtungslink im Log der App.
+      {% trans "Die App ist neu und hat noch kein Konto. Damit nur du sie einrichten kannst, steht ein Einrichtungslink im Log der App." %}
     </p>
   </div>
   <div class="flex flex-col gap-1 text-sm">
-    <span>Mit Docker:</span>
-    <code class="rounded bg-surface-muted px-2 py-1 break-all">docker compose logs app | grep einrichtung</code>
-    <span class="mt-2">Oder direkt abfragen:</span>
+    <span>{% trans "Mit Docker:" %}</span>
+    <code class="rounded bg-surface-muted px-2 py-1 break-all">docker compose logs app | grep "not set up yet"</code>
+    <span class="mt-2">{% trans "Oder direkt abfragen:" %}</span>
     <code class="rounded bg-surface-muted px-2 py-1 break-all">docker compose exec app python manage.py setup_link</code>
   </div>
   {% csrf_token %}
   {% if error %}<div role="alert" class="alert alert-error">{{ error }}</div>{% endif %}
   <label class="field">
-    <span>Einrichtungscode</span>
+    <span>{% trans "Einrichtungscode" %}</span>
     <input type="text" name="code" class="input" autocomplete="off" spellcheck="false" required autofocus>
-    <span class="font-normal text-muted">Der Teil nach <code>?code=</code> im Link. Öffnest du den Link direkt, entfällt dieser Schritt.</span>
+    <span class="font-normal text-muted">{% trans "Der Teil nach <code>?code=</code> im Link. Öffnest du den Link direkt, entfällt dieser Schritt." %}</span>
   </label>
-  <button type="submit" class="btn btn-primary mt-1">Weiter</button>
+  <button type="submit" class="btn btn-primary mt-1">{% trans "Weiter" %}</button>
 </form>
 {% endblock %}

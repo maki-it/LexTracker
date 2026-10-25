@@ -13,6 +13,8 @@ from django.core.exceptions import PermissionDenied
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
+from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy
 from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.http import require_http_methods
 
@@ -33,12 +35,12 @@ from setup.forms import AdminAccountForm, AlreadySetUp, BackupForm
 
 # (URL name, label)
 STEPS = [
-    ("setup:account", "Admin-Konto"),
-    ("setup:mfa", "Zwei-Faktor"),
+    ("setup:account", gettext_lazy("Admin-Konto")),
+    ("setup:mfa", gettext_lazy("Zwei-Faktor")),
     ("setup:lexware", "Lexware Office"),
-    ("setup:mail", "E-Mail"),
-    ("setup:backup", "Datensicherung"),
-    ("setup:done", "Fertig"),
+    ("setup:mail", gettext_lazy("E-Mail")),
+    ("setup:backup", gettext_lazy("Datensicherung")),
+    ("setup:done", gettext_lazy("Fertig")),
 ]
 
 
@@ -48,10 +50,10 @@ async def is_fresh() -> bool:
 
 
 def _render(request: HttpRequest, template: str, step: str, context: dict) -> HttpResponse:
-    current = [name for name, _ in STEPS].index(step)
+    current = [name for name, _label in STEPS].index(step)
     steps = [
         {"label": label, "number": i + 1, "done": i < current, "current": i == current}
-        for i, (_, label) in enumerate(STEPS)
+        for i, (_name, label) in enumerate(STEPS)
     ]
     # bare_layout: no sidebar, even though the new administrator is logged in.
     return render(request, template, {**context, "steps": steps, "bare_layout": True})
@@ -84,7 +86,7 @@ async def account(request: HttpRequest) -> HttpResponse:
         try:
             user = await sync_to_async(form.save)()
         except AlreadySetUp:
-            messages.error(request, "Die App wurde in der Zwischenzeit schon eingerichtet. Bitte melde dich an.")
+            messages.error(request, _("Die App wurde in der Zwischenzeit schon eingerichtet. Bitte melde dich an."))
             return redirect("accounts:login")
         await alogin(request, user, backend="django.contrib.auth.backends.ModelBackend")
         return redirect("setup:mfa")
@@ -106,7 +108,7 @@ async def two_factor(request: HttpRequest) -> HttpResponse:
         codes = await sync_to_async(mfa.confirm)(device, form.cleaned_data["code"])
         if codes is not None:
             return _render(request, "setup/recovery_codes.html", "setup:mfa", {"codes": codes})
-        form.add_error("code", "Der Code stimmt nicht. Prüfe die Uhrzeit auf dem Handy und versuche es erneut.")
+        form.add_error("code", _("Der Code stimmt nicht. Prüfe die Uhrzeit auf dem Handy und versuche es erneut."))
     context = {
         "form": form,
         "qr_code": await sync_to_async(mfa.qr_code_svg)(device),
@@ -123,7 +125,7 @@ async def _unlock(request: HttpRequest) -> HttpResponse:
         return redirect("setup:account")
     if not code:
         setup_code.log_setup_link(request)
-    error = "Der Code stimmt nicht." if code else None
+    error = _("Der Code stimmt nicht.") if code else None
     return _render(request, "setup/unlock.html", "setup:account", {"error": error})
 
 
@@ -155,9 +157,9 @@ async def mail(request: HttpRequest) -> HttpResponse:
         if request.POST.get("test") and config.is_configured:
             to = request.user.email
             if not to:
-                test_result = {"error": "Dein Konto hat keine E-Mail-Adresse. Trag unter Konto eine ein."}
+                test_result = {"error": _("Dein Konto hat keine E-Mail-Adresse. Trag unter Konto eine ein.")}
             else:
-                subject = "Testmail von LexTracker"
+                subject = _("Testmail von LexTracker")
                 text, html = outbox.render("test", {"subject": subject, "config": config})
                 error = await outbox.asend_now(config, outbox.Message(to, subject, text, html))
                 test_result = {"error": error} if error else {"ok": to}
@@ -188,10 +190,10 @@ async def done(request: HttpRequest) -> HttpResponse:
             try:
                 result = await sync_and_record()
             except LexwareError as exc:
-                messages.error(request, f"Der Kundenimport ist fehlgeschlagen: {exc}")
+                messages.error(request, _("Der Kundenimport ist fehlgeschlagen: %(error)s") % {"error": exc})
             else:
-                messages.success(request, f"Kunden importiert: {result.summary}")
-        messages.success(request, "Die Einrichtung ist abgeschlossen. Viel Spaß mit LexTracker!")
+                messages.success(request, _("Kunden importiert: %(summary)s") % {"summary": result.summary})
+        messages.success(request, _("Die Einrichtung ist abgeschlossen. Viel Spaß mit LexTracker!"))
         return redirect("core:dashboard")
     context = {
         "lexware": status,

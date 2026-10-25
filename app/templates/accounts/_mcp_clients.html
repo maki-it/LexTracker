@@ -1,9 +1,10 @@
+{% load i18n %}
 <div class="flex flex-col gap-3 rounded-lg border border-line px-3 py-3 text-sm" data-tabs>
   <div>
-    <h3 class="font-medium">Agent verbinden</h3>
+    <h3 class="font-medium">{% trans "Agent verbinden" %}</h3>
     <p class="mt-0.5 text-muted">
-      Wähle deinen Client und kopiere die Konfiguration.
-      {% if new_key %}Dein neuer Token ist schon eingesetzt.{% else %}Ersetze <code class="text-ink">{{ token_placeholder }}</code> durch deinen Token.{% endif %}
+      {% trans "Wähle deinen Client und kopiere die Konfiguration." %}
+      {% if new_key %}{% trans "Dein neuer Token ist schon eingesetzt." %}{% else %}{% blocktrans trimmed %}Ersetze <code class="text-ink">{{ token_placeholder }}</code> durch deinen Token.{% endblocktrans %}{% endif %}
     </p>
   </div>
   <div class="tabs mt-0 overflow-x-auto" role="tablist">
@@ -21,7 +22,7 @@
     <div class="flex flex-col gap-1">
       <div class="flex items-center justify-between gap-2">
         <span class="text-muted">{{ snippet.label }}</span>
-        <button type="button" class="btn btn-sm" data-copy="mcp-{{ client.slug }}-{{ forloop.counter }}">Kopieren</button>
+        <button type="button" class="btn btn-sm" data-copy="mcp-{{ client.slug }}-{{ forloop.counter }}">{% trans "Kopieren" %}</button>
       </div>
       <pre id="mcp-{{ client.slug }}-{{ forloop.counter }}" class="overflow-x-auto rounded bg-surface-muted px-3 py-2 text-[13px] text-ink">{{ snippet.text }}</pre>
     </div>

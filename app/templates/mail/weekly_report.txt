@@ -1,21 +1,21 @@
-{% load timefmt %}{% autoescape off %}Hallo{% if user.first_name %} {{ user.first_name }}{% endif %},
+{% load i18n timefmt %}{% autoescape off %}{% if user.first_name %}{% blocktrans trimmed with first_name=user.first_name %}Hallo {{ first_name }},{% endblocktrans %}{% else %}{% trans "Hallo," %}{% endif %}
 
-dein Wochenbericht für {{ report.range.label }}.
+{% blocktrans trimmed with label=report.range.label %}dein Wochenbericht für {{ label }}.{% endblocktrans %}
 
-Deine Stunden: {{ report.total|hours:duration_format }} (davon abrechenbar {{ report.billable|hours:duration_format }})
+{% blocktrans trimmed with total=report.total|hours:duration_format billable=report.billable|hours:duration_format %}Deine Stunden: {{ total }} (davon abrechenbar {{ billable }}){% endblocktrans %}
 {% for day in report.days %}
   {{ day.label }}  {{ day.duration|hours:duration_format }}{% endfor %}
 {% if report.projects %}
-Nach Projekt:{% for line in report.projects %}
+{% trans "Nach Projekt:" %}{% for line in report.projects %}
   {{ line.label }}: {{ line.duration|hours:duration_format }}{% endfor %}
 {% endif %}{% if report.overview %}{% with o=report.overview %}
-Überblick
-{% if report.team_total is not None %}  Stunden aller Benutzer: {{ report.team_total|hours:duration_format }}
-{% endif %}  Noch nicht abgerechnet (in diesem Zeitraum): {{ o.totals.unbilled|hours:duration_format }}{% if o.unbilled_value %}, ≈ {{ o.unbilled_value|floatformat:2 }} €{% endif %}
-  Rechnungen offen: {{ o.open|floatformat:2 }} €
-{% for r in o.retainers %}  Retainer {{ r.agreement.customer.name }} ({{ r.period_label }}): {{ r.used|hours:duration_format }} von {{ r.included|hours:duration_format }}{% if r.overage %}, {{ r.overage|hours:duration_format }} darüber{% endif %}
+{% trans "Überblick" %}
+{% if report.team_total is not None %}  {% blocktrans trimmed with hours=report.team_total|hours:duration_format %}Stunden aller Benutzer: {{ hours }}{% endblocktrans %}
+{% endif %}  {% blocktrans trimmed with hours=o.totals.unbilled|hours:duration_format %}Noch nicht abgerechnet (in diesem Zeitraum): {{ hours }}{% endblocktrans %}{% if o.unbilled_value %}, ≈ {{ o.unbilled_value|floatformat:2 }} €{% endif %}
+  {% blocktrans trimmed with amount=o.open|floatformat:2 %}Rechnungen offen: {{ amount }} €{% endblocktrans %}
+{% for r in o.retainers %}  {% blocktrans trimmed with customer=r.agreement.customer.name period=r.period_label used=r.used|hours:duration_format included=r.included|hours:duration_format %}Retainer {{ customer }} ({{ period }}): {{ used }} von {{ included }}{% endblocktrans %}{% if r.overage %}{% blocktrans trimmed with overage=r.overage|hours:duration_format %}, {{ overage }} darüber{% endblocktrans %}{% endif %}
 {% endfor %}{% endwith %}{% endif %}{% if url %}
-Mehr in LexTracker: {{ url }}
+{% blocktrans trimmed %}Mehr in LexTracker: {{ url }}{% endblocktrans %}
 {% endif %}
-Den Wochenbericht schaltest du in LexTracker unter Konto ab.
+{% trans "Den Wochenbericht schaltest du in LexTracker unter Konto ab." %}
 {% endautoescape %}

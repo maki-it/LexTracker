@@ -1,38 +1,39 @@
 from decimal import Decimal
 
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 from core.models import TimeStampedModel
 
 
 class Project(TimeStampedModel):
     class Status(models.TextChoices):
-        PLANNED = "planned", "geplant"
-        ACTIVE = "active", "aktiv"
-        PAUSED = "paused", "pausiert"
-        DONE = "done", "abgeschlossen"
+        PLANNED = "planned", _("geplant")
+        ACTIVE = "active", _("aktiv")
+        PAUSED = "paused", _("pausiert")
+        DONE = "done", _("abgeschlossen")
 
     customer = models.ForeignKey(
-        "customers.Customer", verbose_name="Kunde", on_delete=models.PROTECT, related_name="projects"
+        "customers.Customer", verbose_name=_("Kunde"), on_delete=models.PROTECT, related_name="projects"
     )
-    name = models.CharField("Name", max_length=255)
-    description = models.TextField("Beschreibung", blank=True)
-    status = models.CharField("Status", max_length=20, choices=Status, default=Status.ACTIVE)
+    name = models.CharField(_("Name"), max_length=255)
+    description = models.TextField(_("Beschreibung"), blank=True)
+    status = models.CharField(_("Status"), max_length=20, choices=Status, default=Status.ACTIVE)
     hourly_rate = models.DecimalField(
-        "Stundensatz (netto)",
+        _("Stundensatz (netto)"),
         max_digits=8,
         decimal_places=2,
         null=True,
         blank=True,
-        help_text="Leer lassen, um den Stundensatz des Kunden zu verwenden.",
+        help_text=_("Leer lassen, um den Stundensatz des Kunden zu verwenden."),
     )
-    budget_hours = models.DecimalField("Budget (Stunden)", max_digits=8, decimal_places=2, null=True, blank=True)
-    start_date = models.DateField("Start", null=True, blank=True)
-    end_date = models.DateField("Ende", null=True, blank=True)
+    budget_hours = models.DecimalField(_("Budget (Stunden)"), max_digits=8, decimal_places=2, null=True, blank=True)
+    start_date = models.DateField(_("Start"), null=True, blank=True)
+    end_date = models.DateField(_("Ende"), null=True, blank=True)
 
     class Meta:
-        verbose_name = "Projekt"
-        verbose_name_plural = "Projekte"
+        verbose_name = _("Projekt")
+        verbose_name_plural = _("Projekte")
         ordering = ["customer__name", "name"]
         constraints = [
             models.UniqueConstraint(fields=["customer", "name"], name="unique_project_name_per_customer"),
@@ -44,28 +45,30 @@ class Project(TimeStampedModel):
 
 class Task(TimeStampedModel):
     class Status(models.TextChoices):
-        OPEN = "open", "offen"
-        IN_PROGRESS = "in_progress", "in Arbeit"
-        DONE = "done", "erledigt"
+        OPEN = "open", _("offen")
+        IN_PROGRESS = "in_progress", _("in Arbeit")
+        DONE = "done", _("erledigt")
 
-    project = models.ForeignKey(Project, verbose_name="Projekt", on_delete=models.CASCADE, related_name="tasks")
-    name = models.CharField("Name", max_length=255)
-    description = models.TextField("Beschreibung", blank=True)
-    status = models.CharField("Status", max_length=20, choices=Status, default=Status.OPEN)
-    is_billable = models.BooleanField("abrechenbar", default=True)
+    project = models.ForeignKey(Project, verbose_name=_("Projekt"), on_delete=models.CASCADE, related_name="tasks")
+    name = models.CharField(_("Name"), max_length=255)
+    description = models.TextField(_("Beschreibung"), blank=True)
+    status = models.CharField(_("Status"), max_length=20, choices=Status, default=Status.OPEN)
+    is_billable = models.BooleanField(_("abrechenbar"), default=True)
     hourly_rate = models.DecimalField(
-        "Stundensatz (netto)",
+        _("Stundensatz (netto)"),
         max_digits=8,
         decimal_places=2,
         null=True,
         blank=True,
-        help_text="Leer lassen, um den Stundensatz des Projekts zu verwenden.",
+        help_text=_("Leer lassen, um den Stundensatz des Projekts zu verwenden."),
     )
-    estimated_hours = models.DecimalField("Schätzung (Stunden)", max_digits=8, decimal_places=2, null=True, blank=True)
+    estimated_hours = models.DecimalField(
+        _("Schätzung (Stunden)"), max_digits=8, decimal_places=2, null=True, blank=True
+    )
 
     class Meta:
-        verbose_name = "Aufgabe"
-        verbose_name_plural = "Aufgaben"
+        verbose_name = _("Aufgabe")
+        verbose_name_plural = _("Aufgaben")
         ordering = ["project", "name"]
 
     def __str__(self) -> str:
@@ -86,24 +89,26 @@ class Task(TimeStampedModel):
 class TaskTemplate(TimeStampedModel):
     """A task that recurs across projects. Adding it to a project copies its values into a new task."""
 
-    name = models.CharField("Name", max_length=255, unique=True)
-    description = models.TextField("Beschreibung", blank=True)
-    is_billable = models.BooleanField("abrechenbar", default=True)
+    name = models.CharField(_("Name"), max_length=255, unique=True)
+    description = models.TextField(_("Beschreibung"), blank=True)
+    is_billable = models.BooleanField(_("abrechenbar"), default=True)
     hourly_rate = models.DecimalField(
-        "Stundensatz (netto)",
+        _("Stundensatz (netto)"),
         max_digits=8,
         decimal_places=2,
         null=True,
         blank=True,
-        help_text="Leer lassen, damit die Aufgabe den Stundensatz des Projekts verwendet.",
+        help_text=_("Leer lassen, damit die Aufgabe den Stundensatz des Projekts verwendet."),
     )
-    estimated_hours = models.DecimalField("Schätzung (Stunden)", max_digits=8, decimal_places=2, null=True, blank=True)
+    estimated_hours = models.DecimalField(
+        _("Schätzung (Stunden)"), max_digits=8, decimal_places=2, null=True, blank=True
+    )
 
     COPIED_FIELDS = ("name", "description", "is_billable", "hourly_rate", "estimated_hours")
 
     class Meta:
-        verbose_name = "Aufgabenvorlage"
-        verbose_name_plural = "Aufgabenvorlagen"
+        verbose_name = _("Aufgabenvorlage")
+        verbose_name_plural = _("Aufgabenvorlagen")
         ordering = ["name"]
 
     def __str__(self) -> str:

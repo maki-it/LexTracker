@@ -62,6 +62,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django_htmx.middleware.HtmxMiddleware",
     "core.middleware.LoginRequiredMiddleware",
+    "core.locale.LocaleMiddleware",
     "core.access.RoleAccessMiddleware",
     "core.nav.NavCountsMiddleware",
     "core.dialogs.DialogMiddleware",
@@ -131,7 +132,11 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-LANGUAGE_CODE = "de-de"
+# The messages in the code and templates are German, so German needs no translation file.
+# Every user picks a language on the account page, see core.locale.
+LANGUAGE_CODE = "de"
+LANGUAGES = [("de", "Deutsch"), ("en", "English")]
+LOCALE_PATHS = [BASE_DIR / "locale"]
 TIME_ZONE = env.time_zone
 USE_I18N = True
 USE_TZ = True

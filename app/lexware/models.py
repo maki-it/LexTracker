@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 
 class LexwareConnection(models.Model):
@@ -9,13 +10,13 @@ class LexwareConnection(models.Model):
     """
 
     encrypted_api_key = models.TextField(blank=True, editable=False)
-    key_suffix = models.CharField("Ende des Schlüssels", max_length=4, blank=True, editable=False)
-    company_name = models.CharField("Lexware-Konto", max_length=200, blank=True, editable=False)
-    verified_at = models.DateTimeField("zuletzt geprüft", null=True, blank=True, editable=False)
-    updated_at = models.DateTimeField("geändert", null=True, blank=True, editable=False)
+    key_suffix = models.CharField(_("Ende des Schlüssels"), max_length=4, blank=True, editable=False)
+    company_name = models.CharField(_("Lexware-Konto"), max_length=200, blank=True, editable=False)
+    verified_at = models.DateTimeField(_("zuletzt geprüft"), null=True, blank=True, editable=False)
+    updated_at = models.DateTimeField(_("geändert"), null=True, blank=True, editable=False)
 
     class Meta:
-        verbose_name = verbose_name_plural = "Lexware-Verbindung"
+        verbose_name = verbose_name_plural = _("Lexware-Verbindung")
 
     def __str__(self) -> str:
         return "Lexware-Verbindung"

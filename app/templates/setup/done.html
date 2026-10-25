@@ -1,39 +1,40 @@
 {% extends "setup/_layout.html" %}
+{% load i18n %}
 {% load icons %}
 {% block step %}
 <form method="post" class="card flex flex-col gap-4 p-6">
   <div>
-    <h1 class="text-lg">Alles bereit</h1>
-    <p class="mt-1 text-sm text-muted">Alles hier kannst du später unter „Einstellungen“ ändern.</p>
+    <h1 class="text-lg">{% trans "Alles bereit" %}</h1>
+    <p class="mt-1 text-sm text-muted">{% trans "Alles hier kannst du später unter „Einstellungen“ ändern." %}</p>
   </div>
   {% csrf_token %}
   <ul class="flex flex-col gap-2 text-sm">
-    <li class="flex items-center gap-2">{% icon "check" %} Administrator-Konto <strong>{{ user.get_username }}</strong> angelegt</li>
+    <li class="flex items-center gap-2">{% icon "check" %} {% blocktrans trimmed with get_username=user.get_username %}Administrator-Konto <strong>{{ get_username }}</strong> angelegt{% endblocktrans %}</li>
     {% if lexware.configured %}
-    <li class="flex items-center gap-2">{% icon "check" %} Lexware Office verbunden{% if lexware.company_name %} ({{ lexware.company_name }}){% endif %}</li>
+    <li class="flex items-center gap-2">{% icon "check" %} {% trans "Lexware Office verbunden" %}{% if lexware.company_name %} ({{ lexware.company_name }}){% endif %}</li>
     {% else %}
-    <li class="flex items-center gap-2 text-muted">{% icon "x" %} Lexware Office noch nicht verbunden</li>
+    <li class="flex items-center gap-2 text-muted">{% icon "x" %} {% trans "Lexware Office noch nicht verbunden" %}</li>
     {% endif %}
     {% if mail.is_configured %}
-    <li class="flex items-center gap-2">{% icon "check" %} E-Mail-Versand über {{ mail.host }} (Passwort vergessen, Anmeldelinks, Wochenbericht)</li>
+    <li class="flex items-center gap-2">{% icon "check" %} {% blocktrans trimmed with host=mail.host %}E-Mail-Versand über {{ host }} (Passwort vergessen, Anmeldelinks, Wochenbericht){% endblocktrans %}</li>
     {% else %}
-    <li class="flex items-center gap-2 text-muted">{% icon "x" %} E-Mail-Versand noch nicht eingerichtet</li>
+    <li class="flex items-center gap-2 text-muted">{% icon "x" %} {% trans "E-Mail-Versand noch nicht eingerichtet" %}</li>
     {% endif %}
     {% if app_settings.backup_enabled %}
-    <li class="flex items-center gap-2">{% icon "check" %} Tägliche Datensicherung ab {{ app_settings.backup_time|time:"H:i" }} Uhr, {{ app_settings.backup_keep }} Kopien</li>
+    <li class="flex items-center gap-2">{% icon "check" %} {% blocktrans trimmed with backup_time=app_settings.backup_time|time:"H:i" backup_keep=app_settings.backup_keep %}Tägliche Datensicherung ab {{ backup_time }} Uhr, {{ backup_keep }} Kopien{% endblocktrans %}</li>
     {% else %}
-    <li class="flex items-center gap-2 text-muted">{% icon "x" %} Keine automatische Datensicherung</li>
+    <li class="flex items-center gap-2 text-muted">{% icon "x" %} {% trans "Keine automatische Datensicherung" %}</li>
     {% endif %}
   </ul>
   {% if lexware.configured %}
   <label class="flex items-center gap-2 text-sm font-medium">
     <input type="checkbox" name="import_customers" value="1" class="size-4 accent-primary" checked>
-    Kunden jetzt aus Lexware importieren
+    {% trans "Kunden jetzt aus Lexware importieren" %}
   </label>
   {% endif %}
   <div class="mt-1 flex flex-wrap items-center gap-3">
-    <button type="submit" class="btn btn-primary">Zur Startseite</button>
-    <a href="{% url 'setup:backup' %}" class="btn btn-ghost">Zurück</a>
+    <button type="submit" class="btn btn-primary">{% trans "Zur Startseite" %}</button>
+    <a href="{% url 'setup:backup' %}" class="btn btn-ghost">{% trans "Zurück" %}</a>
   </div>
 </form>
 {% endblock %}

@@ -1,24 +1,25 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load icons %}
-{% block title %}Rechnungen · LexTracker{% endblock %}
+{% block title %}{% trans "Rechnungen" %} · LexTracker{% endblock %}
 {% block content %}
 <div class="page-header">
   <div>
-    <h1>Rechnungen</h1>
-    <p class="page-subtitle">{% if range %}{{ range.start|date:date_format }} – {{ range.end|date:date_format }}{% else %}Alle Zeiträume{% endif %} · {{ invoices|length }} Rechnung{{ invoices|length|pluralize:"en" }}</p>
+    <h1>{% trans "Rechnungen" %}</h1>
+    <p class="page-subtitle">{% if range %}{{ range.start|date:date_format }} – {{ range.end|date:date_format }}{% else %}{% trans "Alle Zeiträume" %}{% endif %} · {% blocktrans trimmed count counter=invoices|length %}{{ counter }} Rechnung{% plural %}{{ counter }} Rechnungen{% endblocktrans %}</p>
   </div>
 </div>
 
 {# Status and range filters keep each other: every link carries the other one along. #}
 <div class="flex flex-col gap-3">
-  <nav aria-label="Status" class="flex flex-wrap gap-1.5">
-    <a href="?{% if range.key %}range={{ range.key }}{% elif range %}from={{ range.start|date:'Y-m-d' }}&to={{ range.end|date:'Y-m-d' }}{% endif %}" class="pill{% if not status %} pill-active{% endif %}">Alle</a>
+  <nav aria-label="{% trans 'Status' %}" class="flex flex-wrap gap-1.5">
+    <a href="?{% if range.key %}range={{ range.key }}{% elif range %}from={{ range.start|date:'Y-m-d' }}&to={{ range.end|date:'Y-m-d' }}{% endif %}" class="pill{% if not status %} pill-active{% endif %}">{% trans "Alle" %}</a>
     {% for key, label in status_filters %}
     <a href="?status={{ key }}{% if range.key %}&range={{ range.key }}{% elif range %}&from={{ range.start|date:'Y-m-d' }}&to={{ range.end|date:'Y-m-d' }}{% endif %}" class="pill{% if status == key %} pill-active{% endif %}">{{ label }}</a>
     {% endfor %}
   </nav>
-  <nav aria-label="Zeitraum" class="flex flex-wrap gap-1.5">
-    <a href="?{% if status %}status={{ status }}{% endif %}" class="pill{% if not range %} pill-active{% endif %}">Gesamt</a>
+  <nav aria-label="{% trans 'Zeitraum' %}" class="flex flex-wrap gap-1.5">
+    <a href="?{% if status %}status={{ status }}{% endif %}" class="pill{% if not range %} pill-active{% endif %}">{% trans "Gesamt" %}</a>
     {% for preset in presets %}
     <a href="?range={{ preset.key }}{% if status %}&status={{ status }}{% endif %}" class="pill{% if range and preset.key == range.key %} pill-active{% endif %}">{{ preset.label }}</a>
     {% endfor %}
@@ -26,20 +27,20 @@
   <form method="get" class="flex flex-wrap items-end gap-3"
         hx-get="{% url 'portal:invoices' %}" hx-trigger="change" hx-target="main" hx-select="main" hx-swap="outerHTML" hx-push-url="true">
     {% if status %}<input type="hidden" name="status" value="{{ status }}">{% endif %}
-    <label class="field"><span>Rechnungsdatum von</span><input type="date" name="from" value="{{ range.start|date:'Y-m-d' }}" class="input"></label>
-    <label class="field"><span>bis</span><input type="date" name="to" value="{{ range.end|date:'Y-m-d' }}" class="input"></label>
-    <noscript><button type="submit" class="btn">Anzeigen</button></noscript>
+    <label class="field"><span>{% trans "Rechnungsdatum von" %}</span><input type="date" name="from" value="{{ range.start|date:'Y-m-d' }}" class="input"></label>
+    <label class="field"><span>{% trans "bis" %}</span><input type="date" name="to" value="{{ range.end|date:'Y-m-d' }}" class="input"></label>
+    <noscript><button type="submit" class="btn">{% trans "Anzeigen" %}</button></noscript>
   </form>
 </div>
 <div class="table-wrap">
   <table class="table">
     <thead>
       <tr>
-        <th>Nummer</th>
-        <th>Datum</th>
-        <th>Leistungszeitraum</th>
-        <th>Status</th>
-        <th class="text-right">Netto</th>
+        <th>{% trans "Nummer" %}</th>
+        <th>{% trans "Datum" %}</th>
+        <th>{% trans "Leistungszeitraum" %}</th>
+        <th>{% trans "Status" %}</th>
+        <th class="text-right">{% trans "Netto" %}</th>
         <th></th>
       </tr>
     </thead>
@@ -55,13 +56,13 @@
         <td class="text-right whitespace-nowrap font-semibold tabular-nums{% if invoice.status == 'voided' %} text-muted line-through{% endif %}">{{ invoice.total_net }} €</td>
         <td class="text-right whitespace-nowrap">
           {% if invoice.voucher_number %}
-          {% if invoice.has_entries %}<a class="inline-flex items-center gap-1.5 hover:underline" href="{% url 'portal:invoice_entries' invoice.voucher_number %}">{% icon "clock" size=14 %}Zeiten</a>{% endif %}
-          {% if invoice.lexware_id %}<a class="{% if invoice.has_entries %}ml-3 {% endif %}inline-flex items-center gap-1.5 hover:underline" href="{% url 'portal:invoice_pdf' invoice.voucher_number %}">{% icon "download" size=14 %}PDF</a>{% endif %}
+          {% if invoice.has_entries %}<a class="inline-flex items-center gap-1.5 hover:underline" href="{% url 'portal:invoice_entries' invoice.voucher_number %}">{% icon "clock" size=14 %}{% trans "Zeiten" %}</a>{% endif %}
+          {% if invoice.lexware_id %}<a class="{% if invoice.has_entries %}ml-3 {% endif %}inline-flex items-center gap-1.5 hover:underline" href="{% url 'portal:invoice_pdf' invoice.voucher_number %}">{% icon "download" size=14 %}{% trans "PDF" %}</a>{% endif %}
           {% endif %}
         </td>
       </tr>
       {% empty %}
-      <tr><td colspan="6" class="py-8 text-center text-muted">{% if status or range %}Keine Rechnung passt zum Filter.{% else %}Noch keine Rechnungen.{% endif %}</td></tr>
+      <tr><td colspan="6" class="py-8 text-center text-muted">{% if status or range %}{% trans "Keine Rechnung passt zum Filter." %}{% else %}{% trans "Noch keine Rechnungen." %}{% endif %}</td></tr>
       {% endfor %}
     </tbody>
   </table>

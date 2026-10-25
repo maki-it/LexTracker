@@ -1,6 +1,6 @@
 MANAGE = uv run app/manage.py
 
-.PHONY: help install run scheduler css css-watch migrate makemigrations superuser test lint format backup loadtest loadtest-ui docker-dev docker-dev-down docker-up docker-down docker-logs docker-backup
+.PHONY: help install run scheduler css css-watch migrate makemigrations messages superuser test lint format backup loadtest loadtest-ui docker-dev docker-dev-down docker-up docker-down docker-logs docker-backup
 
 help: ## Show available commands
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  %-16s %s\n", $$1, $$2}'
@@ -26,6 +26,10 @@ migrate: ## Apply database migrations
 
 makemigrations: ## Create migrations for model changes
 	$(MANAGE) makemigrations
+
+messages: ## Update the English translation (app/locale) and compile it
+	cd app && uv run manage.py makemessages -l en --no-location --no-obsolete -i static -e html,txt,py
+	cd app && uv run manage.py compilemessages
 
 superuser: ## Create an admin account
 	$(MANAGE) createsuperuser

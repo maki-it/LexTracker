@@ -1,15 +1,16 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load timefmt %}
-{% block title %}Zeiten der Rechnung {{ invoice.voucher_number }} · LexTracker{% endblock %}
+{% block title %}{% blocktrans trimmed with voucher_number=invoice.voucher_number %}Zeiten der Rechnung {{ voucher_number }} · LexTracker{% endblocktrans %}{% endblock %}
 {% block content %}
 <div class="page-header">
   <div>
-    <p class="breadcrumb"><a href="{% url 'portal:invoices' %}">Rechnungen</a> / {{ invoice.voucher_number|default:"Rechnung" }}</p>
+    <p class="breadcrumb"><a href="{% url 'portal:invoices' %}">{% trans "Rechnungen" %}</a> / {{ invoice.voucher_number|default:_("Rechnung") }}</p>
     <div class="flex flex-wrap items-center gap-3">
-      <h1>Zeiten der Rechnung {{ invoice.voucher_number }}</h1>
+      <h1>{% blocktrans trimmed with voucher_number=invoice.voucher_number %}Zeiten der Rechnung {{ voucher_number }}{% endblocktrans %}</h1>
       <span class="badge {{ invoice.status_badge }}">{{ invoice.get_status_display }}</span>
     </div>
-    <p class="page-subtitle">Leistungszeitraum {{ invoice.period_start|date:date_format }}{% if invoice.period_end != invoice.period_start %} – {{ invoice.period_end|date:date_format }}{% endif %} · {{ total|hours:duration_format }} h</p>
+    <p class="page-subtitle">{% blocktrans trimmed with period_start=invoice.period_start|date:date_format %}Leistungszeitraum {{ period_start }}{% endblocktrans %}{% if invoice.period_end != invoice.period_start %} – {{ invoice.period_end|date:date_format }}{% endif %} · {{ total|hours:duration_format }} h</p>
   </div>
 </div>
 
@@ -17,10 +18,10 @@
   <table class="table">
     <thead>
       <tr>
-        <th>Datum</th>
-        <th>Projekt · Aufgabe</th>
-        {% if user.portal_descriptions %}<th>Beschreibung</th>{% endif %}
-        <th class="text-right">Dauer</th>
+        <th>{% trans "Datum" %}</th>
+        <th>{% trans "Projekt · Aufgabe" %}</th>
+        {% if user.portal_descriptions %}<th>{% trans "Beschreibung" %}</th>{% endif %}
+        <th class="text-right">{% trans "Dauer" %}</th>
       </tr>
     </thead>
     <tbody>
@@ -32,12 +33,12 @@
         <td class="text-right whitespace-nowrap tabular-nums">{{ entry.duration|hours:duration_format }} h</td>
       </tr>
       {% empty %}
-      <tr><td colspan="{% if user.portal_descriptions %}4{% else %}3{% endif %}" class="py-8 text-center text-muted">Zu dieser Rechnung gehören keine erfassten Zeiten.</td></tr>
+      <tr><td colspan="{% if user.portal_descriptions %}4{% else %}3{% endif %}" class="py-8 text-center text-muted">{% trans "Zu dieser Rechnung gehören keine erfassten Zeiten." %}</td></tr>
       {% endfor %}
     </tbody>
     {% if entries %}
     <tfoot>
-      <tr><td colspan="{% if user.portal_descriptions %}3{% else %}2{% endif %}" class="text-right">Summe</td><td class="text-right whitespace-nowrap tabular-nums">{{ total|hours:duration_format }} h</td></tr>
+      <tr><td colspan="{% if user.portal_descriptions %}3{% else %}2{% endif %}" class="text-right">{% trans "Summe" %}</td><td class="text-right whitespace-nowrap tabular-nums">{{ total|hours:duration_format }} h</td></tr>
     </tfoot>
     {% endif %}
   </table>

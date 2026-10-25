@@ -1,0 +1,4302 @@
+# English translation of the LexTracker interface.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: LexTracker\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-25 14:04+0100\n"
+"PO-Revision-Date: 2026-10-25 12:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: English\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Benutzername"
+msgstr "Username"
+
+msgid "Passwort"
+msgstr "Password"
+
+msgid "Benutzername oder E-Mail-Adresse"
+msgstr "Username or e-mail address"
+
+msgid "Code"
+msgstr "Code"
+
+msgid "Für Wochenbericht, Erinnerungen und Links zum Anmelden."
+msgstr "For the weekly report, reminders and sign-in links."
+
+msgid "Aktuelles Passwort"
+msgstr "Current password"
+
+msgid "Das Passwort ist falsch."
+msgstr "The password is wrong."
+
+msgid "aktiv"
+msgstr "active"
+
+msgid "Kunden"
+msgstr "Customers"
+
+msgid "Einzelne Projekte"
+msgstr "Individual projects"
+
+msgid "Damit meldet sich die Person an."
+msgstr "This is what the person signs in with."
+
+msgid "Wessen Projekte, Zeiten und Rechnungen dieser Zugang sieht."
+msgstr "Whose projects, time entries and invoices this account can see."
+
+msgid "Deaktivierte Benutzer können sich nicht mehr anmelden."
+msgstr "Deactivated users can no longer sign in."
+
+msgid "Mit allen Projekten, auch künftigen."
+msgstr "With all projects, including future ones."
+
+msgid "Zusätzlich zu den Kunden oben."
+msgstr "In addition to the customers above."
+
+msgid "– kein Kunde –"
+msgstr "– no customer –"
+
+msgid "Ein Kundenzugang braucht einen Kunden."
+msgstr "A customer account needs a customer."
+
+msgid "Du kannst dir selbst die Administratorrolle nicht nehmen."
+msgstr "You cannot remove your own administrator role."
+
+msgid "Du kannst dich nicht selbst deaktivieren."
+msgstr "You cannot deactivate yourself."
+
+msgid "Neues Passwort für LexTracker"
+msgstr "New password for LexTracker"
+
+msgid "Dein Anmeldelink für LexTracker"
+msgstr "Your sign-in link for LexTracker"
+
+msgid "Dein Zugang zu LexTracker"
+msgstr "Your LexTracker account"
+
+msgid "DEIN_TOKEN"
+msgstr "YOUR_TOKEN"
+
+msgid ""
+"Im Terminal ausführen. Mit <code>--scope user</code> steht LexTracker in all "
+"deinen Projekten bereit, Claude Code speichert das in <code>~/.claude.json</"
+"code>."
+msgstr ""
+"Run this in the terminal. With <code>--scope user</code>, LexTracker is "
+"available in all your projects; Claude Code stores this in <code>~/.claude."
+"json</code>."
+
+msgid "Oder fürs ganze Team: .mcp.json im Projektordner"
+msgstr "Or for the whole team: .mcp.json in the project folder"
+
+#, python-format
+msgid ""
+"Die <code>.mcp.json</code> kann ins Git, der Token steht nicht darin. Jeder "
+"setzt ihn selbst als Umgebungsvariable <code>%(env)s</code>."
+msgstr ""
+"The <code>.mcp.json</code> can go into Git, as it does not contain the "
+"token. Everyone sets it themselves as the environment variable "
+"<code>%(env)s</code>."
+
+msgid ""
+"Prüfen mit <code>claude mcp list</code> oder in Claude Code mit <code>/mcp</"
+"code>."
+msgstr ""
+"Check with <code>claude mcp list</code> or, inside Claude Code, with <code>/"
+"mcp</code>."
+
+msgid "Claude Desktop und Web"
+msgstr "Claude Desktop and Web"
+
+msgid ""
+"In Claude unter <strong>Customize → Connectors</strong> auf <strong>Add "
+"custom connector</strong> klicken. Bei <strong>Authentication</strong> "
+"<strong>No sign-in</strong> wählen und den Token unter <strong>Request "
+"headers</strong> als Header <code>authorization</code> eintragen."
+msgstr ""
+"In Claude, go to <strong>Customize → Connectors</strong> and click "
+"<strong>Add custom connector</strong>. Under <strong>Authentication</"
+"strong>, choose <strong>No sign-in</strong> and enter the token under "
+"<strong>Request headers</strong> as the header <code>authorization</code>."
+
+msgid "Wert für den Header authorization"
+msgstr "Value for the authorization header"
+
+msgid ""
+"Claude verbindet sich aus der Anthropic-Cloud. LexTracker muss dafür über "
+"HTTPS aus dem Internet erreichbar sein."
+msgstr ""
+"Claude connects from the Anthropic cloud, so LexTracker must be reachable "
+"from the internet over HTTPS."
+
+msgid ""
+"Request headers sind bei Claude noch in der Beta und nicht in jedem Konto "
+"sichtbar. Fehlt der Abschnitt, nutze Claude Code."
+msgstr ""
+"Request headers are still in beta in Claude and not visible in every "
+"account. If the section is missing, use Claude Code."
+
+msgid ""
+"Die Datei <code>claude_desktop_config.json</code> ist nur für lokale Server "
+"gedacht, nicht für LexTracker."
+msgstr ""
+"The <code>claude_desktop_config.json</code> file is only meant for local "
+"servers, not for LexTracker."
+
+msgid ""
+"In <code>.vscode/mcp.json</code> im Projekt eintragen. Für alle Projekte "
+"öffnest du die Datei über die Befehlspalette mit <strong>MCP: Open User "
+"Configuration</strong>."
+msgstr ""
+"Add it to <code>.vscode/mcp.json</code> in the project. For all projects, "
+"open the file via the command palette with <strong>MCP: Open User "
+"Configuration</strong>."
+
+msgid "LexTracker API-Token"
+msgstr "LexTracker API token"
+
+msgid ""
+"VS Code fragt beim ersten Start nach dem Token und speichert ihn sicher, die "
+"Datei enthält ihn nicht."
+msgstr ""
+"VS Code asks for the token on first start and stores it securely; the file "
+"does not contain it."
+
+msgid ""
+"In <code>~/.cursor/mcp.json</code> eintragen, dann steht LexTracker in allen "
+"Projekten bereit. Nur für ein Projekt geht es in <code>.cursor/mcp.json</"
+"code> im Projektordner."
+msgstr ""
+"Add it to <code>~/.cursor/mcp.json</code> and LexTracker is available in all "
+"projects. For a single project, use <code>.cursor/mcp.json</code> in the "
+"project folder."
+
+#, python-format
+msgid ""
+"Liegt die Datei im Projekt und kommt ins Git, schreib statt des Tokens "
+"<code>${env:%(env)s}</code> und setze die Umgebungsvariable."
+msgstr ""
+"If the file lives in the project and goes into Git, write <code>${env:"
+"%(env)s}</code> instead of the token and set the environment variable."
+
+#, python-format
+msgid ""
+"In <code>~/.codex/config.toml</code> eintragen. Codex liest den Token aus "
+"der Umgebungsvariable <code>%(env)s</code>, z. B. aus deiner <code>~/.zshrc</"
+"code> oder <code>~/.bashrc</code>."
+msgstr ""
+"Add it to <code>~/.codex/config.toml</code>. Codex reads the token from the "
+"environment variable <code>%(env)s</code>, e.g. from your <code>~/.zshrc</"
+"code> or <code>~/.bashrc</code>."
+
+msgid "Umgebungsvariable"
+msgstr "Environment variable"
+
+msgid "Administrator"
+msgstr "Administrator"
+
+msgid "Mitarbeiter"
+msgstr "Employee"
+
+msgid "Kunde"
+msgstr "Customer"
+
+msgid "wie das System"
+msgstr "Like the system"
+
+msgid "hell"
+msgstr "light"
+
+msgid "dunkel"
+msgstr "dark"
+
+msgid "31. Dezember 2026"
+msgstr "31 December 2026"
+
+msgid "Stunden und Minuten (2:45)"
+msgstr "Hours and minutes (2:45)"
+
+msgid "Dezimalstunden (2,75)"
+msgstr "Decimal hours (2.75)"
+
+msgid "Sprache"
+msgstr "Language"
+
+msgid "Gilt für die Oberfläche und die E-Mails an dich."
+msgstr "Applies to the interface and to e-mails sent to you."
+
+msgid "Rolle"
+msgstr "Role"
+
+msgid "Darstellung"
+msgstr "Appearance"
+
+msgid "Datumsformat"
+msgstr "Date format"
+
+msgid "Zeitdauern anzeigen als"
+msgstr "Show durations as"
+
+msgid "Einträge pro Seite"
+msgstr "Entries per page"
+
+msgid ""
+"Wie viele Kunden oder Projekte eine Liste auf einmal lädt. Beim Scrollen "
+"kommen weitere dazu."
+msgstr ""
+"How many customers or projects a list loads at once. More appear as you "
+"scroll."
+
+msgid "Wochenbericht per E-Mail"
+msgstr "Weekly report by e-mail"
+
+msgid "Deine Stunden der letzten sieben Tage."
+msgstr "Your hours of the last seven days."
+
+msgid "Erinnerung, wenn mein Timer sehr lange läuft"
+msgstr "Reminder when my timer runs for a very long time"
+
+msgid "Falls du vergessen hast, ihn zu stoppen."
+msgstr "In case you forgot to stop it."
+
+msgid "Nachrichten anzeigen ab"
+msgstr "Show messages from"
+
+msgid "Welche Nachrichten in der Glocke stehen. Kritische siehst du immer."
+msgstr "Which messages appear in the bell. You always see critical ones."
+
+msgid "Nachrichten auch per E-Mail ab"
+msgstr "Also send messages by e-mail from"
+
+msgid ""
+"Gilt nur, wenn der E-Mail-Versand eingerichtet ist. Eine Meldung, die sich "
+"wiederholt, schickt nur eine E-Mail."
+msgstr ""
+"Only applies if e-mail sending is set up. A message that repeats sends only "
+"one e-mail."
+
+msgid "bucht auf alle Projekte dieser Kunden"
+msgstr "books on all projects of these customers"
+
+msgid "bucht auf diese Projekte"
+msgstr "books on these projects"
+
+msgid "sieht Budgets"
+msgstr "sees budgets"
+
+msgid "sieht Zeiteinträge"
+msgstr "sees time entries"
+
+msgid "sieht Beschreibungen der Zeiteinträge"
+msgstr "sees descriptions of time entries"
+
+msgid "Nur wirksam, wenn Zeiteinträge sichtbar sind."
+msgstr "Only effective if time entries are visible."
+
+msgid "sieht Rechnungen"
+msgstr "sees invoices"
+
+msgid "darf Kontaktdaten und Rechnungsadresse ändern"
+msgstr "may change contact details and billing address"
+
+msgid "Benutzer"
+msgstr "User"
+
+msgid "Name"
+msgstr "Name"
+
+msgid "Wofür du den Token nutzt, z. B. „Claude Code Laptop“."
+msgstr "What you use the token for, e.g. “Claude Code laptop”."
+
+msgid "erstellt"
+msgstr "created"
+
+msgid "zuletzt benutzt"
+msgstr "last used"
+
+msgid "API-Token"
+msgstr "API token"
+
+msgid "API-Tokens"
+msgstr "API tokens"
+
+msgid "IP-Adresse"
+msgstr "IP address"
+
+msgid "Zeitpunkt"
+msgstr "Time"
+
+msgid "Fehlgeschlagene Anmeldung"
+msgstr "Failed sign-in"
+
+msgid "Fehlgeschlagene Anmeldungen"
+msgstr "Failed sign-ins"
+
+msgid "gültig bis"
+msgstr "valid until"
+
+msgid "benutzt"
+msgstr "used"
+
+msgid "Anmeldelink"
+msgstr "Sign-in link"
+
+msgid "Anmeldelinks"
+msgstr "Sign-in links"
+
+#, python-format
+msgid "Einladung an %(email)s ist unterwegs."
+msgstr "The invitation to %(email)s is on its way."
+
+#, python-format
+msgid "%(name)s gespeichert."
+msgstr "%(name)s saved."
+
+msgid "Du kannst dich nicht selbst löschen."
+msgstr "You cannot delete yourself."
+
+#, python-format
+msgid ""
+"%(name)s hat gebuchte Zeiten und kann nicht gelöscht werden. Deaktiviere den "
+"Zugang."
+msgstr ""
+"%(name)s has booked time and cannot be deleted. Deactivate the account "
+"instead."
+
+#, python-format
+msgid "%(name)s gelöscht."
+msgstr "%(name)s deleted."
+
+msgid "Der Benutzer ist deaktiviert. Aktiviere ihn zuerst."
+msgstr "The user is deactivated. Activate them first."
+
+#, python-format
+msgid "Zu viele Fehlversuche. Versuche es in %(minutes)d Minute wieder."
+msgid_plural ""
+"Zu viele Fehlversuche. Versuche es in %(minutes)d Minuten wieder."
+msgstr[0] "Too many failed attempts. Try again in %(minutes)d minute."
+msgstr[1] "Too many failed attempts. Try again in %(minutes)d minutes."
+
+msgid "Benutzername oder Passwort ist falsch."
+msgstr "Username or password is wrong."
+
+msgid "Der Code ist ungültig oder abgelaufen."
+msgstr "The code is invalid or has expired."
+
+msgid "Neues Passwort gesetzt. Melde dich jetzt damit an."
+msgstr "New password set. Sign in with it now."
+
+msgid "Profil"
+msgstr "Profile"
+
+msgid "Benachrichtigungen"
+msgstr "Notifications"
+
+msgid "Sicherheit"
+msgstr "Security"
+
+msgid "KI-Agenten"
+msgstr "AI agents"
+
+msgid "Einstellungen gespeichert."
+msgstr "Settings saved."
+
+msgid "Token widerrufen. Programme, die ihn nutzen, haben keinen Zugriff mehr."
+msgstr "Token revoked. Programs that use it no longer have access."
+
+msgid "Passwort geändert."
+msgstr "Password changed."
+
+msgid "Zwei-Faktor-Anmeldung ist eingeschaltet."
+msgstr "Two-factor authentication is turned on."
+
+msgid ""
+"Der Code stimmt nicht. Prüfe die Uhrzeit auf dem Handy und versuche es "
+"erneut."
+msgstr "The code does not match. Check the time on your phone and try again."
+
+msgid "Zwei-Faktor-Anmeldung ist ausgeschaltet."
+msgstr "Two-factor authentication is turned off."
+
+msgid "Passwort gesetzt. Melde dich jetzt an."
+msgstr "Password set. Sign in now."
+
+#, python-format
+msgid "Für „%(task)s“ ist kein Stundensatz hinterlegt."
+msgstr "No hourly rate is set for “%(task)s”."
+
+msgid "Für einen Retainer erforderlich."
+msgstr "Required for a retainer."
+
+msgid "Das Ende liegt vor dem Beginn."
+msgstr "The end is before the start."
+
+msgid "Für diesen Zeitraum gilt schon eine andere Vereinbarung."
+msgstr "Another agreement already applies to this period."
+
+msgid "Von"
+msgstr "From"
+
+msgid "Bis"
+msgstr "To"
+
+msgid "nach Aufwand (Stundensatz)"
+msgstr "Time and materials (hourly rate)"
+
+msgid "Retainer (Stundenkontingent zum Festpreis)"
+msgstr "Retainer (block of hours at a fixed price)"
+
+msgid "monatlich"
+msgstr "monthly"
+
+msgid "quartalsweise"
+msgstr "quarterly"
+
+msgid "jährlich"
+msgstr "yearly"
+
+msgid "Modell"
+msgstr "Model"
+
+msgid "Abrechnungszeitraum"
+msgstr "Billing period"
+
+msgid "Enthaltene Stunden pro Zeitraum"
+msgstr "Included hours per period"
+
+msgid "Festpreis pro Zeitraum (netto)"
+msgstr "Fixed price per period (net)"
+
+msgid "Stundensatz für Mehrstunden (netto)"
+msgstr "Hourly rate for extra hours (net)"
+
+msgid ""
+"Leer lassen, um den normalen Stundensatz der Aufgabe, des Projekts oder "
+"Kunden zu verwenden."
+msgstr ""
+"Leave empty to use the regular hourly rate of the task, project or customer."
+
+msgid "gültig ab"
+msgstr "valid from"
+
+msgid "Abrechnungsvereinbarung"
+msgstr "Billing agreement"
+
+msgid "Abrechnungsvereinbarungen"
+msgstr "Billing agreements"
+
+#, python-format
+msgid "%(hours)s h %(period)s für %(price)s €"
+msgstr "%(hours)s h %(period)s for %(price)s €"
+
+msgid "LexTracker"
+msgstr "LexTracker"
+
+msgid "Lexware Office"
+msgstr "Lexware Office"
+
+msgid "Entwurf"
+msgstr "Draft"
+
+msgid "Offen"
+msgstr "Open"
+
+msgid "Überfällig"
+msgstr "Overdue"
+
+msgid "Überweisung läuft"
+msgstr "Transfer pending"
+
+msgid "Lastschrift"
+msgstr "Direct debit"
+
+msgid "Bezahlt"
+msgstr "Paid"
+
+msgid "Storniert"
+msgstr "Voided"
+
+msgid "In Lexware gelöscht"
+msgstr "Deleted in Lexware"
+
+msgid "Leistungszeitraum von"
+msgstr "Service period from"
+
+msgid "Leistungszeitraum bis"
+msgstr "Service period to"
+
+msgid "Summe netto"
+msgstr "Total net"
+
+msgid "Lexware-ID"
+msgstr "Lexware ID"
+
+msgid "erstellt in"
+msgstr "created in"
+
+msgid "Rechnungsdatum"
+msgstr "Invoice date"
+
+msgid "Status"
+msgstr "Status"
+
+msgid "Rechnungsnummer"
+msgstr "Invoice number"
+
+msgid "fällig am"
+msgstr "due on"
+
+msgid "offener Betrag"
+msgstr "open amount"
+
+msgid "Status abgeglichen"
+msgstr "Status synced"
+
+msgid "Rechnung"
+msgstr "Invoice"
+
+msgid "Rechnungen"
+msgstr "Invoices"
+
+msgid "Entwurf gelöscht"
+msgstr "Draft deleted"
+
+msgid ""
+"Der Kunde ist nicht mit Lexware verknüpft. Importiere ihn zuerst aus Lexware."
+msgstr "The customer is not linked to Lexware. Import them from Lexware first."
+
+msgid "Für diesen Zeitraum gibt es nichts abzurechnen."
+msgstr "There is nothing to bill for this period."
+
+#, python-format
+msgid "%(count)d geändert"
+msgstr "%(count)d changed"
+
+#, python-format
+msgid "%(count)d unverändert"
+msgstr "%(count)d unchanged"
+
+#, python-format
+msgid "%(count)d aus Lexware übernommen"
+msgstr "%(count)d imported from Lexware"
+
+#, python-format
+msgid "%(count)d in Lexware gelöscht (Zeiten wieder freigegeben)"
+msgstr "%(count)d deleted in Lexware (time released again)"
+
+msgid "Entwürfe"
+msgstr "Drafts"
+
+#, python-format
+msgid "Rechnungsstatus abgeglichen: %(summary)s"
+msgstr "Invoice status synced: %(summary)s"
+
+#, python-format
+msgid "%(count)d Zeiteintrag wieder zur Abrechnung freigegeben."
+msgid_plural "%(count)d Zeiteinträge wieder zur Abrechnung freigegeben."
+msgstr[0] "%(count)d time entry released for billing again."
+msgstr[1] "%(count)d time entries released for billing again."
+
+msgid "Alle offenen"
+msgstr "All open"
+
+msgid "Bitte einen gültigen Zeitraum wählen."
+msgstr "Please choose a valid period."
+
+#, python-format
+msgid "Rechnungsentwurf über %(amount)s € netto in Lexware angelegt."
+msgstr "Invoice draft for %(amount)s € net created in Lexware."
+
+msgid "Abrechnungsvereinbarung gespeichert."
+msgstr "Billing agreement saved."
+
+msgid "Die Datei ist beschädigt."
+msgstr "The file is damaged."
+
+msgid "Die Datei ist keine Datenbank von LexTracker."
+msgstr "The file is not a LexTracker database."
+
+#, python-format
+msgid "Keine lesbare Datenbank (%(error)s)."
+msgstr "Not a readable database (%(error)s)."
+
+msgid "Die Sicherung stammt aus einer neueren Version der App."
+msgstr "The backup comes from a newer version of the app."
+
+msgid ""
+"Markdown möglich: **fett**, *kursiv*, [Linktext](https://example.com), "
+"Listen mit „- “."
+msgstr ""
+"Markdown is supported: **bold**, *italic*, [link text](https://example.com), "
+"lists with “- ”."
+
+#. Translators: the long date format "31. Dezember 2026" without the full stop that German puts after the day.
+msgctxt "long date format"
+msgid "j. F Y"
+msgstr "j F Y"
+
+#. Translators: Django date format for a day and month without the year.
+msgctxt "date format"
+msgid "d.m."
+msgstr "j M"
+
+#. Translators: Django date format for a full date.
+msgctxt "date format"
+msgid "d.m.Y"
+msgstr "j M Y"
+
+msgid "täglich"
+msgstr "daily"
+
+#, python-format
+msgid "alle %(count)d Tage"
+msgstr "every %(count)d days"
+
+msgid "stündlich"
+msgstr "hourly"
+
+#, python-format
+msgid "alle %(count)d Stunden"
+msgstr "every %(count)d hours"
+
+#, python-format
+msgid "alle %(count)d Minuten"
+msgstr "every %(count)d minutes"
+
+#, python-format
+msgid ", %(start)s – %(end)s Uhr"
+msgstr ", %(start)s – %(end)s"
+
+#, python-format
+msgid ", ab %(time)s Uhr"
+msgstr ", from %(time)s"
+
+#, python-format
+msgid ", bis %(time)s Uhr"
+msgstr ", until %(time)s"
+
+#, python-format
+msgid "Wochenbericht %(weekday)s %(time)s Uhr"
+msgstr "Weekly report %(weekday)s %(time)s"
+
+msgid "Wochenbericht aus"
+msgstr "Weekly report off"
+
+#, python-format
+msgid "Timer-Erinnerung nach %(hours)s Std."
+msgstr "Timer reminder after %(hours)s hrs"
+
+msgid "Timer-Erinnerung aus"
+msgstr "Timer reminder off"
+
+msgid "Kundenimport"
+msgstr "Customer import"
+
+msgid "aus"
+msgstr "off"
+
+msgid "Rechnungsabgleich"
+msgstr "Invoice sync"
+
+msgid "Datensicherung"
+msgstr "Backup"
+
+#, python-format
+msgid "täglich ab %(time)s Uhr"
+msgstr "daily from %(time)s"
+
+msgid "E-Mail-Versand"
+msgstr "E-mail sending"
+
+msgid "alle 5 Sekunden"
+msgstr "every 5 seconds"
+
+msgid "Berichte und Hinweise per E-Mail"
+msgstr "Reports and notices by e-mail"
+
+#, python-format
+msgid ""
+"jede Minute geprüft: %(weekly)s, %(reminder)s, Hinweis zu überfälligen "
+"Rechnungen"
+msgstr ""
+"checked every minute: %(weekly)s, %(reminder)s, notice about overdue invoices"
+
+msgid "Nachricht zu lange laufender Timer"
+msgstr "Message about timers that run too long"
+
+msgid "jede Minute geprüft"
+msgstr "checked every minute"
+
+msgid "Alte Nachrichten löschen"
+msgstr "Delete old messages"
+
+msgid "geändert"
+msgstr "changed"
+
+msgid "Standard-Stundensatz (netto)"
+msgstr "Default hourly rate (net)"
+
+msgid "Gilt, wenn weder Aufgabe, Projekt noch Kunde einen Stundensatz haben."
+msgstr ""
+"Applies if neither the task, the project nor the customer has an hourly rate."
+
+msgid "exakt (keine Rundung)"
+msgstr "exact (no rounding)"
+
+msgid "5 Minuten"
+msgstr "5 minutes"
+
+msgid "6 Minuten (Zehntelstunde)"
+msgstr "6 minutes (tenth of an hour)"
+
+msgid "10 Minuten"
+msgstr "10 minutes"
+
+msgid "Viertelstunde"
+msgstr "quarter hour"
+
+msgid "halbe Stunde"
+msgstr "half hour"
+
+msgid "volle Stunde"
+msgstr "full hour"
+
+msgid "Zeiten runden auf"
+msgstr "Round times to"
+
+msgid ""
+"Beim Stoppen des Timers und beim Speichern eines Eintrags werden Beginn und "
+"Ende auf den nächsten Schritt gerundet (z. B. 9:07 auf 9:00, 9:08 auf 9:15). "
+"Ein Eintrag dauert mindestens einen Schritt. Bestehende Einträge bleiben, "
+"wie sie sind."
+msgstr ""
+"When the timer is stopped and when an entry is saved, start and end are "
+"rounded to the nearest step (e.g. 9:07 to 9:00, 9:08 to 9:15). An entry "
+"lasts at least one step. Existing entries stay as they are."
+
+msgid "Projekt und Zeitraum"
+msgstr "Project and period"
+
+msgid "zusätzlich die Tätigkeiten mit Datum und Dauer"
+msgstr "additionally the activities with date and duration"
+
+msgid "Detailtiefe der Rechnungspositionen"
+msgstr "Level of detail of invoice items"
+
+msgid ""
+"Jede Position heißt wie die Aufgabe. Die Beschreibung darunter nennt das "
+"Projekt und den Zeitraum. Mit den Tätigkeiten steht auch jeder Zeiteintrag "
+"mit seiner Beschreibung auf der Rechnung, und der Kunde sieht sie."
+msgstr ""
+"Each item is named after the task. The description below it names the "
+"project and the period. With the activities, every time entry with its "
+"description also appears on the invoice, and the customer sees it."
+
+msgid "Fehlversuche bis zur Sperre"
+msgstr "Failed attempts until lockout"
+
+msgid ""
+"Nach so vielen falschen Passwörtern oder Codes von einer IP-Adresse ist die "
+"Anmeldung von dort gesperrt. 0 schaltet die Sperre aus."
+msgstr ""
+"After this many wrong passwords or codes from one IP address, sign-in from "
+"there is blocked. 0 turns the lockout off."
+
+msgid "Sperre in Minuten"
+msgstr "Lockout in minutes"
+
+msgid "Zählt die Fehlversuche in diesem Zeitraum und sperrt so lange."
+msgstr "Counts failed attempts within this period and blocks for as long."
+
+msgid "Anmeldung per E-Mail-Link erlauben"
+msgstr "Allow sign-in via e-mail link"
+
+msgid ""
+"Bietet auf der Anmeldeseite einen Link per E-Mail statt des Passworts an. "
+"Die Zwei-Faktor-Anmeldung gilt auch dann. Nur wenn der E-Mail-Versand "
+"eingerichtet ist."
+msgstr ""
+"Offers a link by e-mail instead of the password on the sign-in page. Two-"
+"factor authentication still applies. Only if e-mail sending is set up."
+
+msgid "alle 15 Minuten"
+msgstr "every 15 minutes"
+
+msgid "alle 30 Minuten"
+msgstr "every 30 minutes"
+
+msgid "alle 2 Stunden"
+msgstr "every 2 hours"
+
+msgid "alle 4 Stunden"
+msgstr "every 4 hours"
+
+msgid "alle 6 Stunden"
+msgstr "every 6 hours"
+
+msgid "alle 12 Stunden"
+msgstr "every 12 hours"
+
+msgid "wöchentlich"
+msgstr "weekly"
+
+msgid "Kunden importieren"
+msgstr "Import customers"
+
+msgid "ab"
+msgstr "from"
+
+msgid "bis"
+msgstr "until"
+
+msgid "Rechnungsstatus abgleichen"
+msgstr "Sync invoice status"
+
+msgid "letzter Kundenimport"
+msgstr "last customer import"
+
+msgid "Ergebnis des letzten Imports"
+msgstr "Result of the last import"
+
+msgid "letzter Import fehlgeschlagen"
+msgstr "last import failed"
+
+msgid "letzter Abgleich der Rechnungen"
+msgstr "last invoice sync"
+
+msgid "Ergebnis des letzten Rechnungsabgleichs"
+msgstr "Result of the last invoice sync"
+
+msgid "letzter Rechnungsabgleich fehlgeschlagen"
+msgstr "last invoice sync failed"
+
+msgid "Datenbank täglich sichern"
+msgstr "Back up the database daily"
+
+msgid "Uhrzeit"
+msgstr "Time of day"
+
+msgid ""
+"Ist der Server zu der Zeit aus, holt er die Sicherung am selben Tag nach."
+msgstr ""
+"If the server is off at that time, it makes the backup up later the same day."
+
+msgid "Kopien aufbewahren"
+msgstr "Keep copies"
+
+msgid "Ältere Kopien werden nach jeder Sicherung gelöscht."
+msgstr "Older copies are deleted after each backup."
+
+msgid "letzte Sicherung"
+msgstr "last backup"
+
+msgid "Ergebnis der letzten Sicherung"
+msgstr "Result of the last backup"
+
+msgid "letzte Sicherung fehlgeschlagen"
+msgstr "last backup failed"
+
+msgid "montags"
+msgstr "Mondays"
+
+msgid "dienstags"
+msgstr "Tuesdays"
+
+msgid "mittwochs"
+msgstr "Wednesdays"
+
+msgid "donnerstags"
+msgstr "Thursdays"
+
+msgid "freitags"
+msgstr "Fridays"
+
+msgid "samstags"
+msgstr "Saturdays"
+
+msgid "sonntags"
+msgstr "Sundays"
+
+msgid "Tag"
+msgstr "Day"
+
+msgid "Erinnern, wenn ein Timer länger läuft als (Stunden)"
+msgstr "Remind when a timer runs longer than (hours)"
+
+msgid ""
+"Eine E-Mail pro Timer an den, der ihn gestartet hat. 0 schaltet die "
+"Erinnerung aus."
+msgstr ""
+"One e-mail per timer, to the person who started it. 0 turns the reminder off."
+
+msgid "an Administratoren"
+msgstr "to administrators"
+
+msgid "an den Kunden und an Administratoren"
+msgstr "to the customer and to administrators"
+
+msgid "Hinweis bei überfälligen Rechnungen"
+msgstr "Notice about overdue invoices"
+
+msgid ""
+"Eine E-Mail pro Rechnung, sobald sie überfällig ist. Der Kunde bekommt eine "
+"freundliche Zahlungserinnerung an die E-Mail-Adresse aus Lexware."
+msgstr ""
+"One e-mail per invoice as soon as it is overdue. The customer receives a "
+"friendly payment reminder at the e-mail address from Lexware."
+
+msgid "Tage nach Fälligkeit"
+msgstr "Days after due date"
+
+msgid ""
+"So lange wartet der Hinweis, damit eine gerade eingegangene Zahlung nicht "
+"übersehen wird."
+msgstr ""
+"The notice waits this long so that a payment that has just arrived is not "
+"overlooked."
+
+msgid "Einladung per E-Mail schicken"
+msgstr "Send invitation by e-mail"
+
+msgid ""
+"Neue Benutzer mit E-Mail-Adresse bekommen ihren Einladungslink direkt per E-"
+"Mail."
+msgstr ""
+"New users with an e-mail address receive their invitation link directly by e-"
+"mail."
+
+msgid "letzter Wochenbericht"
+msgstr "last weekly report"
+
+msgid "Scheduler gestartet"
+msgstr "Scheduler started"
+
+msgid "Scheduler zuletzt gemeldet"
+msgstr "Scheduler last reported"
+
+msgid "Einstellungen"
+msgstr "Settings"
+
+msgid "Aufgabe"
+msgstr "Job"
+
+msgid "letzter Lauf"
+msgstr "last run"
+
+msgid "letzter erfolgreicher Lauf"
+msgstr "last successful run"
+
+msgid "Dauer in Millisekunden"
+msgstr "Duration in milliseconds"
+
+msgid "letzter Lauf erfolgreich"
+msgstr "last run successful"
+
+msgid "Ergebnis des letzten Laufs"
+msgstr "Result of the last run"
+
+msgid "Fehlschläge in Folge"
+msgstr "Failures in a row"
+
+msgid "letzte Fehlermeldung"
+msgstr "last error message"
+
+msgid "letzter Fehlschlag"
+msgstr "last failure"
+
+msgid "Aufgabenstatus"
+msgstr "Job status"
+
+#, python-format
+msgid "%(count)d gelöscht"
+msgstr "%(count)d deleted"
+
+msgid "Allgemein"
+msgstr "General"
+
+msgid "E-Mail"
+msgstr "E-mail"
+
+#, python-format
+msgid "Die Sicherung ist fehlgeschlagen: %(error)s"
+msgstr "The backup failed: %(error)s"
+
+#, python-format
+msgid "Sicherung %(name)s erstellt."
+msgstr "Backup %(name)s created."
+
+msgid "Bitte wähle eine Datei aus."
+msgstr "Please choose a file."
+
+#, python-format
+msgid "Die Datei ist größer als %(size)s."
+msgstr "The file is larger than %(size)s."
+
+#, python-format
+msgid "Sicherung hochgeladen und als %(name)s gespeichert."
+msgstr "Backup uploaded and saved as %(name)s."
+
+#, python-format
+msgid "Sicherung %(name)s gelöscht."
+msgstr "Backup %(name)s deleted."
+
+msgid "Bitte bestätige, dass der aktuelle Stand ersetzt wird."
+msgstr "Please confirm that the current state will be replaced."
+
+#, python-format
+msgid ""
+"Sicherung %(name)s wiederhergestellt. Der vorherige Stand liegt als "
+"%(before)s im Ordner."
+msgstr ""
+"Backup %(name)s restored. The previous state is in the folder as %(before)s."
+
+msgid "Neue Kategorien"
+msgstr "New categories"
+
+msgid "Mehrere durch Komma trennen, z. B. „Stammkunde, Hosting“."
+msgstr "Separate several with commas, e.g. “Regular customer, Hosting”."
+
+msgid "Kategorie"
+msgstr "Category"
+
+msgid "Kategorien"
+msgstr "Categories"
+
+msgid "Kundennummer"
+msgstr "Customer number"
+
+msgid "Telefon"
+msgstr "Phone"
+
+msgid "Notizen"
+msgstr "Notes"
+
+msgid "archiviert"
+msgstr "archived"
+
+msgid "Lexware-Version"
+msgstr "Lexware version"
+
+msgid "zuletzt synchronisiert"
+msgstr "last synced"
+
+msgid "in Lexware gelöscht"
+msgstr "deleted in Lexware"
+
+#, python-format
+msgid "%(count)d neu"
+msgstr "%(count)d new"
+
+#, python-format
+msgid "%(count)d aktualisiert"
+msgstr "%(count)d updated"
+
+#, python-format
+msgid "%(count)d in Lexware nicht mehr vorhanden (archiviert)"
+msgstr "%(count)d no longer in Lexware (archived)"
+
+#, python-format
+msgid "Die Änderung konnte nicht in Lexware gespeichert werden: %(error)s"
+msgstr "The change could not be saved in Lexware: %(error)s"
+
+#, python-format
+msgid "%(label)s abgeschlossen"
+msgstr "%(label)s completed"
+
+msgid "Lexware lehnt den API-Schlüssel ab"
+msgstr "Lexware rejects the API key"
+
+#, python-format
+msgid ""
+"%(label)s ist fehlgeschlagen. Bitte prüfe oder ersetze den Schlüssel in den "
+"Einstellungen."
+msgstr "%(label)s failed. Please check or replace the key in the settings."
+
+#, python-format
+msgid "%(label)s fehlgeschlagen"
+msgstr "%(label)s failed"
+
+msgid "Datensicherung erstellt"
+msgstr "Backup created"
+
+msgid "Datensicherung fehlgeschlagen"
+msgstr "Backup failed"
+
+msgid "Datensicherung wiederhergestellt"
+msgstr "Backup restored"
+
+#, python-format
+msgid "%(name)s, durch %(user)s."
+msgstr "%(name)s, by %(user)s."
+
+msgid "Datensicherung hochgeladen"
+msgstr "Backup uploaded"
+
+msgid "E-Mail konnte nicht zugestellt werden"
+msgstr "E-mail could not be delivered"
+
+#, python-format
+msgid "%(subject)s an %(to)s: %(error)s"
+msgstr "%(subject)s to %(to)s: %(error)s"
+
+#, python-format
+msgid "%(count)d Stunde"
+msgid_plural "%(count)d Stunden"
+msgstr[0] "%(count)d hour"
+msgstr[1] "%(count)d hours"
+
+#, python-format
+msgid "Dein Timer läuft schon seit %(duration)s"
+msgstr "Your timer has been running for %(duration)s"
+
+msgid "Debug"
+msgstr "Debug"
+
+msgid "Info"
+msgstr "Info"
+
+msgid "Warnung"
+msgstr "Warning"
+
+msgid "Kritisch"
+msgstr "Critical"
+
+msgid "Empfänger"
+msgstr "Recipient"
+
+msgid "Priorität"
+msgstr "Priority"
+
+msgid "Art"
+msgstr "Type"
+
+msgid "Titel"
+msgstr "Title"
+
+msgid "Text"
+msgstr "Text"
+
+msgid "Ziel"
+msgstr "Target"
+
+msgid "Anzahl"
+msgstr "Count"
+
+msgid "zuletzt"
+msgstr "latest"
+
+msgid "gelesen"
+msgstr "read"
+
+msgid "Nachricht"
+msgstr "Message"
+
+msgid "Nachrichten"
+msgstr "Messages"
+
+msgid ""
+"Es ist kein Lexware-API-Schlüssel hinterlegt. Trage ihn in den Einstellungen "
+"ein."
+msgstr "No Lexware API key is stored. Enter it in the settings."
+
+#, python-format
+msgid "Lexware ist nicht erreichbar: %(error)s"
+msgstr "Lexware is not reachable: %(error)s"
+
+msgid "Lexware hat den API-Schlüssel abgelehnt."
+msgstr "Lexware rejected the API key."
+
+#, python-format
+msgid "Lexware kennt %(path)s nicht (HTTP 404)."
+msgstr "Lexware does not know %(path)s (HTTP 404)."
+
+#, python-format
+msgid "Lexware antwortete mit HTTP %(status)s: %(detail)s"
+msgstr "Lexware responded with HTTP %(status)s: %(detail)s"
+
+msgid "Lexware hat zu viele Anfragen abgelehnt (Rate-Limit)."
+msgstr "Lexware rejected too many requests (rate limit)."
+
+msgid "API-Schlüssel"
+msgstr "API key"
+
+msgid ""
+"Erstellst du in Lexware Office unter Erweiterungen > Public API (app.lexware."
+"de/addons/public-api)."
+msgstr ""
+"You create it in Lexware Office under Extensions > Public API (app.lexware."
+"de/addons/public-api)."
+
+msgid "Ende des Schlüssels"
+msgstr "End of the key"
+
+msgid "Lexware-Konto"
+msgstr "Lexware account"
+
+msgid "zuletzt geprüft"
+msgstr "last checked"
+
+msgid "Lexware-Verbindung"
+msgstr "Lexware connection"
+
+#, python-format
+msgid "Der Schlüssel wurde nicht gespeichert: %(error)s"
+msgstr "The key was not saved: %(error)s"
+
+msgid "Bitte gib einen API-Schlüssel ein."
+msgstr "Please enter an API key."
+
+#, python-format
+msgid "API-Schlüssel geprüft und gespeichert (%(company)s)."
+msgstr "API key checked and saved (%(company)s)."
+
+#, python-format
+msgid "Verbindung fehlgeschlagen: %(error)s"
+msgstr "Connection failed: %(error)s"
+
+#, python-format
+msgid "Verbindung zu Lexware Office klappt (%(company)s)."
+msgstr "Connection to Lexware Office works (%(company)s)."
+
+msgid "ohne Firmennamen"
+msgstr "without company name"
+
+msgid "API-Schlüssel entfernt."
+msgstr "API key removed."
+
+msgid "Gespeichertes Passwort entfernen"
+msgstr "Remove saved password"
+
+msgid "Leer lassen, um das gespeicherte Passwort zu behalten."
+msgstr "Leave empty to keep the saved password."
+
+msgid "Ohne Absenderadresse kann die App keine E-Mails verschicken."
+msgstr "Without a sender address the app cannot send e-mails."
+
+msgid ""
+"Port 587 nutzt STARTTLS statt SSL/TLS. Wähle „STARTTLS“ oder, wenn dein "
+"Anbieter SSL/TLS verlangt, Port 465."
+msgstr ""
+"Port 587 uses STARTTLS instead of SSL/TLS. Choose “STARTTLS” or, if your "
+"provider requires SSL/TLS, port 465."
+
+msgid ""
+"Port 465 erwartet SSL/TLS von Anfang an. Wähle „SSL/TLS“ oder, wenn dein "
+"Anbieter STARTTLS verlangt, Port 587."
+msgstr ""
+"Port 465 expects SSL/TLS from the start. Choose “SSL/TLS” or, if your "
+"provider requires STARTTLS, port 587."
+
+msgid "Testmail an"
+msgstr "Send test e-mail to"
+
+msgid "Mo"
+msgstr "Mon"
+
+msgid "Di"
+msgstr "Tue"
+
+msgid "Mi"
+msgstr "Wed"
+
+msgid "Do"
+msgstr "Thu"
+
+msgid "Fr"
+msgstr "Fri"
+
+msgid "Sa"
+msgstr "Sat"
+
+msgid "So"
+msgstr "Sun"
+
+#, python-format
+msgid "Dein Wochenbericht %(range)s"
+msgstr "Your weekly report %(range)s"
+
+msgid "Dein Timer läuft noch"
+msgstr "Your timer is still running"
+
+msgid "ohne Nummer"
+msgstr "without number"
+
+#, python-format
+msgid "Zahlungserinnerung zur Rechnung %(number)s"
+msgstr "Payment reminder for invoice %(number)s"
+
+#, python-format
+msgid "Rechnung %(number)s von %(customer)s ist überfällig"
+msgstr "Invoice %(number)s from %(customer)s is overdue"
+
+msgid "STARTTLS (meist Port 587)"
+msgstr "STARTTLS (usually port 587)"
+
+msgid "SSL/TLS (meist Port 465)"
+msgstr "SSL/TLS (usually port 465)"
+
+msgid "keine (nur im eigenen Netz)"
+msgstr "none (own network only)"
+
+msgid "SMTP-Server"
+msgstr "SMTP server"
+
+msgid "z. B. smtp.example.de"
+msgstr "e.g. smtp.example.com"
+
+msgid "Port"
+msgstr "Port"
+
+msgid "Verschlüsselung"
+msgstr "Encryption"
+
+msgid "Absenderadresse"
+msgstr "Sender address"
+
+msgid "Muss der SMTP-Server für dein Konto erlauben."
+msgstr "The SMTP server must allow this for your account."
+
+msgid "Absendername"
+msgstr "Sender name"
+
+msgid "Adresse der App"
+msgstr "Address of the app"
+
+msgid ""
+"Für Links in E-Mails, die der Zeitplan verschickt, z. B. https://zeit."
+"example.de."
+msgstr ""
+"For links in e-mails sent by the schedule, e.g. https://time.example.com."
+
+msgid "wartet"
+msgstr "pending"
+
+msgid "verschickt"
+msgstr "sent"
+
+msgid "fehlgeschlagen"
+msgstr "failed"
+
+msgid "verfallen"
+msgstr "expired"
+
+msgid "Passwort zurücksetzen"
+msgstr "Reset password"
+
+msgid "Wochenbericht"
+msgstr "Weekly report"
+
+msgid "Erinnerung an laufenden Timer"
+msgstr "Reminder about a running timer"
+
+msgid "Einladung"
+msgstr "Invitation"
+
+msgid "Hinweis auf überfällige Rechnung"
+msgstr "Notice about an overdue invoice"
+
+msgid "an"
+msgstr "to"
+
+msgid "Betreff"
+msgstr "Subject"
+
+msgid "HTML"
+msgstr "HTML"
+
+msgid "nächster Versuch"
+msgstr "next attempt"
+
+msgid "verfällt"
+msgstr "expires"
+
+msgid "Versuche"
+msgstr "Attempts"
+
+msgid "letzter Fehler"
+msgstr "last error"
+
+msgid "E-Mails"
+msgstr "E-mails"
+
+msgid ""
+"Das SMTP-Passwort lässt sich nicht entschlüsseln. Bitte trag es neu ein."
+msgstr "The SMTP password cannot be decrypted. Please enter it again."
+
+#, python-format
+msgid ""
+"Der Server antwortet auf Port %(port)s nicht mit SSL/TLS. Wahrscheinlich "
+"erwartet er STARTTLS (üblich auf Port 587). Wähle als Verschlüsselung "
+"„STARTTLS“."
+msgstr ""
+"The server does not respond with SSL/TLS on port %(port)s. It probably "
+"expects STARTTLS (common on port 587). Choose “STARTTLS” as the encryption."
+
+#, python-format
+msgid ""
+"Der Server auf Port %(port)s bietet kein STARTTLS an. Wahrscheinlich "
+"erwartet er SSL/TLS von Anfang an (üblich auf Port 465). Wähle als "
+"Verschlüsselung „SSL/TLS“ und Port 465."
+msgstr ""
+"The server on port %(port)s does not offer STARTTLS. It probably expects SSL/"
+"TLS from the start (common on port 465). Choose “SSL/TLS” as the encryption "
+"and port 465."
+
+msgid ""
+"Port 465 erwartet SSL/TLS von Anfang an und antwortet nicht auf STARTTLS. "
+"Wähle als Verschlüsselung „SSL/TLS“ oder nutze Port 587."
+msgstr ""
+"Port 465 expects SSL/TLS from the start and does not respond to STARTTLS. "
+"Choose “SSL/TLS” as the encryption or use port 587."
+
+msgid ""
+"E-Mail-Einstellungen gespeichert. Schick eine Testmail, um sie zu prüfen."
+msgstr "E-mail settings saved. Send a test e-mail to check them."
+
+msgid "Trag zuerst SMTP-Server und Absenderadresse ein."
+msgstr "Enter the SMTP server and sender address first."
+
+msgid "Testmail von LexTracker"
+msgstr "Test e-mail from LexTracker"
+
+#, python-format
+msgid "Die Testmail wurde nicht verschickt: %(error)s"
+msgstr "The test e-mail was not sent: %(error)s"
+
+#, python-format
+msgid "Testmail an %(to)s verschickt. Schau in dein Postfach."
+msgstr "Test e-mail sent to %(to)s. Check your inbox."
+
+msgid "Die E-Mail wird gleich noch einmal verschickt."
+msgstr "The e-mail will be sent again shortly."
+
+msgid "Deutschland"
+msgstr "Germany"
+
+msgid "Österreich"
+msgstr "Austria"
+
+msgid "Schweiz"
+msgstr "Switzerland"
+
+msgid "Belgien"
+msgstr "Belgium"
+
+msgid "Bulgarien"
+msgstr "Bulgaria"
+
+msgid "Dänemark"
+msgstr "Denmark"
+
+msgid "Estland"
+msgstr "Estonia"
+
+msgid "Finnland"
+msgstr "Finland"
+
+msgid "Frankreich"
+msgstr "France"
+
+msgid "Griechenland"
+msgstr "Greece"
+
+msgid "Irland"
+msgstr "Ireland"
+
+msgid "Italien"
+msgstr "Italy"
+
+msgid "Kroatien"
+msgstr "Croatia"
+
+msgid "Lettland"
+msgstr "Latvia"
+
+msgid "Liechtenstein"
+msgstr "Liechtenstein"
+
+msgid "Litauen"
+msgstr "Lithuania"
+
+msgid "Luxemburg"
+msgstr "Luxembourg"
+
+msgid "Malta"
+msgstr "Malta"
+
+msgid "Niederlande"
+msgstr "Netherlands"
+
+msgid "Norwegen"
+msgstr "Norway"
+
+msgid "Polen"
+msgstr "Poland"
+
+msgid "Portugal"
+msgstr "Portugal"
+
+msgid "Rumänien"
+msgstr "Romania"
+
+msgid "Schweden"
+msgstr "Sweden"
+
+msgid "Slowakei"
+msgstr "Slovakia"
+
+msgid "Slowenien"
+msgstr "Slovenia"
+
+msgid "Spanien"
+msgstr "Spain"
+
+msgid "Tschechien"
+msgstr "Czechia"
+
+msgid "Ungarn"
+msgstr "Hungary"
+
+msgid "Vereinigtes Königreich"
+msgstr "United Kingdom"
+
+msgid "Zypern"
+msgstr "Cyprus"
+
+msgid "USA"
+msgstr "USA"
+
+msgid "Herr"
+msgstr "Mr"
+
+msgid "Frau"
+msgstr "Ms"
+
+msgid "Firmenname oder Vor- und Nachname."
+msgstr "Company name or first and last name."
+
+msgid "Adresszusatz"
+msgstr "Address line 2"
+
+msgid "Straße und Hausnummer"
+msgstr "Street and house number"
+
+msgid "PLZ"
+msgstr "Postcode"
+
+msgid "Ort"
+msgstr "City"
+
+msgid "Land"
+msgstr "Country"
+
+msgid "Anrede"
+msgstr "Salutation"
+
+msgid "Vorname"
+msgstr "First name"
+
+msgid "Nachname"
+msgstr "Last name"
+
+msgid "E-Mail des Ansprechpartners"
+msgstr "Contact person’s e-mail"
+
+msgid "Telefon des Ansprechpartners"
+msgstr "Contact person’s phone"
+
+msgid ""
+"Die Rechnung kann gerade nicht heruntergeladen werden. Bitte versuche es "
+"später."
+msgstr "The invoice cannot be downloaded right now. Please try again later."
+
+msgid ""
+"Deine Kontaktdaten wurden in der Zwischenzeit geändert. Bitte prüfe deine "
+"Eingaben und speichere erneut."
+msgstr ""
+"Your contact details have been changed in the meantime. Please check your "
+"entries and save again."
+
+msgid "Deine Kontaktdaten sind gespeichert."
+msgstr "Your contact details have been saved."
+
+msgid ""
+"Deine Änderung konnte gerade nicht gespeichert werden. Bitte versuche es "
+"später."
+msgstr "Your change could not be saved right now. Please try again later."
+
+msgid "Aufgaben aus Vorlagen"
+msgstr "Tasks from templates"
+
+msgid "Das Ende liegt vor dem Start."
+msgstr "The end is before the start."
+
+msgid "geplant"
+msgstr "planned"
+
+msgid "pausiert"
+msgstr "paused"
+
+msgid "abgeschlossen"
+msgstr "completed"
+
+msgid "Beschreibung"
+msgstr "Description"
+
+msgid "Stundensatz (netto)"
+msgstr "Hourly rate (net)"
+
+msgid "Leer lassen, um den Stundensatz des Kunden zu verwenden."
+msgstr "Leave empty to use the customer’s hourly rate."
+
+msgid "Budget (Stunden)"
+msgstr "Budget (hours)"
+
+msgid "Start"
+msgstr "Start"
+
+msgid "Ende"
+msgstr "End"
+
+msgid "Projekt"
+msgstr "Project"
+
+msgid "Projekte"
+msgstr "Projects"
+
+msgid "offen"
+msgstr "open"
+
+msgid "in Arbeit"
+msgstr "in progress"
+
+msgid "erledigt"
+msgstr "done"
+
+msgid "abrechenbar"
+msgstr "billable"
+
+msgid "Leer lassen, um den Stundensatz des Projekts zu verwenden."
+msgstr "Leave empty to use the project’s hourly rate."
+
+msgid "Schätzung (Stunden)"
+msgstr "Estimate (hours)"
+
+msgid "Aufgaben"
+msgstr "Tasks"
+
+msgid "Leer lassen, damit die Aufgabe den Stundensatz des Projekts verwendet."
+msgstr "Leave empty so the task uses the project’s hourly rate."
+
+msgid "Aufgabenvorlage"
+msgstr "Task template"
+
+msgid "Aufgabenvorlagen"
+msgstr "Task templates"
+
+#, python-format
+msgid "Projekt „%(name)s“ gespeichert."
+msgstr "Project “%(name)s” saved."
+
+#, python-format
+msgid ""
+"„%(name)s“ hat gebuchte Zeiten und kann nicht gelöscht werden. Setze es auf "
+"abgeschlossen."
+msgstr "“%(name)s” has booked time and cannot be deleted. Set it to completed."
+
+#, python-format
+msgid "Projekt „%(name)s“ gelöscht."
+msgstr "Project “%(name)s” deleted."
+
+#, python-format
+msgid "Aufgabe „%(name)s“ gespeichert."
+msgstr "Task “%(name)s” saved."
+
+#, python-format
+msgid "Es gibt schon eine Vorlage „%(name)s“."
+msgstr "There is already a template “%(name)s”."
+
+#, python-format
+msgid "„%(name)s“ als Vorlage gespeichert."
+msgstr "“%(name)s” saved as a template."
+
+#, python-format
+msgid ""
+"„%(name)s“ hat gebuchte Zeiten und kann nicht gelöscht werden. Setze sie auf "
+"erledigt."
+msgstr "“%(name)s” has booked time and cannot be deleted. Set it to done."
+
+#, python-format
+msgid "Aufgabe „%(name)s“ gelöscht."
+msgstr "Task “%(name)s” deleted."
+
+#, python-format
+msgid "Vorlage „%(name)s“ gespeichert."
+msgstr "Template “%(name)s” saved."
+
+#, python-format
+msgid "Vorlage „%(name)s“ gelöscht."
+msgstr "Template “%(name)s” deleted."
+
+#. Translators: Django date format for the day of the month in a chart.
+msgctxt "chart day"
+msgid "d."
+msgstr "d"
+
+msgid "Dieser Monat"
+msgstr "This month"
+
+msgid "Letzter Monat"
+msgstr "Last month"
+
+msgid "Dieses Quartal"
+msgstr "This quarter"
+
+msgid "Letztes Quartal"
+msgstr "Last quarter"
+
+msgid "Dieses Jahr"
+msgstr "This year"
+
+msgid "Letztes Jahr"
+msgstr "Last year"
+
+#. Translators: the field separator of the CSV export. Spreadsheets with German settings expect ";".
+msgctxt "csv delimiter"
+msgid ";"
+msgstr ","
+
+msgid "Datum"
+msgstr "Date"
+
+msgid "Beginn"
+msgstr "Start"
+
+msgid "Stunden"
+msgstr "Hours"
+
+msgid "Abrechenbar"
+msgstr "Billable"
+
+msgid "Abgerechnet"
+msgstr "Billed"
+
+msgid "ja"
+msgstr "yes"
+
+msgid "nein"
+msgstr "no"
+
+msgid "Admin-Konto"
+msgstr "Admin account"
+
+msgid "Zwei-Faktor"
+msgstr "Two-factor"
+
+msgid "Fertig"
+msgstr "Done"
+
+msgid ""
+"Die App wurde in der Zwischenzeit schon eingerichtet. Bitte melde dich an."
+msgstr "The app has been set up in the meantime. Please sign in."
+
+msgid "Der Code stimmt nicht."
+msgstr "The code does not match."
+
+msgid "Dein Konto hat keine E-Mail-Adresse. Trag unter Konto eine ein."
+msgstr "Your account has no e-mail address. Add one under Account."
+
+#, python-format
+msgid "Der Kundenimport ist fehlgeschlagen: %(error)s"
+msgstr "The customer import failed: %(error)s"
+
+#, python-format
+msgid "Kunden importiert: %(summary)s"
+msgstr "Customers imported: %(summary)s"
+
+msgid "Die Einrichtung ist abgeschlossen. Viel Spaß mit LexTracker!"
+msgstr "Setup is complete. Enjoy LexTracker!"
+
+msgid "Kein Zugriff"
+msgstr "No access"
+
+msgid "Diese Seite ist für deinen Zugang nicht freigegeben."
+msgstr "This page is not available to your account."
+
+msgid "Zur Übersicht"
+msgstr "Back to overview"
+
+msgid "Agent verbinden"
+msgstr "Connect an agent"
+
+msgid "Wähle deinen Client und kopiere die Konfiguration."
+msgstr "Choose your client and copy the configuration."
+
+msgid "Dein neuer Token ist schon eingesetzt."
+msgstr "Your new token is already filled in."
+
+#, python-format
+msgid ""
+"Ersetze <code class=\"text-ink\">%(token_placeholder)s</code> durch deinen "
+"Token."
+msgstr ""
+"Replace <code class=\"text-ink\">%(token_placeholder)s</code> with your "
+"token."
+
+msgid "Kopieren"
+msgstr "Copy"
+
+msgid "Konto"
+msgstr "Account"
+
+msgid "Speichern"
+msgstr "Save"
+
+msgid ""
+"Nach dem Ändern bleibst du hier angemeldet, andere Geräte werden abgemeldet."
+msgstr ""
+"After changing it you stay signed in here; other devices are signed out."
+
+msgid "Passwort ändern"
+msgstr "Change password"
+
+msgid "Zwei-Faktor-Anmeldung"
+msgstr "Two-factor authentication"
+
+msgid "Eingeschaltet."
+msgstr "Turned on."
+
+msgid ""
+"Beim Anmelden fragt LexTracker nach dem Code aus deiner Authenticator-App."
+msgstr ""
+"When you sign in, LexTracker asks for the code from your authenticator app."
+
+msgid "Verwalten"
+msgstr "Manage"
+
+msgid ""
+"Schütze dein Konto zusätzlich mit einem Code aus einer Authenticator-App wie "
+"1Password, Bitwarden, Google Authenticator oder Microsoft Authenticator."
+msgstr ""
+"Protect your account with an additional code from an authenticator app such "
+"as 1Password, Bitwarden, Google Authenticator or Microsoft Authenticator."
+
+msgid "Einrichten"
+msgstr "Set up"
+
+msgid "KI-Agenten und API-Tokens"
+msgstr "AI agents and API tokens"
+
+msgid ""
+"Mit einem Token kann ein KI-Agent über den MCP-Server Zeiten für dich "
+"erfassen: Projekte und Aufgaben finden, Timer starten und stoppen, Zeiten "
+"nachtragen. Der Agent handelt dabei als du."
+msgstr ""
+"With a token, an AI agent can record time for you through the MCP server: "
+"find projects and tasks, start and stop timers, add time retroactively. The "
+"agent acts as you."
+
+msgid "MCP-Adresse:"
+msgstr "MCP address:"
+
+msgid "Neuer Token. Kopiere ihn jetzt, er wird nur dieses eine Mal angezeigt."
+msgstr "New token. Copy it now; it is shown only this once."
+
+msgid "In den Konfigurationen unten ist er schon eingesetzt."
+msgstr "It is already filled in in the configurations below."
+
+msgid "Beispiel-Prompts für deinen Agenten"
+msgstr "Example prompts for your agent"
+
+msgid "Dauerhaft, z. B. in der <code>CLAUDE.md</code> deines Projekts:"
+msgstr "Permanently, e.g. in your project’s <code>CLAUDE.md</code>:"
+
+msgid ""
+"## Zeiterfassung\n"
+"Erfasse deine Arbeitszeit in LexTracker (MCP-Server „lextracker“):\n"
+"- Bevor du mit einer Aufgabe beginnst, suche mit find_tasks die passende "
+"Aufgabe im Projekt „PROJEKTNAME“. Gibt es keine passende, lege sie mit "
+"create_task an.\n"
+"- Starte dann mit start_timer den Timer und gib als Beschreibung kurz an, "
+"woran du arbeitest.\n"
+"- Wenn du fertig bist oder auf mich wartest, stoppe den Timer mit stop_timer "
+"und fasse in der Beschreibung in ein bis zwei Sätzen zusammen, was du "
+"erledigt hast."
+msgstr ""
+"## Time tracking\\nRecord your working time in LexTracker (MCP server "
+"“lextracker”):\\n- Before you start a task, use find_tasks to look for the "
+"matching task in the project “PROJECT NAME”. If there is none, create it "
+"with create_task.\\n- Then start the timer with start_timer and briefly "
+"state what you are working on as the description.\\n- When you are done or "
+"waiting for me, stop the timer with stop_timer and summarize in one or two "
+"sentences in the description what you have done."
+
+msgid "Einmalig im Chat:"
+msgstr "Once, in a chat:"
+
+msgid ""
+"Starte in LexTracker den Timer auf der passenden Aufgabe im Projekt "
+"„PROJEKTNAME“, bevor du loslegst, und stoppe ihn mit einer kurzen "
+"Zusammenfassung, wenn du fertig bist."
+msgstr ""
+"In LexTracker, start the timer on the matching task in the project “PROJECT "
+"NAME” before you begin, and stop it with a short summary when you are done."
+
+msgid "Zeit nachtragen:"
+msgstr "Add time retroactively:"
+
+msgid ""
+"Trage in LexTracker für heute 9:00 bis 11:30 auf die Aufgabe „AUFGABE“ im "
+"Projekt „PROJEKTNAME“ ein: Abstimmung und Konzept für den Relaunch."
+msgstr ""
+"In LexTracker, add today 9:00 to 11:30 to the task “TASK” in the project "
+"“PROJECT NAME”: coordination and concept for the relaunch."
+
+#, python-format
+msgid "erstellt %(created_at)s"
+msgstr "created %(created_at)s"
+
+#, python-format
+msgid "zuletzt benutzt %(last_used_at)s Uhr"
+msgstr "last used %(last_used_at)s"
+
+msgid "noch nicht benutzt"
+msgstr "not used yet"
+
+msgid "Diesen Token widerrufen?"
+msgstr "Revoke this token?"
+
+msgid "Widerrufen"
+msgstr "Revoke"
+
+msgid "Token erstellen"
+msgstr "Create token"
+
+msgid "Passwort festlegen"
+msgstr "Set password"
+
+msgid "Link ungültig"
+msgstr "Invalid link"
+
+msgid ""
+"Dieser Link ist abgelaufen oder wurde schon benutzt. Bitte frag nach einem "
+"neuen Link."
+msgstr ""
+"This link has expired or has already been used. Please ask for a new link."
+
+msgid "Zur Anmeldung"
+msgstr "Go to sign-in"
+
+msgid "Willkommen"
+msgstr "Welcome"
+
+#, python-format
+msgid ""
+"Lege ein Passwort für deinen Benutzernamen <strong class=\"text-"
+"ink\">%(get_username)s</strong> fest."
+msgstr ""
+"Set a password for your username <strong class=\"text-"
+"ink\">%(get_username)s</strong>."
+
+msgid "Anmelden"
+msgstr "Sign in"
+
+msgid "Vergessen?"
+msgstr "Forgot?"
+
+msgid "Anmeldelink per E-Mail"
+msgstr "Sign-in link by e-mail"
+
+msgid "Bestätigungscode"
+msgstr "Verification code"
+
+msgid ""
+"Gib den Code aus deiner Authenticator-App ein. Hast du dein Handy nicht zur "
+"Hand, geht auch einer deiner Wiederherstellungscodes."
+msgstr ""
+"Enter the code from your authenticator app. If you do not have your phone at "
+"hand, one of your recovery codes works too."
+
+msgid "Zurück"
+msgstr "Back"
+
+msgid "Dieser Anmeldelink ist abgelaufen oder wurde schon benutzt."
+msgstr "This sign-in link has expired or has already been used."
+
+msgid "Neuen Link anfordern"
+msgstr "Request a new link"
+
+msgid ""
+"Mit diesem Link meldest du dich ohne Passwort an. Er funktioniert nur einmal."
+msgstr "With this link you sign in without a password. It works only once."
+
+msgid "Jetzt anmelden"
+msgstr "Sign in now"
+
+msgid "Schau in dein Postfach"
+msgstr "Check your inbox"
+
+#, python-format
+msgid ""
+"Gibt es zu „%(identifier)s“ einen Zugang mit E-Mail-Adresse, ist ein "
+"Anmeldelink unterwegs. Er gilt 15 Minuten und nur einmal."
+msgstr ""
+"If there is an account with an e-mail address for “%(identifier)s”, a sign-"
+"in link is on its way. It is valid for 15 minutes and works only once."
+
+msgid "Anmelden ohne Passwort"
+msgstr "Sign in without a password"
+
+msgid ""
+"Wir schicken dir einen Link, der dich anmeldet. Nutzt du die Zwei-Faktor-"
+"Anmeldung, fragt LexTracker danach noch nach dem Code."
+msgstr ""
+"We send you a link that signs you in. If you use two-factor authentication, "
+"LexTracker will still ask for the code afterwards."
+
+msgid "Anmeldelink schicken"
+msgstr "Send sign-in link"
+
+msgid "Mit Passwort anmelden"
+msgstr "Sign in with password"
+
+msgid ""
+"Bestätige mit deinem Passwort. Neue Wiederherstellungscodes ersetzen die "
+"alten."
+msgstr "Confirm with your password. New recovery codes replace the old ones."
+
+msgid "Neue Wiederherstellungscodes"
+msgstr "New recovery codes"
+
+msgid "Ausschalten"
+msgstr "Turn off"
+
+msgid "Abbrechen"
+msgstr "Cancel"
+
+msgid "Zwei-Faktor-Anmeldung einrichten"
+msgstr "Set up two-factor authentication"
+
+msgid "Scanne den QR-Code mit deiner Authenticator-App."
+msgstr "Scan the QR code with your authenticator app."
+
+msgid "Gib den sechsstelligen Code ein, den die App anzeigt."
+msgstr "Enter the six-digit code the app shows."
+
+msgid "Kein Scanner? Gib diesen Schlüssel von Hand ein:"
+msgstr "No scanner? Enter this key by hand:"
+
+msgid "Einschalten"
+msgstr "Turn on"
+
+msgid "Passwort vergessen"
+msgstr "Forgot password"
+
+msgid ""
+"Diese App verschickt keine E-Mails. Bitte frag deinen Administrator nach "
+"einem Link für ein neues Passwort."
+msgstr ""
+"This app does not send e-mails. Please ask your administrator for a link to "
+"set a new password."
+
+#, python-format
+msgid ""
+"Gibt es zu „%(identifier)s“ einen Zugang mit E-Mail-Adresse, ist ein Link "
+"für ein neues Passwort unterwegs. Er gilt eine Stunde."
+msgstr ""
+"If there is an account with an e-mail address for “%(identifier)s”, a link "
+"to set a new password is on its way. It is valid for one hour."
+
+msgid "Wir schicken dir einen Link, mit dem du ein neues Passwort festlegst."
+msgstr "We send you a link with which you set a new password."
+
+msgid "Link schicken"
+msgstr "Send link"
+
+msgid "Zurück zur Anmeldung"
+msgstr "Back to sign-in"
+
+msgid "Neues Passwort"
+msgstr "New password"
+
+msgid "Dieser Link ist abgelaufen oder wurde schon benutzt."
+msgstr "This link has expired or has already been used."
+
+#, python-format
+msgid ""
+"Lege ein neues Passwort für <strong class=\"text-ink\">%(get_username)s</"
+"strong> fest."
+msgstr ""
+"Set a new password for <strong class=\"text-ink\">%(get_username)s</strong>."
+
+msgid "Passwort speichern"
+msgstr "Save password"
+
+msgid "Wiederherstellungscodes"
+msgstr "Recovery codes"
+
+msgid ""
+"Speichere diese Codes jetzt an einem sicheren Ort, zum Beispiel in deinem "
+"Passwort-Manager. Sie werden nur dieses eine Mal angezeigt."
+msgstr ""
+"Save these codes in a safe place now, for example in your password manager. "
+"They are shown only this once."
+
+msgid ""
+"Jeder Code funktioniert einmal, falls du keinen Zugriff auf deine "
+"Authenticator-App hast."
+msgstr ""
+"Each code works once, in case you do not have access to your authenticator "
+"app."
+
+msgid "Neuer Benutzer"
+msgstr "New user"
+
+msgid ""
+"Mitarbeiter buchen Zeiten auf die Kunden und Projekte, die du ihnen "
+"freischaltest, und sehen nur ihre eigenen Zeiten. Kunden sehen nur ihre "
+"eigenen Daten und können nichts ändern."
+msgstr ""
+"Employees book time on the customers and projects you enable for them and "
+"see only their own time. Customers see only their own data and cannot change "
+"anything."
+
+msgid "Darf buchen auf"
+msgstr "May book on"
+
+msgid "Suchen …"
+msgstr "Search …"
+
+#, python-format
+msgid "%(label)s durchsuchen"
+msgstr "Search %(label)s"
+
+msgid "Alle auswählen"
+msgstr "Select all"
+
+msgid "Noch keine."
+msgstr "None yet."
+
+msgid "Keine Treffer."
+msgstr "No matches."
+
+msgid "Kundenzugang"
+msgstr "Customer access"
+
+msgid "Projekte sieht jeder Kundenzugang. Was er darüber hinaus sieht:"
+msgstr "Every customer account sees projects. What else it sees:"
+
+msgid "Anlegen und einladen"
+msgstr "Create and invite"
+
+msgid "Benutzer löschen"
+msgstr "Delete user"
+
+msgid ""
+"Dieser Benutzer hat Zeiten gebucht, deshalb kann er nicht gelöscht werden. "
+"Nimm stattdessen das Häkchen bei „aktiv“ heraus, dann kann er sich nicht "
+"mehr anmelden."
+msgstr ""
+"This user has booked time, so they cannot be deleted. Untick “active” "
+"instead; then they can no longer sign in."
+
+msgid "Der Zugang und seine API-Tokens werden endgültig gelöscht."
+msgstr "The account and its API tokens will be permanently deleted."
+
+msgid "Diesen Benutzer wirklich löschen?"
+msgstr "Really delete this user?"
+
+#, python-format
+msgid "Einladung für %(get_full_name)s"
+msgstr "Invitation for %(get_full_name)s"
+
+#, python-format
+msgid ""
+"Schick diesen Link an <a href=\"mailto:%(email)s\">%(email)s</a>. Damit legt "
+"sie ihr Passwort fest und meldet sich dann als <strong>%(username)s</strong> "
+"an."
+msgstr ""
+"Send this link to <a href=\"mailto:%(email)s\">%(email)s</a>. They use it to "
+"set their password and then sign in as <strong>%(username)s</strong>."
+
+#, python-format
+msgid ""
+"Schick diesen Link an die Person. Damit legt sie ihr Passwort fest und "
+"meldet sich dann als <strong>%(username)s</strong> an."
+msgstr ""
+"Send this link to the person. They use it to set their password and then "
+"sign in as <strong>%(username)s</strong>."
+
+msgid ""
+"Der Link gilt eine Woche und nur einmal. Mit demselben Knopf in der "
+"Benutzerliste kannst du jederzeit einen neuen erzeugen, z. B. wenn jemand "
+"sein Passwort vergessen hat."
+msgstr ""
+"The link is valid for one week and works only once. With the same button in "
+"the user list you can create a new one at any time, e.g. if someone has "
+"forgotten their password."
+
+#, python-format
+msgid "Per E-Mail an %(email)s schicken"
+msgstr "Send by e-mail to %(email)s"
+
+msgid "Zur Benutzerliste"
+msgstr "Back to user list"
+
+msgid "Zugänge für Mitarbeiter und Kunden"
+msgstr "Accounts for employees and customers"
+
+msgid "Zuletzt angemeldet"
+msgstr "Last signed in"
+
+#, python-format
+msgid "%(customers)s Kunde"
+msgid_plural "%(customers)s Kunden"
+msgstr[0] "%(customers)s customer"
+msgstr[1] "%(customers)s customers"
+
+#, python-format
+msgid "%(projects)s Projekt"
+msgid_plural "%(projects)s Projekte"
+msgstr[0] "%(projects)s project"
+msgstr[1] "%(projects)s projects"
+
+msgid "noch nichts freigeschaltet"
+msgstr "nothing enabled yet"
+
+msgid "deaktiviert"
+msgstr "deactivated"
+
+msgid "eingeladen"
+msgstr "invited"
+
+#, python-format
+msgid "%(last_login)s Uhr"
+msgstr "%(last_login)s"
+
+msgid "noch nie"
+msgstr "never"
+
+msgid "Link, mit dem die Person ein Passwort festlegt"
+msgstr "Link with which the person sets a password"
+
+msgid "Einladungslink"
+msgstr "Invitation link"
+
+msgid "Bearbeiten"
+msgstr "Edit"
+
+msgid "Benutzer bearbeiten"
+msgstr "Edit user"
+
+msgid "Menü"
+msgstr "Menu"
+
+msgid "Hauptnavigation"
+msgstr "Main navigation"
+
+msgid "Übersicht"
+msgstr "Overview"
+
+msgid "Zeiten"
+msgstr "Time"
+
+msgid "Kontaktdaten"
+msgstr "Contact details"
+
+msgid "Aktive Projekte"
+msgstr "Active projects"
+
+msgid "Abrechnung"
+msgstr "Billing"
+
+msgid "Kunden mit offenen, abrechenbaren Zeiten"
+msgstr "Customers with open, billable time"
+
+msgid "Auswertungen"
+msgstr "Reports"
+
+msgid "Verwaltung"
+msgstr "Administration"
+
+msgid "Abmelden"
+msgstr "Sign out"
+
+#, python-format
+msgid "Und %(critical_count)s weitere kritische Nachrichten."
+msgstr "And %(critical_count)s more critical messages."
+
+msgid "Ansehen"
+msgstr "View"
+
+msgid "Schließen"
+msgstr "Close"
+
+#, python-format
+msgid "%(included)s h im Retainer"
+msgstr "%(included)s h in retainer"
+
+msgid "kein Satz"
+msgstr "no rate"
+
+msgid "im Retainer"
+msgstr "in retainer"
+
+#, python-format
+msgid "Weitere %(counter)s Zeiteintrag anzeigen"
+msgid_plural "Weitere %(counter)s Zeiteinträge anzeigen"
+msgstr[0] "Show %(counter)s more time entry"
+msgstr[1] "Show %(counter)s more time entries"
+
+msgid "Entwurf öffnen"
+msgstr "Open draft"
+
+msgid ""
+"Die Zeiten dieser stornierten Rechnung können dann neu abgerechnet werden"
+msgstr "The time of this voided invoice can then be billed again"
+
+msgid "Zeiten freigeben"
+msgstr "Release time"
+
+msgid "Keine Rechnung passt zum Filter."
+msgstr "No invoice matches the filter."
+
+msgid "Noch keine Rechnungen erstellt."
+msgstr "No invoices created yet."
+
+msgid "In Lexware Office gelöscht"
+msgstr "Deleted in Lexware Office"
+
+msgid "In Lexware Office erstellt, ohne Zeiteinträge"
+msgstr "Created in Lexware Office, without time entries"
+
+#, python-format
+msgid "Fällig %(due_date)s"
+msgstr "Due %(due_date)s"
+
+#, python-format
+msgid "seit %(counter)s Tag"
+msgid_plural "seit %(counter)s Tagen"
+msgstr[0] "for %(counter)s day"
+msgstr[1] "for %(counter)s days"
+
+msgid "Zeiten wieder offen"
+msgstr "Time open again"
+
+msgid "Nummer"
+msgstr "Number"
+
+msgid "Leistungszeitraum"
+msgstr "Service period"
+
+msgid "Netto"
+msgstr "Net"
+
+#, python-format
+msgid "%(hours)s h offen"
+msgstr "%(hours)s h open"
+
+msgid "Keine offenen Zeiten"
+msgstr "No open time"
+
+msgid "Zeitraum"
+msgstr "Period"
+
+msgid "Offene Zeiten"
+msgstr "Open time"
+
+#, python-format
+msgid "%(counter)s Zeiteintrag"
+msgid_plural "%(counter)s Zeiteinträge"
+msgstr[0] "%(counter)s time entry"
+msgstr[1] "%(counter)s time entries"
+
+msgid "Vorschau"
+msgstr "Preview"
+
+msgid "Position"
+msgstr "Item"
+
+msgid "Menge"
+msgstr "Quantity"
+
+msgid "Einzelpreis"
+msgstr "Unit price"
+
+msgid "Gesamt"
+msgstr "Total"
+
+msgid "Für diesen Zeitraum gibt es keine offenen, abrechenbaren Zeiten."
+msgstr "There is no open, billable time for this period."
+
+msgid ""
+"Legt einen Entwurf in Lexware an. Die Zeiteinträge werden danach als "
+"abgerechnet markiert."
+msgstr ""
+"Creates a draft in Lexware. The time entries are then marked as billed."
+
+msgid "Rechnungsentwurf in Lexware anlegen"
+msgstr "Create invoice draft in Lexware"
+
+msgid ""
+"Dieser Kunde ist nicht mit Lexware verknüpft. Importiere ihn auf der "
+"Kundenseite aus Lexware, um eine Rechnung zu erstellen."
+msgstr ""
+"This customer is not linked to Lexware. Import them from Lexware on the "
+"customer page to create an invoice."
+
+msgid "Zeiten abrechnen und Rechnungen aus Lexware Office im Blick behalten"
+msgstr "Bill time and keep an eye on invoices from Lexware Office"
+
+msgid "Abrechnen"
+msgstr "Billing"
+
+msgid "Nach Aufwand:"
+msgstr "Time and materials:"
+
+msgid "alle Stunden zum Stundensatz der Aufgabe, des Projekts oder Kunden."
+msgstr "all hours at the hourly rate of the task, project or customer."
+
+msgid "Retainer:"
+msgstr "Retainer:"
+
+msgid ""
+"pro Zeitraum ein Festpreis mit enthaltenen Stunden; darüber hinaus "
+"gearbeitete Stunden werden extra berechnet. Nicht genutzte Stunden verfallen."
+msgstr ""
+"a fixed price per period with included hours; hours worked beyond that are "
+"charged extra. Unused hours expire."
+
+#, python-format
+msgid "Abrechnung %(name)s · LexTracker"
+msgstr "Billing %(name)s · LexTracker"
+
+msgid "Neue Vereinbarung"
+msgstr "New agreement"
+
+#, python-format
+msgid "%(included_hours)s h %(get_period_display)s für %(fixed_price)s €"
+msgstr "%(included_hours)s h %(get_period_display)s for %(fixed_price)s €"
+
+#, python-format
+msgid "gültig ab %(valid_from)s"
+msgstr "valid from %(valid_from)s"
+
+#, python-format
+msgid "bis %(valid_until)s"
+msgstr "until %(valid_until)s"
+
+msgid "· Mehrstunden"
+msgstr "· Extra hours"
+
+#, python-format
+msgid "zu %(overage_rate)s €/h"
+msgstr "at %(overage_rate)s €/h"
+
+msgid "zum normalen Stundensatz"
+msgstr "at the regular hourly rate"
+
+msgid "Vereinbarung bearbeiten"
+msgstr "Edit agreement"
+
+msgid ""
+"Keine Vereinbarung: Zeiten werden nach Aufwand zum Stundensatz abgerechnet."
+msgstr ""
+"No agreement: time is billed on a time-and-materials basis at the hourly "
+"rate."
+
+msgid "Anzeigen"
+msgstr "Show"
+
+msgid ""
+"Zeiträume mit offenen Zeiten sind markiert. Mit Von und Bis rechnest du "
+"jeden beliebigen Zeitraum ab, auch über mehrere Monate."
+msgstr ""
+"Periods with open time are marked. With From and To you can bill any period, "
+"even across several months."
+
+msgid "Alle Rechnungen des Kunden"
+msgstr "All invoices of the customer"
+
+#, python-format
+msgid "Offene Zeiten %(name)s · LexTracker"
+msgstr "Open time %(name)s · LexTracker"
+
+#, python-format
+msgid "Offene Zeiten · %(name)s"
+msgstr "Open time · %(name)s"
+
+msgid ""
+"So gehen die Zeiten in die nächste Rechnung ein, wenn du alles Offene "
+"zusammen abrechnest."
+msgstr ""
+"This is how the time goes into the next invoice if you bill everything open "
+"together."
+
+msgid "Offene Zeit"
+msgstr "Open time"
+
+#, python-format
+msgid "davon %(included)s h im Retainer"
+msgstr "of which %(included)s h in retainer"
+
+msgid "Zeiteinträge"
+msgstr "Time entries"
+
+#, python-format
+msgid "in %(counter)s Projekt"
+msgid_plural "in %(counter)s Projekten"
+msgstr[0] "in %(counter)s project"
+msgstr[1] "in %(counter)s projects"
+
+#, python-format
+msgid "davon %(retainer_total)s € Retainer-Pauschale"
+msgstr "of which %(retainer_total)s € retainer flat fee"
+
+#, python-format
+msgid ""
+"Retainer (%(agreement)s): Stunden innerhalb des Kontingents sind mit der "
+"Pauschale abgegolten und haben keinen eigenen Betrag, Mehrstunden werden "
+"extra berechnet."
+msgstr ""
+"Retainer (%(agreement)s): hours within the allowance are covered by the flat "
+"fee and have no amount of their own; extra hours are charged separately."
+
+#, python-format
+msgid "%(problem)s Der Eintrag kommt nicht in die Rechnung."
+msgstr "%(problem)s The entry is not included in the invoice."
+
+#, python-format
+msgid "· %(included)s h im Retainer"
+msgstr "· %(included)s h in retainer"
+
+#, python-format
+msgid "%(without_rate)s ohne Satz"
+msgstr "%(without_rate)s without rate"
+
+msgid "Dauer"
+msgstr "Duration"
+
+msgid "Satz"
+msgstr "Rate"
+
+msgid "Betrag"
+msgstr "Amount"
+
+msgid "Zur Abrechnung"
+msgstr "To billing"
+
+msgid "Keine offenen Zeiten: Alles ist abgerechnet."
+msgstr "No open time: everything is billed."
+
+msgid "Kunde oder Rechnungsnummer suchen"
+msgstr "Search customer or invoice number"
+
+msgid "Rechnungen suchen"
+msgstr "Search invoices"
+
+msgid "Nach Kunde filtern"
+msgstr "Filter by customer"
+
+msgid "Alle Kunden"
+msgstr "All customers"
+
+msgid "Suchen"
+msgstr "Search"
+
+msgid "Abgleich fehlgeschlagen"
+msgstr "Sync failed"
+
+msgid "Abgeglichen"
+msgstr "Synced"
+
+#, python-format
+msgid "%(invoices_synced_at)s Uhr"
+msgstr "%(invoices_synced_at)s"
+
+msgid "Status aktualisieren"
+msgstr "Update status"
+
+msgid "Nach Status filtern"
+msgstr "Filter by status"
+
+msgid "Alle"
+msgstr "All"
+
+msgid "Noch nicht abgerechnet"
+msgstr "Not billed yet"
+
+msgid "Kunde oder Kundennummer suchen"
+msgstr "Search customer or customer number"
+
+msgid "Kunden suchen"
+msgstr "Search customers"
+
+msgid "Kunden filtern"
+msgstr "Filter customers"
+
+msgid "Mit offenen Zeiten"
+msgstr "With open time"
+
+msgid "Offene Zeiteinträge anzeigen"
+msgstr "Show open time entries"
+
+msgid "Kein Kunde passt zur Suche."
+msgstr "No customer matches the search."
+
+msgid "Noch keine Kunden."
+msgstr "No customers yet."
+
+msgid "Alles abgerechnet: Kein Kunde hat offene Zeiten."
+msgstr "Everything billed: no customer has open time."
+
+msgid "(optional)"
+msgstr "(optional)"
+
+msgid "Weitere laden"
+msgstr "Load more"
+
+msgid "Sicherung wiederherstellen"
+msgstr "Restore backup"
+
+msgid "Sicherungen"
+msgstr "Backups"
+
+#, python-format
+msgid ""
+"Alle Daten der App werden durch den Stand aus <strong>%(name)s</strong> "
+"ersetzt: Kunden, Projekte, Zeiten, Rechnungen, Benutzer und Einstellungen. "
+"Was seitdem dazukam, ist danach nicht mehr in der App."
+msgstr ""
+"All data in the app will be replaced by the state from <strong>%(name)s</"
+"strong>: customers, projects, time entries, invoices, users and settings. "
+"Anything added since then will no longer be in the app afterwards."
+
+msgid ""
+"Vorher sichert die App den aktuellen Stand als eigene Kopie, so kannst du "
+"die Wiederherstellung rückgängig machen. In Lexware Office ändert sich "
+"nichts. Gab es dein Konto damals noch nicht oder hatte es ein anderes "
+"Passwort, meldest du dich danach neu an."
+msgstr ""
+"Beforehand the app saves the current state as a copy of its own, so you can "
+"undo the restore. Nothing changes in Lexware Office. If your account did not "
+"exist back then or had a different password, you will have to sign in again "
+"afterwards."
+
+msgid "Ich möchte den aktuellen Stand ersetzen."
+msgstr "I want to replace the current state."
+
+msgid "Wiederherstellen"
+msgstr "Restore"
+
+msgid "Sicherung hochladen"
+msgstr "Upload backup"
+
+msgid ""
+"Eine Sicherung von einem anderen Server, z. B. eine heruntergeladene "
+"<code>db-….sqlite3</code>, kommt hier in den Ordner der Sicherungen. Die "
+"Daten der App ändern sich dabei noch nicht: Wiederherstellen kannst du sie "
+"danach in der Liste."
+msgstr ""
+"A backup from another server, e.g. a downloaded <code>db-….sqlite3</code>, "
+"goes into the backups folder here. The app’s data does not change yet: you "
+"can restore it from the list afterwards."
+
+#, python-format
+msgid ""
+"Die App prüft die Datei vorher und nimmt nur unbeschädigte Datenbanken von "
+"LexTracker an, die nicht aus einer neueren Version stammen. Höchstens "
+"%(max_size)s."
+msgstr ""
+"The app checks the file beforehand and only accepts undamaged LexTracker "
+"databases that do not come from a newer version. At most %(max_size)s."
+
+msgid "Datei"
+msgstr "File"
+
+msgid "Hochladen"
+msgstr "Upload"
+
+#, python-format
+msgid ""
+"Kopien der Datenbank in <code>%(dir)s</code>. Wann und wie viele entstehen, "
+"legst du in den <a href=\"%(url)s\">Einstellungen</a> fest."
+msgstr ""
+"Copies of the database in <code>%(dir)s</code>. When and how many are "
+"created is set in the <a href=\"%(url)s\">settings</a>."
+
+msgid "Jetzt sichern"
+msgstr "Back up now"
+
+msgid "Sicherung"
+msgstr "Backup"
+
+msgid "Größe"
+msgstr "Size"
+
+#, python-format
+msgid "%(created)s Uhr"
+msgstr "%(created)s"
+
+msgid "· Stand vor einer Wiederherstellung"
+msgstr "· State before a restore"
+
+msgid "· Stand vor einer Umstellung der Datenbank"
+msgstr "· State before a database migration"
+
+msgid "· Hochgeladen"
+msgstr "· Uploaded"
+
+msgid "Herunterladen"
+msgstr "Download"
+
+#, python-format
+msgid "%(name)s herunterladen"
+msgstr "Download %(name)s"
+
+#, python-format
+msgid "%(name)s wiederherstellen"
+msgstr "Restore %(name)s"
+
+msgid "Diese Sicherung wirklich löschen?"
+msgstr "Really delete this backup?"
+
+msgid "Löschen"
+msgstr "Delete"
+
+#, python-format
+msgid "%(name)s löschen"
+msgstr "Delete %(name)s"
+
+msgid "Noch keine Sicherungen."
+msgstr "No backups yet."
+
+#, python-format
+msgid "Hallo %(first_name)s"
+msgstr "Hello %(first_name)s"
+
+#, python-format
+msgid ""
+"Lexware Office ist noch nicht verbunden. Trag den API-Schlüssel in den <a "
+"href=\"%(url)s\">Einstellungen</a> ein, um Kunden zu importieren und "
+"Rechnungen zu erstellen."
+msgstr ""
+"Lexware Office is not connected yet. Enter the API key in the <a "
+"href=\"%(url)s\">settings</a> to import customers and create invoices."
+
+#, python-format
+msgid ""
+"Der Scheduler meldet sich nicht mehr. Import, Sicherung und E-Mail-Versand "
+"laufen so nicht. Mehr dazu unter <a href=\"%(url)s\">Hintergrundaufgaben</a>."
+msgstr ""
+"The scheduler is no longer reporting. Import, backup and e-mail sending do "
+"not run like this. More under <a href=\"%(url)s\">Background jobs</a>."
+
+msgid "Timer starten"
+msgstr "Start timer"
+
+msgid "Was machst du gerade? (optional)"
+msgstr "What are you working on? (optional)"
+
+msgid "Starten"
+msgstr "Start"
+
+#, python-format
+msgid ""
+"Noch keine offenen Aufgaben. <a class=\"hover:underline\" "
+"href=\"%(url)s\">Lege ein Projekt an</a> und füge Aufgaben hinzu."
+msgstr ""
+"No open tasks yet. <a class=\"hover:underline\" href=\"%(url)s\">Create a "
+"project</a> and add tasks."
+
+msgid "Noch keine offenen Aufgaben."
+msgstr "No open tasks yet."
+
+msgid ""
+"Sobald ein Projekt mit Aufgaben angelegt ist, kannst du hier Zeit buchen."
+msgstr ""
+"As soon as a project with tasks has been created, you can book time here."
+
+msgid "Heute"
+msgstr "Today"
+
+msgid "Heute ist dafür nichts erfasst."
+msgstr "Nothing recorded for this today."
+
+msgid "Heute noch nichts erfasst."
+msgstr "Nothing recorded today yet."
+
+msgid "Zeit nachtragen"
+msgstr "Add time"
+
+msgid "Hintergrundaufgaben"
+msgstr "Background jobs"
+
+msgid ""
+"Was der Scheduler im Hintergrund erledigt und wie die letzten Läufe "
+"ausgingen. Fehler melden sich zusätzlich als Nachricht in der Glocke."
+msgstr ""
+"What the scheduler does in the background and how the latest runs went. "
+"Errors are also reported as a message in the bell."
+
+msgid "Scheduler"
+msgstr "Scheduler"
+
+msgid "läuft"
+msgstr "running"
+
+msgid "meldet sich nicht"
+msgstr "not reporting"
+
+msgid "noch nie gemeldet"
+msgstr "never reported"
+
+#, python-format
+msgid "Zuletzt gemeldet %(seen_at)s Uhr (vor %(seen_at2)s)"
+msgstr "Last reported %(seen_at)s (%(seen_at2)s ago)"
+
+#, python-format
+msgid ", gestartet %(started_at)s Uhr"
+msgstr ", started %(started_at)s"
+
+msgid ""
+"Der Scheduler prüft sonst jede Minute. Solange er nicht läuft, werden nichts "
+"importiert, keine Sicherung erstellt und keine E-Mails verschickt. Schau "
+"nach dem Container <code>scheduler</code> (<code>docker compose logs "
+"scheduler</code>) oder starte ihn mit <code>make scheduler</code>."
+msgstr ""
+"Otherwise the scheduler checks every minute. While it is not running, "
+"nothing is imported, no backup is made and no e-mails are sent. Look at the "
+"container <code>scheduler</code> (<code>docker compose logs scheduler</"
+"code>) or start it with <code>make scheduler</code>."
+
+msgid ""
+"Der Scheduler ist ein eigener Prozess (Container <code>scheduler</code>, "
+"lokal <code>make scheduler</code>). Sobald er läuft, steht hier sein Status."
+msgstr ""
+"The scheduler is a process of its own (container <code>scheduler</code>, "
+"locally <code>make scheduler</code>). Once it is running, its status appears "
+"here."
+
+msgid "Nächster Lauf"
+msgstr "Next run"
+
+msgid "Letzter Lauf"
+msgstr "Last run"
+
+msgid "Ergebnis"
+msgstr "Result"
+
+msgid "beim nächsten Check"
+msgstr "at the next check"
+
+#, python-format
+msgid "%(at)s Uhr"
+msgstr "%(at)s"
+
+#, python-format
+msgid "in %(next_run)s"
+msgstr "in %(next_run)s"
+
+#, python-format
+msgid "%(last_run_at)s Uhr"
+msgstr "%(last_run_at)s"
+
+#, python-format
+msgid "%(duration_ms)s ms"
+msgstr "%(duration_ms)s ms"
+
+msgid "noch nicht gelaufen"
+msgstr "not run yet"
+
+msgid "ok"
+msgstr "ok"
+
+msgid "Fehler"
+msgstr "Error"
+
+#, python-format
+msgid "%(failures)s× in Folge"
+msgstr "%(failures)s× in a row"
+
+#, python-format
+msgid "Letzter Fehler %(last_error_at)s Uhr: %(last_error)s"
+msgstr "Last error %(last_error_at)s: %(last_error)s"
+
+msgid "Diese Einstellungen gelten für alle Benutzer."
+msgstr "These settings apply to all users."
+
+msgid ""
+"Der API-Schlüssel wird verschlüsselt gespeichert und nicht wieder angezeigt. "
+"Zum Ändern trägst du einfach einen neuen ein; den alten brauchst du dafür "
+"nicht."
+msgstr ""
+"The API key is stored encrypted and not shown again. To change it, simply "
+"enter a new one; you do not need the old one."
+
+msgid "verbunden"
+msgstr "connected"
+
+#, python-format
+msgid "zuletzt geprüft %(verified_at)s Uhr"
+msgstr "last checked %(verified_at)s"
+
+msgid "aus Umgebungsvariable"
+msgstr "from environment variable"
+
+msgid ""
+"Der Schlüssel kommt aus <code>APP_LEXWARE_API_KEY</code>. Trag ihn hier ein, "
+"dann kannst du die Variable entfernen. Ein hier eingetragener Schlüssel hat "
+"Vorrang."
+msgstr ""
+"The key comes from <code>APP_LEXWARE_API_KEY</code>. Enter it here and you "
+"can remove the variable. A key entered here takes precedence."
+
+msgid ""
+"Der gespeicherte Schlüssel lässt sich nicht mehr entschlüsseln, vermutlich "
+"weil sich <code>APP_SECRET_KEY</code> geändert hat. Bitte trag ihn neu ein."
+msgstr ""
+"The stored key can no longer be decrypted, probably because "
+"<code>APP_SECRET_KEY</code> has changed. Please enter it again."
+
+msgid ""
+"Noch kein API-Schlüssel hinterlegt. Ohne ihn gibt es keinen Kundenimport und "
+"keine Rechnungen."
+msgstr ""
+"No API key stored yet. Without it there is no customer import and no "
+"invoices."
+
+msgid "Neuen Schlüssel prüfen und speichern"
+msgstr "Check and save new key"
+
+msgid "Prüfen und speichern"
+msgstr "Check and save"
+
+msgid "Verbindung testen"
+msgstr "Test connection"
+
+msgid "Schlüssel entfernen"
+msgstr "Remove key"
+
+#, python-format
+msgid ""
+"Die Umsatzsteuer auf Rechnungen richtet sich nach deinem Lexware-Konto: als "
+"Kleinunternehmer ohne Umsatzsteuer, sonst mit 19 %%."
+msgstr ""
+"The VAT on invoices depends on your Lexware account: without VAT as a small "
+"business, otherwise at 19 %%."
+
+msgid "Anmeldung"
+msgstr "Sign-in"
+
+#, python-format
+msgid "Die App verschickt E-Mails über <code>%(host)s</code> als %(sender)s."
+msgstr "The app sends e-mails via <code>%(host)s</code> as %(sender)s."
+
+msgid ""
+"Noch kein SMTP-Server eingerichtet. Ohne ihn gibt es keine Links zum "
+"Zurücksetzen des Passworts, keine Anmeldelinks, Berichte oder Erinnerungen."
+msgstr ""
+"No SMTP server set up yet. Without it there are no links to reset the "
+"password, no sign-in links, reports or reminders."
+
+msgid "verwalten"
+msgstr "manage"
+
+msgid "einrichten"
+msgstr "set up"
+
+#, python-format
+msgid "%(counter)s E-Mail konnte nicht verschickt werden."
+msgid_plural "%(counter)s E-Mails konnten nicht verschickt werden."
+msgstr[0] "%(counter)s e-mail could not be sent."
+msgstr[1] "%(counter)s e-mails could not be sent."
+
+msgid ""
+"Jeder bekommt seine Stunden der sieben Tage vor dem Versandtag, "
+"Administratoren dazu offene Stunden, offene Rechnungen und Retainer."
+msgstr ""
+"Everyone gets their hours of the seven days before the sending day; "
+"administrators also get open hours, open invoices and retainers."
+
+#, python-format
+msgid "Zuletzt verschickt %(weekly_report_at)s Uhr."
+msgstr "Last sent %(weekly_report_at)s."
+
+msgid "Abschalten kann jeder beides für sich unter Konto."
+msgstr "Everyone can turn off both for themselves under Account."
+
+msgid ""
+"Gilt für Rechnungen, die laut Lexware überfällig sind, und nur, solange der "
+"Rechnungsstatus abgeglichen wird. Rechnungen, die schon länger als eine "
+"Woche über diese Frist sind, bekommen keinen Hinweis mehr."
+msgstr ""
+"Applies to invoices that are overdue according to Lexware, and only while "
+"the invoice status is synced. Invoices that are already more than a week "
+"past this deadline no longer get a notice."
+
+msgid "Abgleich mit Lexware"
+msgstr "Sync with Lexware"
+
+msgid ""
+"Wie oft und in welchem Zeitfenster die App Kunden importiert und den Status "
+"der Rechnungen abgleicht. Ohne Zeitfenster läuft der Abgleich rund um die "
+"Uhr. Bei „täglich“ oder „wöchentlich“ legt „ab“ die Uhrzeit fest. Liegt "
+"„bis“ vor „ab“, reicht das Fenster über Mitternacht."
+msgstr ""
+"How often and in which time window the app imports customers and syncs the "
+"status of invoices. Without a time window, the sync runs around the clock. "
+"For “daily” or “weekly”, “from” sets the time of day. If “until” is before "
+"“from”, the window extends past midnight."
+
+#, python-format
+msgid "Zuletzt %(last_run)s Uhr:"
+msgstr "Last %(last_run)s:"
+
+#, python-format
+msgid "fehlgeschlagen (%(status)s)"
+msgstr "failed (%(status)s)"
+
+msgid "Noch nicht gelaufen."
+msgstr "Not run yet."
+
+#, python-format
+msgid ""
+"Kopiert die Datenbank einmal am Tag ab der eingestellten Uhrzeit nach "
+"<code>%(dir)s</code>. Den Ordner legt die Server-Konfiguration fest "
+"(<code>APP_BACKUP_DIR</code>, in Docker das Volume <code>/backups</code>)."
+msgstr ""
+"Copies the database once a day from the set time to <code>%(dir)s</code>. "
+"The folder is set by the server configuration (<code>APP_BACKUP_DIR</code>, "
+"in Docker the volume <code>/backups</code>)."
+
+#, python-format
+msgid "%(counter)s Kopie vorhanden"
+msgid_plural "%(counter)s Kopien vorhanden"
+msgstr[0] "%(counter)s copy available"
+msgstr[1] "%(counter)s copies available"
+
+msgid "Noch keine Kopie vorhanden"
+msgstr "No copy available yet"
+
+#, python-format
+msgid "Letzte Sicherung: %(newest)s Uhr"
+msgstr "Latest backup: %(newest)s"
+
+msgid "Die erste entsteht zur eingestellten Uhrzeit oder per Knopfdruck."
+msgstr "The first one is created at the set time or at the press of a button."
+
+msgid "Sicherungen verwalten"
+msgstr "Manage backups"
+
+msgid "Noch keine Sicherung aufgezeichnet."
+msgstr "No backup recorded yet."
+
+msgid "Archiviert"
+msgstr "Archived"
+
+msgid "Keine Kunden gefunden."
+msgstr "No customers found."
+
+msgid "Noch keine Kunden. Importiere sie aus Lexware Office."
+msgstr "No customers yet. Import them from Lexware Office."
+
+#, python-format
+msgid "Import abgeschlossen: %(summary)s"
+msgstr "Import completed: %(summary)s"
+
+#, python-format
+msgid "Letzter Import %(lexware_synced_at)s Uhr:"
+msgstr "Last import %(lexware_synced_at)s:"
+
+#, python-format
+msgid "fehlgeschlagen (%(lexware_sync_status)s)"
+msgstr "failed (%(lexware_sync_status)s)"
+
+#, python-format
+msgid "· automatisch %(get_lexware_sync_interval_display)s"
+msgstr "· automatically %(get_lexware_sync_interval_display)s"
+
+msgid "Nr."
+msgstr "No."
+
+msgid "Stundensatz"
+msgstr "Hourly rate"
+
+#, python-format
+msgid "%(name)s · LexTracker"
+msgstr "%(name)s · LexTracker"
+
+#, python-format
+msgid "/ Nr. %(customer_number)s"
+msgstr "/ No. %(customer_number)s"
+
+msgid ""
+"Name, E-Mail und Telefon gehören zum Kontakt in Lexware Office. Änderungen "
+"daran werden beim Speichern auch dort gespeichert."
+msgstr ""
+"Name, e-mail and phone belong to the contact in Lexware Office. Changes to "
+"them are also saved there when you save."
+
+#, python-format
+msgid "Zuletzt abgeglichen %(lexware_synced_at)s Uhr."
+msgstr "Last synced %(lexware_synced_at)s."
+
+msgid "Kontakte mit Kundenrolle aus Lexware Office"
+msgstr "Contacts with the customer role from Lexware Office"
+
+msgid "Aus Lexware importieren"
+msgstr "Import from Lexware"
+
+msgid "Importiere …"
+msgstr "Importing …"
+
+#, python-format
+msgid ""
+"Für den Import aus Lexware Office fehlt der API-Schlüssel. Trage ihn in den "
+"<a href=\"%(url)s\">Einstellungen</a> ein."
+msgstr ""
+"The API key for importing from Lexware Office is missing. Enter it in the <a "
+"href=\"%(url)s\">settings</a>."
+
+msgid "Name, Nummer, E-Mail oder Notiz suchen"
+msgstr "Search name, number, e-mail or note"
+
+msgid "Aktive oder archivierte Kunden"
+msgstr "Active or archived customers"
+
+msgid "Nach Kategorie filtern"
+msgstr "Filter by category"
+
+msgid "Alle Kategorien"
+msgstr "All categories"
+
+#, python-format
+msgid "Nachrichten, %(count)s ungelesen"
+msgstr "Messages, %(count)s unread"
+
+msgid "ungelesen"
+msgstr "unread"
+
+#, python-format
+msgid "So oft ist das seit %(since)s Uhr passiert"
+msgstr "This has happened this often since %(since)s"
+
+#, python-format
+msgid "%(last_at)s Uhr"
+msgstr "%(last_at)s"
+
+msgid "Gelesen"
+msgstr "Read"
+
+#, python-format
+msgid ""
+"Angezeigt ab Priorität „%(get_message_level_display)s“. Das stellst du unter "
+"Konto ein."
+msgstr ""
+"Shown from priority “%(get_message_level_display)s”. You set this under "
+"Account."
+
+msgid "Alle als gelesen markieren"
+msgstr "Mark all as read"
+
+msgid "Nach Priorität filtern"
+msgstr "Filter by priority"
+
+msgid "Keine Nachrichten."
+msgstr "No messages."
+
+msgid "Anzeige"
+msgstr "View"
+
+msgid "Ungelesen"
+msgstr "Unread"
+
+msgid "Alle anzeigen"
+msgstr "Show all"
+
+msgid "Keine ungelesenen Nachrichten."
+msgstr "No unread messages."
+
+#, python-format
+msgid "Angezeigt ab Priorität „%(get_message_level_display)s“."
+msgstr "Shown from priority “%(get_message_level_display)s”."
+
+msgid "Ändern"
+msgstr "Change"
+
+msgid "Weitere Nachrichten anzeigen"
+msgstr "Show more messages"
+
+msgid "Als Seite öffnen"
+msgstr "Open as page"
+
+msgid "Diese E-Mail hat LexTracker automatisch verschickt."
+msgstr "LexTracker sent this e-mail automatically."
+
+msgid "Falls der Knopf nicht geht, kopiere diese Adresse in den Browser:"
+msgstr "If the button does not work, copy this address into your browser:"
+
+msgid "Willkommen bei LexTracker"
+msgstr "Welcome to LexTracker"
+
+#, python-format
+msgid "Hallo %(first_name)s,"
+msgstr "Hello %(first_name)s,"
+
+msgid "Hallo,"
+msgstr "Hello,"
+
+#, python-format
+msgid ""
+"%(inviter)s hat dir einen Zugang eingerichtet. Dein Benutzername ist "
+"<strong>%(username)s</strong>."
+msgstr ""
+"%(inviter)s has set up an account for you. Your username is "
+"<strong>%(username)s</strong>."
+
+#, python-format
+msgid ""
+"du hast dir einen Zugang eingerichtet. Dein Benutzername ist "
+"<strong>%(username)s</strong>."
+msgstr ""
+"you have set up an account for yourself. Your username is "
+"<strong>%(username)s</strong>."
+
+#, python-format
+msgid ""
+"Der Link gilt %(days)s Tage und nur einmal. Danach meldest du dich mit "
+"Benutzername und Passwort an."
+msgstr ""
+"The link is valid for %(days)s days and works only once. After that you sign "
+"in with your username and password."
+
+#, python-format
+msgid ""
+"%(inviter)s hat dir einen Zugang zu LexTracker eingerichtet. Dein "
+"Benutzername ist „%(username)s“. Über diesen Link legst du dein Passwort "
+"fest:"
+msgstr ""
+"%(inviter)s has set up a LexTracker account for you. Your username is "
+"“%(username)s”. Use this link to set your password:"
+
+#, python-format
+msgid ""
+"du hast dir einen Zugang zu LexTracker eingerichtet. Dein Benutzername ist "
+"„%(username)s“. Über diesen Link legst du dein Passwort fest:"
+msgstr ""
+"you have set up a LexTracker account for yourself. Your username is "
+"“%(username)s”. Use this link to set your password:"
+
+msgid "Rechnung überfällig"
+msgstr "Invoice overdue"
+
+#, python-format
+msgid ""
+"Die Rechnung <strong>%(number)s</strong> an %(customer)s war am %(due_date)s "
+"fällig und ist seit %(days)s Tag überfällig."
+msgid_plural ""
+"Die Rechnung <strong>%(number)s</strong> an %(customer)s war am %(due_date)s "
+"fällig und ist seit %(days)s Tagen überfällig."
+msgstr[0] ""
+"Invoice <strong>%(number)s</strong> to %(customer)s was due on %(due_date)s "
+"and has been overdue for %(days)s day."
+msgstr[1] ""
+"Invoice <strong>%(number)s</strong> to %(customer)s was due on %(due_date)s "
+"and has been overdue for %(days)s days."
+
+#, python-format
+msgid "Offen: <strong>%(amount)s €</strong>"
+msgstr "Open: <strong>%(amount)s €</strong>"
+
+#, python-format
+msgid "Der Kunde hat eine Zahlungserinnerung an %(email)s bekommen."
+msgstr "The customer has received a payment reminder at %(email)s."
+
+msgid ""
+"Der Kunde hat keine E-Mail-Adresse in Lexware, deshalb ging keine "
+"Zahlungserinnerung an ihn."
+msgstr ""
+"The customer has no e-mail address in Lexware, so no payment reminder was "
+"sent to them."
+
+msgid "An den Kunden ging keine Erinnerung."
+msgstr "No reminder was sent to the customer."
+
+msgid "In Lexware Office öffnen"
+msgstr "Open in Lexware Office"
+
+msgid "Diese Hinweise stellst du in LexTracker unter Einstellungen ein."
+msgstr "You set these notices in LexTracker under Settings."
+
+#, python-format
+msgid ""
+"die Rechnung %(number)s an %(customer)s war am %(due_date)s fällig und ist "
+"seit %(days)s Tag überfällig."
+msgid_plural ""
+"die Rechnung %(number)s an %(customer)s war am %(due_date)s fällig und ist "
+"seit %(days)s Tagen überfällig."
+msgstr[0] ""
+"invoice %(number)s to %(customer)s was due on %(due_date)s and has been "
+"overdue for %(days)s day."
+msgstr[1] ""
+"invoice %(number)s to %(customer)s was due on %(due_date)s and has been "
+"overdue for %(days)s days."
+
+#, python-format
+msgid "Offen sind noch %(amount)s €."
+msgstr "%(amount)s € is still open."
+
+#, python-format
+msgid "Rechnung in Lexware Office: %(url)s"
+msgstr "Invoice in Lexware Office: %(url)s"
+
+msgid "Zahlungserinnerung"
+msgstr "Payment reminder"
+
+msgid "Guten Tag,"
+msgstr "Hello,"
+
+#, python-format
+msgid ""
+"zu unserer Rechnung <strong>%(number)s</strong> vom %(invoice_date)s haben "
+"wir bisher keinen Zahlungseingang gesehen. Sie war am %(due_date)s fällig."
+msgstr ""
+"we have not yet seen a payment for our invoice <strong>%(number)s</strong> "
+"dated %(invoice_date)s. It was due on %(due_date)s."
+
+#, python-format
+msgid ""
+"zu unserer Rechnung <strong>%(number)s</strong> haben wir bisher keinen "
+"Zahlungseingang gesehen. Sie war am %(due_date)s fällig."
+msgstr ""
+"we have not yet seen a payment for our invoice <strong>%(number)s</strong>. "
+"It was due on %(due_date)s."
+
+#, python-format
+msgid "Offener Betrag: <strong>%(amount)s €</strong>"
+msgstr "Open amount: <strong>%(amount)s €</strong>"
+
+msgid ""
+"Bitte überweisen Sie den Betrag in den nächsten Tagen. Falls Sie bereits "
+"bezahlt haben, betrachten Sie diese E-Mail bitte als gegenstandslos."
+msgstr ""
+"Please transfer the amount in the next few days. If you have already paid, "
+"please disregard this e-mail."
+
+msgid "Viele Grüße"
+msgstr "Kind regards"
+
+msgid "Diese Erinnerung wurde automatisch verschickt."
+msgstr "This reminder was sent automatically."
+
+#, python-format
+msgid ""
+"zu unserer Rechnung %(number)s vom %(invoice_date)s haben wir bisher keinen "
+"Zahlungseingang gesehen. Sie war am %(due_date)s fällig."
+msgstr ""
+"we have not yet seen a payment for our invoice %(number)s dated "
+"%(invoice_date)s. It was due on %(due_date)s."
+
+#, python-format
+msgid ""
+"zu unserer Rechnung %(number)s haben wir bisher keinen Zahlungseingang "
+"gesehen. Sie war am %(due_date)s fällig."
+msgstr ""
+"we have not yet seen a payment for our invoice %(number)s. It was due on "
+"%(due_date)s."
+
+#, python-format
+msgid "Offener Betrag: %(amount)s €"
+msgstr "Open amount: %(amount)s €"
+
+msgid "Dein Anmeldelink"
+msgstr "Your sign-in link"
+
+#, python-format
+msgid ""
+"Hallo %(first_name)s, mit diesem Link meldest du dich als "
+"<strong>%(username)s</strong> an, ohne Passwort."
+msgstr ""
+"Hello %(first_name)s, with this link you sign in as <strong>%(username)s</"
+"strong> without a password."
+
+#, python-format
+msgid ""
+"Hallo, mit diesem Link meldest du dich als <strong>%(username)s</strong> an, "
+"ohne Passwort."
+msgstr ""
+"Hello, with this link you sign in as <strong>%(username)s</strong> without a "
+"password."
+
+#, python-format
+msgid ""
+"Der Link gilt %(minutes)s Minuten und nur einmal. Hast du ihn nicht "
+"angefordert, ignoriere diese E-Mail. Ohne den Link kann sich niemand damit "
+"anmelden."
+msgstr ""
+"The link is valid for %(minutes)s minutes and works only once. If you did "
+"not request it, ignore this e-mail. Without the link, nobody can sign in "
+"with it."
+
+#, python-format
+msgid ""
+"mit diesem Link meldest du dich bei LexTracker als „%(username)s“ an, ohne "
+"Passwort:"
+msgstr ""
+"with this link you sign in to LexTracker as “%(username)s” without a "
+"password:"
+
+msgid "Nachrichten öffnen"
+msgstr "Open messages"
+
+msgid ""
+"Welche Nachrichten du per E-Mail bekommst, stellst du in LexTracker unter "
+"Konto ein."
+msgstr ""
+"You set which messages you receive by e-mail in LexTracker under Account."
+
+msgid "Neues Passwort festlegen"
+msgstr "Set a new password"
+
+#, python-format
+msgid ""
+"Hallo %(first_name)s, jemand hat ein neues Passwort für deinen Zugang "
+"<strong>%(username)s</strong> angefordert."
+msgstr ""
+"Hello %(first_name)s, someone has requested a new password for your account "
+"<strong>%(username)s</strong>."
+
+#, python-format
+msgid ""
+"Hallo, jemand hat ein neues Passwort für deinen Zugang <strong>%(username)s</"
+"strong> angefordert."
+msgstr ""
+"Hello, someone has requested a new password for your account "
+"<strong>%(username)s</strong>."
+
+#, python-format
+msgid ""
+"Der Link gilt %(minutes)s Minuten und nur einmal. Warst du das nicht, "
+"ignoriere diese E-Mail. Dein Passwort bleibt dann, wie es ist."
+msgstr ""
+"The link is valid for %(minutes)s minutes and works only once. If this was "
+"not you, ignore this e-mail. Your password then stays as it is."
+
+#, python-format
+msgid ""
+"jemand hat ein neues Passwort für deinen LexTracker-Zugang „%(username)s“ "
+"angefordert. Über diesen Link legst du es fest:"
+msgstr ""
+"someone has requested a new password for your LexTracker account "
+"“%(username)s”. Use this link to set it:"
+
+msgid "Es klappt."
+msgstr "It works."
+
+#, python-format
+msgid ""
+"Diese Testmail zeigt: LexTracker kann über <strong>%(host)s</strong> E-Mails "
+"verschicken."
+msgstr ""
+"This test e-mail shows that LexTracker can send e-mails via "
+"<strong>%(host)s</strong>."
+
+#, python-format
+msgid "Absender: %(sender)s"
+msgstr "Sender: %(sender)s"
+
+#, python-format
+msgid ""
+"diese Testmail zeigt: LexTracker kann über %(host)s E-Mails verschicken."
+msgstr "this test e-mail shows that LexTracker can send e-mails via %(host)s."
+
+#, python-format
+msgid "Seit %(started_at)s Uhr, also schon <strong>%(hours)s Stunden</strong>:"
+msgstr "Since %(started_at)s, so already <strong>%(hours)s hours</strong>:"
+
+msgid ""
+"Hast du vergessen, ihn zu stoppen? Dann stoppe ihn und korrigiere das Ende."
+msgstr "Did you forget to stop it? Then stop it and correct the end."
+
+msgid "LexTracker öffnen"
+msgstr "Open LexTracker"
+
+msgid "Diese Erinnerung schaltest du in LexTracker unter Konto ab."
+msgstr "You turn this reminder off in LexTracker under Account."
+
+#, python-format
+msgid "dein Timer läuft seit %(started_at)s Uhr, also schon %(hours)s Stunden:"
+msgstr ""
+"your timer has been running since %(started_at)s, so already %(hours)s hours:"
+
+msgid "Dein Wochenbericht"
+msgstr "Your weekly report"
+
+msgid "Deine Stunden"
+msgstr "Your hours"
+
+msgid "davon abrechenbar"
+msgstr "of which billable"
+
+msgid "Nach Projekt"
+msgstr "By project"
+
+msgid "Überblick"
+msgstr "Overview"
+
+msgid "Stunden aller Benutzer"
+msgstr "Hours of all users"
+
+msgid "Noch nicht abgerechnet (in diesem Zeitraum)"
+msgstr "Not billed yet (in this period)"
+
+msgid "Rechnungen offen"
+msgstr "Invoices open"
+
+#, python-format
+msgid "Retainer %(customer)s"
+msgstr "Retainer %(customer)s"
+
+msgid "In LexTracker ansehen"
+msgstr "View in LexTracker"
+
+msgid "Den Wochenbericht schaltest du in LexTracker unter Konto ab."
+msgstr "You turn the weekly report off in LexTracker under Account."
+
+#, python-format
+msgid "dein Wochenbericht für %(label)s."
+msgstr "your weekly report for %(label)s."
+
+#, python-format
+msgid "Deine Stunden: %(total)s (davon abrechenbar %(billable)s)"
+msgstr "Your hours: %(total)s (of which billable %(billable)s)"
+
+msgid "Nach Projekt:"
+msgstr "By project:"
+
+#, python-format
+msgid "Stunden aller Benutzer: %(hours)s"
+msgstr "Hours of all users: %(hours)s"
+
+#, python-format
+msgid "Noch nicht abgerechnet (in diesem Zeitraum): %(hours)s"
+msgstr "Not billed yet (in this period): %(hours)s"
+
+#, python-format
+msgid "Rechnungen offen: %(amount)s €"
+msgstr "Invoices open: %(amount)s €"
+
+#, python-format
+msgid "Retainer %(customer)s (%(period)s): %(used)s von %(included)s"
+msgstr "Retainer %(customer)s (%(period)s): %(used)s of %(included)s"
+
+#, python-format
+msgid ", %(overage)s darüber"
+msgstr ", %(overage)s over"
+
+#, python-format
+msgid "Mehr in LexTracker: %(url)s"
+msgstr "More in LexTracker: %(url)s"
+
+#, python-format
+msgid ""
+"Der SMTP-Server, über den die App E-Mails verschickt. Den Zeitplan für "
+"Berichte und Erinnerungen legst du in den <a href=\"%(url)s\">Einstellungen</"
+"a> fest."
+msgstr ""
+"The SMTP server through which the app sends e-mails. You set the schedule "
+"for reports and reminders in the <a href=\"%(url)s\">settings</a>."
+
+msgid "Das Passwort wird verschlüsselt gespeichert und nicht wieder angezeigt."
+msgstr "The password is stored encrypted and not shown again."
+
+msgid ""
+"Das gespeicherte Passwort lässt sich nicht mehr entschlüsseln, vermutlich "
+"weil sich <code>APP_SECRET_KEY</code> geändert hat. Bitte trag es neu ein."
+msgstr ""
+"The stored password can no longer be decrypted, probably because "
+"<code>APP_SECRET_KEY</code> has changed. Please enter it again."
+
+msgid "Testmail"
+msgstr "Test e-mail"
+
+msgid ""
+"Geht sofort raus, nicht über die Warteschlange, damit du hier siehst, was "
+"der Server antwortet."
+msgstr ""
+"Goes out immediately, not via the queue, so that you see here what the "
+"server responds."
+
+msgid "Testmail schicken"
+msgstr "Send test e-mail"
+
+msgid "Postausgang"
+msgstr "Outbox"
+
+msgid ""
+"Die App legt E-Mails hier ab und der Scheduler verschickt sie wenige "
+"Sekunden später. Klappt das nicht, versucht er es nach 1, 5, 15 und 60 "
+"Minuten noch einmal."
+msgstr ""
+"The app puts e-mails here and the scheduler sends them a few seconds later. "
+"If that fails, it tries again after 1, 5, 15 and 60 minutes."
+
+#, python-format
+msgid "%(counter)s E-Mail wartet."
+msgid_plural "%(counter)s E-Mails warten."
+msgstr[0] "%(counter)s e-mail is waiting."
+msgstr[1] "%(counter)s e-mails are waiting."
+
+#, python-format
+msgid "an %(to)s · %(created_at)s Uhr"
+msgstr "to %(to)s · %(created_at)s"
+
+#, python-format
+msgid "%(attempts)s. Versuch fehlgeschlagen"
+msgstr "Attempt %(attempts)s failed"
+
+msgid "Erneut"
+msgstr "Again"
+
+msgid "Noch keine E-Mails."
+msgstr "No e-mails yet."
+
+#, python-format
+msgid "Name, Rechnungsadresse, Ansprechpartner und Kontaktwege von %(name)s"
+msgstr "Name, billing address, contact person and contact details of %(name)s"
+
+msgid "Deine Kundennummer"
+msgstr "Your customer number"
+
+msgid ""
+"Für dich sind keine Kontaktdaten hinterlegt, die du hier ändern kannst. "
+"Bitte melde dich direkt bei uns, wenn sich etwas geändert hat."
+msgstr ""
+"There are no contact details stored for you that you could change here. "
+"Please contact us directly if something has changed."
+
+msgid ""
+"Deine Kontaktdaten können gerade nicht geladen werden. Bitte versuche es "
+"später noch einmal."
+msgstr ""
+"Your contact details cannot be loaded right now. Please try again later."
+
+msgid ""
+"Diese Angaben verwenden wir für deine Rechnungen. Änderungen gelten für alle "
+"Rechnungen, die ab jetzt erstellt werden."
+msgstr ""
+"We use this information for your invoices. Changes apply to all invoices "
+"created from now on."
+
+msgid "Aktuell gespeichert:"
+msgstr "Currently stored:"
+
+#, python-format
+msgid ""
+"Ansprechpartner: %(person_salutation)s %(person_first_name)s "
+"%(person_last_name)s"
+msgstr ""
+"Contact person: %(person_salutation)s %(person_first_name)s "
+"%(person_last_name)s"
+
+msgid "Rechnungsadresse"
+msgstr "Billing address"
+
+msgid "Ansprechpartner"
+msgstr "Contact person"
+
+msgid "Alle Projekte"
+msgstr "All projects"
+
+msgid "Projekt · Aufgabe"
+msgstr "Project · Task"
+
+msgid "nicht berechnet"
+msgstr "not charged"
+
+msgid "abgerechnet"
+msgstr "billed"
+
+msgid "(storniert)"
+msgstr "(voided)"
+
+msgid "In diesem Zeitraum wurde keine Zeit gebucht."
+msgstr "No time was booked in this period."
+
+msgid "Summe"
+msgstr "Total"
+
+#, python-format
+msgid "Zeiten der Rechnung %(voucher_number)s · LexTracker"
+msgstr "Time of invoice %(voucher_number)s · LexTracker"
+
+#, python-format
+msgid "Zeiten der Rechnung %(voucher_number)s"
+msgstr "Time of invoice %(voucher_number)s"
+
+#, python-format
+msgid "Leistungszeitraum %(period_start)s"
+msgstr "Service period %(period_start)s"
+
+msgid "Zu dieser Rechnung gehören keine erfassten Zeiten."
+msgstr "No recorded time belongs to this invoice."
+
+msgid "Alle Zeiträume"
+msgstr "All periods"
+
+#, python-format
+msgid "%(counter)s Rechnung"
+msgid_plural "%(counter)s Rechnungen"
+msgstr[0] "%(counter)s invoice"
+msgstr[1] "%(counter)s invoices"
+
+msgid "Rechnungsdatum von"
+msgstr "Invoice date from"
+
+msgid "PDF"
+msgstr "PDF"
+
+msgid "Noch keine Rechnungen."
+msgstr "No invoices yet."
+
+msgid "Deine Projekte und die dafür gebuchten Stunden"
+msgstr "Your projects and the hours booked on them"
+
+msgid "Diesen Monat gebucht"
+msgstr "Booked this month"
+
+msgid "Laufende Projekte"
+msgstr "Ongoing projects"
+
+msgid "Offene Rechnungen"
+msgstr "Open invoices"
+
+msgid "Diesen Monat"
+msgstr "This month"
+
+msgid "Budget"
+msgstr "Budget"
+
+#, python-format
+msgid "bis %(end_date)s"
+msgstr "until %(end_date)s"
+
+#, python-format
+msgid "%(budget_share)s %% von %(budget_hours)s h"
+msgstr "%(budget_share)s %% of %(budget_hours)s h"
+
+msgid "Noch keine Projekte."
+msgstr "No projects yet."
+
+msgid "Keine Projekte gefunden."
+msgstr "No projects found."
+
+msgid "Keine Projekte in dieser Ansicht."
+msgstr "No projects in this view."
+
+msgid "nicht abrechenbar ·"
+msgstr "not billable ·"
+
+#, python-format
+msgid "%(booked)s h gebucht"
+msgstr "%(booked)s h booked"
+
+#, python-format
+msgid "von %(estimated_hours)s h geschätzt"
+msgstr "of %(estimated_hours)s h estimated"
+
+msgid "Zeit"
+msgstr "Time"
+
+#, python-format
+msgid "Aufgabe %(name)s bearbeiten"
+msgstr "Edit task %(name)s"
+
+msgid "Noch keine Aufgaben."
+msgstr "No tasks yet."
+
+msgid "Aus Vorlagen hinzufügen"
+msgstr "Add from templates"
+
+msgid "Vorlagen verwalten"
+msgstr "Manage templates"
+
+msgid "Schon im Projekt"
+msgstr "Already in the project"
+
+msgid "Ausgewählte hinzufügen"
+msgstr "Add selected"
+
+msgid "Neue Aufgabe"
+msgstr "New task"
+
+msgid "Hinzufügen"
+msgstr "Add"
+
+msgid "Gebucht"
+msgstr "Booked"
+
+msgid "vom Kunden"
+msgstr "from the customer"
+
+#, python-format
+msgid "%(name)s bearbeiten"
+msgstr "Edit %(name)s"
+
+msgid "Neues Projekt"
+msgstr "New project"
+
+msgid "Projekt bearbeiten"
+msgstr "Edit project"
+
+msgid "Projekt löschen"
+msgstr "Delete project"
+
+msgid ""
+"Auf dieses Projekt sind Zeiten gebucht, deshalb kann es nicht gelöscht "
+"werden. Setze seinen Status auf „abgeschlossen“, dann taucht es bei der "
+"Zeiterfassung nicht mehr auf."
+msgstr ""
+"Time has been booked on this project, so it cannot be deleted. Set its "
+"status to “completed”; then it no longer appears in time tracking."
+
+msgid "Das Projekt und seine Aufgaben werden endgültig gelöscht."
+msgstr "The project and its tasks will be permanently deleted."
+
+msgid "Dieses Projekt mit allen Aufgaben wirklich löschen?"
+msgstr "Really delete this project with all its tasks?"
+
+#, python-format
+msgid "%(counter)s Projekt"
+msgid_plural "%(counter)s Projekte"
+msgstr[0] "%(counter)s project"
+msgstr[1] "%(counter)s projects"
+
+msgid "Projekt, Kunde oder Beschreibung suchen"
+msgstr "Search project, customer or description"
+
+msgid "Projekte suchen"
+msgstr "Search projects"
+
+#, python-format
+msgid "%(name)s bearbeiten · LexTracker"
+msgstr "Edit %(name)s · LexTracker"
+
+msgid "Aufgabe bearbeiten"
+msgstr "Edit task"
+
+msgid "Als Vorlage speichern"
+msgstr "Save as template"
+
+msgid ""
+"Name, Beschreibung, Stundensatz, Schätzung und „abrechenbar“ werden zur "
+"Vorlage, die du in anderen Projekten mit einem Klick hinzufügst."
+msgstr ""
+"Name, description, hourly rate, estimate and “billable” become the template, "
+"which you add to other projects with one click."
+
+msgid "Aufgabe löschen"
+msgstr "Delete task"
+
+msgid ""
+"Auf diese Aufgabe sind Zeiten gebucht, deshalb kann sie nicht gelöscht "
+"werden. Setze ihren Status auf „erledigt“, dann taucht sie bei der "
+"Zeiterfassung nicht mehr auf."
+msgstr ""
+"Time has been booked on this task, so it cannot be deleted. Set its status "
+"to “done”; then it no longer appears in time tracking."
+
+msgid "Diese Aufgabe wirklich löschen?"
+msgstr "Really delete this task?"
+
+msgid "Neue Vorlage"
+msgstr "New template"
+
+msgid "Vorlage bearbeiten"
+msgstr "Edit template"
+
+msgid ""
+"Änderungen gelten für Aufgaben, die du danach aus der Vorlage anlegst. "
+"Bestehende Aufgaben bleiben, wie sie sind."
+msgstr ""
+"Changes apply to tasks you create from the template afterwards. Existing "
+"tasks stay as they are."
+
+msgid "Vorlage löschen"
+msgstr "Delete template"
+
+msgid "Aufgaben, die aus dieser Vorlage angelegt wurden, bleiben erhalten."
+msgstr "Tasks that were created from this template are kept."
+
+msgid "Diese Vorlage wirklich löschen?"
+msgstr "Really delete this template?"
+
+msgid ""
+"Aufgaben, die in vielen Projekten vorkommen. Beim Hinzufügen zu einem "
+"Projekt werden ihre Werte in eine neue Aufgabe kopiert."
+msgstr ""
+"Tasks that occur in many projects. When added to a project, their values are "
+"copied into a new task."
+
+msgid "Vorlage"
+msgstr "Template"
+
+msgid "Schätzung"
+msgstr "Estimate"
+
+msgid "nicht abrechenbar"
+msgstr "not billable"
+
+msgid "vom Projekt"
+msgstr "from the project"
+
+#, python-format
+msgid "Vorlage %(name)s bearbeiten"
+msgstr "Edit template %(name)s"
+
+msgid ""
+"Noch keine Vorlagen. Lege eine neue an oder speichere eine bestehende "
+"Aufgabe als Vorlage."
+msgstr ""
+"No templates yet. Create a new one or save an existing task as a template."
+
+msgid "Zeiten als CSV"
+msgstr "Time as CSV"
+
+msgid "Erfasst"
+msgstr "Recorded"
+
+#, python-format
+msgid "%(billable_share)s %% der erfassten Zeit"
+msgstr "%(billable_share)s %% of the recorded time"
+
+#, python-format
+msgid "≈ %(unbilled_value)s € nach Stundensatz"
+msgstr "≈ %(unbilled_value)s € at hourly rate"
+
+msgid ", ohne Retainer-Kunden"
+msgstr ", excluding retainer customers"
+
+msgid "Abgerechnet (netto)"
+msgstr "Billed (net)"
+
+#, python-format
+msgid "%(paid)s € bezahlt · %(open)s € offen"
+msgstr "%(paid)s € paid · %(open)s € open"
+
+#, python-format
+msgid "· %(drafts)s € Entwurf"
+msgstr "· %(drafts)s € draft"
+
+msgid "Stunden im Zeitraum"
+msgstr "Hours in the period"
+
+msgid "pro Tag"
+msgstr "per day"
+
+msgid "pro Monat"
+msgstr "per month"
+
+#, python-format
+msgid "%(label)s: %(total)s h, davon %(billable)s h abrechenbar"
+msgstr "%(label)s: %(total)s h, of which %(billable)s h billable"
+
+msgid "Retainer im laufenden Zeitraum"
+msgstr "Retainers in the current period"
+
+msgid "Verbraucht"
+msgstr "Used"
+
+msgid "Rest"
+msgstr "Remaining"
+
+#, python-format
+msgid "+%(overage)s h Mehrstunden"
+msgstr "+%(overage)s h extra hours"
+
+msgid "Nicht abgerechnet"
+msgstr "Not billed"
+
+msgid "Nur diesen Kunden auswerten"
+msgstr "Evaluate only this customer"
+
+msgid "In diesem Zeitraum ist nichts erfasst."
+msgstr "Nothing recorded in this period."
+
+msgid "Im Zeitraum"
+msgstr "In the period"
+
+msgid "Budget gesamt"
+msgstr "Total budget"
+
+#, python-format
+msgid "%(booked_all_time)s h, kein Budget"
+msgstr "%(booked_all_time)s h, no budget"
+
+msgid "Einrichtung"
+msgstr "Setup"
+
+msgid "Schritte der Einrichtung"
+msgstr "Setup steps"
+
+msgid ""
+"Die App ist neu und hat noch kein Konto. Lege zuerst dein Administrator-"
+"Konto an. Mitarbeiter und Kunden lädst du später unter „Benutzer“ ein."
+msgstr ""
+"The app is new and has no account yet. First create your administrator "
+"account. You invite employees and customers later under “Users”."
+
+msgid "Konto anlegen und weiter"
+msgstr "Create account and continue"
+
+#, python-format
+msgid ""
+"Der Scheduler kopiert die Datenbank einmal am Tag nach <code>%(backup_dir)s</"
+"code>. Den Ordner legt die Server-Konfiguration fest (<code>APP_BACKUP_DIR</"
+"code>, in Docker das Volume <code>/backups</code>)."
+msgstr ""
+"The scheduler copies the database once a day to <code>%(backup_dir)s</code>. "
+"The folder is set by the server configuration (<code>APP_BACKUP_DIR</code>, "
+"in Docker the volume <code>/backups</code>)."
+
+msgid "Speichern und weiter"
+msgstr "Save and continue"
+
+msgid "Alles bereit"
+msgstr "All set"
+
+msgid "Alles hier kannst du später unter „Einstellungen“ ändern."
+msgstr "You can change everything here later under “Settings”."
+
+#, python-format
+msgid "Administrator-Konto <strong>%(get_username)s</strong> angelegt"
+msgstr "Administrator account <strong>%(get_username)s</strong> created"
+
+msgid "Lexware Office verbunden"
+msgstr "Lexware Office connected"
+
+msgid "Lexware Office noch nicht verbunden"
+msgstr "Lexware Office not connected yet"
+
+#, python-format
+msgid ""
+"E-Mail-Versand über %(host)s (Passwort vergessen, Anmeldelinks, "
+"Wochenbericht)"
+msgstr ""
+"E-mail sending via %(host)s (forgotten password, sign-in links, weekly "
+"report)"
+
+msgid "E-Mail-Versand noch nicht eingerichtet"
+msgstr "E-mail sending not set up yet"
+
+#, python-format
+msgid "Tägliche Datensicherung ab %(backup_time)s Uhr, %(backup_keep)s Kopien"
+msgstr "Daily backup from %(backup_time)s, %(backup_keep)s copies"
+
+msgid "Keine automatische Datensicherung"
+msgstr "No automatic backup"
+
+msgid "Kunden jetzt aus Lexware importieren"
+msgstr "Import customers from Lexware now"
+
+msgid "Zur Startseite"
+msgstr "Go to start page"
+
+msgid "Lexware Office verbinden"
+msgstr "Connect Lexware Office"
+
+msgid ""
+"Über die Public API importiert LexTracker deine Kunden und erstellt "
+"Rechnungsentwürfe. Die API gibt es mit Lexware Office XL. Den Schlüssel "
+"prüft die App mit einem Testaufruf, bevor sie ihn verschlüsselt speichert."
+msgstr ""
+"Through the Public API, LexTracker imports your customers and creates "
+"invoice drafts. The API is available with Lexware Office XL. The app checks "
+"the key with a test call before it stores it encrypted."
+
+#, python-format
+msgid ""
+"Es ist schon ein Schlüssel hinterlegt (<code>%(masked)s</code>, "
+"%(company)s). Du kannst ihn hier ersetzen oder einfach weitermachen."
+msgstr ""
+"A key is already stored (<code>%(masked)s</code>, %(company)s). You can "
+"replace it here or simply continue."
+
+#, python-format
+msgid ""
+"Es ist schon ein Schlüssel hinterlegt (<code>%(masked)s</code>). Du kannst "
+"ihn hier ersetzen oder einfach weitermachen."
+msgstr ""
+"A key is already stored (<code>%(masked)s</code>). You can replace it here "
+"or simply continue."
+
+msgid "Prüfen und weiter"
+msgstr "Check and continue"
+
+msgid "Weiter"
+msgstr "Continue"
+
+msgid "Später einrichten"
+msgstr "Set up later"
+
+msgid ""
+"Mit einem SMTP-Server verschickt LexTracker Links zum Zurücksetzen des "
+"Passworts, Anmeldelinks, Wochenberichte und Erinnerungen. Das Passwort wird "
+"verschlüsselt gespeichert. Du kannst den Schritt überspringen und es später "
+"unter „Einstellungen“ nachholen."
+msgstr ""
+"With an SMTP server, LexTracker sends links to reset the password, sign-in "
+"links, weekly reports and reminders. The password is stored encrypted. You "
+"can skip this step and do it later under “Settings”."
+
+#, python-format
+msgid ""
+"Testmail an %(ok)s verschickt. Schau in dein Postfach, dann geht es mit "
+"„Weiter“ los."
+msgstr ""
+"Test e-mail sent to %(ok)s. Check your inbox, then continue with “Continue”."
+
+msgid "Speichern und Testmail schicken"
+msgstr "Save and send test e-mail"
+
+msgid ""
+"Das Administrator-Konto kann alles ändern und ist deshalb nur mit "
+"Authenticator-App geschützt. Ohne diesen Schritt geht die Einrichtung nicht "
+"weiter."
+msgstr ""
+"The administrator account can change everything and is therefore protected "
+"only with an authenticator app. Without this step, setup does not continue."
+
+msgid "Einschalten und weiter"
+msgstr "Turn on and continue"
+
+msgid ""
+"Die App ist neu und hat noch kein Konto. Damit nur du sie einrichten kannst, "
+"steht ein Einrichtungslink im Log der App."
+msgstr ""
+"The app is new and has no account yet. So that only you can set it up, a "
+"setup link is in the app’s log."
+
+msgid "Mit Docker:"
+msgstr "With Docker:"
+
+msgid "Oder direkt abfragen:"
+msgstr "Or query it directly:"
+
+msgid "Einrichtungscode"
+msgstr "Setup code"
+
+msgid ""
+"Der Teil nach <code>?code=</code> im Link. Öffnest du den Link direkt, "
+"entfällt dieser Schritt."
+msgstr ""
+"The part after <code>?code=</code> in the link. If you open the link "
+"directly, this step is skipped."
+
+msgid "Jetzt"
+msgstr "Now"
+
+msgid "Nur Einträge dieses Kunden"
+msgstr "Only entries of this customer"
+
+msgid "Nur Einträge dieses Projekts"
+msgstr "Only entries of this project"
+
+msgid "Eintrag bearbeiten"
+msgstr "Edit entry"
+
+msgid "Gefiltert nach"
+msgstr "Filtered by"
+
+msgid "Filter entfernen"
+msgstr "Remove filter"
+
+msgid "Keine passende Aufgabe."
+msgstr "No matching task."
+
+msgid "Bitte eine Aufgabe aus den Vorschlägen auswählen."
+msgstr "Please choose a task from the suggestions."
+
+msgid "Aufgabe, Projekt oder Kunde suchen"
+msgstr "Search task, project or customer"
+
+msgid "Vorschläge"
+msgstr "Suggestions"
+
+#, python-format
+msgid "Läuft seit %(started_at)s"
+msgstr "Running since %(started_at)s"
+
+msgid "Timer stoppen"
+msgstr "Stop timer"
+
+msgid "Stoppen"
+msgstr "Stop"
+
+msgid "Kein Timer aktiv"
+msgstr "No timer active"
+
+msgid "Zeiteintrag bearbeiten"
+msgstr "Edit time entry"
+
+msgid "Zeit erfassen"
+msgstr "Record time"
+
+msgid "Diesen Zeiteintrag wirklich löschen?"
+msgstr "Really delete this time entry?"
+
+msgid "Eintrag löschen"
+msgstr "Delete entry"
+
+msgctxt "weekday and date"
+msgid "l, d.m."
+msgstr "l j M"
+
+#, python-format
+msgid ""
+"KW %(monday)s · %(monday2)s – %(sunday)s · <strong class=\"font-semibold "
+"text-ink tabular-nums\">%(week_total)s h</strong> erfasst"
+msgstr ""
+"Week %(monday)s · %(monday2)s – %(sunday)s · <strong class=\"font-semibold "
+"text-ink tabular-nums\">%(week_total)s h</strong> recorded"
+
+msgid "Vorherige Woche"
+msgstr "Previous week"
+
+msgid "Diese Woche"
+msgstr "This week"
+
+msgid "Nächste Woche"
+msgstr "Next week"
+
+msgid "In dieser Woche ist dafür nichts erfasst."
+msgstr "Nothing has been recorded for this in the current week."
+
+msgid "In dieser Woche ist noch nichts erfasst."
+msgstr "Nothing recorded this week yet."
+
+msgid "Was machst du gerade?"
+msgstr "What are you working on?"
+
+#, python-format
+msgid "%(field)s auf jetzt setzen"
+msgstr "Set %(field)s to now"
+
+msgid "Das Ende muss nach dem Beginn liegen."
+msgstr "The end must be after the start."
+
+msgid "Zeiteintrag"
+msgstr "Time entry"
+
+msgid "Zeiteintrag gespeichert."
+msgstr "Time entry saved."
+
+msgid "Zeiteintrag gelöscht."
+msgstr "Time entry deleted."

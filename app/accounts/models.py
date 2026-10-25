@@ -1,8 +1,10 @@
 import hashlib
 import secrets
 
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 from core.models import UUIDModel
 from inbox.levels import EMAIL_CHOICES, Level
@@ -10,25 +12,25 @@ from inbox.levels import EMAIL_CHOICES, Level
 
 class User(UUIDModel, AbstractUser):
     class Role(models.TextChoices):
-        ADMIN = "admin", "Administrator"
-        EMPLOYEE = "employee", "Mitarbeiter"
-        CUSTOMER = "customer", "Kunde"
+        ADMIN = "admin", _("Administrator")
+        EMPLOYEE = "employee", _("Mitarbeiter")
+        CUSTOMER = "customer", _("Kunde")
 
     class Theme(models.TextChoices):
-        SYSTEM = "system", "wie das System"
-        LIGHT = "light", "hell"
-        DARK = "dark", "dunkel"
+        SYSTEM = "system", _("wie das System")
+        LIGHT = "light", _("hell")
+        DARK = "dark", _("dunkel")
 
     class DateFormat(models.TextChoices):
         # Django date format strings, shown with an example.
         NUMERIC = "d.m.Y", "31.12.2026"
         SHORT = "d.m.y", "31.12.26"
-        LONG = "j. F Y", "31. Dezember 2026"
+        LONG = "j. F Y", _("31. Dezember 2026")
         ISO = "Y-m-d", "2026-12-31"
 
     class DurationFormat(models.TextChoices):
-        CLOCK = "clock", "Stunden und Minuten (2:45)"
-        DECIMAL = "decimal", "Dezimalstunden (2,75)"
+        CLOCK = "clock", _("Stunden und Minuten (2:45)")
+        DECIMAL = "decimal", _("Dezimalstunden (2,75)")
 
     class PageSize(models.IntegerChoices):
         SMALL = 25, "25"
@@ -36,43 +38,52 @@ class User(UUIDModel, AbstractUser):
         LARGE = 100, "100"
         XLARGE = 200, "200"
 
-    role = models.CharField("Rolle", max_length=20, choices=Role, default=Role.ADMIN)
-    theme = models.CharField("Darstellung", max_length=10, choices=Theme, default=Theme.SYSTEM)
-    date_format = models.CharField("Datumsformat", max_length=10, choices=DateFormat, default=DateFormat.NUMERIC)
+    language = models.CharField(
+        _("Sprache"),
+        max_length=10,
+        choices=settings.LANGUAGES,
+        default=settings.LANGUAGE_CODE,
+        help_text=_("Gilt für die Oberfläche und die E-Mails an dich."),
+    )
+    role = models.CharField(_("Rolle"), max_length=20, choices=Role, default=Role.ADMIN)
+    theme = models.CharField(_("Darstellung"), max_length=10, choices=Theme, default=Theme.SYSTEM)
+    date_format = models.CharField(_("Datumsformat"), max_length=10, choices=DateFormat, default=DateFormat.NUMERIC)
     duration_format = models.CharField(
-        "Zeitdauern anzeigen als", max_length=10, choices=DurationFormat, default=DurationFormat.CLOCK
+        _("Zeitdauern anzeigen als"), max_length=10, choices=DurationFormat, default=DurationFormat.CLOCK
     )
     list_page_size = models.PositiveSmallIntegerField(
-        "Einträge pro Seite",
+        _("Einträge pro Seite"),
         choices=PageSize,
         default=PageSize.MEDIUM,
-        help_text="Wie viele Kunden oder Projekte eine Liste auf einmal lädt. Beim Scrollen kommen weitere dazu.",
+        help_text=_("Wie viele Kunden oder Projekte eine Liste auf einmal lädt. Beim Scrollen kommen weitere dazu."),
     )
     weekly_report = models.BooleanField(
-        "Wochenbericht per E-Mail", default=True, help_text="Deine Stunden der letzten sieben Tage."
+        _("Wochenbericht per E-Mail"), default=True, help_text=_("Deine Stunden der letzten sieben Tage.")
     )
     timer_reminder = models.BooleanField(
-        "Erinnerung, wenn mein Timer sehr lange läuft",
+        _("Erinnerung, wenn mein Timer sehr lange läuft"),
         default=True,
-        help_text="Falls du vergessen hast, ihn zu stoppen.",
+        help_text=_("Falls du vergessen hast, ihn zu stoppen."),
     )
     message_level = models.SmallIntegerField(
-        "Nachrichten anzeigen ab",
+        _("Nachrichten anzeigen ab"),
         choices=Level,
         default=Level.INFO,
-        help_text="Welche Nachrichten in der Glocke stehen. Kritische siehst du immer.",
+        help_text=_("Welche Nachrichten in der Glocke stehen. Kritische siehst du immer."),
     )
     message_email_level = models.SmallIntegerField(
-        "Nachrichten auch per E-Mail ab",
+        _("Nachrichten auch per E-Mail ab"),
         choices=EMAIL_CHOICES,
         default=Level.CRITICAL,
-        help_text="Gilt nur, wenn der E-Mail-Versand eingerichtet ist. "
-        "Eine Meldung, die sich wiederholt, schickt nur eine E-Mail.",
+        help_text=_(
+            "Gilt nur, wenn der E-Mail-Versand eingerichtet ist. "
+            "Eine Meldung, die sich wiederholt, schickt nur eine E-Mail."
+        ),
     )
     # Only set for customer logins: the customer whose data this user may see.
     customer = models.ForeignKey(
         "customers.Customer",
-        verbose_name="Kunde",
+        verbose_name=_("Kunde"),
         on_delete=models.CASCADE,
         null=True,
         blank=True,
@@ -81,22 +92,24 @@ class User(UUIDModel, AbstractUser):
     # Only for employees: what they may book time on. A customer stands for all of its projects.
     bookable_customers = models.ManyToManyField(
         "customers.Customer",
-        verbose_name="bucht auf alle Projekte dieser Kunden",
+        verbose_name=_("bucht auf alle Projekte dieser Kunden"),
         blank=True,
         related_name="bookable_by",
     )
     bookable_projects = models.ManyToManyField(
-        "projects.Project", verbose_name="bucht auf diese Projekte", blank=True, related_name="bookable_by"
+        "projects.Project", verbose_name=_("bucht auf diese Projekte"), blank=True, related_name="bookable_by"
     )
     # What a customer login may see besides the customer's projects.
-    portal_budget = models.BooleanField("sieht Budgets", default=True)
-    portal_entries = models.BooleanField("sieht Zeiteinträge", default=True)
+    portal_budget = models.BooleanField(_("sieht Budgets"), default=True)
+    portal_entries = models.BooleanField(_("sieht Zeiteinträge"), default=True)
     portal_descriptions = models.BooleanField(
-        "sieht Beschreibungen der Zeiteinträge", default=True, help_text="Nur wirksam, wenn Zeiteinträge sichtbar sind."
+        _("sieht Beschreibungen der Zeiteinträge"),
+        default=True,
+        help_text=_("Nur wirksam, wenn Zeiteinträge sichtbar sind."),
     )
-    portal_invoices = models.BooleanField("sieht Rechnungen", default=True)
+    portal_invoices = models.BooleanField(_("sieht Rechnungen"), default=True)
     # Off by default: changes go straight to the contact in Lexware Office.
-    portal_contact = models.BooleanField("darf Kontaktdaten und Rechnungsadresse ändern", default=False)
+    portal_contact = models.BooleanField(_("darf Kontaktdaten und Rechnungsadresse ändern"), default=False)
 
     @property
     def is_admin(self) -> bool:
@@ -111,8 +124,8 @@ class User(UUIDModel, AbstractUser):
         return self.role == self.Role.CUSTOMER
 
     class Meta:
-        verbose_name = "Benutzer"
-        verbose_name_plural = "Benutzer"
+        verbose_name = _("Benutzer")
+        verbose_name_plural = _("Benutzer")
         constraints = [
             models.CheckConstraint(
                 condition=models.Q(role="customer", customer__isnull=False) | ~models.Q(role="customer"),
@@ -129,17 +142,19 @@ class ApiToken(UUIDModel):
 
     PREFIX = "lxt_"
 
-    user = models.ForeignKey(User, verbose_name="Benutzer", on_delete=models.CASCADE, related_name="api_tokens")
-    name = models.CharField("Name", max_length=100, help_text="Wofür du den Token nutzt, z. B. „Claude Code Laptop“.")
+    user = models.ForeignKey(User, verbose_name=_("Benutzer"), on_delete=models.CASCADE, related_name="api_tokens")
+    name = models.CharField(
+        _("Name"), max_length=100, help_text=_("Wofür du den Token nutzt, z. B. „Claude Code Laptop“.")
+    )
     key_hash = models.CharField(max_length=64, unique=True, editable=False)
     # The first characters, so the token can be recognised in the list.
     hint = models.CharField(max_length=12, editable=False)
-    created_at = models.DateTimeField("erstellt", auto_now_add=True)
-    last_used_at = models.DateTimeField("zuletzt benutzt", null=True, blank=True, editable=False)
+    created_at = models.DateTimeField(_("erstellt"), auto_now_add=True)
+    last_used_at = models.DateTimeField(_("zuletzt benutzt"), null=True, blank=True, editable=False)
 
     class Meta:
-        verbose_name = "API-Token"
-        verbose_name_plural = "API-Tokens"
+        verbose_name = _("API-Token")
+        verbose_name_plural = _("API-Tokens")
         ordering = ["-created_at"]
 
     def __str__(self) -> str:
@@ -160,13 +175,13 @@ class ApiToken(UUIDModel):
 class LoginFailure(UUIDModel):
     """A wrong password or code, for the login rate limit (see accounts.ratelimit)."""
 
-    ip_address = models.GenericIPAddressField("IP-Adresse")
-    username = models.CharField("Benutzername", max_length=150, blank=True)
-    at = models.DateTimeField("Zeitpunkt", auto_now_add=True)
+    ip_address = models.GenericIPAddressField(_("IP-Adresse"))
+    username = models.CharField(_("Benutzername"), max_length=150, blank=True)
+    at = models.DateTimeField(_("Zeitpunkt"), auto_now_add=True)
 
     class Meta:
-        verbose_name = "Fehlgeschlagene Anmeldung"
-        verbose_name_plural = "Fehlgeschlagene Anmeldungen"
+        verbose_name = _("Fehlgeschlagene Anmeldung")
+        verbose_name_plural = _("Fehlgeschlagene Anmeldungen")
         indexes = [models.Index(fields=["ip_address", "at"])]
 
     def __str__(self) -> str:
@@ -179,15 +194,15 @@ class LoginLink(UUIDModel):
     Only a hash is stored. A link works once and only until it expires.
     """
 
-    user = models.ForeignKey(User, verbose_name="Benutzer", on_delete=models.CASCADE, related_name="login_links")
+    user = models.ForeignKey(User, verbose_name=_("Benutzer"), on_delete=models.CASCADE, related_name="login_links")
     key_hash = models.CharField(max_length=64, unique=True, editable=False)
-    created_at = models.DateTimeField("erstellt", auto_now_add=True)
-    expires_at = models.DateTimeField("gültig bis")
-    used_at = models.DateTimeField("benutzt", null=True, blank=True)
+    created_at = models.DateTimeField(_("erstellt"), auto_now_add=True)
+    expires_at = models.DateTimeField(_("gültig bis"))
+    used_at = models.DateTimeField(_("benutzt"), null=True, blank=True)
 
     class Meta:
-        verbose_name = "Anmeldelink"
-        verbose_name_plural = "Anmeldelinks"
+        verbose_name = _("Anmeldelink")
+        verbose_name_plural = _("Anmeldelinks")
 
     def __str__(self) -> str:
         return f"{self.user} {self.created_at:%d.%m.%Y %H:%M}"

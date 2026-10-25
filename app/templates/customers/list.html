@@ -1,11 +1,12 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load icons %}
-{% block title %}Kunden · LexTracker{% endblock %}
+{% block title %}{% trans "Kunden" %} · LexTracker{% endblock %}
 {% block content %}
 <div class="page-header">
   <div>
-    <h1>Kunden</h1>
-    <p class="page-subtitle">Kontakte mit Kundenrolle aus Lexware Office</p>
+    <h1>{% trans "Kunden" %}</h1>
+    <p class="page-subtitle">{% trans "Kontakte mit Kundenrolle aus Lexware Office" %}</p>
   </div>
   <div class="toolbar">
     {% if lexware_configured %}
@@ -13,25 +14,25 @@
             hx-post="{% url 'customers:import' %}{% if list_query %}?{{ list_query }}{% endif %}"
             hx-target="#customer-list" hx-select="#customer-list" hx-swap="outerHTML" hx-disabled-elt="this">
       {% icon "download" %}
-      <span class="htmx-indicator-hide">Aus Lexware importieren</span>
-      <span class="htmx-indicator">Importiere …</span>
+      <span class="htmx-indicator-hide">{% trans "Aus Lexware importieren" %}</span>
+      <span class="htmx-indicator">{% trans "Importiere …" %}</span>
     </button>
     {% endif %}
   </div>
 </div>
 {% if not lexware_configured %}
 <div role="alert" class="alert alert-warning">
-  Für den Import aus Lexware Office fehlt der API-Schlüssel. Trage ihn in den <a href="{% url 'core:settings' %}?tab=lexware">Einstellungen</a> ein.
+  {% url 'core:settings' as settings_url %}{% blocktrans trimmed with url=settings_url|add:"?tab=lexware" %}Für den Import aus Lexware Office fehlt der API-Schlüssel. Trage ihn in den <a href="{{ url }}">Einstellungen</a> ein.{% endblocktrans %}
 </div>
 {% endif %}
 <div class="flex flex-col gap-3">
   <form method="get" class="flex flex-wrap items-center gap-3" role="search">
-    <input type="search" name="q" value="{{ query }}" placeholder="Name, Nummer, E-Mail oder Notiz suchen" aria-label="Kunden suchen" class="input max-w-sm"
+    <input type="search" name="q" value="{{ query }}" placeholder="{% trans 'Name, Nummer, E-Mail oder Notiz suchen' %}" aria-label="{% trans 'Kunden suchen' %}" class="input max-w-sm"
            hx-get="{% url 'customers:list' %}" hx-trigger="input changed delay:250ms, search" hx-include="closest form"
            hx-target="#customer-list" hx-select="#customer-list" hx-swap="outerHTML" hx-push-url="true">
     {% if view_param %}<input type="hidden" name="view" value="{{ view_param }}">{% endif %}
     {% if category %}<input type="hidden" name="category" value="{{ category }}">{% endif %}
-    <noscript><button type="submit" class="btn">Suchen</button></noscript>
+    <noscript><button type="submit" class="btn">{% trans "Suchen" %}</button></noscript>
   </form>
 </div>
 {# Reloads itself when an import has run in the meantime, e.g. the automatic one; see customer_list. #}
@@ -39,15 +40,15 @@
      hx-get="{% url 'customers:list' %}?{% if list_query %}{{ list_query }}&{% endif %}since={{ synced_marker|urlencode }}"
      hx-trigger="every 30s" hx-select="#customer-list" hx-swap="outerHTML">
   <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
-    <nav aria-label="Aktive oder archivierte Kunden" class="flex flex-wrap gap-1.5">
+    <nav aria-label="{% trans 'Aktive oder archivierte Kunden' %}" class="flex flex-wrap gap-1.5">
       {% for key, label, count, link in view_links %}
       <a href="?{{ link }}" class="pill gap-1.5{% if view == key %} pill-active{% endif %}">{% if key == "archived" %}{% icon "archive" size=14 %}{% endif %}{{ label }}<span class="text-muted tabular-nums">{{ count }}</span></a>
       {% endfor %}
     </nav>
     {% if category_links %}
     <span class="hidden h-5 w-px bg-line sm:block" aria-hidden="true"></span>
-    <nav aria-label="Nach Kategorie filtern" class="flex flex-wrap gap-1.5">
-      <a href="?{{ all_categories_link }}" class="pill{% if not category %} pill-active{% endif %}">Alle Kategorien</a>
+    <nav aria-label="{% trans 'Nach Kategorie filtern' %}" class="flex flex-wrap gap-1.5">
+      <a href="?{{ all_categories_link }}" class="pill{% if not category %} pill-active{% endif %}">{% trans "Alle Kategorien" %}</a>
       {% for c, link in category_links %}
       <a href="?{{ link }}" class="pill{% if category == c.pk %} pill-active{% endif %}">{{ c.name }}</a>
       {% endfor %}

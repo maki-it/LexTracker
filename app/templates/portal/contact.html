@@ -1,31 +1,32 @@
 {% extends "base.html" %}
-{% block title %}Kontaktdaten · LexTracker{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Kontaktdaten" %} · LexTracker{% endblock %}
 {% block content %}
 <div>
-  <h1>Kontaktdaten</h1>
-  <p class="page-subtitle">Name, Rechnungsadresse, Ansprechpartner und Kontaktwege von {{ customer.name }}</p>
+  <h1>{% trans "Kontaktdaten" %}</h1>
+  <p class="page-subtitle">{% blocktrans trimmed with name=customer.name %}Name, Rechnungsadresse, Ansprechpartner und Kontaktwege von {{ name }}{% endblocktrans %}</p>
 </div>
 
 {% if customer.customer_number %}
 <div class="stat max-w-2xl">
-  <span class="stat-label">Deine Kundennummer</span>
+  <span class="stat-label">{% trans "Deine Kundennummer" %}</span>
   <span class="stat-value tabular-nums">{{ customer.customer_number }}</span>
 </div>
 {% endif %}
 
 {% if unavailable %}
-<p class="card text-sm text-muted">Für dich sind keine Kontaktdaten hinterlegt, die du hier ändern kannst. Bitte melde dich direkt bei uns, wenn sich etwas geändert hat.</p>
+<p class="card text-sm text-muted">{% trans "Für dich sind keine Kontaktdaten hinterlegt, die du hier ändern kannst. Bitte melde dich direkt bei uns, wenn sich etwas geändert hat." %}</p>
 {% elif lexware_error %}
-<div role="alert" class="alert alert-error">Deine Kontaktdaten können gerade nicht geladen werden. Bitte versuche es später noch einmal.</div>
+<div role="alert" class="alert alert-error">{% trans "Deine Kontaktdaten können gerade nicht geladen werden. Bitte versuche es später noch einmal." %}</div>
 {% else %}
 <form method="post" action="{% url 'portal:contact' %}" class="card flex max-w-2xl flex-col gap-4">
   {% csrf_token %}
   <p class="rounded-lg bg-surface-muted px-4 py-3 text-[13px] text-muted">
-    Diese Angaben verwenden wir für deine Rechnungen. Änderungen gelten für alle Rechnungen, die ab jetzt erstellt werden.
+    {% trans "Diese Angaben verwenden wir für deine Rechnungen. Änderungen gelten für alle Rechnungen, die ab jetzt erstellt werden." %}
   </p>
   {% if conflict %}
   <div class="rounded-lg border border-line px-4 py-3 text-[13px]">
-    <p class="font-medium">Aktuell gespeichert:</p>
+    <p class="font-medium">{% trans "Aktuell gespeichert:" %}</p>
     <p class="text-muted">
       {{ conflict.name }}<br>
       {% if conflict.supplement %}{{ conflict.supplement }}<br>{% endif %}
@@ -33,7 +34,7 @@
       {{ conflict.zip }} {{ conflict.city }}{% if conflict.countryCode != "DE" %}, {{ conflict.countryCode }}{% endif %}<br>
       {% if conflict.email %}{{ conflict.email }}<br>{% endif %}
       {% if conflict.phone %}{{ conflict.phone }}<br>{% endif %}
-      {% if conflict.person_last_name %}Ansprechpartner: {{ conflict.person_salutation }} {{ conflict.person_first_name }} {{ conflict.person_last_name }}{% endif %}
+      {% if conflict.person_last_name %}{% blocktrans trimmed with person_salutation=conflict.person_salutation person_first_name=conflict.person_first_name person_last_name=conflict.person_last_name %}Ansprechpartner: {{ person_salutation }} {{ person_first_name }} {{ person_last_name }}{% endblocktrans %}{% endif %}
     </p>
   </div>
   {% endif %}
@@ -43,7 +44,7 @@
   {{ form.version }}
   {% include "core/_field.html" with field=form.name %}
   <fieldset class="flex flex-col gap-4">
-    <legend class="mb-2 font-medium">Rechnungsadresse</legend>
+    <legend class="mb-2 font-medium">{% trans "Rechnungsadresse" %}</legend>
     {% include "core/_field.html" with field=form.street %}
     {% include "core/_field.html" with field=form.supplement %}
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-[8rem_1fr]">
@@ -58,7 +59,7 @@
   </div>
   {% if form.with_person %}
   <fieldset class="flex flex-col gap-4">
-    <legend class="mb-2 font-medium">Ansprechpartner</legend>
+    <legend class="mb-2 font-medium">{% trans "Ansprechpartner" %}</legend>
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-[8rem_1fr_1fr]">
       {% include "core/_field.html" with field=form.person_salutation %}
       {% include "core/_field.html" with field=form.person_first_name %}
@@ -71,7 +72,7 @@
   </fieldset>
   {% endif %}
   <div class="flex gap-2 border-t border-line pt-4">
-    <button type="submit" class="btn btn-primary">Speichern</button>
+    <button type="submit" class="btn btn-primary">{% trans "Speichern" %}</button>
   </div>
 </form>
 {% endif %}

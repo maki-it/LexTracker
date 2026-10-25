@@ -1,13 +1,13 @@
-{% load timefmt %}{% autoescape off %}Hallo{% if user.first_name %} {{ user.first_name }}{% endif %},
+{% load i18n timefmt %}{% autoescape off %}{% if user.first_name %}{% blocktrans trimmed with first_name=user.first_name %}Hallo {{ first_name }},{% endblocktrans %}{% else %}{% trans "Hallo," %}{% endif %}
 
-dein Timer läuft seit {{ entry.started_at|date:datetime_format }} Uhr, also schon {{ running_for|hours:"clock" }} Stunden:
+{% blocktrans trimmed with started_at=entry.started_at|date:datetime_format hours=running_for|hours:"clock" %}dein Timer läuft seit {{ started_at }} Uhr, also schon {{ hours }} Stunden:{% endblocktrans %}
 
   {{ entry.task.project.customer.name }} · {{ entry.task.project.name }} · {{ entry.task.name }}{% if entry.description %}
   {{ entry.description }}{% endif %}
 
-Hast du vergessen, ihn zu stoppen? Dann stoppe ihn und korrigiere das Ende.{% if url %}
+{% trans "Hast du vergessen, ihn zu stoppen? Dann stoppe ihn und korrigiere das Ende." %}{% if url %}
 
 {{ url }}{% endif %}
 
-Diese Erinnerung schaltest du in LexTracker unter Konto ab.
+{% trans "Diese Erinnerung schaltest du in LexTracker unter Konto ab." %}
 {% endautoescape %}

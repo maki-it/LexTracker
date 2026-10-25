@@ -1,9 +1,10 @@
 {% extends "mail/_base.html" %}
+{% load i18n %}
 {% block content %}
-<p style="margin:0 0 12px;font-size:18px;font-weight:600">Rechnung überfällig</p>
-<p style="margin:0">Die Rechnung <strong>{{ invoice.voucher_number|default:"ohne Nummer" }}</strong> an {{ invoice.customer.name }} war am {{ invoice.due_date|date:date_format }} fällig und ist seit {{ days_overdue }} Tag{{ days_overdue|pluralize:"en" }} überfällig.</p>
-{% if invoice.open_amount is not None %}<p style="margin:12px 0;padding:10px 12px;background:#f4f4f5;border-radius:8px">Offen: <strong>{{ invoice.open_amount|floatformat:"2g" }} €</strong></p>{% endif %}
-<p style="margin:12px 0 0">{% if customer_notified %}Der Kunde hat eine Zahlungserinnerung an {{ invoice.customer.email }} bekommen.{% elif customer_without_email %}Der Kunde hat keine E-Mail-Adresse in Lexware, deshalb ging keine Zahlungserinnerung an ihn.{% else %}An den Kunden ging keine Erinnerung.{% endif %}</p>
-{% if invoice.lexware_url %}{% include "mail/_button.html" with url=invoice.lexware_url label="In Lexware Office öffnen" %}{% endif %}
+<p style="margin:0 0 12px;font-size:18px;font-weight:600">{% trans "Rechnung überfällig" %}</p>
+<p style="margin:0">{% trans "ohne Nummer" as no_number %}{% blocktrans trimmed count days=days_overdue with number=invoice.voucher_number|default:no_number customer=invoice.customer.name due_date=invoice.due_date|date:date_format %}Die Rechnung <strong>{{ number }}</strong> an {{ customer }} war am {{ due_date }} fällig und ist seit {{ days }} Tag überfällig.{% plural %}Die Rechnung <strong>{{ number }}</strong> an {{ customer }} war am {{ due_date }} fällig und ist seit {{ days }} Tagen überfällig.{% endblocktrans %}</p>
+{% if invoice.open_amount is not None %}<p style="margin:12px 0;padding:10px 12px;background:#f4f4f5;border-radius:8px">{% blocktrans trimmed with amount=invoice.open_amount|floatformat:"2g" %}Offen: <strong>{{ amount }} €</strong>{% endblocktrans %}</p>{% endif %}
+<p style="margin:12px 0 0">{% if customer_notified %}{% blocktrans trimmed with email=invoice.customer.email %}Der Kunde hat eine Zahlungserinnerung an {{ email }} bekommen.{% endblocktrans %}{% elif customer_without_email %}{% trans "Der Kunde hat keine E-Mail-Adresse in Lexware, deshalb ging keine Zahlungserinnerung an ihn." %}{% else %}{% trans "An den Kunden ging keine Erinnerung." %}{% endif %}</p>
+{% if invoice.lexware_url %}{% trans "In Lexware Office öffnen" as button_label %}{% include "mail/_button.html" with url=invoice.lexware_url label=button_label %}{% endif %}
 {% endblock %}
-{% block footer %}Diese Hinweise stellst du in LexTracker unter Einstellungen ein.{% endblock %}
+{% block footer %}{% trans "Diese Hinweise stellst du in LexTracker unter Einstellungen ein." %}{% endblock %}

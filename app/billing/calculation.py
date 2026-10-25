@@ -7,6 +7,7 @@ from decimal import ROUND_HALF_UP, Decimal
 
 from django.db.models import Max, Min, Q
 from django.utils import timezone
+from django.utils.translation import gettext as _
 
 from billing.models import BillingAgreement
 from billing.periods import periods_between
@@ -128,7 +129,9 @@ def _hourly_lines(entries: list[TimeEntry], draft: Draft, rate: Decimal | None =
             (r for r in (rate, entry.task.effective_hourly_rate, draft.fallback_rate) if r is not None), None
         )
         if entry_rate is None:
-            problem = f"Für „{entry.task.project.name} · {entry.task.name}“ ist kein Stundensatz hinterlegt."
+            problem = _("Für „%(task)s“ ist kein Stundensatz hinterlegt.") % {
+                "task": f"{entry.task.project.name} · {entry.task.name}"
+            }
             if problem not in draft.problems:
                 draft.problems.append(problem)
             continue

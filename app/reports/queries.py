@@ -7,7 +7,8 @@ from uuid import UUID
 
 from django.db.models import Q, Sum
 from django.db.models.functions import TruncDate, TruncMonth
-from django.utils import timezone
+from django.utils import dateformat, timezone
+from django.utils.translation import pgettext
 
 from billing.calculation import CENT, to_hours
 from billing.models import BillingAgreement, Invoice
@@ -21,7 +22,14 @@ from tracking.queries import booked_time
 # Invoices that count as revenue. Voided and deleted ones do not.
 BILLED_STATUSES = [s for s in Invoice.Status.values if s not in (Invoice.Status.VOIDED, Invoice.Status.DELETED)]
 OPEN_STATUSES = [Invoice.Status.OPEN, Invoice.Status.OVERDUE, Invoice.Status.TRANSFERRED, Invoice.Status.SEPADEBIT]
-MONTHS = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"]
+
+
+def _bucket_label(key, by_day: bool) -> str:
+    """``31.`` for a day, ``Okt 26`` for a month (the abbreviation of the language)."""
+    if by_day:
+        # Translators: Django date format for the day of the month in a chart.
+        return dateformat.format(key, pgettext("chart day", "d."))
+    return f"{dateformat.format(date(key[0], key[1], 1), 'M')} {key[0] % 100:02d}"
 
 
 @dataclass
@@ -164,7 +172,7 @@ def _buckets(entries, rng: DateRange) -> list[Bucket]:
     longest = max((t for t, _ in totals.values()), default=timedelta()) or timedelta(hours=1)
     buckets = []
     for key, (total, billable) in totals.items():
-        label = f"{key:%d.}" if by_day else f"{MONTHS[key[1] - 1]} {key[0] % 100:02d}"
+        label = _bucket_label(key, by_day)
         buckets.append(Bucket(label, total, billable, round(total / longest * 100)))
     return buckets
 

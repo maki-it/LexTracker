@@ -1,4 +1,5 @@
 from django import forms
+from django.utils.translation import gettext_lazy as _
 
 from core.forms import MARKDOWN_HELP, StyledFormMixin
 from customers.models import Category, Customer
@@ -6,10 +7,10 @@ from customers.models import Category, Customer
 
 class CustomerForm(StyledFormMixin, forms.ModelForm):
     new_categories = forms.CharField(
-        label="Neue Kategorien",
+        label=_("Neue Kategorien"),
         required=False,
         max_length=500,
-        help_text="Mehrere durch Komma trennen, z. B. „Stammkunde, Hosting“.",
+        help_text=_("Mehrere durch Komma trennen, z. B. „Stammkunde, Hosting“."),
     )
 
     class Meta:

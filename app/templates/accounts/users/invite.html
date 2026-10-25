@@ -1,22 +1,23 @@
 {% extends "base.html" %}
-{% block title %}Einladung · LexTracker{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Einladung" %} · LexTracker{% endblock %}
 {% block content %}
 <div>
-  <p class="breadcrumb"><a href="{% url 'users:list' %}">Benutzer</a></p>
-  <h1>Einladung für {{ edited.get_full_name|default:edited.get_username }}</h1>
+  <p class="breadcrumb"><a href="{% url 'users:list' %}">{% trans "Benutzer" %}</a></p>
+  <h1>{% blocktrans trimmed with get_full_name=edited.get_full_name|default:edited.get_username %}Einladung für {{ get_full_name }}{% endblocktrans %}</h1>
 </div>
 <div class="card flex max-w-2xl flex-col gap-4">
-  <p>Schick diesen Link an {% if edited.email %}<a href="mailto:{{ edited.email }}">{{ edited.email }}</a>{% else %}die Person{% endif %}. Damit legt sie ihr Passwort fest und meldet sich dann als <strong>{{ edited.get_username }}</strong> an.</p>
+  <p>{% if edited.email %}{% blocktrans trimmed with email=edited.email username=edited.get_username %}Schick diesen Link an <a href="mailto:{{ email }}">{{ email }}</a>. Damit legt sie ihr Passwort fest und meldet sich dann als <strong>{{ username }}</strong> an.{% endblocktrans %}{% else %}{% blocktrans trimmed with username=edited.get_username %}Schick diesen Link an die Person. Damit legt sie ihr Passwort fest und meldet sich dann als <strong>{{ username }}</strong> an.{% endblocktrans %}{% endif %}</p>
   <code class="break-all rounded bg-surface-muted px-3 py-2 text-[13px] text-ink select-all">{{ url }}</code>
-  <p class="text-[13px] text-muted">Der Link gilt eine Woche und nur einmal. Mit demselben Knopf in der Benutzerliste kannst du jederzeit einen neuen erzeugen, z. B. wenn jemand sein Passwort vergessen hat.</p>
+  <p class="text-[13px] text-muted">{% trans "Der Link gilt eine Woche und nur einmal. Mit demselben Knopf in der Benutzerliste kannst du jederzeit einen neuen erzeugen, z. B. wenn jemand sein Passwort vergessen hat." %}</p>
   <div class="flex flex-wrap gap-2 border-t border-line pt-4">
     {% if can_send %}
     <form method="post">
       {% csrf_token %}
-      <button type="submit" class="btn btn-primary">Per E-Mail an {{ edited.email }} schicken</button>
+      <button type="submit" class="btn btn-primary">{% blocktrans trimmed with email=edited.email %}Per E-Mail an {{ email }} schicken{% endblocktrans %}</button>
     </form>
     {% endif %}
-    <a href="{% url 'users:list' %}" class="btn">Zur Benutzerliste</a>
+    <a href="{% url 'users:list' %}" class="btn">{% trans "Zur Benutzerliste" %}</a>
   </div>
 </div>
 {% endblock %}

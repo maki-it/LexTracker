@@ -1,22 +1,23 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load icons %}
-{% block title %}Rechnungen · LexTracker{% endblock %}
+{% block title %}{% trans "Rechnungen" %} · LexTracker{% endblock %}
 {% block content %}
 {% include "billing/_tabs.html" with tab="rechnungen" %}
 <div class="flex flex-col gap-3">
   <div class="flex flex-wrap items-center justify-between gap-3">
     <form method="get" class="flex min-w-0 flex-1 items-center gap-3" role="search">
-      <input type="search" name="q" value="{{ query }}" placeholder="Kunde oder Rechnungsnummer suchen" aria-label="Rechnungen suchen" class="input max-w-sm"
+      <input type="search" name="q" value="{{ query }}" placeholder="{% trans 'Kunde oder Rechnungsnummer suchen' %}" aria-label="{% trans 'Rechnungen suchen' %}" class="input max-w-sm"
              hx-get="{% url 'billing:invoices' %}" hx-trigger="input changed delay:250ms, search" hx-include="closest form"
              hx-target="#invoice-table" hx-select="#invoice-table" hx-swap="outerHTML" hx-push-url="true">
-      <select name="customer" class="input max-w-xs" aria-label="Nach Kunde filtern"
+      <select name="customer" class="input max-w-xs" aria-label="{% trans 'Nach Kunde filtern' %}"
               hx-get="{% url 'billing:invoices' %}" hx-trigger="change" hx-include="closest form"
               hx-target="#invoice-table" hx-select="#invoice-table" hx-swap="outerHTML" hx-push-url="true">
-        <option value="">Alle Kunden</option>
+        <option value="">{% trans "Alle Kunden" %}</option>
         {% for c in customers %}<option value="{{ c.pk }}"{% if c.pk == customer_id %} selected{% endif %}>{{ c.name }}</option>{% endfor %}
       </select>
       {% for key in statuses %}<input type="hidden" name="status" value="{{ key }}">{% endfor %}
-      <noscript><button type="submit" class="btn">Suchen</button></noscript>
+      <noscript><button type="submit" class="btn">{% trans "Suchen" %}</button></noscript>
     </form>
     {% if lexware_configured %}
     <form method="post" action="{% url 'billing:invoice_sync' %}" class="flex items-center gap-3">
@@ -24,15 +25,15 @@
       <input type="hidden" name="return_query" value="{{ request.GET.urlencode }}">
       {% if app_settings.invoices_synced_at %}
       <span class="text-[13px]{% if app_settings.invoices_sync_failed %} text-danger{% else %} text-muted{% endif %}" title="{{ app_settings.invoices_sync_status }}">
-        {% if app_settings.invoices_sync_failed %}Abgleich fehlgeschlagen{% else %}Abgeglichen{% endif %} {{ app_settings.invoices_synced_at|date:datetime_format }} Uhr
+        {% if app_settings.invoices_sync_failed %}{% trans "Abgleich fehlgeschlagen" %}{% else %}{% trans "Abgeglichen" %}{% endif %} {% blocktrans trimmed with invoices_synced_at=app_settings.invoices_synced_at|date:datetime_format %}{{ invoices_synced_at }} Uhr{% endblocktrans %}
       </span>
       {% endif %}
-      <button type="submit" class="btn btn-sm">{% icon "refresh" size=14 %}Status aktualisieren</button>
+      <button type="submit" class="btn btn-sm">{% icon "refresh" size=14 %}{% trans "Status aktualisieren" %}</button>
     </form>
     {% endif %}
   </div>
-  <nav aria-label="Nach Status filtern" class="flex flex-wrap gap-1.5">
-    <a href="?{{ all_query }}" class="pill{% if not statuses %} pill-active{% endif %}">Alle</a>
+  <nav aria-label="{% trans 'Nach Status filtern' %}" class="flex flex-wrap gap-1.5">
+    <a href="?{{ all_query }}" class="pill{% if not statuses %} pill-active{% endif %}">{% trans "Alle" %}</a>
     {% for pill in filters %}
     <a href="?{{ pill.query }}" class="pill gap-1.5{% if pill.active %} pill-active{% endif %}"{% if pill.active %} aria-current="true"{% endif %}>{{ pill.label }}<span class="text-muted tabular-nums">{{ pill.count }}</span></a>
     {% endfor %}

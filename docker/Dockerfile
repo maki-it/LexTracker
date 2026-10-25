@@ -13,15 +13,23 @@ COPY pyproject.toml uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev
 
+# gettext compiles the translations (.po to .mo). It stays in this stage, the runtime image does not need it.
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    rm -f /etc/apt/apt.conf.d/docker-clean \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends gettext
+
 COPY app ./app
 
-# Build the stylesheet with the standalone Tailwind CLI and collect all static files.
+# Compile the translations, build the stylesheet with the standalone Tailwind CLI and collect all static files.
 # The CLI binary lands in a cache mount, so it is downloaded once per Tailwind version
 # instead of on every code change, and never ends up in the image.
 # The secret is a throwaway value, only needed so the settings load.
 RUN --mount=type=cache,target=/srv/app/.django_tailwind_cli \
     APP_ENVIRONMENT=production APP_SECRET_KEY=build-only APP_DATA_DIR=/tmp/data \
-    sh -c "cd app && /srv/.venv/bin/python manage.py tailwind build \
+    sh -c "cd app && /srv/.venv/bin/python manage.py compilemessages \
+      && /srv/.venv/bin/python manage.py tailwind build \
       && /srv/.venv/bin/python manage.py collectstatic --noinput"
 
 

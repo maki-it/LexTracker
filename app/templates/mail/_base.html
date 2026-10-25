@@ -1,5 +1,5 @@
-<!doctype html>
-<html lang="de">
+{% load i18n %}{% get_current_language as LANGUAGE_CODE %}<!doctype html>
+<html lang="{{ LANGUAGE_CODE }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -13,7 +13,7 @@
         {% block content %}{% endblock %}
       </td>
     </tr>
-    <tr><td style="padding:16px 4px 0;font-size:12px;color:#71717a">{% block footer %}Diese E-Mail hat LexTracker automatisch verschickt.{% endblock %}</td></tr>
+    <tr><td style="padding:16px 4px 0;font-size:12px;color:#71717a">{% block footer %}{% trans "Diese E-Mail hat LexTracker automatisch verschickt." %}{% endblock %}</td></tr>
   </table>
 </body>
 </html>

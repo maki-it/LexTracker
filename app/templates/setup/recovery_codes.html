@@ -1,14 +1,15 @@
 {% extends "setup/_layout.html" %}
+{% load i18n %}
 {% block step %}
 <div class="card flex flex-col gap-4 p-6">
-  <h1 class="text-lg">Wiederherstellungscodes</h1>
+  <h1 class="text-lg">{% trans "Wiederherstellungscodes" %}</h1>
   <div role="alert" class="alert alert-warning">
-    Speichere diese Codes jetzt an einem sicheren Ort, zum Beispiel in deinem Passwort-Manager. Sie werden nur dieses eine Mal angezeigt.
+    {% trans "Speichere diese Codes jetzt an einem sicheren Ort, zum Beispiel in deinem Passwort-Manager. Sie werden nur dieses eine Mal angezeigt." %}
   </div>
-  <p class="text-sm text-muted">Jeder Code funktioniert einmal, falls du keinen Zugriff auf deine Authenticator-App hast.</p>
+  <p class="text-sm text-muted">{% trans "Jeder Code funktioniert einmal, falls du keinen Zugriff auf deine Authenticator-App hast." %}</p>
   <ul class="grid grid-cols-2 gap-2 font-mono text-base">
     {% for code in codes %}<li class="rounded-md bg-surface-muted px-3 py-2">{{ code }}</li>{% endfor %}
   </ul>
-  <div><a href="{% url 'setup:lexware' %}" class="btn btn-primary">Weiter</a></div>
+  <div><a href="{% url 'setup:lexware' %}" class="btn btn-primary">{% trans "Weiter" %}</a></div>
 </div>
 {% endblock %}

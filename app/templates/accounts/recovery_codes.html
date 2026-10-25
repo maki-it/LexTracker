@@ -1,18 +1,19 @@
 {% extends layout %}
-{% block title %}Wiederherstellungscodes · LexTracker{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Wiederherstellungscodes" %} · LexTracker{% endblock %}
 {% block content %}
 <div>
-  <p class="breadcrumb"><a href="{% url 'account:settings' %}?tab=security">Konto</a></p>
-  <h1>Wiederherstellungscodes</h1>
+  <p class="breadcrumb"><a href="{% url 'account:settings' %}?tab=security">{% trans "Konto" %}</a></p>
+  <h1>{% trans "Wiederherstellungscodes" %}</h1>
 </div>
 <div class="card flex max-w-2xl flex-col gap-4">
   <div role="alert" class="alert alert-warning">
-    Speichere diese Codes jetzt an einem sicheren Ort, zum Beispiel in deinem Passwort-Manager. Sie werden nur dieses eine Mal angezeigt.
+    {% trans "Speichere diese Codes jetzt an einem sicheren Ort, zum Beispiel in deinem Passwort-Manager. Sie werden nur dieses eine Mal angezeigt." %}
   </div>
-  <p class="text-sm text-muted">Jeder Code funktioniert einmal, falls du keinen Zugriff auf deine Authenticator-App hast.</p>
+  <p class="text-sm text-muted">{% trans "Jeder Code funktioniert einmal, falls du keinen Zugriff auf deine Authenticator-App hast." %}</p>
   <ul class="grid grid-cols-2 gap-2 font-mono text-base">
     {% for code in codes %}<li class="rounded-md bg-surface-muted px-3 py-2">{{ code }}</li>{% endfor %}
   </ul>
-  <div><a href="{% url 'account:settings' %}?tab=security" class="btn btn-primary">Fertig</a></div>
+  <div><a href="{% url 'account:settings' %}?tab=security" class="btn btn-primary">{% trans "Fertig" %}</a></div>
 </div>
 {% endblock %}

@@ -1,8 +1,9 @@
 {% extends layout %}
-{% block title %}Konto · LexTracker{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Konto" %} · LexTracker{% endblock %}
 {% block content %}
-<h1>Konto</h1>
-<nav class="tabs flex-wrap gap-x-4 sm:gap-x-5" aria-label="Konto">
+<h1>{% trans "Konto" %}</h1>
+<nav class="tabs flex-wrap gap-x-4 sm:gap-x-5" aria-label="{% trans 'Konto' %}">
   {# Absolute, so the links also work inside the dialog, where the address bar shows the page behind it. #}
   {% for key, label in tabs %}
   <a href="{% url 'account:settings' %}?tab={{ key }}" class="tab{% if key == tab %} tab-active{% endif %}"{% if key == tab %} aria-current="page"{% endif %}>{{ label }}</a>
@@ -15,14 +16,15 @@
     <input type="hidden" name="tab" value="{{ tab }}">
     {% for error in form.non_field_errors %}<div role="alert" class="alert alert-error">{{ error }}</div>{% endfor %}
     <section class="card flex flex-col gap-4"{% if tab != "profile" %} hidden{% endif %}>
-      <h2>Profil</h2>
+      <h2>{% trans "Profil" %}</h2>
       {% include "core/_field.html" with field=form.first_name %}
       {% include "core/_field.html" with field=form.last_name %}
       {% include "core/_field.html" with field=form.email %}
     </section>
 
     <section class="card flex flex-col gap-4"{% if tab != "appearance" %} hidden{% endif %}>
-      <h2>Darstellung</h2>
+      <h2>{% trans "Darstellung" %}</h2>
+      {% include "core/_field.html" with field=form.language %}
       {% include "core/_field.html" with field=form.theme %}
       {% include "core/_field.html" with field=form.date_format %}
       {% include "core/_field.html" with field=form.duration_format %}
@@ -31,7 +33,7 @@
 
     {% if form.message_level %}
     <section class="card flex flex-col gap-4"{% if tab != "notifications" %} hidden{% endif %}>
-      <h2>Benachrichtigungen</h2>
+      <h2>{% trans "Benachrichtigungen" %}</h2>
       <label class="flex items-center gap-2 text-sm font-medium">{{ form.weekly_report }} {{ form.weekly_report.label }}</label>
       {% for error in form.weekly_report.errors %}<p class="text-sm text-danger">{{ error }}</p>{% endfor %}
       <label class="flex items-center gap-2 text-sm font-medium">{{ form.timer_reminder }} {{ form.timer_reminder.label }}</label>
@@ -41,64 +43,67 @@
     </section>
     {% endif %}
 
-    <div><button type="submit" class="btn btn-primary">Speichern</button></div>
+    <div><button type="submit" class="btn btn-primary">{% trans "Speichern" %}</button></div>
   </form>
 
   <section class="card flex flex-col gap-3"{% if tab != "security" %} hidden{% endif %}>
-    <h2>Passwort</h2>
-    <p class="text-sm text-muted">Nach dem Ändern bleibst du hier angemeldet, andere Geräte werden abgemeldet.</p>
-    <div><a href="{% url 'account:password' %}" class="btn">Passwort ändern</a></div>
+    <h2>{% trans "Passwort" %}</h2>
+    <p class="text-sm text-muted">{% trans "Nach dem Ändern bleibst du hier angemeldet, andere Geräte werden abgemeldet." %}</p>
+    <div><a href="{% url 'account:password' %}" class="btn">{% trans "Passwort ändern" %}</a></div>
   </section>
 
   <section class="card flex flex-col gap-3"{% if tab != "security" %} hidden{% endif %}>
-    <h2>Zwei-Faktor-Anmeldung</h2>
+    <h2>{% trans "Zwei-Faktor-Anmeldung" %}</h2>
     {% if has_mfa %}
-    <p class="text-sm"><span class="font-medium text-success">Eingeschaltet.</span> Beim Anmelden fragt LexTracker nach dem Code aus deiner Authenticator-App.</p>
-    <div><a href="{% url 'account:mfa_manage' %}" class="btn">Verwalten</a></div>
+    <p class="text-sm"><span class="font-medium text-success">{% trans "Eingeschaltet." %}</span> {% trans "Beim Anmelden fragt LexTracker nach dem Code aus deiner Authenticator-App." %}</p>
+    <div><a href="{% url 'account:mfa_manage' %}" class="btn">{% trans "Verwalten" %}</a></div>
     {% else %}
-    <p class="text-sm text-muted">Schütze dein Konto zusätzlich mit einem Code aus einer Authenticator-App wie 1Password, Bitwarden, Google Authenticator oder Microsoft Authenticator.</p>
-    <div><a href="{% url 'account:mfa_setup' %}" class="btn btn-primary">Einrichten</a></div>
+    <p class="text-sm text-muted">{% trans "Schütze dein Konto zusätzlich mit einem Code aus einer Authenticator-App wie 1Password, Bitwarden, Google Authenticator oder Microsoft Authenticator." %}</p>
+    <div><a href="{% url 'account:mfa_setup' %}" class="btn btn-primary">{% trans "Einrichten" %}</a></div>
     {% endif %}
   </section>
 
   {% if not user.is_customer %}
   <section class="card flex flex-col gap-4" id="api-tokens"{% if tab != "agents" %} hidden{% endif %}>
     <div>
-      <h2>KI-Agenten und API-Tokens</h2>
+      <h2>{% trans "KI-Agenten und API-Tokens" %}</h2>
       <p class="mt-1 text-sm text-muted">
+        {% blocktrans trimmed %}
         Mit einem Token kann ein KI-Agent über den MCP-Server Zeiten für dich erfassen: Projekte und Aufgaben finden, Timer starten und stoppen, Zeiten nachtragen.
-        Der Agent handelt dabei als du. MCP-Adresse: <code class="text-ink">{{ mcp_url }}</code>
+        Der Agent handelt dabei als du.
+        {% endblocktrans %}
+        {% trans "MCP-Adresse:" %} <code class="text-ink">{{ mcp_url }}</code>
       </p>
     </div>
     {% if new_key %}
     <div role="alert" class="alert alert-success flex flex-col gap-2">
-      <span class="font-medium">Neuer Token. Kopiere ihn jetzt, er wird nur dieses eine Mal angezeigt.</span>
+      <span class="font-medium">{% trans "Neuer Token. Kopiere ihn jetzt, er wird nur dieses eine Mal angezeigt." %}</span>
       <div class="flex items-center gap-2">
         <code id="new-token" class="min-w-0 flex-1 break-all rounded bg-surface px-2 py-1 text-ink select-all">{{ new_key }}</code>
-        <button type="button" class="btn btn-sm" data-copy="new-token">Kopieren</button>
+        <button type="button" class="btn btn-sm" data-copy="new-token">{% trans "Kopieren" %}</button>
       </div>
-      <span class="text-[13px]">In den Konfigurationen unten ist er schon eingesetzt.</span>
+      <span class="text-[13px]">{% trans "In den Konfigurationen unten ist er schon eingesetzt." %}</span>
     </div>
     {% endif %}
     {% include "accounts/_mcp_clients.html" %}
     <details class="rounded-lg border border-line px-3 py-2.5 text-sm"{% if new_key %} open{% endif %}>
-      <summary class="cursor-pointer font-medium">Beispiel-Prompts für deinen Agenten</summary>
+      <summary class="cursor-pointer font-medium">{% trans "Beispiel-Prompts für deinen Agenten" %}</summary>
       <div class="mt-3 flex flex-col gap-3">
         <div class="flex flex-col gap-1">
-          <span class="text-muted">Dauerhaft, z. B. in der <code>CLAUDE.md</code> deines Projekts:</span>
-          <pre class="whitespace-pre-wrap rounded bg-surface-muted px-3 py-2 text-[13px] text-ink select-all">## Zeiterfassung
+          <span class="text-muted">{% trans "Dauerhaft, z. B. in der <code>CLAUDE.md</code> deines Projekts:" %}</span>
+          <pre class="whitespace-pre-wrap rounded bg-surface-muted px-3 py-2 text-[13px] text-ink select-all">{% blocktrans %}## Zeiterfassung
 Erfasse deine Arbeitszeit in LexTracker (MCP-Server „lextracker“):
 - Bevor du mit einer Aufgabe beginnst, suche mit find_tasks die passende Aufgabe im Projekt „PROJEKTNAME“. Gibt es keine passende, lege sie mit create_task an.
 - Starte dann mit start_timer den Timer und gib als Beschreibung kurz an, woran du arbeitest.
-- Wenn du fertig bist oder auf mich wartest, stoppe den Timer mit stop_timer und fasse in der Beschreibung in ein bis zwei Sätzen zusammen, was du erledigt hast.</pre>
+- Wenn du fertig bist oder auf mich wartest, stoppe den Timer mit stop_timer und fasse in der Beschreibung in ein bis zwei Sätzen zusammen, was du erledigt hast.{% endblocktrans %}</pre>
         </div>
         <div class="flex flex-col gap-1">
-          <span class="text-muted">Einmalig im Chat:</span>
-          <pre class="whitespace-pre-wrap rounded bg-surface-muted px-3 py-2 text-[13px] text-ink select-all">Starte in LexTracker den Timer auf der passenden Aufgabe im Projekt „PROJEKTNAME“, bevor du loslegst, und stoppe ihn mit einer kurzen Zusammenfassung, wenn du fertig bist.</pre>
+          <span class="text-muted">{% trans "Einmalig im Chat:" %}</span>
+          <pre class="whitespace-pre-wrap rounded bg-surface-muted px-3 py-2 text-[13px] text-ink select-all">{% blocktrans %}Starte in LexTracker den Timer auf der passenden Aufgabe im Projekt „PROJEKTNAME“, bevor du loslegst, und stoppe ihn mit einer kurzen Zusammenfassung, wenn du fertig bist.{% endblocktrans %}</pre>
         </div>
         <div class="flex flex-col gap-1">
-          <span class="text-muted">Zeit nachtragen:</span>
-          <pre class="whitespace-pre-wrap rounded bg-surface-muted px-3 py-2 text-[13px] text-ink select-all">Trage in LexTracker für heute 9:00 bis 11:30 auf die Aufgabe „AUFGABE“ im Projekt „PROJEKTNAME“ ein: Abstimmung und Konzept für den Relaunch.</pre>
+          <span class="text-muted">{% trans "Zeit nachtragen:" %}</span>
+          <pre class="whitespace-pre-wrap rounded bg-surface-muted px-3 py-2 text-[13px] text-ink select-all">{% blocktrans %}Trage in LexTracker für heute 9:00 bis 11:30 auf die Aufgabe „AUFGABE“ im Projekt „PROJEKTNAME“ ein: Abstimmung und Konzept für den Relaunch.{% endblocktrans %}</pre>
         </div>
       </div>
     </details>
@@ -108,11 +113,11 @@ Erfasse deine Arbeitszeit in LexTracker (MCP-Server „lextracker“):
       <li class="flex flex-wrap items-center gap-3 px-3 py-2.5">
         <div class="min-w-0 flex-1">
           <div class="font-medium">{{ token.name }}</div>
-          <div class="text-[13px] text-muted"><code>{{ token.hint }}…</code> · erstellt {{ token.created_at|date:date_format }} · {% if token.last_used_at %}zuletzt benutzt {{ token.last_used_at|date:datetime_format }} Uhr{% else %}noch nicht benutzt{% endif %}</div>
+          <div class="text-[13px] text-muted"><code>{{ token.hint }}…</code> · {% blocktrans trimmed with created_at=token.created_at|date:date_format %}erstellt {{ created_at }}{% endblocktrans %} · {% if token.last_used_at %}{% blocktrans trimmed with last_used_at=token.last_used_at|date:datetime_format %}zuletzt benutzt {{ last_used_at }} Uhr{% endblocktrans %}{% else %}{% trans "noch nicht benutzt" %}{% endif %}</div>
         </div>
-        <form method="post" action="{% url 'account:token_revoke' token.pk %}" onsubmit="return confirm('Diesen Token widerrufen?')">
+        <form method="post" action="{% url 'account:token_revoke' token.pk %}" onsubmit="return confirm('{% filter escapejs %}{% trans "Diesen Token widerrufen?" %}{% endfilter %}')">
           {% csrf_token %}
-          <button type="submit" class="btn btn-sm btn-danger">Widerrufen</button>
+          <button type="submit" class="btn btn-sm btn-danger">{% trans "Widerrufen" %}</button>
         </form>
       </li>
       {% endfor %}
@@ -125,7 +130,7 @@ Erfasse deine Arbeitszeit in LexTracker (MCP-Server „lextracker“):
         {{ token_form.name }}
         {% for error in token_form.name.errors %}<span class="text-sm text-danger">{{ error }}</span>{% endfor %}
       </label>
-      <button type="submit" class="btn btn-primary">Token erstellen</button>
+      <button type="submit" class="btn btn-primary">{% trans "Token erstellen" %}</button>
     </form>
   </section>
   {% endif %}

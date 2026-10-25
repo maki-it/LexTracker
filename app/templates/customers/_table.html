@@ -1,27 +1,28 @@
+{% load i18n %}
 <div id="customer-table" class="flex flex-col gap-4">
   {% if error %}
   <div role="alert" class="alert alert-error">{{ error }}</div>
   {% elif result %}
   <div role="alert" class="alert alert-success">
-    Import abgeschlossen: {{ result.summary }}
+    {% blocktrans trimmed with summary=result.summary %}Import abgeschlossen: {{ summary }}{% endblocktrans %}
   </div>
   {% endif %}
   {% if app_settings.lexware_synced_at %}
   <p class="text-sm {% if app_settings.lexware_sync_failed %}text-danger{% else %}text-muted{% endif %}">
-    Letzter Import {{ app_settings.lexware_synced_at|date:datetime_format }} Uhr:
-    {% if app_settings.lexware_sync_failed %}fehlgeschlagen ({{ app_settings.lexware_sync_status }}){% else %}{{ app_settings.lexware_sync_status }}{% endif %}
-    {% if app_settings.lexware_sync_interval %}· automatisch {{ app_settings.get_lexware_sync_interval_display }}{% endif %}
+    {% blocktrans trimmed with lexware_synced_at=app_settings.lexware_synced_at|date:datetime_format %}Letzter Import {{ lexware_synced_at }} Uhr:{% endblocktrans %}
+    {% if app_settings.lexware_sync_failed %}{% blocktrans trimmed with lexware_sync_status=app_settings.lexware_sync_status %}fehlgeschlagen ({{ lexware_sync_status }}){% endblocktrans %}{% else %}{{ app_settings.lexware_sync_status }}{% endif %}
+    {% if app_settings.lexware_sync_interval %}{% blocktrans trimmed with get_lexware_sync_interval_display=app_settings.get_lexware_sync_interval_display %}· automatisch {{ get_lexware_sync_interval_display }}{% endblocktrans %}{% endif %}
   </p>
   {% endif %}
   <div class="table-wrap">
     <table class="table">
       <thead>
         <tr>
-          <th>Nr.</th>
-          <th>Name</th>
-          <th>E-Mail</th>
-          <th>Telefon</th>
-          <th class="text-right">Stundensatz</th>
+          <th>{% trans "Nr." %}</th>
+          <th>{% trans "Name" %}</th>
+          <th>{% trans "E-Mail" %}</th>
+          <th>{% trans "Telefon" %}</th>
+          <th class="text-right">{% trans "Stundensatz" %}</th>
         </tr>
       </thead>
       <tbody>

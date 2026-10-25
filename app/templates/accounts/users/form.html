@@ -1,10 +1,11 @@
 {% extends layout %}
+{% load i18n %}
 {% load icons %}
-{% block title %}{% if not is_new %}{{ edited.get_username }}{% else %}Neuer Benutzer{% endif %} · LexTracker{% endblock %}
+{% block title %}{% if not is_new %}{{ edited.get_username }}{% else %}{% trans "Neuer Benutzer" %}{% endif %} · LexTracker{% endblock %}
 {% block content %}
 <div>
-  <p class="breadcrumb"><a href="{% url 'users:list' %}">Benutzer</a></p>
-  <h1>{% if not is_new %}{{ edited.get_full_name|default:edited.get_username }}{% else %}Neuer Benutzer{% endif %}</h1>
+  <p class="breadcrumb"><a href="{% url 'users:list' %}">{% trans "Benutzer" %}</a></p>
+  <h1>{% if not is_new %}{{ edited.get_full_name|default:edited.get_username }}{% else %}{% trans "Neuer Benutzer" %}{% endif %}</h1>
 </div>
 <form method="post" action="{{ request.get_full_path }}" class="card flex max-w-2xl flex-col gap-4">
   {% csrf_token %}
@@ -16,30 +17,30 @@
   </div>
   {% include "core/_field.html" with field=form.email %}
   {% include "core/_field.html" with field=form.role %}
-  <p class="-mt-2 text-[13px] text-muted">Mitarbeiter buchen Zeiten auf die Kunden und Projekte, die du ihnen freischaltest, und sehen nur ihre eigenen Zeiten. Kunden sehen nur ihre eigenen Daten und können nichts ändern.</p>
+  <p class="-mt-2 text-[13px] text-muted">{% trans "Mitarbeiter buchen Zeiten auf die Kunden und Projekte, die du ihnen freischaltest, und sehen nur ihre eigenen Zeiten. Kunden sehen nur ihre eigenen Daten und können nichts ändern." %}</p>
   <fieldset class="flex flex-col gap-3 rounded-lg border border-line p-4" data-shown-for="role=employee"{% if form.role.value != "employee" %} hidden disabled{% endif %}>
-    <legend class="px-1 font-medium">Darf buchen auf</legend>
+    <legend class="px-1 font-medium">{% trans "Darf buchen auf" %}</legend>
     {% for field in form %}{% if field.name in form.BOOKING_FIELDS %}
     <div class="flex flex-col gap-1.5">
       <span class="text-sm font-medium">{{ field.label }}</span>
       <div class="flex max-h-48 flex-col gap-1.5 overflow-y-auto rounded-lg border border-line px-3 py-2" data-checkbox-group>
         {% if field|length > 1 %}
         <div class="sticky -top-2 -mx-3 -mt-2 flex flex-col gap-1.5 border-b border-line bg-surface px-3 pb-1.5 pt-2">
-          {% if field|length > 5 %}<input type="search" data-filter class="input" placeholder="Suchen …" aria-label="{{ field.label }} durchsuchen" autocomplete="off">{% endif %}
-          <label class="flex items-center gap-2 text-sm font-medium"><input type="checkbox" data-select-all> Alle auswählen</label>
+          {% if field|length > 5 %}<input type="search" data-filter class="input" placeholder="{% trans 'Suchen …' %}" aria-label="{% blocktrans trimmed with label=field.label %}{{ label }} durchsuchen{% endblocktrans %}" autocomplete="off">{% endif %}
+          <label class="flex items-center gap-2 text-sm font-medium"><input type="checkbox" data-select-all> {% trans "Alle auswählen" %}</label>
         </div>
         {% endif %}
-        {% for choice in field %}<label class="flex items-center gap-2 text-sm">{{ choice.tag }} {{ choice.choice_label }}</label>{% empty %}<span class="text-sm text-muted">Noch keine.</span>{% endfor %}
-        <span class="text-sm text-muted" data-no-match hidden>Keine Treffer.</span>
+        {% for choice in field %}<label class="flex items-center gap-2 text-sm">{{ choice.tag }} {{ choice.choice_label }}</label>{% empty %}<span class="text-sm text-muted">{% trans "Noch keine." %}</span>{% endfor %}
+        <span class="text-sm text-muted" data-no-match hidden>{% trans "Keine Treffer." %}</span>
       </div>
       {% if field.help_text %}<span class="text-[13px] text-muted">{{ field.help_text }}</span>{% endif %}
     </div>
     {% endif %}{% endfor %}
   </fieldset>
   <fieldset class="flex flex-col gap-3 rounded-lg border border-line p-4" data-shown-for="role=customer"{% if form.role.value != "customer" %} hidden disabled{% endif %}>
-    <legend class="px-1 font-medium">Kundenzugang</legend>
+    <legend class="px-1 font-medium">{% trans "Kundenzugang" %}</legend>
     {% include "core/_field.html" with field=form.customer %}
-    <p class="text-[13px] text-muted">Projekte sieht jeder Kundenzugang. Was er darüber hinaus sieht:</p>
+    <p class="text-[13px] text-muted">{% trans "Projekte sieht jeder Kundenzugang. Was er darüber hinaus sieht:" %}</p>
     {% for field in form %}{% if field.name in form.PORTAL_FIELDS %}
     <label class="flex items-center gap-2 text-sm font-medium{% if field.name == 'portal_descriptions' %} ml-6{% endif %}">{{ field }} {{ field.label }}</label>
     {% endif %}{% endfor %}
@@ -49,20 +50,20 @@
   {% for error in form.is_active.errors %}<span class="text-sm text-danger">{{ error }}</span>{% endfor %}
   {% endif %}
   <div class="flex gap-2 border-t border-line pt-4">
-    <button type="submit" class="btn btn-primary">{% if not is_new %}Speichern{% else %}Anlegen und einladen{% endif %}</button>
-    <a href="{% url 'users:list' %}" class="btn btn-ghost" data-close-dialog>Abbrechen</a>
+    <button type="submit" class="btn btn-primary">{% if not is_new %}{% trans "Speichern" %}{% else %}{% trans "Anlegen und einladen" %}{% endif %}</button>
+    <a href="{% url 'users:list' %}" class="btn btn-ghost" data-close-dialog>{% trans "Abbrechen" %}</a>
   </div>
 </form>
 {% if not is_new and edited != user %}
 <section class="card flex max-w-2xl flex-col gap-3">
-  <h2>Benutzer löschen</h2>
+  <h2>{% trans "Benutzer löschen" %}</h2>
   {% if has_entries %}
-  <p class="text-sm text-muted">Dieser Benutzer hat Zeiten gebucht, deshalb kann er nicht gelöscht werden. Nimm stattdessen das Häkchen bei „aktiv“ heraus, dann kann er sich nicht mehr anmelden.</p>
+  <p class="text-sm text-muted">{% trans "Dieser Benutzer hat Zeiten gebucht, deshalb kann er nicht gelöscht werden. Nimm stattdessen das Häkchen bei „aktiv“ heraus, dann kann er sich nicht mehr anmelden." %}</p>
   {% else %}
-  <p class="text-sm text-muted">Der Zugang und seine API-Tokens werden endgültig gelöscht.</p>
-  <form method="post" action="{% url 'users:delete' edited.pk %}" onsubmit="return confirm('Diesen Benutzer wirklich löschen?')">
+  <p class="text-sm text-muted">{% trans "Der Zugang und seine API-Tokens werden endgültig gelöscht." %}</p>
+  <form method="post" action="{% url 'users:delete' edited.pk %}" onsubmit="return confirm('{% filter escapejs %}{% trans "Diesen Benutzer wirklich löschen?" %}{% endfilter %}')">
     {% csrf_token %}
-    <button type="submit" class="btn btn-danger">{% icon "trash" size=14 %}Benutzer löschen</button>
+    <button type="submit" class="btn btn-danger">{% icon "trash" size=14 %}{% trans "Benutzer löschen" %}</button>
   </form>
   {% endif %}
 </section>

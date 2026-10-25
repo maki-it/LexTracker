@@ -12,6 +12,8 @@ from django.http import Http404, HttpRequest, HttpResponse, QueryDict
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy, ngettext
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from billing.calculation import ProjectRows, active_agreement, build_draft, entries_by_project, open_draft, unbilled
@@ -41,12 +43,12 @@ async def _get_customer(pk: UUID) -> Customer:
 
 # The status filters on the invoice list. "Offen" includes payments that are on their way.
 STATUS_FILTERS = {
-    "draft": ("Entwürfe", [Invoice.Status.DRAFT]),
-    "open": ("Offen", [Invoice.Status.OPEN, Invoice.Status.TRANSFERRED, Invoice.Status.SEPADEBIT]),
-    "overdue": ("Überfällig", [Invoice.Status.OVERDUE]),
-    "paid": ("Bezahlt", [Invoice.Status.PAID]),
-    "voided": ("Storniert", [Invoice.Status.VOIDED]),
-    "deleted": ("In Lexware gelöscht", [Invoice.Status.DELETED]),
+    "draft": (gettext_lazy("Entwürfe"), [Invoice.Status.DRAFT]),
+    "open": (gettext_lazy("Offen"), [Invoice.Status.OPEN, Invoice.Status.TRANSFERRED, Invoice.Status.SEPADEBIT]),
+    "overdue": (gettext_lazy("Überfällig"), [Invoice.Status.OVERDUE]),
+    "paid": (gettext_lazy("Bezahlt"), [Invoice.Status.PAID]),
+    "voided": (gettext_lazy("Storniert"), [Invoice.Status.VOIDED]),
+    "deleted": (gettext_lazy("In Lexware gelöscht"), [Invoice.Status.DELETED]),
 }
 
 
@@ -64,7 +66,7 @@ async def _invoice_counts() -> dict[str, int]:
     by_status = {
         row["status"]: row["n"] async for row in Invoice.objects.values("status").annotate(n=Count("pk")).order_by()
     }
-    counts = {key: sum(by_status.get(s, 0) for s in statuses) for key, (_, statuses) in STATUS_FILTERS.items()}
+    counts = {key: sum(by_status.get(s, 0) for s in statuses) for key, (_label, statuses) in STATUS_FILTERS.items()}
     counts["draft"] += await Invoice.objects.filter(DELETED_DRAFT).acount()
     return counts
 
@@ -144,7 +146,7 @@ async def invoice_sync(request: HttpRequest) -> HttpResponse:
     except LexwareError as exc:
         messages.error(request, str(exc))
     else:
-        messages.success(request, f"Rechnungsstatus abgeglichen: {result.summary}")
+        messages.success(request, _("Rechnungsstatus abgeglichen: %(summary)s") % {"summary": result.summary})
     return redirect(_invoice_list_url(request))
 
 
@@ -156,7 +158,15 @@ async def invoice_release(request: HttpRequest, invoice_pk: UUID) -> HttpRespons
     except Invoice.DoesNotExist as exc:
         raise Http404 from exc
     released = await TimeEntry.objects.filter(invoice=invoice).aupdate(invoice=None)
-    messages.success(request, f"{released} Zeiteinträge wieder zur Abrechnung freigegeben.")
+    messages.success(
+        request,
+        ngettext(
+            "%(count)d Zeiteintrag wieder zur Abrechnung freigegeben.",
+            "%(count)d Zeiteinträge wieder zur Abrechnung freigegeben.",
+            released,
+        )
+        % {"count": released},
+    )
     return redirect(_invoice_list_url(request))
 
 
@@ -205,13 +215,13 @@ def _period_options(customer: Customer, agreement: BillingAgreement | None, toda
 
     options = [option(p.start, p.end, p.label) for p in periods]
     if open_by_day and not is_retainer:
-        options.insert(0, option(min(open_by_day), max(open_by_day), "Alle offenen"))
+        options.insert(0, option(min(open_by_day), max(open_by_day), _("Alle offenen")))
     return options
 
 
 def _default_period(options: list[PeriodOption]) -> PeriodOption:
     """The last completed period if it has open time, otherwise all open time, otherwise that period."""
-    periods = [o for o in options if o.label != "Alle offenen"]
+    periods = [o for o in options if o.label != _("Alle offenen")]
     last_completed = periods[1]
     if last_completed.open_time:
         return last_completed
@@ -303,7 +313,7 @@ async def invoice_create(request: HttpRequest, pk: UUID) -> HttpResponse:
     customer = await _get_customer(pk)
     period_form = PeriodForm(request.POST)
     if not period_form.is_valid():
-        messages.error(request, "Bitte einen gültigen Zeitraum wählen.")
+        messages.error(request, _("Bitte einen gültigen Zeitraum wählen."))
         return redirect("billing:customer", pk=pk)
     start, end = period_form.cleaned_data["start"], period_form.cleaned_data["end"]
     try:
@@ -312,7 +322,9 @@ async def invoice_create(request: HttpRequest, pk: UUID) -> HttpResponse:
     except LexwareError as exc:
         messages.error(request, str(exc))
     else:
-        messages.success(request, f"Rechnungsentwurf über {invoice.total_net} € netto in Lexware angelegt.")
+        messages.success(
+            request, _("Rechnungsentwurf über %(amount)s € netto in Lexware angelegt.") % {"amount": invoice.total_net}
+        )
     return redirect(f"{reverse('billing:customer', args=[pk])}?start={start}&end={end}")
 
 
@@ -330,6 +342,6 @@ async def agreement_form(request: HttpRequest, pk: UUID, agreement_pk: int | Non
     if request.method == "POST" and await sync_to_async(form.is_valid)():
         form.instance.customer = customer
         await sync_to_async(form.save)()
-        messages.success(request, "Abrechnungsvereinbarung gespeichert.")
+        messages.success(request, _("Abrechnungsvereinbarung gespeichert."))
         return redirect("billing:customer", pk=pk)
     return await arender(request, "billing/agreement_form.html", {"form": form, "customer": customer})

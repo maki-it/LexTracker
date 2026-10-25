@@ -1,18 +1,19 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load icons dialogs %}
-{% block title %}Sicherungen · LexTracker{% endblock %}
+{% block title %}{% trans "Sicherungen" %} · LexTracker{% endblock %}
 {% block content %}
 <div class="page-header">
   <div>
-    <p class="breadcrumb"><a href="{% url 'core:settings' %}?tab=backup">Einstellungen</a></p>
-    <h1>Sicherungen</h1>
-    <p class="page-subtitle">Kopien der Datenbank in <code>{{ dir }}</code>. Wann und wie viele entstehen, legst du in den <a href="{% url 'core:settings' %}?tab=backup">Einstellungen</a> fest.</p>
+    <p class="breadcrumb"><a href="{% url 'core:settings' %}?tab=backup">{% trans "Einstellungen" %}</a></p>
+    <h1>{% trans "Sicherungen" %}</h1>
+    <p class="page-subtitle">{% url 'core:settings' as settings_url %}{% blocktrans trimmed with url=settings_url|add:"?tab=backup" %}Kopien der Datenbank in <code>{{ dir }}</code>. Wann und wie viele entstehen, legst du in den <a href="{{ url }}">Einstellungen</a> fest.{% endblocktrans %}</p>
   </div>
   <div class="flex gap-2">
-    <a {% dialog_link "core:backup_upload" %} class="btn btn-ghost">{% icon "upload" %}Hochladen</a>
+    <a {% dialog_link "core:backup_upload" %} class="btn btn-ghost">{% icon "upload" %}{% trans "Hochladen" %}</a>
     <form method="post" action="{% url 'core:backup_create' %}">
       {% csrf_token %}
-      <button type="submit" class="btn btn-primary">{% icon "plus" %}Jetzt sichern</button>
+      <button type="submit" class="btn btn-primary">{% icon "plus" %}{% trans "Jetzt sichern" %}</button>
     </form>
   </div>
 </div>
@@ -20,8 +21,8 @@
   <table class="table">
     <thead>
       <tr>
-        <th>Sicherung</th>
-        <th class="text-right">Größe</th>
+        <th>{% trans "Sicherung" %}</th>
+        <th class="text-right">{% trans "Größe" %}</th>
         <th></th>
       </tr>
     </thead>
@@ -29,23 +30,23 @@
       {% for item in backups %}
       <tr>
         <td class="w-full">
-          <div class="font-medium">{{ item.created|date:datetime_format }} Uhr</div>
-          <div class="text-xs text-muted">{{ item.name }}{% if item.before_restore %} · Stand vor einer Wiederherstellung{% elif item.before_upgrade %} · Stand vor einer Umstellung der Datenbank{% elif item.uploaded %} · Hochgeladen{% endif %}</div>
+          <div class="font-medium">{% blocktrans trimmed with created=item.created|date:datetime_format %}{{ created }} Uhr{% endblocktrans %}</div>
+          <div class="text-xs text-muted">{{ item.name }}{% if item.before_restore %} {% trans "· Stand vor einer Wiederherstellung" %}{% elif item.before_upgrade %} {% trans "· Stand vor einer Umstellung der Datenbank" %}{% elif item.uploaded %} {% trans "· Hochgeladen" %}{% endif %}</div>
         </td>
         <td class="whitespace-nowrap text-right text-muted tabular-nums">{{ item.size|filesizeformat }}</td>
         <td>
           <div class="flex justify-end gap-1">
-            <a href="{% url 'core:backup_download' item.name %}" class="btn btn-ghost btn-sm btn-icon size-8" title="Herunterladen" aria-label="{{ item.name }} herunterladen">{% icon "download" %}</a>
-            <a {% dialog_link "core:backup_restore" item.name %} class="btn btn-ghost btn-sm btn-icon size-8" title="Wiederherstellen" aria-label="{{ item.name }} wiederherstellen">{% icon "refresh" %}</a>
-            <form method="post" action="{% url 'core:backup_delete' item.name %}" onsubmit="return confirm('Diese Sicherung wirklich löschen?')">
+            <a href="{% url 'core:backup_download' item.name %}" class="btn btn-ghost btn-sm btn-icon size-8" title="{% trans 'Herunterladen' %}" aria-label="{% blocktrans trimmed with name=item.name %}{{ name }} herunterladen{% endblocktrans %}">{% icon "download" %}</a>
+            <a {% dialog_link "core:backup_restore" item.name %} class="btn btn-ghost btn-sm btn-icon size-8" title="{% trans 'Wiederherstellen' %}" aria-label="{% blocktrans trimmed with name=item.name %}{{ name }} wiederherstellen{% endblocktrans %}">{% icon "refresh" %}</a>
+            <form method="post" action="{% url 'core:backup_delete' item.name %}" onsubmit="return confirm('{% filter escapejs %}{% trans "Diese Sicherung wirklich löschen?" %}{% endfilter %}')">
               {% csrf_token %}
-              <button type="submit" class="btn btn-ghost btn-sm btn-icon size-8 text-danger" title="Löschen" aria-label="{{ item.name }} löschen">{% icon "trash" %}</button>
+              <button type="submit" class="btn btn-ghost btn-sm btn-icon size-8 text-danger" title="{% trans 'Löschen' %}" aria-label="{% blocktrans trimmed with name=item.name %}{{ name }} löschen{% endblocktrans %}">{% icon "trash" %}</button>
             </form>
           </div>
         </td>
       </tr>
       {% empty %}
-      <tr><td colspan="3" class="py-10 text-center text-muted">Noch keine Sicherungen.</td></tr>
+      <tr><td colspan="3" class="py-10 text-center text-muted">{% trans "Noch keine Sicherungen." %}</td></tr>
       {% endfor %}
     </tbody>
   </table>

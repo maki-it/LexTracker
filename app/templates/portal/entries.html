@@ -1,31 +1,32 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load timefmt %}
-{% block title %}Zeiten · LexTracker{% endblock %}
+{% block title %}{% trans "Zeiten" %} · LexTracker{% endblock %}
 {% block content %}
 <div class="page-header">
   <div>
-    <h1>Zeiten</h1>
+    <h1>{% trans "Zeiten" %}</h1>
     <p class="page-subtitle">{{ range.start|date:date_format }} – {{ range.end|date:date_format }} · {{ total|hours:duration_format }} h</p>
   </div>
 </div>
 
 <div class="flex flex-col gap-3">
-  <nav aria-label="Zeitraum" class="flex flex-wrap gap-1.5">
+  <nav aria-label="{% trans 'Zeitraum' %}" class="flex flex-wrap gap-1.5">
     {% for preset in presets %}
     <a href="?range={{ preset.key }}{% if project_id %}&project={{ project_id }}{% endif %}" class="pill{% if preset.key == range.key %} pill-active{% endif %}">{{ preset.label }}</a>
     {% endfor %}
   </nav>
   <form method="get" class="flex flex-wrap items-end gap-3"
         hx-get="{% url 'portal:entries' %}" hx-trigger="change" hx-target="main" hx-select="main" hx-swap="outerHTML" hx-push-url="true">
-    <label class="field"><span>Von</span><input type="date" name="from" value="{{ range.start|date:'Y-m-d' }}" class="input"></label>
-    <label class="field"><span>Bis</span><input type="date" name="to" value="{{ range.end|date:'Y-m-d' }}" class="input"></label>
-    <label class="field min-w-56"><span>Projekt</span>
+    <label class="field"><span>{% trans "Von" %}</span><input type="date" name="from" value="{{ range.start|date:'Y-m-d' }}" class="input"></label>
+    <label class="field"><span>{% trans "Bis" %}</span><input type="date" name="to" value="{{ range.end|date:'Y-m-d' }}" class="input"></label>
+    <label class="field min-w-56"><span>{% trans "Projekt" %}</span>
       <select name="project" class="input">
-        <option value="">Alle Projekte</option>
+        <option value="">{% trans "Alle Projekte" %}</option>
         {% for p in projects %}<option value="{{ p.pk }}"{% if p.pk == project_id %} selected{% endif %}>{{ p.name }}</option>{% endfor %}
       </select>
     </label>
-    <noscript><button type="submit" class="btn">Anzeigen</button></noscript>
+    <noscript><button type="submit" class="btn">{% trans "Anzeigen" %}</button></noscript>
   </form>
 </div>
 
@@ -33,11 +34,11 @@
   <table class="table">
     <thead>
       <tr>
-        <th>Datum</th>
-        <th>Projekt · Aufgabe</th>
-        {% if user.portal_descriptions %}<th>Beschreibung</th>{% endif %}
-        <th class="text-right">Dauer</th>
-        <th>Abrechnung</th>
+        <th>{% trans "Datum" %}</th>
+        <th>{% trans "Projekt · Aufgabe" %}</th>
+        {% if user.portal_descriptions %}<th>{% trans "Beschreibung" %}</th>{% endif %}
+        <th class="text-right">{% trans "Dauer" %}</th>
+        <th>{% trans "Abrechnung" %}</th>
       </tr>
     </thead>
     <tbody>
@@ -48,23 +49,23 @@
         {% if user.portal_descriptions %}<td class="w-full">{{ entry.description|default:"–" }}</td>{% endif %}
         <td class="text-right whitespace-nowrap tabular-nums">
           {{ entry.duration|hours:duration_format }} h
-          {% if not entry.is_billable or not entry.task.is_billable %}<div><span class="badge">nicht berechnet</span></div>{% endif %}
+          {% if not entry.is_billable or not entry.task.is_billable %}<div><span class="badge">{% trans "nicht berechnet" %}</span></div>{% endif %}
         </td>
         <td class="whitespace-nowrap">
           {% if not entry.is_billable or not entry.task.is_billable %}<span class="text-muted">–</span>
           {% elif entry.invoice %}
-          <span class="badge badge-success">abgerechnet</span>
-          {% if user.portal_invoices %}{% if entry.invoice.voucher_number %}<a class="ml-1 tabular-nums hover:underline" href="{% url 'portal:invoice_entries' entry.invoice.voucher_number %}">{{ entry.invoice.voucher_number }}</a>{% else %}<span class="ml-1">Rechnung</span>{% endif %}{% if entry.invoice.status == "voided" %} <span class="text-[13px] text-muted">(storniert)</span>{% endif %}{% endif %}
-          {% else %}<span class="badge">offen</span>{% endif %}
+          <span class="badge badge-success">{% trans "abgerechnet" %}</span>
+          {% if user.portal_invoices %}{% if entry.invoice.voucher_number %}<a class="ml-1 tabular-nums hover:underline" href="{% url 'portal:invoice_entries' entry.invoice.voucher_number %}">{{ entry.invoice.voucher_number }}</a>{% else %}<span class="ml-1">{% trans "Rechnung" %}</span>{% endif %}{% if entry.invoice.status == "voided" %} <span class="text-[13px] text-muted">{% trans "(storniert)" %}</span>{% endif %}{% endif %}
+          {% else %}<span class="badge">{% trans "offen" %}</span>{% endif %}
         </td>
       </tr>
       {% empty %}
-      <tr><td colspan="{% if user.portal_descriptions %}5{% else %}4{% endif %}" class="py-8 text-center text-muted">In diesem Zeitraum wurde keine Zeit gebucht.</td></tr>
+      <tr><td colspan="{% if user.portal_descriptions %}5{% else %}4{% endif %}" class="py-8 text-center text-muted">{% trans "In diesem Zeitraum wurde keine Zeit gebucht." %}</td></tr>
       {% endfor %}
     </tbody>
     {% if entries %}
     <tfoot>
-      <tr><td colspan="{% if user.portal_descriptions %}3{% else %}2{% endif %}" class="text-right">Summe</td><td class="text-right whitespace-nowrap tabular-nums">{{ total|hours:duration_format }} h</td><td></td></tr>
+      <tr><td colspan="{% if user.portal_descriptions %}3{% else %}2{% endif %}" class="text-right">{% trans "Summe" %}</td><td class="text-right whitespace-nowrap tabular-nums">{{ total|hours:duration_format }} h</td><td></td></tr>
     </tfoot>
     {% endif %}
   </table>

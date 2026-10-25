@@ -4,6 +4,7 @@ from django import forms
 from django.db.models import F, Max, Q, QuerySet
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
+from django.utils.translation import gettext_lazy as _
 
 from core.forms import StyledFormMixin
 from core.ids import parse_uuid
@@ -99,7 +100,7 @@ def open_tasks(user, include_pk: UUID | None = None):
 
 
 class TimeEntryForm(StyledFormMixin, forms.ModelForm):
-    task = TaskChoiceField(label="Aufgabe", queryset=Task.objects.none(), widget=TaskSearchInput)
+    task = TaskChoiceField(label=_("Aufgabe"), queryset=Task.objects.none(), widget=TaskSearchInput)
 
     class Meta:
         model = TimeEntry
@@ -118,7 +119,7 @@ class TimeEntryForm(StyledFormMixin, forms.ModelForm):
         self.fields["ended_at"].required = True
         self.rounding = rounding
         for name in ("started_at", "ended_at"):
-            self.fields[name].widget.now_label = f"{self.fields[name].label} auf jetzt setzen"
+            self.fields[name].widget.now_label = _("%(field)s auf jetzt setzen") % {"field": self.fields[name].label}
         if rounding:
             # The arrows move in rounding steps, app.js snaps a picked time to a step, and the shown times sit on one.
             for name in ("started_at", "ended_at"):
@@ -130,7 +131,7 @@ class TimeEntryForm(StyledFormMixin, forms.ModelForm):
         cleaned = super().clean()
         start, end = cleaned.get("started_at"), cleaned.get("ended_at")
         if start and end and end <= start:
-            self.add_error("ended_at", "Das Ende muss nach dem Beginn liegen.")
+            self.add_error("ended_at", _("Das Ende muss nach dem Beginn liegen."))
         elif start and end:
             cleaned["started_at"], cleaned["ended_at"] = rounded_times(start, end, self.rounding)
         return cleaned

@@ -1,28 +1,29 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load timefmt icons dialogs %}
-{% block title %}Projekte · LexTracker{% endblock %}
+{% block title %}{% trans "Projekte" %} · LexTracker{% endblock %}
 {% block content %}
 <div class="page-header">
   <div>
-    <h1>Projekte</h1>
-    <p class="page-subtitle">{{ count }} Projekte{% if "all" not in statuses %} · {{ selected_labels|join:", " }}{% endif %}</p>
+    <h1>{% trans "Projekte" %}</h1>
+    <p class="page-subtitle">{% blocktrans trimmed count counter=count %}{{ counter }} Projekt{% plural %}{{ counter }} Projekte{% endblocktrans %}{% if "all" not in statuses %} · {{ selected_labels|join:", " }}{% endif %}</p>
   </div>
   <div class="toolbar">
-    <a href="{% url 'projects:templates' %}" class="btn">Aufgabenvorlagen</a>
-    <a {% dialog_link "projects:create" %} class="btn btn-primary">{% icon "plus" %}Neues Projekt</a>
+    <a href="{% url 'projects:templates' %}" class="btn">{% trans "Aufgabenvorlagen" %}</a>
+    <a {% dialog_link "projects:create" %} class="btn btn-primary">{% icon "plus" %}{% trans "Neues Projekt" %}</a>
   </div>
 </div>
 <div class="flex flex-col gap-3">
   <form method="get" role="search">
-    <input type="search" name="q" value="{{ query }}" placeholder="Projekt, Kunde oder Beschreibung suchen" aria-label="Projekte suchen" class="input max-w-sm"
+    <input type="search" name="q" value="{{ query }}" placeholder="{% trans 'Projekt, Kunde oder Beschreibung suchen' %}" aria-label="{% trans 'Projekte suchen' %}" class="input max-w-sm"
            hx-get="{% url 'projects:list' %}" hx-trigger="input changed delay:250ms, search" hx-include="closest form"
            hx-target="#project-list" hx-select="#project-list" hx-swap="outerHTML" hx-push-url="true">
     {% for key in statuses %}<input type="hidden" name="status" value="{{ key }}">{% endfor %}
-    <noscript><button type="submit" class="btn">Suchen</button></noscript>
+    <noscript><button type="submit" class="btn">{% trans "Suchen" %}</button></noscript>
   </form>
 </div>
 <div id="project-list" class="flex flex-col gap-3">
-  <nav aria-label="Nach Status filtern" class="flex flex-wrap gap-1.5">
+  <nav aria-label="{% trans 'Nach Status filtern' %}" class="flex flex-wrap gap-1.5">
     {% for pill in filters %}
     <a href="?{{ pill.query }}" class="pill gap-1.5{% if pill.active %} pill-active{% endif %}"{% if pill.active %} aria-current="true"{% endif %}>{{ pill.label }}<span class="text-muted tabular-nums">{{ pill.count }}</span></a>
     {% endfor %}
@@ -31,11 +32,11 @@
     <table class="table">
       <thead>
         <tr>
-          <th>Projekt</th>
-          <th>Kunde</th>
-          <th>Status</th>
-          <th class="text-right">Gebucht</th>
-          <th class="text-right">Budget</th>
+          <th>{% trans "Projekt" %}</th>
+          <th>{% trans "Kunde" %}</th>
+          <th>{% trans "Status" %}</th>
+          <th class="text-right">{% trans "Gebucht" %}</th>
+          <th class="text-right">{% trans "Budget" %}</th>
         </tr>
       </thead>
       <tbody>

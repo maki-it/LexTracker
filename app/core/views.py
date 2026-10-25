@@ -14,6 +14,8 @@ from django.templatetags.static import static
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.http import content_disposition_header
+from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 from django.views.generic import RedirectView
 
@@ -85,11 +87,11 @@ def _require_admin(request: HttpRequest) -> None:
 
 
 SETTINGS_TABS = [
-    ("general", "Allgemein"),
+    ("general", gettext_lazy("Allgemein")),
     ("lexware", "Lexware"),
-    ("email", "E-Mail"),
-    ("backup", "Datensicherung"),
-    ("security", "Sicherheit"),
+    ("email", gettext_lazy("E-Mail")),
+    ("backup", gettext_lazy("Datensicherung")),
+    ("security", gettext_lazy("Sicherheit")),
 ]
 _SETTINGS_TAB_FIELDS = {
     "general": ["default_hourly_rate", "time_rounding", "invoice_detail"],
@@ -130,7 +132,7 @@ async def app_settings(request: HttpRequest) -> HttpResponse:
     if request.method == "POST" and await sync_to_async(form.is_valid)():
         # Save only the fields on the page; the import writes its status columns itself.
         await form.instance.asave(update_fields=list(form.fields))
-        messages.success(request, "Einstellungen gespeichert.")
+        messages.success(request, _("Einstellungen gespeichert."))
         return redirect(f"{reverse('core:settings')}?tab={tab}")
     if form.errors and not form.non_field_errors():
         # Show the tab that holds the first mistake, whichever one was open.
@@ -214,9 +216,9 @@ async def backup_create(request: HttpRequest) -> HttpResponse:
     try:
         path = await sync_to_async(backup.backup_and_record)()
     except Exception as exc:
-        messages.error(request, f"Die Sicherung ist fehlgeschlagen: {exc}")
+        messages.error(request, _("Die Sicherung ist fehlgeschlagen: %(error)s") % {"error": exc})
     else:
-        messages.success(request, f"Sicherung {path.name} erstellt.")
+        messages.success(request, _("Sicherung %(name)s erstellt.") % {"name": path.name})
     return redirect("core:backups")
 
 
@@ -231,16 +233,18 @@ async def backup_upload(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
         file = request.FILES.get("file")
         if file is None:
-            error = "Bitte wähle eine Datei aus."
+            error = _("Bitte wähle eine Datei aus.")
         elif file.size > settings.BACKUP_UPLOAD_MAX_SIZE:
-            error = f"Die Datei ist größer als {filesizeformat(settings.BACKUP_UPLOAD_MAX_SIZE)}."
+            error = _("Die Datei ist größer als %(size)s.") % {"size": filesizeformat(settings.BACKUP_UPLOAD_MAX_SIZE)}
         else:
             try:
                 path = await sync_to_async(backup.save_upload)(file.chunks())
             except backup.InvalidBackup as exc:
                 error = str(exc)
             else:
-                messages.success(request, f"Sicherung hochgeladen und als {path.name} gespeichert.")
+                messages.success(
+                    request, _("Sicherung hochgeladen und als %(name)s gespeichert.") % {"name": path.name}
+                )
                 await inbox_events.backup_uploaded(path.name, request.user.get_username())
                 return navigate("core:backups")
     context = {"error": error, "max_size": settings.BACKUP_UPLOAD_MAX_SIZE}
@@ -271,7 +275,7 @@ async def backup_delete(request: HttpRequest, name: str) -> HttpResponse:
     _require_admin(request)
     path = await _get_backup(name)
     await asyncio.to_thread(path.unlink)
-    messages.success(request, f"Sicherung {name} gelöscht.")
+    messages.success(request, _("Sicherung %(name)s gelöscht.") % {"name": name})
     return redirect("core:backups")
 
 
@@ -282,7 +286,7 @@ async def backup_restore(request: HttpRequest, name: str) -> HttpResponse:
     error = None
     if request.method == "POST":
         if request.POST.get("confirmed") != "1":
-            error = "Bitte bestätige, dass der aktuelle Stand ersetzt wird."
+            error = _("Bitte bestätige, dass der aktuelle Stand ersetzt wird.")
         else:
             try:
                 before = await sync_to_async(backup.restore)(path)
@@ -295,7 +299,8 @@ async def backup_restore(request: HttpRequest, name: str) -> HttpResponse:
                 await inbox_events.backup_restored(name, request.user.get_username())
                 messages.success(
                     request,
-                    f"Sicherung {name} wiederhergestellt. Der vorherige Stand liegt als {before.name} im Ordner.",
+                    _("Sicherung %(name)s wiederhergestellt. Der vorherige Stand liegt als %(before)s im Ordner.")
+                    % {"name": name, "before": before.name},
                 )
                 return navigate("core:backups")
     return render(request, "core/backup_restore.html", {"name": name, "error": error})

@@ -1,22 +1,23 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load icons dialogs markdown %}
-{% block title %}Aufgabenvorlagen · LexTracker{% endblock %}
+{% block title %}{% trans "Aufgabenvorlagen" %} · LexTracker{% endblock %}
 {% block content %}
 <div class="page-header">
   <div>
-    <p class="breadcrumb"><a href="{% url 'projects:list' %}">Projekte</a></p>
-    <h1>Aufgabenvorlagen</h1>
-    <p class="page-subtitle">Aufgaben, die in vielen Projekten vorkommen. Beim Hinzufügen zu einem Projekt werden ihre Werte in eine neue Aufgabe kopiert.</p>
+    <p class="breadcrumb"><a href="{% url 'projects:list' %}">{% trans "Projekte" %}</a></p>
+    <h1>{% trans "Aufgabenvorlagen" %}</h1>
+    <p class="page-subtitle">{% trans "Aufgaben, die in vielen Projekten vorkommen. Beim Hinzufügen zu einem Projekt werden ihre Werte in eine neue Aufgabe kopiert." %}</p>
   </div>
-  <a {% dialog_link "projects:template_create" %} class="btn btn-primary">{% icon "plus" %}Neue Vorlage</a>
+  <a {% dialog_link "projects:template_create" %} class="btn btn-primary">{% icon "plus" %}{% trans "Neue Vorlage" %}</a>
 </div>
 <div class="table-wrap">
   <table class="table">
     <thead>
       <tr>
-        <th>Vorlage</th>
-        <th class="text-right">Stundensatz</th>
-        <th class="text-right">Schätzung</th>
+        <th>{% trans "Vorlage" %}</th>
+        <th class="text-right">{% trans "Stundensatz" %}</th>
+        <th class="text-right">{% trans "Schätzung" %}</th>
         <th></th>
       </tr>
     </thead>
@@ -25,15 +26,15 @@
       <tr>
         <td class="w-full">
           <div class="font-medium">{{ template.name }}</div>
-          {% if not template.is_billable %}<div class="text-xs text-muted">nicht abrechenbar</div>{% endif %}
+          {% if not template.is_billable %}<div class="text-xs text-muted">{% trans "nicht abrechenbar" %}</div>{% endif %}
           {% if template.description %}<div class="line-clamp-2 text-xs text-muted">{{ template.description|markdown }}</div>{% endif %}
         </td>
-        <td class="whitespace-nowrap text-right text-muted tabular-nums">{% if template.hourly_rate is not None %}{{ template.hourly_rate }} €/h{% else %}vom Projekt{% endif %}</td>
+        <td class="whitespace-nowrap text-right text-muted tabular-nums">{% if template.hourly_rate is not None %}{{ template.hourly_rate }} €/h{% else %}{% trans "vom Projekt" %}{% endif %}</td>
         <td class="whitespace-nowrap text-right text-muted tabular-nums">{% if template.estimated_hours is not None %}{{ template.estimated_hours }} h{% else %}–{% endif %}</td>
-        <td><a {% dialog_link "projects:template_edit" template.pk %} class="btn btn-ghost btn-sm btn-icon size-8" title="Bearbeiten" aria-label="Vorlage {{ template.name }} bearbeiten">{% icon "pencil" %}</a></td>
+        <td><a {% dialog_link "projects:template_edit" template.pk %} class="btn btn-ghost btn-sm btn-icon size-8" title="{% trans 'Bearbeiten' %}" aria-label="{% blocktrans trimmed with name=template.name %}Vorlage {{ name }} bearbeiten{% endblocktrans %}">{% icon "pencil" %}</a></td>
       </tr>
       {% empty %}
-      <tr><td colspan="4" class="py-10 text-center text-muted">Noch keine Vorlagen. Lege eine neue an oder speichere eine bestehende Aufgabe als Vorlage.</td></tr>
+      <tr><td colspan="4" class="py-10 text-center text-muted">{% trans "Noch keine Vorlagen. Lege eine neue an oder speichere eine bestehende Aufgabe als Vorlage." %}</td></tr>
       {% endfor %}
     </tbody>
   </table>

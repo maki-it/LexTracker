@@ -1,51 +1,52 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load timefmt icons dialogs %}
-{% block title %}Übersicht · LexTracker{% endblock %}
+{% block title %}{% trans "Übersicht" %} · LexTracker{% endblock %}
 {% block content %}
 <div class="page-header">
   <div>
-    <h1>Hallo {{ user.first_name|default:user.username }}</h1>
+    <h1>{% blocktrans trimmed with first_name=user.first_name|default:user.username %}Hallo {{ first_name }}{% endblocktrans %}</h1>
     <p class="page-subtitle">{% now "l, j. F Y" %}</p>
   </div>
 </div>
 
 {% if lexware_missing %}
 <div role="alert" class="alert alert-warning">
-  Lexware Office ist noch nicht verbunden. Trag den API-Schlüssel in den <a href="{% url 'core:settings' %}?tab=lexware">Einstellungen</a> ein, um Kunden zu importieren und Rechnungen zu erstellen.
+  {% url 'core:settings' as settings_url %}{% blocktrans trimmed with url=settings_url|add:"?tab=lexware" %}Lexware Office ist noch nicht verbunden. Trag den API-Schlüssel in den <a href="{{ url }}">Einstellungen</a> ein, um Kunden zu importieren und Rechnungen zu erstellen.{% endblocktrans %}
 </div>
 {% endif %}
 {% if scheduler_stopped %}
 <div role="alert" class="alert alert-error">
-  Der Scheduler meldet sich nicht mehr. Import, Sicherung und E-Mail-Versand laufen so nicht. Mehr dazu unter <a href="{% url 'core:jobs' %}">Hintergrundaufgaben</a>.
+  {% url 'core:jobs' as jobs_url %}{% blocktrans trimmed with url=jobs_url %}Der Scheduler meldet sich nicht mehr. Import, Sicherung und E-Mail-Versand laufen so nicht. Mehr dazu unter <a href="{{ url }}">Hintergrundaufgaben</a>.{% endblocktrans %}
 </div>
 {% endif %}
 
 <section class="card flex flex-col gap-3">
-  <h2>Timer starten</h2>
+  <h2>{% trans "Timer starten" %}</h2>
   {% if last_task %}
   <form method="post" action="{% url 'tracking:timer_start' %}" hx-post="{% url 'tracking:timer_start' %}" hx-swap="none"
         class="flex flex-col gap-2 md:flex-row">
     {% csrf_token %}
-    <div class="md:w-96 md:shrink-0">{% include "tracking/_task_search.html" with name="task" task=last_task label="Aufgabe" %}</div>
-    <input type="text" name="description" class="input" placeholder="Was machst du gerade? (optional)" aria-label="Beschreibung">
-    <button type="submit" class="btn btn-primary">{% icon "play" size=14 %}Starten</button>
+    <div class="md:w-96 md:shrink-0">{% trans "Aufgabe" as task_label %}{% include "tracking/_task_search.html" with name="task" task=last_task label=task_label %}</div>
+    <input type="text" name="description" class="input" placeholder="{% trans 'Was machst du gerade? (optional)' %}" aria-label="{% trans 'Beschreibung' %}">
+    <button type="submit" class="btn btn-primary">{% icon "play" size=14 %}{% trans "Starten" %}</button>
   </form>
   {% else %}
-  <p class="text-muted">Noch keine offenen Aufgaben. {% if user.is_admin %}<a class="hover:underline" href="{% url 'projects:create' %}">Lege ein Projekt an</a> und füge Aufgaben hinzu.{% else %}Sobald ein Projekt mit Aufgaben angelegt ist, kannst du hier Zeit buchen.{% endif %}</p>
+  <p class="text-muted">{% if user.is_admin %}{% url 'projects:create' as create_url %}{% blocktrans trimmed with url=create_url %}Noch keine offenen Aufgaben. <a class="hover:underline" href="{{ url }}">Lege ein Projekt an</a> und füge Aufgaben hinzu.{% endblocktrans %}{% else %}{% trans "Noch keine offenen Aufgaben." %} {% trans "Sobald ein Projekt mit Aufgaben angelegt ist, kannst du hier Zeit buchen." %}{% endif %}</p>
   {% endif %}
 </section>
 
 {% include "tracking/_filter.html" %}
 <section id="today" class="row-list" hx-get="{{ request.get_full_path }}" hx-select="#today" hx-swap="outerHTML" hx-trigger="timer-changed from:body">
   <div class="row-list-header">
-    <h2>Heute</h2>
+    <h2>{% trans "Heute" %}</h2>
     <span class="font-semibold tabular-nums">{{ today_total|hours:duration_format }} h</span>
   </div>
   {% for entry in today_entries %}
   {% include "tracking/_entry_row.html" %}
   {% empty %}
-  <p class="px-1 py-4 text-muted">{% if filter_label %}Heute ist dafür nichts erfasst.{% else %}Heute noch nichts erfasst.{% endif %}</p>
+  <p class="px-1 py-4 text-muted">{% if filter_label %}{% trans "Heute ist dafür nichts erfasst." %}{% else %}{% trans "Heute noch nichts erfasst." %}{% endif %}</p>
   {% endfor %}
-  <div class="pt-3"><a {% dialog_link "tracking:create" %} class="btn btn-sm">{% icon "plus" size=14 %}Zeit nachtragen</a></div>
+  <div class="pt-3"><a {% dialog_link "tracking:create" %} class="btn btn-sm">{% icon "plus" size=14 %}{% trans "Zeit nachtragen" %}</a></div>
 </section>
 {% endblock %}

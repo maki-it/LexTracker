@@ -17,6 +17,7 @@ from django.core.management import call_command
 from django.db import connection
 from django.db.migrations.loader import MigrationLoader
 from django.utils import timezone
+from django.utils.translation import gettext as _
 
 from core.models import AppSettings
 
@@ -156,17 +157,17 @@ def check(path: Path) -> None:
     try:
         with closing(sqlite3.connect(f"file:{path}?mode=ro", uri=True)) as db:
             if db.execute("PRAGMA quick_check").fetchone()[0] != "ok":
-                raise InvalidBackup("Die Datei ist beschädigt.")
+                raise InvalidBackup(_("Die Datei ist beschädigt."))
             tables = {row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
             if not {"django_migrations", "core_appsettings"} <= tables:
-                raise InvalidBackup("Die Datei ist keine Datenbank von LexTracker.")
+                raise InvalidBackup(_("Die Datei ist keine Datenbank von LexTracker."))
             applied = set(db.execute("SELECT app, name FROM django_migrations"))
     except sqlite3.DatabaseError as exc:
-        raise InvalidBackup(f"Keine lesbare Datenbank ({exc}).") from exc
+        raise InvalidBackup(_("Keine lesbare Datenbank (%(error)s).") % {"error": exc}) from exc
     # A backup from a newer version has tables this code does not know; migrate cannot undo that.
     unknown = applied - set(MigrationLoader(None, ignore_no_migrations=True).disk_migrations)
     if unknown:
-        raise InvalidBackup("Die Sicherung stammt aus einer neueren Version der App.")
+        raise InvalidBackup(_("Die Sicherung stammt aus einer neueren Version der App."))
 
 
 def save_upload(chunks: Iterable[bytes], now: datetime | None = None) -> Path:

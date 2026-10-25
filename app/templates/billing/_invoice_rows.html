@@ -1,7 +1,8 @@
+{% load i18n %}
 {% for invoice in invoices %}
 <tr>
   <td class="whitespace-nowrap tabular-nums{% if not invoice.voucher_number and not invoice.lexware_url %} text-muted{% endif %}">
-    {% if invoice.lexware_url %}<a class="hover:underline" href="{{ invoice.lexware_url }}" target="_blank" rel="noopener">{{ invoice.voucher_number|default:"Entwurf öffnen" }}</a>{% else %}{{ invoice.voucher_number|default:"–" }}{% endif %}
+    {% if invoice.lexware_url %}<a class="hover:underline" href="{{ invoice.lexware_url }}" target="_blank" rel="noopener">{{ invoice.voucher_number|default:_("Entwurf öffnen") }}</a>{% else %}{{ invoice.voucher_number|default:"–" }}{% endif %}
   </td>
   {% if show_customer %}<td class="font-medium"><a href="{% url 'billing:customer' invoice.customer_id %}" class="text-ink no-underline hover:underline">{{ invoice.customer.name }}</a></td>{% endif %}
   <td class="whitespace-nowrap tabular-nums">{{ invoice.voucher_date|default:invoice.created_at|date:date_format }}</td>
@@ -15,12 +16,12 @@
     <form method="post" action="{% url 'billing:invoice_release' invoice.pk %}" class="inline">
       {% csrf_token %}
       <input type="hidden" name="return_query" value="{{ request.GET.urlencode }}">
-      <button type="submit" class="btn btn-ghost btn-sm ml-2" title="Die Zeiten dieser stornierten Rechnung können dann neu abgerechnet werden">Zeiten freigeben</button>
+      <button type="submit" class="btn btn-ghost btn-sm ml-2" title="{% trans 'Die Zeiten dieser stornierten Rechnung können dann neu abgerechnet werden' %}">{% trans "Zeiten freigeben" %}</button>
     </form>
     {% endif %}
   </td>
 </tr>
 {% empty %}
-{% if not page or page.is_first %}<tr><td colspan="7" class="py-8 text-center text-muted">{% if query or statuses or customer_id %}Keine Rechnung passt zum Filter.{% else %}Noch keine Rechnungen erstellt.{% endif %}</td></tr>{% endif %}
+{% if not page or page.is_first %}<tr><td colspan="7" class="py-8 text-center text-muted">{% if query or statuses or customer_id %}{% trans "Keine Rechnung passt zum Filter." %}{% else %}{% trans "Noch keine Rechnungen erstellt." %}{% endif %}</td></tr>{% endif %}
 {% endfor %}
 {% if page %}{% include "core/_more_rows.html" with colspan=7 %}{% endif %}

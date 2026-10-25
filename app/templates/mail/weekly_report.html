@@ -1,17 +1,17 @@
 {% extends "mail/_base.html" %}
-{% load timefmt %}
+{% load i18n timefmt %}
 {% block content %}
-<p style="margin:0 0 4px;font-size:18px;font-weight:600">Dein Wochenbericht</p>
+<p style="margin:0 0 4px;font-size:18px;font-weight:600">{% trans "Dein Wochenbericht" %}</p>
 <p style="margin:0 0 20px;color:#71717a">{{ report.range.label }}</p>
 
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px">
   <tr>
     <td style="padding:0 8px 0 0;width:50%">
-      <div style="font-size:12px;color:#71717a">Deine Stunden</div>
+      <div style="font-size:12px;color:#71717a">{% trans "Deine Stunden" %}</div>
       <div style="font-size:24px;font-weight:600">{{ report.total|hours:duration_format }}</div>
     </td>
     <td style="padding:0 0 0 8px;width:50%">
-      <div style="font-size:12px;color:#71717a">davon abrechenbar</div>
+      <div style="font-size:12px;color:#71717a">{% trans "davon abrechenbar" %}</div>
       <div style="font-size:24px;font-weight:600">{{ report.billable|hours:duration_format }}</div>
     </td>
   </tr>
@@ -30,7 +30,7 @@
 </table>
 
 {% if report.projects %}
-<p style="margin:0 0 6px;font-weight:600">Nach Projekt</p>
+<p style="margin:0 0 6px;font-weight:600">{% trans "Nach Projekt" %}</p>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;font-size:14px">
   {% for line in report.projects %}
   <tr>
@@ -42,31 +42,31 @@
 {% endif %}
 
 {% if report.overview %}{% with o=report.overview %}
-<p style="margin:0 0 6px;font-weight:600">Überblick</p>
+<p style="margin:0 0 6px;font-weight:600">{% trans "Überblick" %}</p>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;font-size:14px">
   {% if report.team_total is not None %}
   <tr>
-    <td style="padding:4px 8px 4px 0;border-top:1px solid #e4e4e7">Stunden aller Benutzer</td>
+    <td style="padding:4px 8px 4px 0;border-top:1px solid #e4e4e7">{% trans "Stunden aller Benutzer" %}</td>
     <td style="padding:4px 0;border-top:1px solid #e4e4e7;text-align:right;white-space:nowrap">{{ report.team_total|hours:duration_format }}</td>
   </tr>
   {% endif %}
   <tr>
-    <td style="padding:4px 8px 4px 0;border-top:1px solid #e4e4e7">Noch nicht abgerechnet (in diesem Zeitraum)</td>
+    <td style="padding:4px 8px 4px 0;border-top:1px solid #e4e4e7">{% trans "Noch nicht abgerechnet (in diesem Zeitraum)" %}</td>
     <td style="padding:4px 0;border-top:1px solid #e4e4e7;text-align:right;white-space:nowrap">{{ o.totals.unbilled|hours:duration_format }}{% if o.unbilled_value %}<br><span style="color:#71717a">≈ {{ o.unbilled_value|floatformat:2 }} €</span>{% endif %}</td>
   </tr>
   <tr>
-    <td style="padding:4px 8px 4px 0;border-top:1px solid #e4e4e7">Rechnungen offen</td>
+    <td style="padding:4px 8px 4px 0;border-top:1px solid #e4e4e7">{% trans "Rechnungen offen" %}</td>
     <td style="padding:4px 0;border-top:1px solid #e4e4e7;text-align:right;white-space:nowrap">{{ o.open|floatformat:2 }} €</td>
   </tr>
   {% for r in o.retainers %}
   <tr>
-    <td style="padding:4px 8px 4px 0;border-top:1px solid #e4e4e7">Retainer {{ r.agreement.customer.name }} <span style="color:#71717a">({{ r.period_label }})</span></td>
+    <td style="padding:4px 8px 4px 0;border-top:1px solid #e4e4e7">{% blocktrans trimmed with customer=r.agreement.customer.name %}Retainer {{ customer }}{% endblocktrans %} <span style="color:#71717a">({{ r.period_label }})</span></td>
     <td style="padding:4px 0;border-top:1px solid #e4e4e7;text-align:right;white-space:nowrap{% if r.overage %};color:#b91c1c{% endif %}">{{ r.used|hours:duration_format }} / {{ r.included|hours:duration_format }}</td>
   </tr>
   {% endfor %}
 </table>
 {% endwith %}{% endif %}
 
-{% if url %}{% include "mail/_button.html" with label="In LexTracker ansehen" %}{% endif %}
+{% if url %}{% trans "In LexTracker ansehen" as button_label %}{% include "mail/_button.html" with label=button_label %}{% endif %}
 {% endblock %}
-{% block footer %}Den Wochenbericht schaltest du in LexTracker unter Konto ab.{% endblock %}
+{% block footer %}{% trans "Den Wochenbericht schaltest du in LexTracker unter Konto ab." %}{% endblock %}

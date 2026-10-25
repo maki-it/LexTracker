@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import BaseUserCreationForm
 from django.db import transaction
+from django.utils import translation
 
 from accounts.models import User
 from core.forms import StyledFormMixin
@@ -17,6 +18,8 @@ class AdminAccountForm(StyledFormMixin, BaseUserCreationForm):
     def save(self, commit: bool = True) -> User:
         user = super().save(commit=False)
         user.role = User.Role.ADMIN
+        # Whoever sets the app up gets it in the language the setup was shown in.
+        user.language = translation.get_language() or user.language
         user.is_staff = user.is_superuser = True
         if commit:
             with transaction.atomic():

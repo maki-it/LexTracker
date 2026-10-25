@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 
 from django.utils import timezone
+from django.utils.translation import gettext as _
 
 from core.models import AppSettings
 from customers.models import Customer
@@ -38,10 +39,14 @@ class SyncResult:
 
     @property
     def summary(self) -> str:
-        summary = f"{self.created} neu, {self.updated} aktualisiert, {self.unchanged} unverändert"
+        parts = [
+            _("%(count)d neu") % {"count": self.created},
+            _("%(count)d aktualisiert") % {"count": self.updated},
+            _("%(count)d unverändert") % {"count": self.unchanged},
+        ]
         if self.removed:
-            summary += f", {self.removed} in Lexware nicht mehr vorhanden (archiviert)"
-        return summary + "."
+            parts.append(_("%(count)d in Lexware nicht mehr vorhanden (archiviert)") % {"count": self.removed})
+        return ", ".join(parts) + "."
 
 
 async def sync_customers(client: LexwareClient) -> SyncResult:

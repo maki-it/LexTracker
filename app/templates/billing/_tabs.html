@@ -1,10 +1,11 @@
+{% load i18n %}
 <div class="page-header">
   <div>
-    <h1>Abrechnung</h1>
-    <p class="page-subtitle">Zeiten abrechnen und Rechnungen aus Lexware Office im Blick behalten</p>
+    <h1>{% trans "Abrechnung" %}</h1>
+    <p class="page-subtitle">{% trans "Zeiten abrechnen und Rechnungen aus Lexware Office im Blick behalten" %}</p>
   </div>
 </div>
-<nav class="tabs" aria-label="Abrechnung">
-  <a href="{% url 'billing:overview' %}" class="tab{% if tab == 'abrechnen' %} tab-active{% endif %}"{% if tab == 'abrechnen' %} aria-current="page"{% endif %}>Abrechnen</a>
-  <a href="{% url 'billing:invoices' %}" class="tab{% if tab == 'rechnungen' %} tab-active{% endif %}"{% if tab == 'rechnungen' %} aria-current="page"{% endif %}>Rechnungen</a>
+<nav class="tabs" aria-label="{% trans 'Abrechnung' %}">
+  <a href="{% url 'billing:overview' %}" class="tab{% if tab == 'abrechnen' %} tab-active{% endif %}"{% if tab == 'abrechnen' %} aria-current="page"{% endif %}>{% trans "Abrechnen" %}</a>
+  <a href="{% url 'billing:invoices' %}" class="tab{% if tab == 'rechnungen' %} tab-active{% endif %}"{% if tab == 'rechnungen' %} aria-current="page"{% endif %}>{% trans "Rechnungen" %}</a>
 </nav>

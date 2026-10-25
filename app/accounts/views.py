@@ -9,7 +9,10 @@ from django.contrib.auth.tokens import default_token_generator
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
+from django.utils import translation
 from django.utils.http import url_has_allowed_host_and_scheme, urlencode
+from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy, ngettext
 from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.http import require_http_methods, require_POST
 
@@ -39,7 +42,11 @@ def _safe_next(request: HttpRequest) -> str:
 
 
 def _locked(request: HttpRequest, template: str, form, minutes: int) -> HttpResponse:
-    error = f"Zu viele Fehlversuche. Versuche es in {minutes} Minute{'n' if minutes > 1 else ''} wieder."
+    error = ngettext(
+        "Zu viele Fehlversuche. Versuche es in %(minutes)d Minute wieder.",
+        "Zu viele Fehlversuche. Versuche es in %(minutes)d Minuten wieder.",
+        minutes,
+    ) % {"minutes": minutes}
     context = {"form": form, "error": error, "next": _safe_next(request)}
     return render(request, template, context, status=429)
 
@@ -60,7 +67,7 @@ async def login_view(request: HttpRequest) -> HttpResponse:
         if user is not None:
             return await _sign_in(request, user, user.backend)
         await ratelimit.record_failure(request, form.cleaned_data["username"])
-        error = "Benutzername oder Passwort ist falsch."
+        error = _("Benutzername oder Passwort ist falsch.")
 
     context = {"form": form, "error": error, "next": _safe_next(request), "links": await links.available()}
     return render(request, "accounts/login.html", context)
@@ -97,7 +104,7 @@ async def login_code(request: HttpRequest) -> HttpResponse:
             await ratelimit.clear_failures(request)
             return redirect(_safe_next(request))
         await ratelimit.record_failure(request, user.get_username())
-        error = "Der Code ist ungültig oder abgelaufen."
+        error = _("Der Code ist ungültig oder abgelaufen.")
     return render(request, "accounts/login_code.html", {"form": form, "error": error, "next": _safe_next(request)})
 
 
@@ -136,7 +143,7 @@ async def password_reset(request: HttpRequest, uidb64: str, token: str) -> HttpR
     form = InviteForm(user, request.POST or None)
     if request.method == "POST" and await sync_to_async(form.is_valid)():
         await sync_to_async(form.save)()
-        messages.success(request, "Neues Passwort gesetzt. Melde dich jetzt damit an.")
+        messages.success(request, _("Neues Passwort gesetzt. Melde dich jetzt damit an."))
         return redirect(f"{reverse('accounts:login')}?{urlencode({'username': user.get_username()})}")
     return render(request, "accounts/password_reset.html", {"form": form, "reset_user": user})
 
@@ -178,15 +185,15 @@ async def logout_view(request: HttpRequest) -> HttpResponse:
 
 
 ACCOUNT_TABS = [
-    ("profile", "Profil"),
-    ("appearance", "Darstellung"),
-    ("notifications", "Benachrichtigungen"),
-    ("security", "Sicherheit"),
-    ("agents", "KI-Agenten"),
+    ("profile", gettext_lazy("Profil")),
+    ("appearance", gettext_lazy("Darstellung")),
+    ("notifications", gettext_lazy("Benachrichtigungen")),
+    ("security", gettext_lazy("Sicherheit")),
+    ("agents", gettext_lazy("KI-Agenten")),
 ]
 _ACCOUNT_TAB_FIELDS = {
     "profile": ["first_name", "last_name", "email"],
-    "appearance": ["theme", "date_format", "duration_format", "list_page_size"],
+    "appearance": ["language", "theme", "date_format", "duration_format", "list_page_size"],
     "notifications": ["weekly_report", "timer_reminder", "message_level", "message_email_level"],
 }
 ACCOUNT_FIELD_TABS = {field: tab for tab, fields in _ACCOUNT_TAB_FIELDS.items() for field in fields}
@@ -215,7 +222,9 @@ async def account(request: HttpRequest) -> HttpResponse:
     tab = account_tab(request.user, request.POST.get("tab") or request.GET.get("tab"))
     if request.method == "POST" and await sync_to_async(form.is_valid)():
         await sync_to_async(form.save)()
-        messages.success(request, "Einstellungen gespeichert.")
+        # The confirmation and the page it leads to are already in the new language.
+        translation.activate(request.user.language)
+        messages.success(request, _("Einstellungen gespeichert."))
         return redirect(account_url(tab))
     if form.errors:
         # Show the tab that holds the first mistake, whichever one was open.
@@ -238,7 +247,7 @@ async def _account_page(request: HttpRequest, form, tab: str, token_form=None, n
             "new_key": new_key,
             "mcp_url": mcp_url,
             "mcp_clients": mcp_clients.clients(mcp_url, new_key),
-            "token_placeholder": mcp_clients.TOKEN_PLACEHOLDER,
+            "token_placeholder": mcp_clients.token_placeholder(),
         },
     )
 
@@ -248,7 +257,7 @@ async def token_create(request: HttpRequest) -> HttpResponse:
     token_form = ApiTokenForm(request.POST)
     new_key = ""
     if await sync_to_async(token_form.is_valid)():
-        _, new_key = await sync_to_async(ApiToken.issue)(request.user, token_form.cleaned_data["name"])
+        _token, new_key = await sync_to_async(ApiToken.issue)(request.user, token_form.cleaned_data["name"])
         token_form = None
     # Rendered, not redirected: the key is shown only on this response.
     return await _account_page(
@@ -258,9 +267,9 @@ async def token_create(request: HttpRequest) -> HttpResponse:
 
 @require_POST
 async def token_revoke(request: HttpRequest, pk: UUID) -> HttpResponse:
-    deleted, _ = await request.user.api_tokens.filter(pk=pk).adelete()
+    deleted, _count = await request.user.api_tokens.filter(pk=pk).adelete()
     if deleted:
-        messages.success(request, "Token widerrufen. Programme, die ihn nutzen, haben keinen Zugriff mehr.")
+        messages.success(request, _("Token widerrufen. Programme, die ihn nutzen, haben keinen Zugriff mehr."))
     return redirect(account_url("agents"))
 
 
@@ -271,7 +280,7 @@ async def password_change(request: HttpRequest) -> HttpResponse:
         await sync_to_async(form.save)()
         # Keep this session signed in; other sessions are signed out by the new password.
         await aupdate_session_auth_hash(request, form.user)
-        messages.success(request, "Passwort geändert.")
+        messages.success(request, _("Passwort geändert."))
         return redirect(account_url("security"))
     return render(request, "accounts/password.html", {"form": form})
 
@@ -285,9 +294,9 @@ async def mfa_setup(request: HttpRequest) -> HttpResponse:
     if request.method == "POST" and form.is_valid():
         codes = await sync_to_async(mfa.confirm)(device, form.cleaned_data["code"])
         if codes is not None:
-            messages.success(request, "Zwei-Faktor-Anmeldung ist eingeschaltet.")
+            messages.success(request, _("Zwei-Faktor-Anmeldung ist eingeschaltet."))
             return render(request, "accounts/recovery_codes.html", {"codes": codes})
-        form.add_error("code", "Der Code stimmt nicht. Prüfe die Uhrzeit auf dem Handy und versuche es erneut.")
+        form.add_error("code", _("Der Code stimmt nicht. Prüfe die Uhrzeit auf dem Handy und versuche es erneut."))
     context = {
         "form": form,
         "qr_code": await sync_to_async(mfa.qr_code_svg)(device),
@@ -305,7 +314,7 @@ async def mfa_manage(request: HttpRequest) -> HttpResponse:
             codes = await sync_to_async(mfa.new_recovery_codes)(request.user)
             return render(request, "accounts/recovery_codes.html", {"codes": codes})
         await sync_to_async(mfa.disable)(request.user)
-        messages.success(request, "Zwei-Faktor-Anmeldung ist ausgeschaltet.")
+        messages.success(request, _("Zwei-Faktor-Anmeldung ist ausgeschaltet."))
         return redirect(account_url("security"))
     return render(request, "accounts/mfa_manage.html", {"form": form})
 
@@ -319,6 +328,6 @@ async def invite(request: HttpRequest, uidb64: str, token: str) -> HttpResponse:
     form = InviteForm(user, request.POST or None)
     if request.method == "POST" and form.is_valid():
         await sync_to_async(form.save)()
-        messages.success(request, "Passwort gesetzt. Melde dich jetzt an.")
+        messages.success(request, _("Passwort gesetzt. Melde dich jetzt an."))
         return redirect(f"{reverse('accounts:login')}?{urlencode({'username': user.get_username()})}")
     return render(request, "accounts/invite.html", {"form": form, "invited": user})

@@ -1,25 +1,26 @@
 {% extends "base.html" %}
-{% block title %}Anmeldelink · LexTracker{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Anmeldelink" %} · LexTracker{% endblock %}
 {% block public_content %}
 <div class="flex w-full max-w-sm flex-col gap-6">
   {% include "accounts/_public_header.html" %}
   {% if sent %}
   <div class="card flex flex-col gap-3 p-6">
-    <h1 class="text-lg">Schau in dein Postfach</h1>
-    <p class="text-muted">Gibt es zu „{{ identifier }}“ einen Zugang mit E-Mail-Adresse, ist ein Anmeldelink unterwegs. Er gilt 15 Minuten und nur einmal.</p>
-    <a href="{% url 'accounts:login' %}" class="btn">Zur Anmeldung</a>
+    <h1 class="text-lg">{% trans "Schau in dein Postfach" %}</h1>
+    <p class="text-muted">{% blocktrans trimmed %}Gibt es zu „{{ identifier }}“ einen Zugang mit E-Mail-Adresse, ist ein Anmeldelink unterwegs. Er gilt 15 Minuten und nur einmal.{% endblocktrans %}</p>
+    <a href="{% url 'accounts:login' %}" class="btn">{% trans "Zur Anmeldung" %}</a>
   </div>
   {% else %}
   <form method="post" class="card flex flex-col gap-4 p-6">
     <div>
-      <h1 class="text-lg">Anmelden ohne Passwort</h1>
-      <p class="mt-1 text-sm text-muted">Wir schicken dir einen Link, der dich anmeldet. Nutzt du die Zwei-Faktor-Anmeldung, fragt LexTracker danach noch nach dem Code.</p>
+      <h1 class="text-lg">{% trans "Anmelden ohne Passwort" %}</h1>
+      <p class="mt-1 text-sm text-muted">{% trans "Wir schicken dir einen Link, der dich anmeldet. Nutzt du die Zwei-Faktor-Anmeldung, fragt LexTracker danach noch nach dem Code." %}</p>
     </div>
     {% csrf_token %}
     {% if error %}<div role="alert" class="alert alert-error">{{ error }}</div>{% endif %}
     {% include "core/_form_fields.html" %}
-    <button type="submit" class="btn btn-primary mt-1">Anmeldelink schicken</button>
-    <a href="{% url 'accounts:login' %}" class="text-center text-sm">Mit Passwort anmelden</a>
+    <button type="submit" class="btn btn-primary mt-1">{% trans "Anmeldelink schicken" %}</button>
+    <a href="{% url 'accounts:login' %}" class="text-center text-sm">{% trans "Mit Passwort anmelden" %}</a>
   </form>
   {% endif %}
 </div>

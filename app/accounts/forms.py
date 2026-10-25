@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import PasswordChangeForm, SetPasswordForm
 from django.db.models import Q
+from django.utils.translation import gettext_lazy as _
 
 from accounts.models import ApiToken, User
 from core.forms import StyledFormMixin
@@ -8,13 +9,15 @@ from projects.models import Project
 
 
 class LoginForm(forms.Form):
-    username = forms.CharField(label="Benutzername", max_length=150, widget=forms.TextInput(attrs={"autofocus": True}))
-    password = forms.CharField(label="Passwort", strip=False, widget=forms.PasswordInput)
+    username = forms.CharField(
+        label=_("Benutzername"), max_length=150, widget=forms.TextInput(attrs={"autofocus": True})
+    )
+    password = forms.CharField(label=_("Passwort"), strip=False, widget=forms.PasswordInput)
 
 
 class LinkRequestForm(forms.Form):
     identifier = forms.CharField(
-        label="Benutzername oder E-Mail-Adresse",
+        label=_("Benutzername oder E-Mail-Adresse"),
         max_length=254,
         widget=forms.TextInput(attrs={"autofocus": True, "autocomplete": "username", "class": "input"}),
     )
@@ -22,7 +25,7 @@ class LinkRequestForm(forms.Form):
 
 class CodeForm(forms.Form):
     code = forms.CharField(
-        label="Code",
+        label=_("Code"),
         max_length=20,
         widget=forms.TextInput(
             attrs={"autofocus": True, "autocomplete": "one-time-code", "inputmode": "numeric", "class": "input"}
@@ -30,13 +33,25 @@ class CodeForm(forms.Form):
     )
 
 
-class PreferencesForm(StyledFormMixin, forms.ModelForm):
+class LanguageFieldMixin:
+    """Without a language in the request, the user keeps theirs (or gets the default one)."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["language"].required = False
+
+    def clean_language(self):
+        return self.cleaned_data.get("language") or self.instance.language
+
+
+class PreferencesForm(LanguageFieldMixin, StyledFormMixin, forms.ModelForm):
     class Meta:
         model = User
         fields = [
             "first_name",
             "last_name",
             "email",
+            "language",
             "theme",
             "date_format",
             "duration_format",
@@ -56,7 +71,7 @@ class PreferencesForm(StyledFormMixin, forms.ModelForm):
             del self.fields["message_level"]
             del self.fields["message_email_level"]
         else:
-            self.fields["email"].help_text = "Für Wochenbericht, Erinnerungen und Links zum Anmelden."
+            self.fields["email"].help_text = _("Für Wochenbericht, Erinnerungen und Links zum Anmelden.")
 
 
 class StyledPasswordChangeForm(StyledFormMixin, PasswordChangeForm):
@@ -65,7 +80,7 @@ class StyledPasswordChangeForm(StyledFormMixin, PasswordChangeForm):
 
 class ConfirmPasswordForm(forms.Form):
     password = forms.CharField(
-        label="Aktuelles Passwort",
+        label=_("Aktuelles Passwort"),
         strip=False,
         widget=forms.PasswordInput(attrs={"autocomplete": "current-password", "class": "input"}),
     )
@@ -77,7 +92,7 @@ class ConfirmPasswordForm(forms.Form):
     def clean_password(self):
         password = self.cleaned_data["password"]
         if not self.user.check_password(password):
-            raise forms.ValidationError("Das Passwort ist falsch.")
+            raise forms.ValidationError(_("Das Passwort ist falsch."))
         return password
 
 
@@ -92,7 +107,7 @@ class ProjectChoices(forms.ModelMultipleChoiceField):
         return f"{project.customer.name} · {project.name}"
 
 
-class UserForm(StyledFormMixin, forms.ModelForm):
+class UserForm(LanguageFieldMixin, StyledFormMixin, forms.ModelForm):
     """An administrator creates or edits a login for an employee or a customer."""
 
     PORTAL_FIELDS = ["portal_budget", "portal_entries", "portal_descriptions", "portal_invoices", "portal_contact"]
@@ -106,6 +121,7 @@ class UserForm(StyledFormMixin, forms.ModelForm):
             "last_name",
             "email",
             "role",
+            "language",
             "customer",
             "bookable_customers",
             "bookable_projects",
@@ -116,25 +132,29 @@ class UserForm(StyledFormMixin, forms.ModelForm):
             "portal_contact",
             "is_active",
         ]
-        labels = {"is_active": "aktiv", "bookable_customers": "Kunden", "bookable_projects": "Einzelne Projekte"}
+        labels = {
+            "is_active": _("aktiv"),
+            "bookable_customers": _("Kunden"),
+            "bookable_projects": _("Einzelne Projekte"),
+        }
         widgets = {
             "bookable_customers": forms.CheckboxSelectMultiple,
             "bookable_projects": forms.CheckboxSelectMultiple,
         }
         field_classes = {"bookable_projects": ProjectChoices}
         help_texts = {
-            "username": "Damit meldet sich die Person an.",
-            "customer": "Wessen Projekte, Zeiten und Rechnungen dieser Zugang sieht.",
-            "is_active": "Deaktivierte Benutzer können sich nicht mehr anmelden.",
-            "bookable_customers": "Mit allen Projekten, auch künftigen.",
-            "bookable_projects": "Zusätzlich zu den Kunden oben.",
+            "username": _("Damit meldet sich die Person an."),
+            "customer": _("Wessen Projekte, Zeiten und Rechnungen dieser Zugang sieht."),
+            "is_active": _("Deaktivierte Benutzer können sich nicht mehr anmelden."),
+            "bookable_customers": _("Mit allen Projekten, auch künftigen."),
+            "bookable_projects": _("Zusätzlich zu den Kunden oben."),
         }
 
     def __init__(self, *args, acting_user=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.acting_user = acting_user
         self.fields["customer"].queryset = self.fields["customer"].queryset.filter(is_archived=False)
-        self.fields["customer"].empty_label = "– kein Kunde –"
+        self.fields["customer"].empty_label = _("– kein Kunde –")
         self.fields["customer"].widget.attrs["data-searchable"] = ""
         # Keep what is unlocked selectable even if it is archived or done by now.
         unlocked = self.instance.pk
@@ -158,7 +178,7 @@ class UserForm(StyledFormMixin, forms.ModelForm):
         cleaned = super().clean()
         role = cleaned.get("role")
         if role == User.Role.CUSTOMER and not cleaned.get("customer"):
-            self.add_error("customer", "Ein Kundenzugang braucht einen Kunden.")
+            self.add_error("customer", _("Ein Kundenzugang braucht einen Kunden."))
         elif role and role != User.Role.CUSTOMER:
             cleaned["customer"] = None
             # The customer access settings are hidden for other roles and not sent: keep what is stored.
@@ -174,9 +194,9 @@ class UserForm(StyledFormMixin, forms.ModelForm):
         if not self.instance._state.adding and self.instance == self.acting_user:
             # Do not lock yourself out.
             if role != User.Role.ADMIN:
-                self.add_error("role", "Du kannst dir selbst die Administratorrolle nicht nehmen.")
+                self.add_error("role", _("Du kannst dir selbst die Administratorrolle nicht nehmen."))
             if cleaned.get("is_active") is False:
-                self.add_error("is_active", "Du kannst dich nicht selbst deaktivieren.")
+                self.add_error("is_active", _("Du kannst dich nicht selbst deaktivieren."))
         return cleaned
 
 

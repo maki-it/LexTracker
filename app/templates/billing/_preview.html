@@ -1,18 +1,19 @@
+{% load i18n %}
 {% load timefmt icons %}
 <section id="preview" class="flex flex-col gap-3">
   {% if draft %}
   <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
     <div class="stat">
-      <span class="stat-label">Zeitraum</span>
+      <span class="stat-label">{% trans "Zeitraum" %}</span>
       <span class="stat-value text-base">{{ draft.start|date:date_format }} – {{ draft.end|date:date_format }}</span>
     </div>
     <div class="stat">
-      <span class="stat-label">Offene Zeiten</span>
+      <span class="stat-label">{% trans "Offene Zeiten" %}</span>
       <span class="stat-value">{{ draft.duration|hours:duration_format }} h</span>
-      <span class="text-xs text-muted">{{ draft.entries|length }} Zeiteinträge</span>
+      <span class="text-xs text-muted">{% blocktrans trimmed count counter=draft.entries|length %}{{ counter }} Zeiteintrag{% plural %}{{ counter }} Zeiteinträge{% endblocktrans %}</span>
     </div>
     <div class="stat">
-      <span class="stat-label">Summe netto</span>
+      <span class="stat-label">{% trans "Summe netto" %}</span>
       <span class="stat-value">{{ draft.total }} €</span>
     </div>
   </div>
@@ -20,7 +21,7 @@
 
   <div class="table-wrap">
     <div class="flex items-center justify-between gap-4 border-b border-line px-4 py-3">
-      <h2>Vorschau</h2>
+      <h2>{% trans "Vorschau" %}</h2>
     </div>
     {% if draft %}
     {% for problem in draft.problems %}<div role="alert" class="alert alert-warning m-4">{{ problem }}</div>{% endfor %}
@@ -28,10 +29,10 @@
     <table class="table">
       <thead>
         <tr>
-          <th>Position</th>
-          <th class="text-right">Menge</th>
-          <th class="text-right">Einzelpreis</th>
-          <th class="text-right">Gesamt</th>
+          <th>{% trans "Position" %}</th>
+          <th class="text-right">{% trans "Menge" %}</th>
+          <th class="text-right">{% trans "Einzelpreis" %}</th>
+          <th class="text-right">{% trans "Gesamt" %}</th>
         </tr>
       </thead>
       <tbody>
@@ -42,7 +43,7 @@
             <details class="group">
               <summary class="flex cursor-pointer list-none items-start gap-1.5 [&::-webkit-details-marker]:hidden">
                 <span class="mt-0.5 inline-flex shrink-0 text-muted transition-transform group-open:rotate-90">{% icon "chevron-right" size=14 %}</span>
-                <span>{{ line.name }}{% if line.description %}<span class="block text-xs text-muted whitespace-pre-line">{{ line.description }}</span>{% endif %}<span class="block text-xs text-muted">{{ line.entries|length }} Zeiteintr{{ line.entries|length|pluralize:"ag,äge" }}</span></span>
+                <span>{{ line.name }}{% if line.description %}<span class="block text-xs text-muted whitespace-pre-line">{{ line.description }}</span>{% endif %}<span class="block text-xs text-muted">{% blocktrans trimmed count counter=line.entries|length %}{{ counter }} Zeiteintrag{% plural %}{{ counter }} Zeiteinträge{% endblocktrans %}</span></span>
               </summary>
               <ul class="mt-2 ml-5 flex flex-col divide-y divide-line border-l border-line pl-3 text-[13px]">
                 {% for entry in line.entries %}
@@ -66,11 +67,11 @@
         {% endfor %}
       </tbody>
       <tfoot>
-        <tr><td colspan="3" class="text-right">Summe netto</td><td class="text-right whitespace-nowrap tabular-nums">{{ draft.total }} €</td></tr>
+        <tr><td colspan="3" class="text-right">{% trans "Summe netto" %}</td><td class="text-right whitespace-nowrap tabular-nums">{{ draft.total }} €</td></tr>
       </tfoot>
     </table>
     {% else %}
-    <p class="px-4 py-8 text-center text-muted">Für diesen Zeitraum gibt es keine offenen, abrechenbaren Zeiten.</p>
+    <p class="px-4 py-8 text-center text-muted">{% trans "Für diesen Zeitraum gibt es keine offenen, abrechenbaren Zeiten." %}</p>
     {% endif %}
     {% if draft.can_be_invoiced %}
     {% if customer.lexware_id %}
@@ -78,15 +79,15 @@
       {% csrf_token %}
       <input type="hidden" name="start" value="{{ draft.start|date:'Y-m-d' }}">
       <input type="hidden" name="end" value="{{ draft.end|date:'Y-m-d' }}">
-      <p class="text-muted">Legt einen Entwurf in Lexware an. Die Zeiteinträge werden danach als abgerechnet markiert.</p>
-      <button type="submit" class="btn btn-primary" onclick="this.disabled=true; this.form.submit();">Rechnungsentwurf in Lexware anlegen</button>
+      <p class="text-muted">{% trans "Legt einen Entwurf in Lexware an. Die Zeiteinträge werden danach als abgerechnet markiert." %}</p>
+      <button type="submit" class="btn btn-primary" onclick="this.disabled=true; this.form.submit();">{% trans "Rechnungsentwurf in Lexware anlegen" %}</button>
     </form>
     {% else %}
-    <div role="alert" class="alert alert-warning m-4">Dieser Kunde ist nicht mit Lexware verknüpft. Importiere ihn auf der Kundenseite aus Lexware, um eine Rechnung zu erstellen.</div>
+    <div role="alert" class="alert alert-warning m-4">{% trans "Dieser Kunde ist nicht mit Lexware verknüpft. Importiere ihn auf der Kundenseite aus Lexware, um eine Rechnung zu erstellen." %}</div>
     {% endif %}
     {% endif %}
     {% else %}
-    <p class="px-4 py-8 text-center text-muted">Bitte einen gültigen Zeitraum wählen.</p>
+    <p class="px-4 py-8 text-center text-muted">{% trans "Bitte einen gültigen Zeitraum wählen." %}</p>
     {% endif %}
   </div>
 </section>

@@ -1,16 +1,17 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load icons %}
-{% block title %}Einstellungen · LexTracker{% endblock %}
+{% block title %}{% trans "Einstellungen" %} · LexTracker{% endblock %}
 {% block content %}
 <div class="page-header">
   <div>
-    <h1>Einstellungen</h1>
-    <p class="page-subtitle">Diese Einstellungen gelten für alle Benutzer.</p>
+    <h1>{% trans "Einstellungen" %}</h1>
+    <p class="page-subtitle">{% trans "Diese Einstellungen gelten für alle Benutzer." %}</p>
   </div>
-  <a href="{% url 'core:jobs' %}" class="btn btn-ghost">{% icon "clock" %}Hintergrundaufgaben</a>
+  <a href="{% url 'core:jobs' %}" class="btn btn-ghost">{% icon "clock" %}{% trans "Hintergrundaufgaben" %}</a>
 </div>
 
-<nav class="tabs flex-wrap gap-x-4 sm:gap-x-5" aria-label="Einstellungen">
+<nav class="tabs flex-wrap gap-x-4 sm:gap-x-5" aria-label="{% trans 'Einstellungen' %}">
   {% for key, label in tabs %}
   <a href="?tab={{ key }}" class="tab{% if key == tab %} tab-active{% endif %}"{% if key == tab %} aria-current="page"{% endif %}>{{ label }}</a>
   {% endfor %}
@@ -21,39 +22,37 @@
   <div>
     <h2>Lexware Office</h2>
     <p class="mt-1 text-sm text-muted">
-      Der API-Schlüssel wird verschlüsselt gespeichert und nicht wieder angezeigt.
-      Zum Ändern trägst du einfach einen neuen ein; den alten brauchst du dafür nicht.
+      {% trans "Der API-Schlüssel wird verschlüsselt gespeichert und nicht wieder angezeigt. Zum Ändern trägst du einfach einen neuen ein; den alten brauchst du dafür nicht." %}
     </p>
   </div>
   {% if lexware.source == "app" %}
   <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-    <span class="badge badge-success">verbunden</span>
+    <span class="badge badge-success">{% trans "verbunden" %}</span>
     <code>{{ lexware.masked }}</code>
     {% if lexware.company_name %}<span>{{ lexware.company_name }}</span>{% endif %}
-    {% if lexware.verified_at %}<span class="text-muted">zuletzt geprüft {{ lexware.verified_at|date:datetime_format }} Uhr</span>{% endif %}
+    {% if lexware.verified_at %}<span class="text-muted">{% blocktrans trimmed with verified_at=lexware.verified_at|date:datetime_format %}zuletzt geprüft {{ verified_at }} Uhr{% endblocktrans %}</span>{% endif %}
   </div>
   {% elif lexware.source == "env" %}
   <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-    <span class="badge badge-warning">aus Umgebungsvariable</span>
+    <span class="badge badge-warning">{% trans "aus Umgebungsvariable" %}</span>
     <code>{{ lexware.masked }}</code>
   </div>
   <p class="text-sm text-muted">
-    Der Schlüssel kommt aus <code>APP_LEXWARE_API_KEY</code>. Trag ihn hier ein, dann kannst du die Variable entfernen.
-    Ein hier eingetragener Schlüssel hat Vorrang.
+    {% trans "Der Schlüssel kommt aus <code>APP_LEXWARE_API_KEY</code>. Trag ihn hier ein, dann kannst du die Variable entfernen. Ein hier eingetragener Schlüssel hat Vorrang." %}
   </p>
   {% elif lexware.unreadable %}
   <div role="alert" class="alert alert-warning">
-    Der gespeicherte Schlüssel lässt sich nicht mehr entschlüsseln, vermutlich weil sich <code>APP_SECRET_KEY</code> geändert hat. Bitte trag ihn neu ein.
+    {% trans "Der gespeicherte Schlüssel lässt sich nicht mehr entschlüsseln, vermutlich weil sich <code>APP_SECRET_KEY</code> geändert hat. Bitte trag ihn neu ein." %}
   </div>
   {% else %}
-  <div role="alert" class="alert alert-warning">Noch kein API-Schlüssel hinterlegt. Ohne ihn gibt es keinen Kundenimport und keine Rechnungen.</div>
+  <div role="alert" class="alert alert-warning">{% trans "Noch kein API-Schlüssel hinterlegt. Ohne ihn gibt es keinen Kundenimport und keine Rechnungen." %}</div>
   {% endif %}
 
   <form method="post" action="{% url 'lexware:save_key' %}" class="flex flex-col gap-3">
     {% csrf_token %}
     {% include "core/_field.html" with field=key_form.api_key %}
     <div class="flex flex-wrap gap-2">
-      <button type="submit" class="btn btn-primary">{% if lexware.configured %}Neuen Schlüssel prüfen und speichern{% else %}Prüfen und speichern{% endif %}</button>
+      <button type="submit" class="btn btn-primary">{% if lexware.configured %}{% trans "Neuen Schlüssel prüfen und speichern" %}{% else %}{% trans "Prüfen und speichern" %}{% endif %}</button>
     </div>
   </form>
   {% if lexware.configured or lexware.unreadable %}
@@ -61,13 +60,13 @@
     {% if lexware.configured %}
     <form method="post" action="{% url 'lexware:test_key' %}">
       {% csrf_token %}
-      <button type="submit" class="btn">Verbindung testen</button>
+      <button type="submit" class="btn">{% trans "Verbindung testen" %}</button>
     </form>
     {% endif %}
     {% if lexware.source == "app" or lexware.unreadable %}
     <form method="post" action="{% url 'lexware:remove_key' %}">
       {% csrf_token %}
-      <button type="submit" class="btn btn-danger">Schlüssel entfernen</button>
+      <button type="submit" class="btn btn-danger">{% trans "Schlüssel entfernen" %}</button>
     </form>
     {% endif %}
   </div>
@@ -80,17 +79,17 @@
   {% for error in form.non_field_errors %}<div role="alert" class="alert alert-error">{{ error }}</div>{% endfor %}
 
   <section class="card flex flex-col gap-4"{% if tab != "general" %} hidden{% endif %}>
-    <h2>Abrechnung</h2>
+    <h2>{% trans "Abrechnung" %}</h2>
     {% include "core/_field.html" with field=form.default_hourly_rate %}
     {% include "core/_field.html" with field=form.time_rounding %}
     {% include "core/_field.html" with field=form.invoice_detail %}
     <p class="text-sm text-muted">
-      Die Umsatzsteuer auf Rechnungen richtet sich nach deinem Lexware-Konto: als Kleinunternehmer ohne Umsatzsteuer, sonst mit 19 %.
+      {% trans "Die Umsatzsteuer auf Rechnungen richtet sich nach deinem Lexware-Konto: als Kleinunternehmer ohne Umsatzsteuer, sonst mit 19 %." %}
     </p>
   </section>
 
   <section class="card flex flex-col gap-4"{% if tab != "security" %} hidden{% endif %}>
-    <h2>Anmeldung</h2>
+    <h2>{% trans "Anmeldung" %}</h2>
     <div class="grid gap-3 sm:grid-cols-2">
       {% include "core/_field.html" with field=form.login_max_attempts %}
       {% include "core/_field.html" with field=form.login_lockout_minutes %}
@@ -103,16 +102,16 @@
 
   <section class="card flex flex-col gap-4" id="e-mail"{% if tab != "email" %} hidden{% endif %}>
     <div>
-      <h2>E-Mail</h2>
+      <h2>{% trans "E-Mail" %}</h2>
       <p class="mt-1 text-sm text-muted">
         {% if mail.is_configured %}
-        Die App verschickt E-Mails über <code>{{ mail.host }}</code> als {{ mail.sender }}.
+        {% blocktrans trimmed with host=mail.host sender=mail.sender %}Die App verschickt E-Mails über <code>{{ host }}</code> als {{ sender }}.{% endblocktrans %}
         {% else %}
-        Noch kein SMTP-Server eingerichtet. Ohne ihn gibt es keine Links zum Zurücksetzen des Passworts, keine Anmeldelinks, Berichte oder Erinnerungen.
+        {% trans "Noch kein SMTP-Server eingerichtet. Ohne ihn gibt es keine Links zum Zurücksetzen des Passworts, keine Anmeldelinks, Berichte oder Erinnerungen." %}
         {% endif %}
-        <a href="{% url 'mailer:settings' %}">E-Mail-Versand {% if mail.is_configured %}verwalten{% else %}einrichten{% endif %}</a>
+        <a href="{% url 'mailer:settings' %}">{% trans "E-Mail-Versand" %} {% if mail.is_configured %}{% trans "verwalten" %}{% else %}{% trans "einrichten" %}{% endif %}</a>
       </p>
-      {% if mail_failed %}<p class="mt-1 text-sm text-danger">{{ mail_failed }} E-Mail{{ mail_failed|pluralize:"s" }} konnte{{ mail_failed|pluralize:"n" }} nicht verschickt werden.</p>{% endif %}
+      {% if mail_failed %}<p class="mt-1 text-sm text-danger">{% blocktrans trimmed count counter=mail_failed %}{{ counter }} E-Mail konnte nicht verschickt werden.{% plural %}{{ counter }} E-Mails konnten nicht verschickt werden.{% endblocktrans %}</p>{% endif %}
     </div>
     <label class="flex items-center gap-2 text-sm font-medium">
       {{ form.weekly_report_enabled }} {{ form.weekly_report_enabled.label }}
@@ -122,18 +121,17 @@
       {% include "core/_field.html" with field=form.weekly_report_time %}
     </div>
     <p class="-mt-2 text-[13px] text-muted">
-      Jeder bekommt seine Stunden der sieben Tage vor dem Versandtag, Administratoren dazu offene Stunden, offene Rechnungen und Retainer.
-      {% if form.instance.weekly_report_at %}Zuletzt verschickt {{ form.instance.weekly_report_at|date:datetime_format }} Uhr.{% endif %}
+      {% trans "Jeder bekommt seine Stunden der sieben Tage vor dem Versandtag, Administratoren dazu offene Stunden, offene Rechnungen und Retainer." %}
+      {% if form.instance.weekly_report_at %}{% blocktrans trimmed with weekly_report_at=form.instance.weekly_report_at|date:datetime_format %}Zuletzt verschickt {{ weekly_report_at }} Uhr.{% endblocktrans %}{% endif %}
     </p>
     {% include "core/_field.html" with field=form.timer_reminder_hours %}
-    <p class="-mt-2 text-[13px] text-muted">Abschalten kann jeder beides für sich unter Konto.</p>
+    <p class="-mt-2 text-[13px] text-muted">{% trans "Abschalten kann jeder beides für sich unter Konto." %}</p>
     <div class="grid gap-3 sm:grid-cols-[2fr_1fr]">
       {% include "core/_field.html" with field=form.overdue_notice %}
       {% include "core/_field.html" with field=form.overdue_notice_days %}
     </div>
     <p class="-mt-2 text-[13px] text-muted">
-      Gilt für Rechnungen, die laut Lexware überfällig sind, und nur, solange der Rechnungsstatus abgeglichen wird.
-      Rechnungen, die schon länger als eine Woche über diese Frist sind, bekommen keinen Hinweis mehr.
+      {% trans "Gilt für Rechnungen, die laut Lexware überfällig sind, und nur, solange der Rechnungsstatus abgeglichen wird. Rechnungen, die schon länger als eine Woche über diese Frist sind, bekommen keinen Hinweis mehr." %}
     </p>
     <label class="flex flex-col gap-1 text-sm">
       <span class="flex items-center gap-2 font-medium">{{ form.invite_by_mail }} {{ form.invite_by_mail.label }}</span>
@@ -143,11 +141,9 @@
 
   <section class="card flex flex-col gap-5"{% if tab != "lexware" %} hidden{% endif %}>
     <div>
-      <h2>Abgleich mit Lexware</h2>
+      <h2>{% trans "Abgleich mit Lexware" %}</h2>
       <p class="mt-1 text-sm text-muted">
-        Wie oft und in welchem Zeitfenster die App Kunden importiert und den Status der Rechnungen abgleicht.
-        Ohne Zeitfenster läuft der Abgleich rund um die Uhr. Bei „täglich“ oder „wöchentlich“ legt „ab“ die Uhrzeit fest.
-        Liegt „bis“ vor „ab“, reicht das Fenster über Mitternacht.
+        {% trans "Wie oft und in welchem Zeitfenster die App Kunden importiert und den Status der Rechnungen abgleicht. Ohne Zeitfenster läuft der Abgleich rund um die Uhr. Bei „täglich“ oder „wöchentlich“ legt „ab“ die Uhrzeit fest. Liegt „bis“ vor „ab“, reicht das Fenster über Mitternacht." %}
       </p>
     </div>
     {% for job in sync_jobs %}
@@ -159,10 +155,10 @@
       </div>
       {% if job.last_run %}
       <p class="text-[13px]{% if job.failed %} text-danger{% else %} text-muted{% endif %}">
-        Zuletzt {{ job.last_run|date:datetime_format }} Uhr: {% if job.failed %}fehlgeschlagen ({{ job.status }}){% else %}{{ job.status }}{% endif %}
+        {% blocktrans trimmed with last_run=job.last_run|date:datetime_format %}Zuletzt {{ last_run }} Uhr:{% endblocktrans %} {% if job.failed %}{% blocktrans trimmed with status=job.status %}fehlgeschlagen ({{ status }}){% endblocktrans %}{% else %}{{ job.status }}{% endif %}
       </p>
       {% else %}
-      <p class="text-[13px] text-muted">Noch nicht gelaufen.</p>
+      <p class="text-[13px] text-muted">{% trans "Noch nicht gelaufen." %}</p>
       {% endif %}
     </fieldset>
     {% endfor %}
@@ -170,22 +166,21 @@
 
   <section class="card flex flex-col gap-4"{% if tab != "backup" %} hidden{% endif %}>
     <div>
-      <h2>Datensicherung</h2>
+      <h2>{% trans "Datensicherung" %}</h2>
       <p class="mt-1 text-sm text-muted">
-        Kopiert die Datenbank einmal am Tag ab der eingestellten Uhrzeit nach <code>{{ backup.dir }}</code>.
-        Den Ordner legt die Server-Konfiguration fest (<code>APP_BACKUP_DIR</code>, in Docker das Volume <code>/backups</code>).
+        {% blocktrans trimmed with dir=backup.dir %}Kopiert die Datenbank einmal am Tag ab der eingestellten Uhrzeit nach <code>{{ dir }}</code>. Den Ordner legt die Server-Konfiguration fest (<code>APP_BACKUP_DIR</code>, in Docker das Volume <code>/backups</code>).{% endblocktrans %}
       </p>
     </div>
     <div class="flex flex-col gap-3 rounded-lg border border-line bg-surface-muted p-4 sm:flex-row sm:items-center sm:justify-between">
       <div class="text-sm">
         <p class="font-medium">
-          {% if backup.count %}{{ backup.count }} Kopie{{ backup.count|pluralize:"n" }} vorhanden{% else %}Noch keine Kopie vorhanden{% endif %}
+          {% if backup.count %}{% blocktrans trimmed count counter=backup.count %}{{ counter }} Kopie vorhanden{% plural %}{{ counter }} Kopien vorhanden{% endblocktrans %}{% else %}{% trans "Noch keine Kopie vorhanden" %}{% endif %}
         </p>
         <p class="text-muted">
-          {% if backup.newest %}Letzte Sicherung: {{ backup.newest|date:datetime_format }} Uhr{% else %}Die erste entsteht zur eingestellten Uhrzeit oder per Knopfdruck.{% endif %}
+          {% if backup.newest %}{% blocktrans trimmed with newest=backup.newest|date:datetime_format %}Letzte Sicherung: {{ newest }} Uhr{% endblocktrans %}{% else %}{% trans "Die erste entsteht zur eingestellten Uhrzeit oder per Knopfdruck." %}{% endif %}
         </p>
       </div>
-      <a href="{% url 'core:backups' %}" class="btn btn-primary">Sicherungen verwalten</a>
+      <a href="{% url 'core:backups' %}" class="btn btn-primary">{% trans "Sicherungen verwalten" %}</a>
     </div>
     <label class="flex items-center gap-2 text-sm font-medium">
       {{ form.backup_enabled }} {{ form.backup_enabled.label }}
@@ -196,15 +191,15 @@
     </div>
     <p class="text-[13px]{% if backup.failed %} text-danger{% else %} text-muted{% endif %}">
       {% if backup.last_run %}
-      Zuletzt {{ backup.last_run|date:datetime_format }} Uhr: {% if backup.failed %}fehlgeschlagen ({{ backup.status }}){% else %}{{ backup.status }}{% endif %}.
+      {% blocktrans trimmed with last_run=backup.last_run|date:datetime_format %}Zuletzt {{ last_run }} Uhr:{% endblocktrans %} {% if backup.failed %}{% blocktrans trimmed with status=backup.status %}fehlgeschlagen ({{ status }}){% endblocktrans %}{% else %}{{ backup.status }}{% endif %}.
       {% else %}
-      Noch keine Sicherung aufgezeichnet.
+      {% trans "Noch keine Sicherung aufgezeichnet." %}
       {% endif %}
     </p>
   </section>
 
   <div>
-    <button type="submit" class="btn btn-primary">Speichern</button>
+    <button type="submit" class="btn btn-primary">{% trans "Speichern" %}</button>
   </div>
 </form>
 {% endblock %}

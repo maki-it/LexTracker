@@ -1,5 +1,6 @@
 from django import forms
 from django.db import transaction
+from django.utils.translation import gettext_lazy as _
 
 from core.forms import MARKDOWN_HELP, StyledFormMixin
 from customers.models import Customer
@@ -18,7 +19,7 @@ class ProjectForm(StyledFormMixin, forms.ModelForm):
         help_texts = {"description": MARKDOWN_HELP}
 
     templates = forms.ModelMultipleChoiceField(
-        label="Aufgaben aus Vorlagen",
+        label=_("Aufgaben aus Vorlagen"),
         queryset=TaskTemplate.objects.all(),
         required=False,
         widget=forms.CheckboxSelectMultiple,
@@ -35,7 +36,7 @@ class ProjectForm(StyledFormMixin, forms.ModelForm):
         cleaned = super().clean()
         start, end = cleaned.get("start_date"), cleaned.get("end_date")
         if start and end and end < start:
-            self.add_error("end_date", "Das Ende liegt vor dem Start.")
+            self.add_error("end_date", _("Das Ende liegt vor dem Start."))
         return cleaned
 
     @transaction.atomic

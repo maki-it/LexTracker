@@ -1,6 +1,7 @@
+{% load i18n %}
 {# One message. Expects `message`; `next_url` when it is on the page with all messages, `filter_key` when it is in the panel. #}
 <li class="flex gap-3 border-b border-line-soft px-1 py-3 last:border-b-0">
-  <span class="mt-1.5 size-2 shrink-0 rounded-full{% if message.is_unread %} bg-primary{% endif %}" {% if message.is_unread %}title="ungelesen"{% endif %}></span>
+  <span class="mt-1.5 size-2 shrink-0 rounded-full{% if message.is_unread %} bg-primary{% endif %}" {% if message.is_unread %}title="{% trans 'ungelesen' %}"{% endif %}></span>
   <div class="flex min-w-0 flex-1 flex-col gap-1">
     <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
       <span class="badge {{ message.badge_class }}">{{ message.get_level_display }}</span>
@@ -9,20 +10,20 @@
       {% else %}
       <span class="{% if message.is_unread %}font-semibold{% else %}font-medium{% endif %}">{{ message.title }}</span>
       {% endif %}
-      {% if message.count > 1 %}<span class="text-xs text-muted tabular-nums" title="So oft ist das seit {{ message.created_at|date:datetime_format }} Uhr passiert">{{ message.count }}×</span>{% endif %}
+      {% if message.count > 1 %}<span class="text-xs text-muted tabular-nums" title="{% blocktrans trimmed with since=message.created_at|date:datetime_format %}So oft ist das seit {{ since }} Uhr passiert{% endblocktrans %}">{{ message.count }}×</span>{% endif %}
     </div>
     {% if message.body %}<p class="break-words whitespace-pre-line text-muted">{{ message.body }}</p>{% endif %}
     <div class="flex flex-wrap items-center gap-x-1 text-[13px] text-muted">
-      <time datetime="{{ message.last_at|date:'c' }}" class="mr-2">{{ message.last_at|date:datetime_format }} Uhr</time>
+      <time datetime="{{ message.last_at|date:'c' }}" class="mr-2">{% blocktrans trimmed with last_at=message.last_at|date:datetime_format %}{{ last_at }} Uhr{% endblocktrans %}</time>
       {% if message.is_unread %}
       <form method="post" action="{% url 'inbox:read' message.pk %}">
         {% csrf_token %}{% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}{% if filter_key %}<input type="hidden" name="filter" value="{{ filter_key }}">{% endif %}
-        <button type="submit" class="btn btn-ghost btn-sm">Gelesen</button>
+        <button type="submit" class="btn btn-ghost btn-sm">{% trans "Gelesen" %}</button>
       </form>
       {% endif %}
       <form method="post" action="{% url 'inbox:delete' message.pk %}">
         {% csrf_token %}{% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}{% if filter_key %}<input type="hidden" name="filter" value="{{ filter_key }}">{% endif %}
-        <button type="submit" class="btn btn-ghost btn-sm">Löschen</button>
+        <button type="submit" class="btn btn-ghost btn-sm">{% trans "Löschen" %}</button>
       </form>
     </div>
   </div>

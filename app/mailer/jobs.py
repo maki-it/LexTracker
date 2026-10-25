@@ -10,11 +10,14 @@ from datetime import date, datetime, time, timedelta
 from asgiref.sync import sync_to_async
 from django.db.models import Q
 from django.urls import reverse
-from django.utils import timezone
+from django.utils import timezone, translation
 from django.utils.http import urlencode
+from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_lazy as _
 
 from accounts.models import User
 from billing.models import Invoice
+from core.i18n import date_format, datetime_format, fmt, full_date, short_date
 from core.models import AppSettings
 from mailer import outbox
 from mailer.models import MailSettings, OutgoingMail
@@ -22,7 +25,15 @@ from reports.queries import build_report, entries_in
 from reports.ranges import DateRange
 from tracking.models import TimeEntry
 
-WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
+WEEKDAYS = [
+    gettext_lazy("Mo"),
+    gettext_lazy("Di"),
+    gettext_lazy("Mi"),
+    gettext_lazy("Do"),
+    gettext_lazy("Fr"),
+    gettext_lazy("Sa"),
+    gettext_lazy("So"),
+]
 # A weekly report missed by more than this (e.g. the server was down) waits for the next week.
 CATCH_UP = timedelta(days=1)
 # Invoices overdue for longer than this get no notice, so turning the notice on does not remind customers
@@ -56,7 +67,7 @@ def report_range(sent_on: date) -> DateRange:
     """The seven days before the day the report is sent; on a Monday that is the week before."""
     end = sent_on - timedelta(days=1)
     start = end - timedelta(days=6)
-    return DateRange("", f"{start:%d.%m.} – {end:%d.%m.%Y}", start, end)
+    return DateRange("", f"{short_date(start)} – {full_date(end)}", start, end)
 
 
 @dataclass
@@ -97,7 +108,7 @@ def build_weekly_report(user: User, rng: DateRange) -> WeeklyReport:
         line.duration += entry.duration
     longest = max(per_day.values(), default=timedelta()) or timedelta(hours=1)
     report.days = [
-        Line(f"{WEEKDAYS[day.weekday()]} {day:%d.%m.}", total, round(total / longest * 100))
+        Line(f"{WEEKDAYS[day.weekday()]} {short_date(day)}", total, round(total / longest * 100))
         for day, total in per_day.items()
     ]
     report.projects = sorted(per_project.values(), key=lambda line: line.duration, reverse=True)
@@ -117,14 +128,18 @@ def _recipients(**flags):
 
 
 async def queue_weekly_reports(slot: datetime) -> int:
-    rng = report_range(timezone.localtime(slot).date())
+    sent_on = timezone.localtime(slot).date()
+    rng = report_range(sent_on)
     base_url = (await MailSettings.aload()).base_url.rstrip("/")
     queued = 0
     async for user in _recipients(weekly_report=True):
         key = f"weekly-report:{user.pk}:{rng.start.isoformat()}"
         if await OutgoingMail.objects.filter(dedupe_key=key).aexists():
             continue
-        report = await sync_to_async(build_weekly_report)(user, rng)
+        # Day names and dates are written in the language of whoever gets the report.
+        with translation.override(user.language):
+            user_range = report_range(sent_on)
+            report = await sync_to_async(build_weekly_report)(user, user_range)
         if report.is_empty:
             continue
         if not base_url:
@@ -138,7 +153,7 @@ async def queue_weekly_reports(slot: datetime) -> int:
         await outbox.aqueue(
             OutgoingMail.Kind.WEEKLY_REPORT,
             user.email,
-            f"Dein Wochenbericht {rng.label}",
+            fmt(_("Dein Wochenbericht %(range)s"), range=user_range.label),
             "weekly_report",
             context,
             user=user,
@@ -170,12 +185,12 @@ async def queue_timer_reminders(now: datetime, hours: int) -> int:
             "running_for": now - entry.started_at,
             "url": f"{base_url}{reverse('core:dashboard')}" if base_url else "",
             "duration_format": entry.user.duration_format,
-            "datetime_format": f"{entry.user.date_format}, H:i",
+            "datetime_format": datetime_format(entry.user.date_format),
         }
         await outbox.aqueue(
             OutgoingMail.Kind.TIMER_REMINDER,
             entry.user.email,
-            "Dein Timer läuft noch",
+            _("Dein Timer läuft noch"),
             "timer_reminder",
             context,
             user=entry.user,
@@ -211,12 +226,12 @@ async def queue_overdue_notices(now: datetime, app_settings: AppSettings) -> int
         key = f"invoice-overdue:{invoice.pk}:{invoice.due_date.isoformat()}"
         context = {"invoice": invoice, "days_overdue": (timezone.localdate(now) - invoice.due_date).days}
         customer_email = invoice.customer.email if to_customer else ""
-        number = invoice.voucher_number or "ohne Nummer"
+        number = invoice.voucher_number or _("ohne Nummer")
         if customer_email and not await OutgoingMail.objects.filter(dedupe_key=f"{key}:customer").aexists():
             await outbox.aqueue(
                 OutgoingMail.Kind.INVOICE_OVERDUE,
                 customer_email,
-                f"Zahlungserinnerung zur Rechnung {number}",
+                fmt(_("Zahlungserinnerung zur Rechnung %(number)s"), number=number),
                 "invoice_overdue_customer",
                 context | {"sender_name": config.from_name},
                 dedupe_key=f"{key}:customer",
@@ -229,14 +244,18 @@ async def queue_overdue_notices(now: datetime, app_settings: AppSettings) -> int
             await outbox.aqueue(
                 OutgoingMail.Kind.INVOICE_OVERDUE,
                 admin.email,
-                f"Rechnung {number} von {invoice.customer.name} ist überfällig",
+                fmt(
+                    _("Rechnung %(number)s von %(customer)s ist überfällig"),
+                    number=number,
+                    customer=invoice.customer.name,
+                ),
                 "invoice_overdue",
                 context
                 | {
                     "user": admin,
                     "customer_notified": bool(customer_email),
                     "customer_without_email": to_customer and not invoice.customer.email,
-                    "date_format": admin.date_format,
+                    "date_format": date_format(admin.date_format),
                 },
                 user=admin,
                 dedupe_key=admin_key,

@@ -1,20 +1,21 @@
 {% extends "base.html" %}
-{% block title %}Anmelden · LexTracker{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Anmelden" %} · LexTracker{% endblock %}
 {% block public_content %}
 <div class="flex w-full max-w-sm flex-col gap-6">
   {% include "accounts/_public_header.html" %}
   {% if invalid or error %}
   <div class="card flex flex-col gap-3 p-6">
-    <h1 class="text-lg">Link ungültig</h1>
-    <p class="text-muted">{% if error %}{{ error }}{% else %}Dieser Anmeldelink ist abgelaufen oder wurde schon benutzt.{% endif %}</p>
-    <a href="{% url 'accounts:login_link_request' %}" class="btn">Neuen Link anfordern</a>
+    <h1 class="text-lg">{% trans "Link ungültig" %}</h1>
+    <p class="text-muted">{% if error %}{{ error }}{% else %}{% trans "Dieser Anmeldelink ist abgelaufen oder wurde schon benutzt." %}{% endif %}</p>
+    <a href="{% url 'accounts:login_link_request' %}" class="btn">{% trans "Neuen Link anfordern" %}</a>
   </div>
   {% else %}
   <form method="post" class="card flex flex-col gap-4 p-6">
-    <h1 class="text-lg">Anmelden</h1>
-    <p class="text-sm text-muted">Mit diesem Link meldest du dich ohne Passwort an. Er funktioniert nur einmal.</p>
+    <h1 class="text-lg">{% trans "Anmelden" %}</h1>
+    <p class="text-sm text-muted">{% trans "Mit diesem Link meldest du dich ohne Passwort an. Er funktioniert nur einmal." %}</p>
     {% csrf_token %}
-    <button type="submit" class="btn btn-primary" autofocus>Jetzt anmelden</button>
+    <button type="submit" class="btn btn-primary" autofocus>{% trans "Jetzt anmelden" %}</button>
   </form>
   {% endif %}
 </div>
