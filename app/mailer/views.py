@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
+from django.utils.translation import gettext as _
 from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.http import require_http_methods, require_POST
 
@@ -37,7 +38,7 @@ async def mail_settings(request: HttpRequest) -> HttpResponse:
     if request.method == "POST" and await sync_to_async(form.is_valid)():
         form.instance.updated_at = timezone.now()
         await sync_to_async(form.save)()
-        messages.success(request, "E-Mail-Einstellungen gespeichert. Schick eine Testmail, um sie zu prüfen.")
+        messages.success(request, _("E-Mail-Einstellungen gespeichert. Schick eine Testmail, um sie zu prüfen."))
         return redirect("mailer:settings")
     return await _page(request, form)
 
@@ -50,20 +51,21 @@ async def test_mail(request: HttpRequest) -> HttpResponse:
     if not test_form.is_valid():
         return await _page(request, MailSettingsForm(instance=config), test_form)
     if not config.is_configured:
-        messages.error(request, "Trag zuerst SMTP-Server und Absenderadresse ein.")
+        messages.error(request, _("Trag zuerst SMTP-Server und Absenderadresse ein."))
         return redirect("mailer:settings")
     to = test_form.cleaned_data["to"]
-    text, html = outbox.render("test", {"subject": "Testmail von LexTracker", "config": config})
-    error = await outbox.asend_now(config, outbox.Message(to, "Testmail von LexTracker", text, html))
+    subject = _("Testmail von LexTracker")
+    text, html = outbox.render("test", {"subject": subject, "config": config})
+    error = await outbox.asend_now(config, outbox.Message(to, subject, text, html))
     if error:
-        messages.error(request, f"Die Testmail wurde nicht verschickt: {error}")
+        messages.error(request, _("Die Testmail wurde nicht verschickt: %(error)s") % {"error": error})
     else:
-        messages.success(request, f"Testmail an {to} verschickt. Schau in dein Postfach.")
+        messages.success(request, _("Testmail an %(to)s verschickt. Schau in dein Postfach.") % {"to": to})
     return redirect("mailer:settings")
 
 
 @require_POST
 async def retry(request: HttpRequest, pk: UUID) -> HttpResponse:
     if await outbox.aretry(pk):
-        messages.success(request, "Die E-Mail wird gleich noch einmal verschickt.")
+        messages.success(request, _("Die E-Mail wird gleich noch einmal verschickt."))
     return redirect("mailer:settings")

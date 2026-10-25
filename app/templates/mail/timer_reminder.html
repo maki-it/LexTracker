@@ -1,13 +1,13 @@
 {% extends "mail/_base.html" %}
-{% load timefmt %}
+{% load i18n timefmt %}
 {% block content %}
-<p style="margin:0 0 12px;font-size:18px;font-weight:600">Dein Timer läuft noch</p>
-<p style="margin:0">Seit {{ entry.started_at|date:datetime_format }} Uhr, also schon <strong>{{ running_for|hours:"clock" }} Stunden</strong>:</p>
+<p style="margin:0 0 12px;font-size:18px;font-weight:600">{% trans "Dein Timer läuft noch" %}</p>
+<p style="margin:0">{% blocktrans trimmed with started_at=entry.started_at|date:datetime_format hours=running_for|hours:"clock" %}Seit {{ started_at }} Uhr, also schon <strong>{{ hours }} Stunden</strong>:{% endblocktrans %}</p>
 <p style="margin:12px 0;padding:10px 12px;background:#f4f4f5;border-radius:8px">
   {{ entry.task.project.customer.name }} · {{ entry.task.project.name }}<br>
   <strong>{{ entry.task.name }}</strong>{% if entry.description %}<br><span style="color:#71717a">{{ entry.description }}</span>{% endif %}
 </p>
-<p style="margin:0">Hast du vergessen, ihn zu stoppen? Dann stoppe ihn und korrigiere das Ende.</p>
-{% if url %}{% include "mail/_button.html" with label="LexTracker öffnen" %}{% endif %}
+<p style="margin:0">{% trans "Hast du vergessen, ihn zu stoppen? Dann stoppe ihn und korrigiere das Ende." %}</p>
+{% if url %}{% trans "LexTracker öffnen" as button_label %}{% include "mail/_button.html" with label=button_label %}{% endif %}
 {% endblock %}
-{% block footer %}Diese Erinnerung schaltest du in LexTracker unter Konto ab.{% endblock %}
+{% block footer %}{% trans "Diese Erinnerung schaltest du in LexTracker unter Konto ab." %}{% endblock %}

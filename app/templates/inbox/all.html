@@ -1,17 +1,18 @@
 {% extends layout %}
-{% block title %}Nachrichten · LexTracker{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Nachrichten" %} · LexTracker{% endblock %}
 {% block content %}
 <div class="page-header">
   <div>
-    <h1>Nachrichten</h1>
-    <p class="page-subtitle">Angezeigt ab Priorität „{{ user.get_message_level_display }}“. Das stellst du unter Konto ein.</p>
+    <h1>{% trans "Nachrichten" %}</h1>
+    <p class="page-subtitle">{% blocktrans trimmed with get_message_level_display=user.get_message_level_display %}Angezeigt ab Priorität „{{ get_message_level_display }}“. Das stellst du unter Konto ein.{% endblocktrans %}</p>
   </div>
   <form method="post" action="{% url 'inbox:read_all' %}">
     {% csrf_token %}<input type="hidden" name="next" value="{{ next_url }}">
-    <button type="submit" class="btn">Alle als gelesen markieren</button>
+    <button type="submit" class="btn">{% trans "Alle als gelesen markieren" %}</button>
   </form>
 </div>
-<nav aria-label="Nach Priorität filtern" class="flex flex-wrap gap-1.5">
+<nav aria-label="{% trans 'Nach Priorität filtern' %}" class="flex flex-wrap gap-1.5">
   {% for key, label, count in filters %}
   <a href="?filter={{ key }}" class="pill gap-1.5{% if active == key %} pill-active{% endif %}">{{ label }}<span class="text-muted tabular-nums">{{ count }}</span></a>
   {% endfor %}
@@ -21,6 +22,6 @@
   {% include "inbox/_rows.html" %}
 </ul>
 {% else %}
-<p class="empty">Keine Nachrichten.</p>
+<p class="empty">{% trans "Keine Nachrichten." %}</p>
 {% endif %}
 {% endblock %}

@@ -1,10 +1,10 @@
-{% autoescape off %}Guten Tag,
+{% load i18n %}{% autoescape off %}{% trans "Guten Tag," %}
 
-zu unserer Rechnung {{ invoice.voucher_number }}{% if invoice.voucher_date %} vom {{ invoice.voucher_date|date:"d.m.Y" }}{% endif %} haben wir bisher keinen Zahlungseingang gesehen. Sie war am {{ invoice.due_date|date:"d.m.Y" }} fällig.{% if invoice.open_amount is not None %}
-Offener Betrag: {{ invoice.open_amount|floatformat:"2g" }} €{% endif %}
+{% if invoice.voucher_date %}{% blocktrans trimmed with number=invoice.voucher_number invoice_date=invoice.voucher_date|date:"SHORT_DATE_FORMAT" due_date=invoice.due_date|date:"SHORT_DATE_FORMAT" %}zu unserer Rechnung {{ number }} vom {{ invoice_date }} haben wir bisher keinen Zahlungseingang gesehen. Sie war am {{ due_date }} fällig.{% endblocktrans %}{% else %}{% blocktrans trimmed with number=invoice.voucher_number due_date=invoice.due_date|date:"SHORT_DATE_FORMAT" %}zu unserer Rechnung {{ number }} haben wir bisher keinen Zahlungseingang gesehen. Sie war am {{ due_date }} fällig.{% endblocktrans %}{% endif %}{% if invoice.open_amount is not None %}
+{% blocktrans trimmed with amount=invoice.open_amount|floatformat:"2g" %}Offener Betrag: {{ amount }} €{% endblocktrans %}{% endif %}
 
-Bitte überweisen Sie den Betrag in den nächsten Tagen. Falls Sie bereits bezahlt haben, betrachten Sie diese E-Mail bitte als gegenstandslos.
+{% trans "Bitte überweisen Sie den Betrag in den nächsten Tagen. Falls Sie bereits bezahlt haben, betrachten Sie diese E-Mail bitte als gegenstandslos." %}
 
-Viele Grüße{% if sender_name %}
+{% trans "Viele Grüße" %}{% if sender_name %}
 {{ sender_name }}{% endif %}
 {% endautoescape %}

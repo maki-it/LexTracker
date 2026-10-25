@@ -14,6 +14,7 @@ from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.utils.http import content_disposition_header
+from django.utils.translation import gettext as _
 from django.views.decorators.http import require_GET, require_http_methods
 
 from billing.models import Invoice
@@ -140,7 +141,7 @@ async def invoices(request: HttpRequest) -> HttpResponse:
     context = {
         "invoices": rows,
         "status": status,
-        "status_filters": [(key, label) for key, (label, _) in INVOICE_STATUS_FILTERS.items()],
+        "status_filters": [(key, label) for key, (label, _statuses) in INVOICE_STATUS_FILTERS.items()],
         "range": date_range,
         "presets": presets(today),
     }
@@ -196,7 +197,7 @@ async def invoice_pdf(request: HttpRequest, number: str) -> HttpResponse:
             pdf = await client.get_invoice_pdf(invoice.lexware_id)
     except LexwareError:
         logger.exception("Invoice PDF %s could not be fetched", invoice.lexware_id)
-        messages.error(request, "Die Rechnung kann gerade nicht heruntergeladen werden. Bitte versuche es später.")
+        messages.error(request, _("Die Rechnung kann gerade nicht heruntergeladen werden. Bitte versuche es später."))
         return redirect("portal:invoices")
     response = HttpResponse(pdf, content_type="application/pdf")
     # Numbers are free-form in Lexware and may hold a slash.
@@ -249,8 +250,10 @@ async def contact(request: HttpRequest) -> HttpResponse:
                     form = ContactForm(data, initial=initial, with_person=with_person)
                     form.add_error(
                         None,
-                        "Deine Kontaktdaten wurden in der Zwischenzeit geändert. "
-                        "Bitte prüfe deine Eingaben und speichere erneut.",
+                        _(
+                            "Deine Kontaktdaten wurden in der Zwischenzeit geändert. "
+                            "Bitte prüfe deine Eingaben und speichere erneut."
+                        ),
                     )
                     conflict = initial
                 else:
@@ -267,12 +270,12 @@ async def contact(request: HttpRequest) -> HttpResponse:
                         update_fields=["name", "email", "phone", "lexware_version", "lexware_synced_at", "updated_at"]
                     )
                     logger.info("Customer login %s changed the Lexware contact of customer %s", user.pk, customer.pk)
-                    messages.success(request, "Deine Kontaktdaten sind gespeichert.")
+                    messages.success(request, _("Deine Kontaktdaten sind gespeichert."))
                     return redirect("portal:contact")
     except LexwareError:
         logger.exception("Lexware contact %s could not be read or saved", customer.lexware_id)
         if form is None:
             return render(request, "portal/contact.html", {"customer": customer, "lexware_error": True})
-        form.add_error(None, "Deine Änderung konnte gerade nicht gespeichert werden. Bitte versuche es später.")
+        form.add_error(None, _("Deine Änderung konnte gerade nicht gespeichert werden. Bitte versuche es später."))
     context = {"customer": customer, "form": form, "conflict": conflict, "countries": COUNTRIES}
     return await arender(request, "portal/contact.html", context)

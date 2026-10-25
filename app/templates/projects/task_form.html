@@ -1,35 +1,36 @@
 {% extends layout %}
+{% load i18n %}
 {% load icons %}
-{% block title %}{{ task.name }} bearbeiten · LexTracker{% endblock %}
+{% block title %}{% blocktrans trimmed with name=task.name %}{{ name }} bearbeiten · LexTracker{% endblocktrans %}{% endblock %}
 {% block content %}
 <div>
-  <p class="breadcrumb"><a href="{% url 'projects:list' %}">Projekte</a> / <a href="{% url 'projects:detail' project.pk %}">{{ project.name }}</a></p>
-  <h1>Aufgabe bearbeiten</h1>
+  <p class="breadcrumb"><a href="{% url 'projects:list' %}">{% trans "Projekte" %}</a> / <a href="{% url 'projects:detail' project.pk %}">{{ project.name }}</a></p>
+  <h1>{% trans "Aufgabe bearbeiten" %}</h1>
 </div>
 <form method="post" action="{{ request.get_full_path }}" class="card flex max-w-2xl flex-col gap-4">
   {% csrf_token %}
   {% include "core/_form_fields.html" %}
   <div class="flex gap-2 border-t border-line pt-4">
-    <button type="submit" class="btn btn-primary">Speichern</button>
-    <a href="{% url 'projects:detail' project.pk %}" class="btn btn-ghost" data-close-dialog>Abbrechen</a>
+    <button type="submit" class="btn btn-primary">{% trans "Speichern" %}</button>
+    <a href="{% url 'projects:detail' project.pk %}" class="btn btn-ghost" data-close-dialog>{% trans "Abbrechen" %}</a>
   </div>
 </form>
 <section class="card flex max-w-2xl flex-col gap-3">
-  <h2>Als Vorlage speichern</h2>
-  <p class="text-sm text-muted">Name, Beschreibung, Stundensatz, Schätzung und „abrechenbar“ werden zur Vorlage, die du in anderen Projekten mit einem Klick hinzufügst.</p>
+  <h2>{% trans "Als Vorlage speichern" %}</h2>
+  <p class="text-sm text-muted">{% trans "Name, Beschreibung, Stundensatz, Schätzung und „abrechenbar“ werden zur Vorlage, die du in anderen Projekten mit einem Klick hinzufügst." %}</p>
   <form method="post" action="{% url 'projects:task_save_as_template' project.pk task.pk %}">
     {% csrf_token %}
-    <button type="submit" class="btn">Als Vorlage speichern</button>
+    <button type="submit" class="btn">{% trans "Als Vorlage speichern" %}</button>
   </form>
 </section>
 <section class="card flex max-w-2xl flex-col gap-3">
-  <h2>Aufgabe löschen</h2>
+  <h2>{% trans "Aufgabe löschen" %}</h2>
   {% if has_entries %}
-  <p class="text-sm text-muted">Auf diese Aufgabe sind Zeiten gebucht, deshalb kann sie nicht gelöscht werden. Setze ihren Status auf „erledigt“, dann taucht sie bei der Zeiterfassung nicht mehr auf.</p>
+  <p class="text-sm text-muted">{% trans "Auf diese Aufgabe sind Zeiten gebucht, deshalb kann sie nicht gelöscht werden. Setze ihren Status auf „erledigt“, dann taucht sie bei der Zeiterfassung nicht mehr auf." %}</p>
   {% else %}
-  <form method="post" action="{% url 'projects:task_delete' project.pk task.pk %}" onsubmit="return confirm('Diese Aufgabe wirklich löschen?')">
+  <form method="post" action="{% url 'projects:task_delete' project.pk task.pk %}" onsubmit="return confirm('{% filter escapejs %}{% trans "Diese Aufgabe wirklich löschen?" %}{% endfilter %}')">
     {% csrf_token %}
-    <button type="submit" class="btn btn-danger">{% icon "trash" size=14 %}Löschen</button>
+    <button type="submit" class="btn btn-danger">{% icon "trash" size=14 %}{% trans "Löschen" %}</button>
   </form>
   {% endif %}
 </section>

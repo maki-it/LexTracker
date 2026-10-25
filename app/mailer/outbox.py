@@ -17,8 +17,9 @@ from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.core.mail.backends.smtp import EmailBackend as SmtpBackend
 from django.template.loader import render_to_string
-from django.utils import timezone
+from django.utils import timezone, translation
 from django.utils.module_loading import import_string
+from django.utils.translation import gettext as _
 
 from mailer.models import SSL_PORT, MailSettings, OutgoingMail
 
@@ -59,8 +60,15 @@ async def aqueue(
     user=None,
     dedupe_key: str = "",
     expires_at: datetime | None = None,
+    language: str | None = None,
 ) -> OutgoingMail:
-    text, html = render(template, {"subject": subject, **context})
+    """Queue an e-mail, written in the language of the user it is for (or ``language``).
+
+    ``subject`` can be a lazy translation. Without a user, e-mails are written in the default language.
+    """
+    with translation.override(language or (user.language if user else settings.LANGUAGE_CODE)):
+        subject = str(subject)
+        text, html = render(template, {"subject": subject, **context})
     return await OutgoingMail.objects.acreate(
         kind=kind,
         user=user,
@@ -80,7 +88,7 @@ def deliver(config: MailSettings, messages: list[Message]) -> list[str]:
     """
     password = config.password
     if password is None:
-        return ["Das SMTP-Passwort lässt sich nicht entschlüsseln. Bitte trag es neu ein."] * len(messages)
+        return [_("Das SMTP-Passwort lässt sich nicht entschlüsseln. Bitte trag es neu ein.")] * len(messages)
     connection = _connection(config, password)
     try:
         connection.open()
@@ -137,19 +145,19 @@ def _security_hint(exc: Exception, config: MailSettings) -> str:
     Security = MailSettings.Security
     # A server that wants STARTTLS answers the TLS handshake of "SSL/TLS" in plain text.
     if config.security == Security.SSL and isinstance(exc, ssl.SSLError) and "WRONG_VERSION_NUMBER" in str(exc):
-        return (
-            f"Der Server antwortet auf Port {config.port} nicht mit SSL/TLS. Wahrscheinlich erwartet er STARTTLS "
+        return _(
+            "Der Server antwortet auf Port %(port)s nicht mit SSL/TLS. Wahrscheinlich erwartet er STARTTLS "
             "(üblich auf Port 587). Wähle als Verschlüsselung „STARTTLS“."
-        )
+        ) % {"port": config.port}
     if config.security == Security.STARTTLS:
         if isinstance(exc, smtplib.SMTPNotSupportedError):
-            return (
-                f"Der Server auf Port {config.port} bietet kein STARTTLS an. Wahrscheinlich erwartet er SSL/TLS "
+            return _(
+                "Der Server auf Port %(port)s bietet kein STARTTLS an. Wahrscheinlich erwartet er SSL/TLS "
                 "von Anfang an (üblich auf Port 465). Wähle als Verschlüsselung „SSL/TLS“ und Port 465."
-            )
+            ) % {"port": config.port}
         # An SSL/TLS port waits for the client to speak first, so it never sends the greeting STARTTLS waits for.
         if config.port == SSL_PORT and isinstance(exc, TimeoutError | smtplib.SMTPServerDisconnected):
-            return (
+            return _(
                 "Port 465 erwartet SSL/TLS von Anfang an und antwortet nicht auf STARTTLS. "
                 "Wähle als Verschlüsselung „SSL/TLS“ oder nutze Port 587."
             )

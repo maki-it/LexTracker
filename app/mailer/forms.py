@@ -1,4 +1,5 @@
 from django import forms
+from django.utils.translation import gettext_lazy as _
 
 from core.forms import StyledFormMixin
 from mailer.models import SSL_PORT, STARTTLS_PORT, MailSettings
@@ -6,14 +7,14 @@ from mailer.models import SSL_PORT, STARTTLS_PORT, MailSettings
 
 class MailSettingsForm(StyledFormMixin, forms.ModelForm):
     password = forms.CharField(
-        label="Passwort",
+        label=_("Passwort"),
         required=False,
         strip=False,
         max_length=200,
         # Never send a stored password back to the browser.
         widget=forms.PasswordInput(render_value=False, attrs={"autocomplete": "new-password"}),
     )
-    remove_password = forms.BooleanField(label="Gespeichertes Passwort entfernen", required=False)
+    remove_password = forms.BooleanField(label=_("Gespeichertes Passwort entfernen"), required=False)
 
     class Meta:
         model = MailSettings
@@ -24,14 +25,14 @@ class MailSettingsForm(StyledFormMixin, forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.instance.encrypted_password:
-            self.fields["password"].help_text = "Leer lassen, um das gespeicherte Passwort zu behalten."
+            self.fields["password"].help_text = _("Leer lassen, um das gespeicherte Passwort zu behalten.")
         else:
             del self.fields["remove_password"]
 
     def clean(self):
         cleaned = super().clean()
         if cleaned.get("host") and not cleaned.get("from_address"):
-            self.add_error("from_address", "Ohne Absenderadresse kann die App keine E-Mails verschicken.")
+            self.add_error("from_address", _("Ohne Absenderadresse kann die App keine E-Mails verschicken."))
         if cleaned.get("host"):
             self._check_port_and_security(cleaned.get("port"), cleaned.get("security"))
         return cleaned
@@ -42,14 +43,18 @@ class MailSettingsForm(StyledFormMixin, forms.ModelForm):
         if port == STARTTLS_PORT and security == Security.SSL:
             self.add_error(
                 "security",
-                "Port 587 nutzt STARTTLS statt SSL/TLS. "
-                "Wähle „STARTTLS“ oder, wenn dein Anbieter SSL/TLS verlangt, Port 465.",
+                _(
+                    "Port 587 nutzt STARTTLS statt SSL/TLS. "
+                    "Wähle „STARTTLS“ oder, wenn dein Anbieter SSL/TLS verlangt, Port 465."
+                ),
             )
         elif port == SSL_PORT and security == Security.STARTTLS:
             self.add_error(
                 "security",
-                "Port 465 erwartet SSL/TLS von Anfang an. "
-                "Wähle „SSL/TLS“ oder, wenn dein Anbieter STARTTLS verlangt, Port 587.",
+                _(
+                    "Port 465 erwartet SSL/TLS von Anfang an. "
+                    "Wähle „SSL/TLS“ oder, wenn dein Anbieter STARTTLS verlangt, Port 587."
+                ),
             )
 
     def save(self, commit=True):
@@ -61,4 +66,4 @@ class MailSettingsForm(StyledFormMixin, forms.ModelForm):
 
 
 class TestMailForm(StyledFormMixin, forms.Form):
-    to = forms.EmailField(label="Testmail an")
+    to = forms.EmailField(label=_("Testmail an"))

@@ -5,6 +5,7 @@ from datetime import datetime, time, timedelta
 
 from asgiref.sync import sync_to_async
 from django.utils import timezone
+from django.utils.translation import gettext as _
 
 from core import backup
 from core.models import AppSettings, JobStatus
@@ -55,22 +56,24 @@ class JobRow:
 
 def _every(minutes: int) -> str:
     if minutes % 1440 == 0:
-        return "täglich" if minutes == 1440 else f"alle {minutes // 1440} Tage"
+        if minutes == 1440:
+            return _("täglich")
+        return _("alle %(count)d Tage") % {"count": minutes // 1440}
     if minutes % 60 == 0:
-        return "stündlich" if minutes == 60 else f"alle {minutes // 60} Stunden"
-    return f"alle {minutes} Minuten"
+        if minutes == 60:
+            return _("stündlich")
+        return _("alle %(count)d Stunden") % {"count": minutes // 60}
+    return _("alle %(count)d Minuten") % {"count": minutes}
 
 
 def _window(start, end) -> str:
     if start is None and end is None:
         return ""
-    return (
-        f", {start:%H:%M} – {end:%H:%M} Uhr"
-        if start and end
-        else f", ab {start:%H:%M} Uhr"
-        if start
-        else f", bis {end:%H:%M} Uhr"
-    )
+    if start and end:
+        return _(", %(start)s – %(end)s Uhr") % {"start": f"{start:%H:%M}", "end": f"{end:%H:%M}"}
+    if start:
+        return _(", ab %(time)s Uhr") % {"time": f"{start:%H:%M}"}
+    return _(", bis %(time)s Uhr") % {"time": f"{end:%H:%M}"}
 
 
 async def overview(now: datetime, app_settings: AppSettings) -> list[JobRow]:
@@ -82,45 +85,49 @@ async def overview(now: datetime, app_settings: AppSettings) -> list[JobRow]:
 
     s = app_settings
     weekly = (
-        f"Wochenbericht {s.get_weekly_report_weekday_display()} {s.weekly_report_time:%H:%M} Uhr"
+        _("Wochenbericht %(weekday)s %(time)s Uhr")
+        % {"weekday": s.get_weekly_report_weekday_display(), "time": f"{s.weekly_report_time:%H:%M}"}
         if s.weekly_report_enabled
-        else "Wochenbericht aus"
+        else _("Wochenbericht aus")
     )
     reminder = (
-        f"Timer-Erinnerung nach {s.timer_reminder_hours} Std." if s.timer_reminder_hours else "Timer-Erinnerung aus"
+        _("Timer-Erinnerung nach %(hours)s Std.") % {"hours": s.timer_reminder_hours}
+        if s.timer_reminder_hours
+        else _("Timer-Erinnerung aus")
     )
     return [
         row(
             "customers",
-            "Kundenimport",
+            _("Kundenimport"),
             (_every(s.lexware_sync_interval) + _window(s.lexware_sync_from, s.lexware_sync_until))
             if s.lexware_sync_interval
-            else "aus",
+            else _("aus"),
             next_sync(now, s.lexware_sync_interval, s.lexware_sync_from, s.lexware_sync_until, s.lexware_synced_at),
             True,
         ),
         row(
             "invoices",
-            "Rechnungsabgleich",
+            _("Rechnungsabgleich"),
             (_every(s.invoice_sync_interval) + _window(s.invoice_sync_from, s.invoice_sync_until))
             if s.invoice_sync_interval
-            else "aus",
+            else _("aus"),
             next_sync(now, s.invoice_sync_interval, s.invoice_sync_from, s.invoice_sync_until, s.invoices_synced_at),
             True,
         ),
         row(
             "backup",
-            "Datensicherung",
-            f"täglich ab {s.backup_time:%H:%M} Uhr" if s.backup_enabled else "aus",
+            _("Datensicherung"),
+            _("täglich ab %(time)s Uhr") % {"time": f"{s.backup_time:%H:%M}"} if s.backup_enabled else _("aus"),
             await sync_to_async(next_backup)(now, s),
             True,
         ),
-        row("mail-queue", "E-Mail-Versand", "alle 5 Sekunden"),
+        row("mail-queue", _("E-Mail-Versand"), _("alle 5 Sekunden")),
         row(
             "mail-reports",
-            "Berichte und Hinweise per E-Mail",
-            f"jede Minute geprüft: {weekly}, {reminder}, Hinweis zu überfälligen Rechnungen",
+            _("Berichte und Hinweise per E-Mail"),
+            _("jede Minute geprüft: %(weekly)s, %(reminder)s, Hinweis zu überfälligen Rechnungen")
+            % {"weekly": weekly, "reminder": reminder},
         ),
-        row("timer-messages", "Nachricht zu lange laufender Timer", "jede Minute geprüft"),
-        row("prune", "Alte Nachrichten löschen", "stündlich"),
+        row("timer-messages", _("Nachricht zu lange laufender Timer"), _("jede Minute geprüft")),
+        row("prune", _("Alte Nachrichten löschen"), _("stündlich")),
     ]

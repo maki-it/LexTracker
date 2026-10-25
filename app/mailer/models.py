@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 from core import crypto
 from core.models import UUIDModel
@@ -17,28 +18,28 @@ class MailSettings(models.Model):
     """
 
     class Security(models.TextChoices):
-        STARTTLS = "starttls", "STARTTLS (meist Port 587)"
-        SSL = "ssl", "SSL/TLS (meist Port 465)"
-        NONE = "none", "keine (nur im eigenen Netz)"
+        STARTTLS = "starttls", _("STARTTLS (meist Port 587)")
+        SSL = "ssl", _("SSL/TLS (meist Port 465)")
+        NONE = "none", _("keine (nur im eigenen Netz)")
 
-    host = models.CharField("SMTP-Server", max_length=200, blank=True, help_text="z. B. smtp.example.de")
-    port = models.PositiveIntegerField("Port", default=587)
-    security = models.CharField("Verschlüsselung", max_length=10, choices=Security, default=Security.STARTTLS)
-    username = models.CharField("Benutzername", max_length=200, blank=True)
+    host = models.CharField(_("SMTP-Server"), max_length=200, blank=True, help_text=_("z. B. smtp.example.de"))
+    port = models.PositiveIntegerField(_("Port"), default=587)
+    security = models.CharField(_("Verschlüsselung"), max_length=10, choices=Security, default=Security.STARTTLS)
+    username = models.CharField(_("Benutzername"), max_length=200, blank=True)
     encrypted_password = models.TextField(blank=True, editable=False)
     from_address = models.EmailField(
-        "Absenderadresse", blank=True, help_text="Muss der SMTP-Server für dein Konto erlauben."
+        _("Absenderadresse"), blank=True, help_text=_("Muss der SMTP-Server für dein Konto erlauben.")
     )
-    from_name = models.CharField("Absendername", max_length=100, default="LexTracker", blank=True)
+    from_name = models.CharField(_("Absendername"), max_length=100, default="LexTracker", blank=True)
     base_url = models.URLField(
-        "Adresse der App",
+        _("Adresse der App"),
         blank=True,
-        help_text="Für Links in E-Mails, die der Zeitplan verschickt, z. B. https://zeit.example.de.",
+        help_text=_("Für Links in E-Mails, die der Zeitplan verschickt, z. B. https://zeit.example.de."),
     )
-    updated_at = models.DateTimeField("geändert", null=True, blank=True, editable=False)
+    updated_at = models.DateTimeField(_("geändert"), null=True, blank=True, editable=False)
 
     class Meta:
-        verbose_name = verbose_name_plural = "E-Mail-Versand"
+        verbose_name = verbose_name_plural = _("E-Mail-Versand")
 
     def __str__(self) -> str:
         return "E-Mail-Versand"
@@ -70,45 +71,45 @@ class OutgoingMail(UUIDModel):
     """An e-mail waiting to be sent, or sent already. The scheduler sends what is due (see ``mailer.outbox``)."""
 
     class Status(models.TextChoices):
-        PENDING = "pending", "wartet"
-        SENT = "sent", "verschickt"
-        FAILED = "failed", "fehlgeschlagen"
-        EXPIRED = "expired", "verfallen"
+        PENDING = "pending", _("wartet")
+        SENT = "sent", _("verschickt")
+        FAILED = "failed", _("fehlgeschlagen")
+        EXPIRED = "expired", _("verfallen")
 
     class Kind(models.TextChoices):
-        PASSWORD_RESET = "password_reset", "Passwort zurücksetzen"
-        LOGIN_LINK = "login_link", "Anmeldelink"
-        WEEKLY_REPORT = "weekly_report", "Wochenbericht"
-        TIMER_REMINDER = "timer_reminder", "Erinnerung an laufenden Timer"
-        INVITATION = "invitation", "Einladung"
-        INVOICE_OVERDUE = "invoice_overdue", "Hinweis auf überfällige Rechnung"
-        NOTIFICATION = "notification", "Nachricht"
+        PASSWORD_RESET = "password_reset", _("Passwort zurücksetzen")
+        LOGIN_LINK = "login_link", _("Anmeldelink")
+        WEEKLY_REPORT = "weekly_report", _("Wochenbericht")
+        TIMER_REMINDER = "timer_reminder", _("Erinnerung an laufenden Timer")
+        INVITATION = "invitation", _("Einladung")
+        INVOICE_OVERDUE = "invoice_overdue", _("Hinweis auf überfällige Rechnung")
+        NOTIFICATION = "notification", _("Nachricht")
 
     # Their links sign in or set a password, so their text is not kept once it no longer needs sending.
     SECRET_KINDS = (Kind.PASSWORD_RESET, Kind.LOGIN_LINK, Kind.INVITATION)
 
-    kind = models.CharField("Art", max_length=30, choices=Kind)
+    kind = models.CharField(_("Art"), max_length=30, choices=Kind)
     user = models.ForeignKey(
-        "accounts.User", verbose_name="Benutzer", on_delete=models.CASCADE, null=True, blank=True, related_name="+"
+        "accounts.User", verbose_name=_("Benutzer"), on_delete=models.CASCADE, null=True, blank=True, related_name="+"
     )
-    to = models.EmailField("an")
-    subject = models.CharField("Betreff", max_length=200)
-    text = models.TextField("Text")
-    html = models.TextField("HTML", blank=True)
+    to = models.EmailField(_("an"))
+    subject = models.CharField(_("Betreff"), max_length=200)
+    text = models.TextField(_("Text"))
+    html = models.TextField(_("HTML"), blank=True)
     # Sent only once per key, e.g. one reminder per running timer.
     dedupe_key = models.CharField(max_length=200, blank=True, db_index=True)
-    status = models.CharField("Status", max_length=10, choices=Status, default=Status.PENDING)
-    created_at = models.DateTimeField("erstellt", auto_now_add=True)
-    next_attempt_at = models.DateTimeField("nächster Versuch", default=timezone.now)
+    status = models.CharField(_("Status"), max_length=10, choices=Status, default=Status.PENDING)
+    created_at = models.DateTimeField(_("erstellt"), auto_now_add=True)
+    next_attempt_at = models.DateTimeField(_("nächster Versuch"), default=timezone.now)
     # Not sent after this, e.g. once the link in it has expired.
-    expires_at = models.DateTimeField("verfällt", null=True, blank=True)
-    attempts = models.PositiveSmallIntegerField("Versuche", default=0)
-    sent_at = models.DateTimeField("verschickt", null=True, blank=True)
-    last_error = models.CharField("letzter Fehler", max_length=500, blank=True)
+    expires_at = models.DateTimeField(_("verfällt"), null=True, blank=True)
+    attempts = models.PositiveSmallIntegerField(_("Versuche"), default=0)
+    sent_at = models.DateTimeField(_("verschickt"), null=True, blank=True)
+    last_error = models.CharField(_("letzter Fehler"), max_length=500, blank=True)
 
     class Meta:
-        verbose_name = "E-Mail"
-        verbose_name_plural = "E-Mails"
+        verbose_name = _("E-Mail")
+        verbose_name_plural = _("E-Mails")
         ordering = ["-created_at"]
         indexes = [models.Index(fields=["status", "next_attempt_at"])]
 

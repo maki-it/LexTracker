@@ -16,6 +16,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.encoding import force_bytes
 from django.utils.http import base36_to_int, urlsafe_base64_decode, urlsafe_base64_encode
+from django.utils.translation import gettext_lazy as _
 
 from accounts.models import LoginLink, User
 from core.ids import parse_uuid
@@ -80,7 +81,7 @@ async def send_password_reset(request: HttpRequest, identifier: str) -> None:
         await outbox.aqueue(
             OutgoingMail.Kind.PASSWORD_RESET,
             user.email,
-            "Neues Passwort für LexTracker",
+            _("Neues Passwort für LexTracker"),
             "password_reset",
             {"user": user, "url": url, "minutes": RESET_MINUTES},
             user=user,
@@ -114,7 +115,7 @@ async def send_login_link(request: HttpRequest, identifier: str) -> None:
         await outbox.aqueue(
             OutgoingMail.Kind.LOGIN_LINK,
             user.email,
-            "Dein Anmeldelink für LexTracker",
+            _("Dein Anmeldelink für LexTracker"),
             "login_link",
             {"user": user, "url": url, "minutes": LOGIN_LINK_MINUTES},
             user=user,
@@ -163,7 +164,7 @@ async def send_invitation(request: HttpRequest, user: User) -> None:
     await outbox.aqueue(
         OutgoingMail.Kind.INVITATION,
         user.email,
-        "Dein Zugang zu LexTracker",
+        _("Dein Zugang zu LexTracker"),
         "invitation",
         {
             "invited": user,

@@ -1,5 +1,6 @@
+{% load i18n %}{% get_current_language as LANGUAGE_CODE %}
 {% load static tailwind_cli icons dialogs %}<!doctype html>
-<html lang="de" data-theme="{{ theme }}">
+<html lang="{{ LANGUAGE_CODE }}" data-theme="{{ theme }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -39,28 +40,28 @@
       <div hx-get="{% url 'tracking:timer' %}" hx-trigger="load" hx-swap="outerHTML"></div>
       {% endif %}
 
-      <button type="button" class="btn btn-ghost btn-icon lg:hidden" data-nav-toggle aria-controls="sidebar-nav" aria-expanded="false" aria-label="Menü">
+      <button type="button" class="btn btn-ghost btn-icon lg:hidden" data-nav-toggle aria-controls="sidebar-nav" aria-expanded="false" aria-label="{% trans 'Menü' %}">
         <span class="group-data-open:hidden">{% icon "menu" size=20 %}</span>
         <span class="hidden group-data-open:inline">{% icon "x" size=20 %}</span>
       </button>
 
-      <nav id="sidebar-nav" aria-label="Hauptnavigation" class="sidebar-nav">
+      <nav id="sidebar-nav" aria-label="{% trans 'Hauptnavigation' %}" class="sidebar-nav">
         {% with active=request.resolver_match.view_name %}
         {% if user.is_customer %}
-        <a href="{% url 'portal:overview' %}" class="nav-link{% if active == 'portal:overview' %} nav-link-active{% endif %}"{% if active == 'portal:overview' %} aria-current="page"{% endif %}>{% icon "dashboard" %}Übersicht</a>
-        {% if user.portal_entries %}<a href="{% url 'portal:entries' %}" class="nav-link{% if active == 'portal:entries' %} nav-link-active{% endif %}"{% if active == 'portal:entries' %} aria-current="page"{% endif %}>{% icon "clock" %}Zeiten</a>{% endif %}
-        {% if user.portal_invoices %}<a href="{% url 'portal:invoices' %}" class="nav-link{% if active == 'portal:invoices' or active == 'portal:invoice_entries' %} nav-link-active{% endif %}"{% if active == 'portal:invoices' or active == 'portal:invoice_entries' %} aria-current="page"{% endif %}>{% icon "receipt" %}Rechnungen</a>{% endif %}
-        {% if user.portal_contact %}<a href="{% url 'portal:contact' %}" class="nav-link{% if active == 'portal:contact' %} nav-link-active{% endif %}"{% if active == 'portal:contact' %} aria-current="page"{% endif %}>{% icon "building" %}Kontaktdaten</a>{% endif %}
+        <a href="{% url 'portal:overview' %}" class="nav-link{% if active == 'portal:overview' %} nav-link-active{% endif %}"{% if active == 'portal:overview' %} aria-current="page"{% endif %}>{% icon "dashboard" %}{% trans "Übersicht" %}</a>
+        {% if user.portal_entries %}<a href="{% url 'portal:entries' %}" class="nav-link{% if active == 'portal:entries' %} nav-link-active{% endif %}"{% if active == 'portal:entries' %} aria-current="page"{% endif %}>{% icon "clock" %}{% trans "Zeiten" %}</a>{% endif %}
+        {% if user.portal_invoices %}<a href="{% url 'portal:invoices' %}" class="nav-link{% if active == 'portal:invoices' or active == 'portal:invoice_entries' %} nav-link-active{% endif %}"{% if active == 'portal:invoices' or active == 'portal:invoice_entries' %} aria-current="page"{% endif %}>{% icon "receipt" %}{% trans "Rechnungen" %}</a>{% endif %}
+        {% if user.portal_contact %}<a href="{% url 'portal:contact' %}" class="nav-link{% if active == 'portal:contact' %} nav-link-active{% endif %}"{% if active == 'portal:contact' %} aria-current="page"{% endif %}>{% icon "building" %}{% trans "Kontaktdaten" %}</a>{% endif %}
         {% else %}
-        <a href="{% url 'core:dashboard' %}" class="nav-link{% if section == 'core' %} nav-link-active{% endif %}"{% if section == 'core' %} aria-current="page"{% endif %}>{% icon "dashboard" %}Übersicht</a>
-        <a href="{% url 'tracking:list' %}" class="nav-link{% if section == 'tracking' %} nav-link-active{% endif %}"{% if section == 'tracking' %} aria-current="page"{% endif %}>{% icon "tasks" %}Aufgaben</a>
+        <a href="{% url 'core:dashboard' %}" class="nav-link{% if section == 'core' %} nav-link-active{% endif %}"{% if section == 'core' %} aria-current="page"{% endif %}>{% icon "dashboard" %}{% trans "Übersicht" %}</a>
+        <a href="{% url 'tracking:list' %}" class="nav-link{% if section == 'tracking' %} nav-link-active{% endif %}"{% if section == 'tracking' %} aria-current="page"{% endif %}>{% icon "tasks" %}{% trans "Aufgaben" %}</a>
         {% if user.is_admin %}
-        <a href="{% url 'projects:list' %}" class="nav-link{% if section == 'projects' %} nav-link-active{% endif %}"{% if section == 'projects' %} aria-current="page"{% endif %}>{% icon "folder" %}Projekte{% if request.nav_counts.projects %}<span class="nav-count" title="Aktive Projekte">{{ request.nav_counts.projects }}</span>{% endif %}</a>
-        <a href="{% url 'customers:list' %}" class="nav-link{% if section == 'customers' %} nav-link-active{% endif %}"{% if section == 'customers' %} aria-current="page"{% endif %}>{% icon "users" %}Kunden</a>
-        <a href="{% url 'billing:overview' %}" class="nav-link{% if section == 'billing' %} nav-link-active{% endif %}"{% if section == 'billing' %} aria-current="page"{% endif %}>{% icon "receipt" %}Abrechnung{% if request.nav_counts.billable_customers %}<span class="nav-count nav-count-primary" title="Kunden mit offenen, abrechenbaren Zeiten">{{ request.nav_counts.billable_customers }}</span>{% endif %}</a>
-        <a href="{% url 'reports:overview' %}" class="nav-link{% if section == 'reports' %} nav-link-active{% endif %}"{% if section == 'reports' %} aria-current="page"{% endif %}>{% icon "chart" %}Auswertungen</a>
-        <a href="{% url 'users:list' %}" class="nav-link{% if section == 'users' %} nav-link-active{% endif %}"{% if section == 'users' %} aria-current="page"{% endif %}>{% icon "user-cog" %}Benutzer</a>
-        <a href="{% url 'core:settings' %}" class="nav-link{% if active == 'core:settings' %} nav-link-active{% endif %}"{% if active == 'core:settings' %} aria-current="page"{% endif %}>{% icon "settings" %}Einstellungen</a>
+        <a href="{% url 'projects:list' %}" class="nav-link{% if section == 'projects' %} nav-link-active{% endif %}"{% if section == 'projects' %} aria-current="page"{% endif %}>{% icon "folder" %}{% trans "Projekte" %}{% if request.nav_counts.projects %}<span class="nav-count" title="{% trans 'Aktive Projekte' %}">{{ request.nav_counts.projects }}</span>{% endif %}</a>
+        <a href="{% url 'customers:list' %}" class="nav-link{% if section == 'customers' %} nav-link-active{% endif %}"{% if section == 'customers' %} aria-current="page"{% endif %}>{% icon "users" %}{% trans "Kunden" %}</a>
+        <a href="{% url 'billing:overview' %}" class="nav-link{% if section == 'billing' %} nav-link-active{% endif %}"{% if section == 'billing' %} aria-current="page"{% endif %}>{% icon "receipt" %}{% trans "Abrechnung" %}{% if request.nav_counts.billable_customers %}<span class="nav-count nav-count-primary" title="{% trans 'Kunden mit offenen, abrechenbaren Zeiten' %}">{{ request.nav_counts.billable_customers }}</span>{% endif %}</a>
+        <a href="{% url 'reports:overview' %}" class="nav-link{% if section == 'reports' %} nav-link-active{% endif %}"{% if section == 'reports' %} aria-current="page"{% endif %}>{% icon "chart" %}{% trans "Auswertungen" %}</a>
+        <a href="{% url 'users:list' %}" class="nav-link{% if section == 'users' %} nav-link-active{% endif %}"{% if section == 'users' %} aria-current="page"{% endif %}>{% icon "user-cog" %}{% trans "Benutzer" %}</a>
+        <a href="{% url 'core:settings' %}" class="nav-link{% if active == 'core:settings' %} nav-link-active{% endif %}"{% if active == 'core:settings' %} aria-current="page"{% endif %}>{% icon "settings" %}{% trans "Einstellungen" %}</a>
         {% endif %}
         {% endif %}
         {% endwith %}
@@ -68,11 +69,11 @@
 
       <div class="sidebar-user">
         <span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-line text-xs font-semibold uppercase">{{ user.get_username|first }}</span>
-        <a {% dialog_link "account:settings" %} class="min-w-0 flex-1 truncate font-medium text-ink no-underline hover:underline" title="Konto">{{ user.get_full_name|default:user.get_username }}</a>
-        {% if user.is_staff %}<a href="{% url 'admin:index' %}" class="btn btn-ghost btn-sm btn-icon" title="Verwaltung" aria-label="Verwaltung">{% icon "shield" %}</a>{% endif %}
+        <a {% dialog_link "account:settings" %} class="min-w-0 flex-1 truncate font-medium text-ink no-underline hover:underline" title="{% trans 'Konto' %}">{{ user.get_full_name|default:user.get_username }}</a>
+        {% if user.is_staff %}<a href="{% url 'admin:index' %}" class="btn btn-ghost btn-sm btn-icon" title="{% trans 'Verwaltung' %}" aria-label="{% trans 'Verwaltung' %}">{% icon "shield" %}</a>{% endif %}
         <form method="post" action="{% url 'accounts:logout' %}">
           {% csrf_token %}
-          <button type="submit" class="btn btn-ghost btn-sm btn-icon" title="Abmelden" aria-label="Abmelden">{% icon "logout" %}</button>
+          <button type="submit" class="btn btn-ghost btn-sm btn-icon" title="{% trans 'Abmelden' %}" aria-label="{% trans 'Abmelden' %}">{% icon "logout" %}</button>
         </form>
       </div>
     </aside>
@@ -84,9 +85,9 @@
         <div class="min-w-0">
           <span class="font-semibold">{{ critical.title }}</span>
           {% if critical.body %}<span class="line-clamp-2 break-words">{{ critical.body }}</span>{% endif %}
-          {% if request.nav_inbox.critical_count > 1 %}<span class="text-[13px]">Und {{ request.nav_inbox.critical_count|add:"-1" }} weitere kritische Nachrichten.</span>{% endif %}
+          {% if request.nav_inbox.critical_count > 1 %}<span class="text-[13px]">{% blocktrans trimmed with critical_count=request.nav_inbox.critical_count|add:"-1" %}Und {{ critical_count }} weitere kritische Nachrichten.{% endblocktrans %}</span>{% endif %}
         </div>
-        <a {% dialog_link "inbox:panel" %} class="font-medium text-current underline">Ansehen</a>
+        <a {% dialog_link "inbox:panel" %} class="font-medium text-current underline">{% trans "Ansehen" %}</a>
       </div>
       {% endif %}
       {% endwith %}
@@ -98,9 +99,9 @@
   </div>
   {% endwith %}
   {# Edit forms open in here, see core/dialogs.py. Esc, the X and a click beside it close it. #}
-  <dialog id="dialog" class="dialog" aria-label="Bearbeiten">
+  <dialog id="dialog" class="dialog" aria-label="{% trans 'Bearbeiten' %}">
     <form method="dialog" class="dialog-close">
-      <button type="submit" class="btn btn-ghost btn-sm btn-icon" aria-label="Schließen" title="Schließen">{% icon "x" %}</button>
+      <button type="submit" class="btn btn-ghost btn-sm btn-icon" aria-label="{% trans 'Schließen' %}" title="{% trans 'Schließen' %}">{% icon "x" %}</button>
     </form>
     <div id="dialog-body" hx-boost="true" hx-target="#dialog-body" hx-swap="innerHTML" hx-push-url="false"></div>
   </dialog>

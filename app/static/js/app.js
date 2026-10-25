@@ -263,7 +263,7 @@ function showTaskResults(search, open) {
 
 function syncTaskValidity(search) {
   const { input, picked } = taskParts(search);
-  input.setCustomValidity(picked.value ? "" : "Bitte eine Aufgabe aus den Vorschlägen auswählen.");
+  input.setCustomValidity(picked.value ? "" : search.dataset.invalidMessage);
 }
 
 function pickTask(search, option) {

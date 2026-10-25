@@ -3,6 +3,7 @@ from datetime import date
 from asgiref.sync import sync_to_async
 from django.db import transaction
 from django.utils import timezone
+from django.utils.translation import gettext as _
 
 from billing.calculation import Draft, build_draft
 from billing.lexware import invoice_payload
@@ -16,7 +17,7 @@ from tracking.models import TimeEntry
 @transaction.atomic
 def _record_invoice(draft: Draft, lexware_id) -> Invoice:
     # update_or_create: the invoice sync may have taken the new draft over from Lexware in the meantime.
-    invoice, _ = Invoice.objects.update_or_create(
+    invoice, _created = Invoice.objects.update_or_create(
         lexware_id=lexware_id,
         defaults={
             "customer": draft.customer,
@@ -37,9 +38,9 @@ async def create_invoice(client: LexwareClient, customer: Customer, start: date,
     """
     draft = await sync_to_async(build_draft)(customer, start, end)
     if not customer.lexware_id:
-        raise LexwareError("Der Kunde ist nicht mit Lexware verknüpft. Importiere ihn zuerst aus Lexware.")
+        raise LexwareError(_("Der Kunde ist nicht mit Lexware verknüpft. Importiere ihn zuerst aus Lexware."))
     if not draft.can_be_invoiced:
-        raise LexwareError(" ".join(draft.problems) or "Für diesen Zeitraum gibt es nichts abzurechnen.")
+        raise LexwareError(" ".join(draft.problems) or _("Für diesen Zeitraum gibt es nichts abzurechnen."))
     profile = await client.get_profile()
     detail = (await AppSettings.aload()).invoice_detail
     lexware_id = await client.create_invoice(invoice_payload(draft, timezone.localdate(), profile, detail))

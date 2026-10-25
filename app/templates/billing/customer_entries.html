@@ -1,37 +1,38 @@
 {% extends layout %}
+{% load i18n %}
 {% load timefmt %}
-{% block title %}Offene Zeiten {{ customer.name }} · LexTracker{% endblock %}
+{% block title %}{% blocktrans trimmed with name=customer.name %}Offene Zeiten {{ name }} · LexTracker{% endblocktrans %}{% endblock %}
 {% block content %}
 <div class="dialog-wide flex flex-col gap-5">
   <div>
-    <p class="breadcrumb"><a href="{% url 'billing:overview' %}">Abrechnung</a> / <a href="{% url 'billing:customer' customer.pk %}">{{ customer.name }}</a></p>
-    <h1>Offene Zeiten · {{ customer.name }}</h1>
-    <p class="mt-1 text-[13px] text-muted">So gehen die Zeiten in die nächste Rechnung ein, wenn du alles Offene zusammen abrechnest.</p>
+    <p class="breadcrumb"><a href="{% url 'billing:overview' %}">{% trans "Abrechnung" %}</a> / <a href="{% url 'billing:customer' customer.pk %}">{{ customer.name }}</a></p>
+    <h1>{% blocktrans trimmed with name=customer.name %}Offene Zeiten · {{ name }}{% endblocktrans %}</h1>
+    <p class="mt-1 text-[13px] text-muted">{% trans "So gehen die Zeiten in die nächste Rechnung ein, wenn du alles Offene zusammen abrechnest." %}</p>
   </div>
 
   {% if draft %}
   <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
     <div class="stat">
-      <span class="stat-label">Offene Zeit</span>
+      <span class="stat-label">{% trans "Offene Zeit" %}</span>
       <span class="stat-value">{{ draft.duration|hours:duration_format }} h</span>
-      <span class="text-xs text-muted">{% if included %}davon {{ included|hours:duration_format }} h im Retainer{% else %}{{ draft.start|date:date_format }} – {{ draft.end|date:date_format }}{% endif %}</span>
+      <span class="text-xs text-muted">{% if included %}{% blocktrans trimmed with included=included|hours:duration_format %}davon {{ included }} h im Retainer{% endblocktrans %}{% else %}{{ draft.start|date:date_format }} – {{ draft.end|date:date_format }}{% endif %}</span>
     </div>
     <div class="stat">
-      <span class="stat-label">Zeiteinträge</span>
+      <span class="stat-label">{% trans "Zeiteinträge" %}</span>
       <span class="stat-value">{{ draft.entries|length }}</span>
-      <span class="text-xs text-muted">in {{ sections|length }} Projekt{{ sections|length|pluralize:",en" }}</span>
+      <span class="text-xs text-muted">{% blocktrans trimmed count counter=sections|length %}in {{ counter }} Projekt{% plural %}in {{ counter }} Projekten{% endblocktrans %}</span>
     </div>
     <div class="stat">
-      <span class="stat-label">Summe netto</span>
+      <span class="stat-label">{% trans "Summe netto" %}</span>
       <span class="stat-value">{{ draft.total }} €</span>
-      {% if retainer_total is not None %}<span class="text-xs text-muted">davon {{ retainer_total }} € Retainer-Pauschale</span>{% endif %}
+      {% if retainer_total is not None %}<span class="text-xs text-muted">{% blocktrans trimmed %}davon {{ retainer_total }} € Retainer-Pauschale{% endblocktrans %}</span>{% endif %}
     </div>
   </div>
 
   {% if draft.agreement and retainer_total is not None %}
-  <div role="alert" class="alert">Retainer ({{ draft.agreement }}): Stunden innerhalb des Kontingents sind mit der Pauschale abgegolten und haben keinen eigenen Betrag, Mehrstunden werden extra berechnet.</div>
+  <div role="alert" class="alert">{% blocktrans trimmed with agreement=draft.agreement %}Retainer ({{ agreement }}): Stunden innerhalb des Kontingents sind mit der Pauschale abgegolten und haben keinen eigenen Betrag, Mehrstunden werden extra berechnet.{% endblocktrans %}</div>
   {% endif %}
-  {% for problem in draft.problems %}<div role="alert" class="alert alert-warning">{{ problem }} Der Eintrag kommt nicht in die Rechnung.</div>{% endfor %}
+  {% for problem in draft.problems %}<div role="alert" class="alert alert-warning">{% blocktrans trimmed %}{{ problem }} Der Eintrag kommt nicht in die Rechnung.{% endblocktrans %}</div>{% endfor %}
 
   {% for section in sections %}
   {% with group=section.group %}
@@ -39,22 +40,22 @@
     <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
       <h2>{{ group.project.name }}</h2>
       <p class="text-[13px] text-muted tabular-nums">
-        {{ group.rows|length }} Zeiteintr{{ group.rows|length|pluralize:"ag,äge" }} · {{ group.duration|hours:duration_format }} h{% if group.amount %} · {{ group.amount }} €{% endif %}
-        {% if group.included %} · {{ group.included|hours:duration_format }} h im Retainer{% endif %}
-        {% if group.without_rate %} · <span class="text-warning">{{ group.without_rate }} ohne Satz</span>{% endif %}
+        {% blocktrans trimmed count counter=group.rows|length %}{{ counter }} Zeiteintrag{% plural %}{{ counter }} Zeiteinträge{% endblocktrans %} · {{ group.duration|hours:duration_format }} h{% if group.amount %} · {{ group.amount }} €{% endif %}
+        {% if group.included %} {% blocktrans trimmed with included=group.included|hours:duration_format %}· {{ included }} h im Retainer{% endblocktrans %}{% endif %}
+        {% if group.without_rate %} · <span class="text-warning">{% blocktrans trimmed with without_rate=group.without_rate %}{{ without_rate }} ohne Satz{% endblocktrans %}</span>{% endif %}
       </p>
     </div>
     <div class="table-wrap">
       <table class="table">
         <thead>
           <tr>
-            <th>Datum</th>
-            <th>Mitarbeiter</th>
-            <th>Aufgabe</th>
-            <th class="text-right">Dauer</th>
-            <th class="text-right">Satz</th>
-            <th class="text-right">Betrag</th>
-            <th>Beschreibung</th>
+            <th>{% trans "Datum" %}</th>
+            <th>{% trans "Mitarbeiter" %}</th>
+            <th>{% trans "Aufgabe" %}</th>
+            <th class="text-right">{% trans "Dauer" %}</th>
+            <th class="text-right">{% trans "Satz" %}</th>
+            <th class="text-right">{% trans "Betrag" %}</th>
+            <th>{% trans "Beschreibung" %}</th>
           </tr>
         </thead>
         <tbody>
@@ -67,11 +68,11 @@
   {% endfor %}
 
   <div class="flex flex-wrap gap-2 border-t border-line pt-4">
-    <a href="{% url 'billing:customer' customer.pk %}" hx-boost="false" class="btn btn-primary">Zur Abrechnung</a>
-    <a href="{% url 'billing:overview' %}" class="btn btn-ghost" data-close-dialog>Schließen</a>
+    <a href="{% url 'billing:customer' customer.pk %}" hx-boost="false" class="btn btn-primary">{% trans "Zur Abrechnung" %}</a>
+    <a href="{% url 'billing:overview' %}" class="btn btn-ghost" data-close-dialog>{% trans "Schließen" %}</a>
   </div>
   {% else %}
-  <p class="empty py-6">Keine offenen Zeiten: Alles ist abgerechnet.</p>
+  <p class="empty py-6">{% trans "Keine offenen Zeiten: Alles ist abgerechnet." %}</p>
   {% endif %}
 </div>
 {% endblock %}

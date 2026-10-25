@@ -1,9 +1,9 @@
-{% load timefmt %}
+{% load i18n timefmt %}
 <div id="period-pills" class="flex flex-wrap gap-1.5"{% if oob %} hx-swap-oob="true"{% endif %}>
   {% for option in period_options %}
   <a href="?start={{ option.start|date:'Y-m-d' }}&end={{ option.end|date:'Y-m-d' }}"
      class="pill{% if option.key == selected_period %} pill-active{% elif not option.open_time %} pill-muted{% endif %}"
-     title="{% if option.open_time %}{{ option.open_time|hours:duration_format }} h offen{% else %}Keine offenen Zeiten{% endif %}">
+     title="{% if option.open_time %}{% blocktrans trimmed with hours=option.open_time|hours:duration_format %}{{ hours }} h offen{% endblocktrans %}{% else %}{% trans "Keine offenen Zeiten" %}{% endif %}">
     {{ option.label }}
     {% if option.open_time %}<span class="pill-count">{{ option.open_time|hours:duration_format }} h</span>{% endif %}
   </a>

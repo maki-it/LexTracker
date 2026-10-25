@@ -1,5 +1,6 @@
 from django import forms
 from django.db.models import Q
+from django.utils.translation import gettext_lazy as _
 
 from billing.models import BillingAgreement
 from core.forms import StyledFormMixin
@@ -23,12 +24,12 @@ class BillingAgreementForm(StyledFormMixin, forms.ModelForm):
         if cleaned.get("kind") == BillingAgreement.Kind.RETAINER:
             for name in ("included_hours", "fixed_price"):
                 if cleaned.get(name) is None:
-                    self.add_error(name, "Für einen Retainer erforderlich.")
+                    self.add_error(name, _("Für einen Retainer erforderlich."))
         start, end = cleaned.get("valid_from"), cleaned.get("valid_until")
         if start and end and end < start:
-            self.add_error("valid_until", "Das Ende liegt vor dem Beginn.")
+            self.add_error("valid_until", _("Das Ende liegt vor dem Beginn."))
         elif start and self._overlapping(start, end).exists():
-            self.add_error("valid_from", "Für diesen Zeitraum gilt schon eine andere Vereinbarung.")
+            self.add_error("valid_from", _("Für diesen Zeitraum gilt schon eine andere Vereinbarung."))
         return cleaned
 
     def _overlapping(self, start, end):
@@ -39,11 +40,11 @@ class BillingAgreementForm(StyledFormMixin, forms.ModelForm):
 
 
 class PeriodForm(forms.Form):
-    start = forms.DateField(label="Von", widget=forms.DateInput(attrs={"type": "date", "class": "input"}))
-    end = forms.DateField(label="Bis", widget=forms.DateInput(attrs={"type": "date", "class": "input"}))
+    start = forms.DateField(label=_("Von"), widget=forms.DateInput(attrs={"type": "date", "class": "input"}))
+    end = forms.DateField(label=_("Bis"), widget=forms.DateInput(attrs={"type": "date", "class": "input"}))
 
     def clean(self):
         cleaned = super().clean()
         if cleaned.get("start") and cleaned.get("end") and cleaned["end"] < cleaned["start"]:
-            raise forms.ValidationError("Das Ende liegt vor dem Beginn.")
+            raise forms.ValidationError(_("Das Ende liegt vor dem Beginn."))
         return cleaned

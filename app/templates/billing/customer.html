@@ -1,16 +1,17 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load icons dialogs %}
-{% block title %}Abrechnung {{ customer.name }} · LexTracker{% endblock %}
+{% block title %}{% blocktrans trimmed with name=customer.name %}Abrechnung {{ name }} · LexTracker{% endblocktrans %}{% endblock %}
 {% block content %}
 <div>
-  <p class="breadcrumb"><a href="{% url 'billing:overview' %}">Abrechnung</a> / {{ customer.name }}</p>
+  <p class="breadcrumb"><a href="{% url 'billing:overview' %}">{% trans "Abrechnung" %}</a> / {{ customer.name }}</p>
   <h1>{{ customer.name }}</h1>
 </div>
 
 <section class="flex flex-col gap-3">
   <div class="flex items-center justify-between gap-4">
-    <h2>Abrechnungsvereinbarung</h2>
-    <a {% dialog_link "billing:agreement_create" customer.pk %} class="btn btn-sm">{% icon "plus" size=14 %}Neue Vereinbarung</a>
+    <h2>{% trans "Abrechnungsvereinbarung" %}</h2>
+    <a {% dialog_link "billing:agreement_create" customer.pk %} class="btn btn-sm">{% icon "plus" size=14 %}{% trans "Neue Vereinbarung" %}</a>
   </div>
   {% if agreements %}
   <div class="table-wrap">
@@ -21,36 +22,36 @@
           <td class="w-full">
             <div class="flex flex-wrap items-center gap-2 font-medium">
               <span class="badge{% if agreement.kind == 'retainer' %} badge-primary{% endif %}">{{ agreement.get_kind_display }}</span>
-              {% if agreement.kind == "retainer" %}{{ agreement.included_hours }} h {{ agreement.get_period_display }} für {{ agreement.fixed_price }} €{% endif %}
+              {% if agreement.kind == "retainer" %}{% blocktrans trimmed with included_hours=agreement.included_hours get_period_display=agreement.get_period_display fixed_price=agreement.fixed_price %}{{ included_hours }} h {{ get_period_display }} für {{ fixed_price }} €{% endblocktrans %}{% endif %}
             </div>
             <div class="mt-1 text-[13px] text-muted">
-              gültig ab {{ agreement.valid_from|date:date_format }}{% if agreement.valid_until %} bis {{ agreement.valid_until|date:date_format }}{% endif %}
-              {% if agreement.kind == "retainer" %} · Mehrstunden {% if agreement.overage_rate is not None %}zu {{ agreement.overage_rate }} €/h{% else %}zum normalen Stundensatz{% endif %}{% endif %}
+              {% blocktrans trimmed with valid_from=agreement.valid_from|date:date_format %}gültig ab {{ valid_from }}{% endblocktrans %}{% if agreement.valid_until %} {% blocktrans trimmed with valid_until=agreement.valid_until|date:date_format %}bis {{ valid_until }}{% endblocktrans %}{% endif %}
+              {% if agreement.kind == "retainer" %} {% trans "· Mehrstunden" %} {% if agreement.overage_rate is not None %}{% blocktrans trimmed with overage_rate=agreement.overage_rate %}zu {{ overage_rate }} €/h{% endblocktrans %}{% else %}{% trans "zum normalen Stundensatz" %}{% endif %}{% endif %}
             </div>
           </td>
-          <td><a {% dialog_link "billing:agreement_edit" customer.pk agreement.pk %} class="btn btn-ghost btn-sm btn-icon size-8" title="Bearbeiten" aria-label="Vereinbarung bearbeiten">{% icon "pencil" %}</a></td>
+          <td><a {% dialog_link "billing:agreement_edit" customer.pk agreement.pk %} class="btn btn-ghost btn-sm btn-icon size-8" title="{% trans 'Bearbeiten' %}" aria-label="{% trans 'Vereinbarung bearbeiten' %}">{% icon "pencil" %}</a></td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
   {% else %}
-  <p class="empty py-6">Keine Vereinbarung: Zeiten werden nach Aufwand zum Stundensatz abgerechnet.</p>
+  <p class="empty py-6">{% trans "Keine Vereinbarung: Zeiten werden nach Aufwand zum Stundensatz abgerechnet." %}</p>
   {% endif %}
 </section>
 
 <section class="flex flex-col gap-3">
-  <h2>Zeitraum</h2>
+  <h2>{% trans "Zeitraum" %}</h2>
   <div class="flex flex-wrap items-end gap-x-4 gap-y-3">
     {% include "billing/_period_pills.html" %}
     <form method="get" class="flex flex-wrap items-end gap-2"
           hx-get="{% url 'billing:customer' customer.pk %}" hx-target="#preview" hx-swap="outerHTML" hx-trigger="change" hx-push-url="true">
-      <label class="field"><span>Von</span>{{ period_form.start }}</label>
-      <label class="field"><span>Bis</span>{{ period_form.end }}</label>
-      <noscript><button type="submit" class="btn">Anzeigen</button></noscript>
+      <label class="field"><span>{% trans "Von" %}</span>{{ period_form.start }}</label>
+      <label class="field"><span>{% trans "Bis" %}</span>{{ period_form.end }}</label>
+      <noscript><button type="submit" class="btn">{% trans "Anzeigen" %}</button></noscript>
     </form>
   </div>
-  <p class="text-[13px] text-muted">Zeiträume mit offenen Zeiten sind markiert. Mit Von und Bis rechnest du jeden beliebigen Zeitraum ab, auch über mehrere Monate.</p>
+  <p class="text-[13px] text-muted">{% trans "Zeiträume mit offenen Zeiten sind markiert. Mit Von und Bis rechnest du jeden beliebigen Zeitraum ab, auch über mehrere Monate." %}</p>
   {% for error in period_form.non_field_errors %}<p class="text-sm text-danger">{{ error }}</p>{% endfor %}
 </section>
 
@@ -58,8 +59,8 @@
 
 <section class="flex flex-col gap-3">
   <div class="flex items-center justify-between gap-4">
-    <h2>Rechnungen</h2>
-    <a href="{% url 'billing:invoices' %}?q={{ customer.name|urlencode }}" class="text-sm hover:underline">Alle Rechnungen des Kunden</a>
+    <h2>{% trans "Rechnungen" %}</h2>
+    <a href="{% url 'billing:invoices' %}?q={{ customer.name|urlencode }}" class="text-sm hover:underline">{% trans "Alle Rechnungen des Kunden" %}</a>
   </div>
   {% include "billing/_invoices.html" %}
 </section>

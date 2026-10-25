@@ -1,5 +1,6 @@
+{% load i18n %}
 {# NowDateTimeInput in tracking/forms.py #}
 <div class="flex items-center gap-2 max-sm:*:h-11">
   <input type="{{ widget.type }}" name="{{ widget.name }}"{% if widget.value != None %} value="{{ widget.value|stringformat:'s' }}"{% endif %}{% for name, value in widget.attrs.items %}{% if value is not False %} {{ name }}{% if value is not True %}="{{ value|stringformat:'s' }}"{% endif %}{% endif %}{% endfor %}>
-  <button type="button" class="btn" data-now-for="{{ widget.attrs.id }}" aria-label="{{ widget.now_label }}">Jetzt</button>
+  <button type="button" class="btn" data-now-for="{{ widget.attrs.id }}" aria-label="{{ widget.now_label }}">{% trans "Jetzt" %}</button>
 </div>

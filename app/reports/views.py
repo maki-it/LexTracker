@@ -7,9 +7,13 @@ from asgiref.sync import sync_to_async
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
 from django.utils import timezone
+from django.utils.formats import get_format
+from django.utils.translation import gettext as _
+from django.utils.translation import pgettext
 from django.views.decorators.http import require_GET
 
 from billing.calculation import to_hours
+from core.i18n import full_date
 from core.ids import parse_uuid
 from customers.models import Customer
 from reports.queries import build_report, entries_in
@@ -43,29 +47,30 @@ async def overview(request: HttpRequest) -> HttpResponse:
 
 
 def _decimal(value) -> str:
-    # Spreadsheets with German settings expect a decimal comma.
-    return str(value).replace(".", ",")
+    # Spreadsheets expect the decimal separator of their settings: a comma in German, a point in English.
+    return str(value).replace(".", get_format("DECIMAL_SEPARATOR"))
 
 
 def _entries_csv(rng, customer_id: UUID | None) -> str:
     out = io.StringIO()
     out.write("﻿")  # BOM, so Excel reads the file as UTF-8
-    writer = csv.writer(out, delimiter=";")
+    # Translators: the field separator of the CSV export. Spreadsheets with German settings expect ";".
+    writer = csv.writer(out, delimiter=pgettext("csv delimiter", ";"))
     writer.writerow(
         [
-            "Datum",
-            "Beginn",
-            "Ende",
-            "Stunden",
-            "Kunde",
-            "Kundennummer",
-            "Projekt",
-            "Aufgabe",
-            "Beschreibung",
-            "Abrechenbar",
-            "Abgerechnet",
-            "Rechnungsnummer",
-            "Benutzer",
+            _("Datum"),
+            _("Beginn"),
+            _("Ende"),
+            _("Stunden"),
+            _("Kunde"),
+            _("Kundennummer"),
+            _("Projekt"),
+            _("Aufgabe"),
+            _("Beschreibung"),
+            _("Abrechenbar"),
+            _("Abgerechnet"),
+            _("Rechnungsnummer"),
+            _("Benutzer"),
         ]
     )
     for entry in entries_in(rng.start, rng.end, customer_id):
@@ -74,7 +79,7 @@ def _entries_csv(rng, customer_id: UUID | None) -> str:
         billable = entry.is_billable and entry.task.is_billable
         writer.writerow(
             [
-                f"{start:%d.%m.%Y}",
+                full_date(start),
                 f"{start:%H:%M}",
                 f"{end:%H:%M}",
                 _decimal(to_hours(entry.duration)),
@@ -83,8 +88,8 @@ def _entries_csv(rng, customer_id: UUID | None) -> str:
                 entry.task.project.name,
                 entry.task.name,
                 entry.description,
-                "ja" if billable else "nein",
-                "ja" if entry.invoice_id else "nein",
+                _("ja") if billable else _("nein"),
+                _("ja") if entry.invoice_id else _("nein"),
                 entry.invoice.voucher_number if entry.invoice else "",
                 entry.user.get_username(),
             ]

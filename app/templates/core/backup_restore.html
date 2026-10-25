@@ -1,28 +1,27 @@
 {% extends layout %}
-{% block title %}Sicherung wiederherstellen · LexTracker{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Sicherung wiederherstellen" %} · LexTracker{% endblock %}
 {% block content %}
 <div>
-  <p class="breadcrumb"><a href="{% url 'core:settings' %}?tab=backup">Einstellungen</a> / <a href="{% url 'core:backups' %}">Sicherungen</a></p>
-  <h1>Sicherung wiederherstellen</h1>
+  <p class="breadcrumb"><a href="{% url 'core:settings' %}?tab=backup">{% trans "Einstellungen" %}</a> / <a href="{% url 'core:backups' %}">{% trans "Sicherungen" %}</a></p>
+  <h1>{% trans "Sicherung wiederherstellen" %}</h1>
 </div>
 <form method="post" action="{% url 'core:backup_restore' name %}" class="card flex max-w-2xl flex-col gap-4">
   {% csrf_token %}
   {% if error %}<div role="alert" class="alert alert-error">{{ error }}</div>{% endif %}
   <p class="text-sm">
-    Alle Daten der App werden durch den Stand aus <strong>{{ name }}</strong> ersetzt: Kunden, Projekte, Zeiten,
-    Rechnungen, Benutzer und Einstellungen. Was seitdem dazukam, ist danach nicht mehr in der App.
+    {% blocktrans trimmed %}Alle Daten der App werden durch den Stand aus <strong>{{ name }}</strong> ersetzt: Kunden, Projekte, Zeiten, Rechnungen, Benutzer und Einstellungen. Was seitdem dazukam, ist danach nicht mehr in der App.{% endblocktrans %}
   </p>
   <p class="text-sm text-muted">
-    Vorher sichert die App den aktuellen Stand als eigene Kopie, so kannst du die Wiederherstellung rückgängig machen.
-    In Lexware Office ändert sich nichts. Gab es dein Konto damals noch nicht oder hatte es ein anderes Passwort, meldest du dich danach neu an.
+    {% trans "Vorher sichert die App den aktuellen Stand als eigene Kopie, so kannst du die Wiederherstellung rückgängig machen. In Lexware Office ändert sich nichts. Gab es dein Konto damals noch nicht oder hatte es ein anderes Passwort, meldest du dich danach neu an." %}
   </p>
   <label class="flex items-center gap-2 text-sm font-medium">
     <input type="checkbox" name="confirmed" value="1" class="size-4 accent-primary" required>
-    Ich möchte den aktuellen Stand ersetzen.
+    {% trans "Ich möchte den aktuellen Stand ersetzen." %}
   </label>
   <div class="flex gap-2 border-t border-line pt-4">
-    <button type="submit" class="btn btn-danger">Wiederherstellen</button>
-    <a href="{% url 'core:backups' %}" class="btn btn-ghost" data-close-dialog>Abbrechen</a>
+    <button type="submit" class="btn btn-danger">{% trans "Wiederherstellen" %}</button>
+    <a href="{% url 'core:backups' %}" class="btn btn-ghost" data-close-dialog>{% trans "Abbrechen" %}</a>
   </div>
 </form>
 {% endblock %}

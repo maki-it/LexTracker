@@ -1,3 +1,4 @@
+{% load i18n %}
 {% load timefmt %}
 {% for project in page.items %}
 <tr>
@@ -8,6 +9,6 @@
   <td class="text-right text-muted tabular-nums">{% if project.budget_hours is not None %}{{ project.budget_hours }} h{% else %}–{% endif %}</td>
 </tr>
 {% empty %}
-{% if page.is_first %}<tr><td colspan="5" class="py-10 text-center text-muted">{% if query %}Keine Projekte gefunden.{% else %}Keine Projekte in dieser Ansicht.{% endif %}</td></tr>{% endif %}
+{% if page.is_first %}<tr><td colspan="5" class="py-10 text-center text-muted">{% if query %}{% trans "Keine Projekte gefunden." %}{% else %}{% trans "Keine Projekte in dieser Ansicht." %}{% endif %}</td></tr>{% endif %}
 {% endfor %}
 {% include "core/_more_rows.html" with colspan=5 %}

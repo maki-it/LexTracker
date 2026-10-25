@@ -1,69 +1,70 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load timefmt icons %}
-{% block title %}Auswertungen · LexTracker{% endblock %}
+{% block title %}{% trans "Auswertungen" %} · LexTracker{% endblock %}
 {% block content %}
 {% with r=report %}
 <div class="page-header">
   <div>
-    <h1>Auswertungen</h1>
+    <h1>{% trans "Auswertungen" %}</h1>
     <p class="page-subtitle">{{ r.range.start|date:date_format }} – {{ r.range.end|date:date_format }}</p>
   </div>
-  <a href="{% url 'reports:entries_csv' %}?{{ range_query }}{{ customer_query }}" class="btn">{% icon "download" %}Zeiten als CSV</a>
+  <a href="{% url 'reports:entries_csv' %}?{{ range_query }}{{ customer_query }}" class="btn">{% icon "download" %}{% trans "Zeiten als CSV" %}</a>
 </div>
 
 <div class="flex flex-col gap-3">
-  <nav aria-label="Zeitraum" class="flex flex-wrap gap-1.5">
+  <nav aria-label="{% trans 'Zeitraum' %}" class="flex flex-wrap gap-1.5">
     {% for preset in presets %}
     <a href="?range={{ preset.key }}{{ customer_query }}" class="pill{% if preset.key == r.range.key %} pill-active{% endif %}">{{ preset.label }}</a>
     {% endfor %}
   </nav>
   <form method="get" class="flex flex-wrap items-end gap-3"
         hx-get="{% url 'reports:overview' %}" hx-trigger="change" hx-target="main" hx-select="main" hx-swap="outerHTML" hx-push-url="true">
-    <label class="field"><span>Von</span><input type="date" name="from" value="{{ r.range.start|date:'Y-m-d' }}" class="input"></label>
-    <label class="field"><span>Bis</span><input type="date" name="to" value="{{ r.range.end|date:'Y-m-d' }}" class="input"></label>
-    <label class="field min-w-56"><span>Kunde</span>
+    <label class="field"><span>{% trans "Von" %}</span><input type="date" name="from" value="{{ r.range.start|date:'Y-m-d' }}" class="input"></label>
+    <label class="field"><span>{% trans "Bis" %}</span><input type="date" name="to" value="{{ r.range.end|date:'Y-m-d' }}" class="input"></label>
+    <label class="field min-w-56"><span>{% trans "Kunde" %}</span>
       <select name="customer" class="input">
-        <option value="">Alle Kunden</option>
+        <option value="">{% trans "Alle Kunden" %}</option>
         {% for c in customers %}<option value="{{ c.pk }}"{% if c.pk == customer_id %} selected{% endif %}>{{ c.name }}</option>{% endfor %}
       </select>
     </label>
-    <noscript><button type="submit" class="btn">Anzeigen</button></noscript>
+    <noscript><button type="submit" class="btn">{% trans "Anzeigen" %}</button></noscript>
   </form>
 </div>
 
 <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
   <div class="stat">
-    <span class="stat-label">Erfasst</span>
+    <span class="stat-label">{% trans "Erfasst" %}</span>
     <span class="stat-value">{{ r.totals.total|hours:duration_format }} h</span>
   </div>
   <div class="stat">
-    <span class="stat-label">Abrechenbar</span>
+    <span class="stat-label">{% trans "Abrechenbar" %}</span>
     <span class="stat-value">{{ r.totals.billable|hours:duration_format }} h</span>
-    <span class="text-xs text-muted">{{ r.totals.billable_share }} % der erfassten Zeit</span>
+    <span class="text-xs text-muted">{% blocktrans trimmed with billable_share=r.totals.billable_share %}{{ billable_share }} % der erfassten Zeit{% endblocktrans %}</span>
   </div>
   <div class="stat">
-    <span class="stat-label">Noch nicht abgerechnet</span>
+    <span class="stat-label">{% trans "Noch nicht abgerechnet" %}</span>
     <span class="stat-value">{{ r.totals.unbilled|hours:duration_format }} h</span>
-    <span class="text-xs text-muted">≈ {{ r.unbilled_value|floatformat:2 }} € nach Stundensatz{% if r.unbilled_value_skips_retainers %}, ohne Retainer-Kunden{% endif %}</span>
+    <span class="text-xs text-muted">{% blocktrans trimmed with unbilled_value=r.unbilled_value|floatformat:2 %}≈ {{ unbilled_value }} € nach Stundensatz{% endblocktrans %}{% if r.unbilled_value_skips_retainers %}{% trans ", ohne Retainer-Kunden" %}{% endif %}</span>
   </div>
   <div class="stat">
-    <span class="stat-label">Abgerechnet (netto)</span>
+    <span class="stat-label">{% trans "Abgerechnet (netto)" %}</span>
     <span class="stat-value">{{ r.invoiced|floatformat:2 }} €</span>
-    <span class="text-xs text-muted">{{ r.paid|floatformat:2 }} € bezahlt · {{ r.open|floatformat:2 }} € offen{% if r.drafts %} · {{ r.drafts|floatformat:2 }} € Entwurf{% endif %}</span>
+    <span class="text-xs text-muted">{% blocktrans trimmed with paid=r.paid|floatformat:2 open=r.open|floatformat:2 %}{{ paid }} € bezahlt · {{ open }} € offen{% endblocktrans %}{% if r.drafts %} {% blocktrans trimmed with drafts=r.drafts|floatformat:2 %}· {{ drafts }} € Entwurf{% endblocktrans %}{% endif %}</span>
   </div>
 </div>
 
-<section class="card flex flex-col gap-4" aria-label="Stunden im Zeitraum">
+<section class="card flex flex-col gap-4" aria-label="{% trans 'Stunden im Zeitraum' %}">
   <div class="flex flex-wrap items-center justify-between gap-3">
-    <h2>Stunden {% if r.range.days <= 31 %}pro Tag{% else %}pro Monat{% endif %}</h2>
+    <h2>{% trans "Stunden" %} {% if r.range.days <= 31 %}{% trans "pro Tag" %}{% else %}{% trans "pro Monat" %}{% endif %}</h2>
     <div class="flex items-center gap-4 text-xs text-muted">
-      <span class="inline-flex items-center gap-1.5"><span class="size-2.5 rounded-sm bg-primary"></span>abrechenbar</span>
-      <span class="inline-flex items-center gap-1.5"><span class="size-2.5 rounded-sm bg-line"></span>nicht abrechenbar</span>
+      <span class="inline-flex items-center gap-1.5"><span class="size-2.5 rounded-sm bg-primary"></span>{% trans "abrechenbar" %}</span>
+      <span class="inline-flex items-center gap-1.5"><span class="size-2.5 rounded-sm bg-line"></span>{% trans "nicht abrechenbar" %}</span>
     </div>
   </div>
   <div class="flex h-40 items-end gap-1 overflow-x-auto">
     {% for b in r.buckets %}
-    <div class="flex h-full min-w-4 flex-1 flex-col items-center justify-end gap-1" title="{{ b.label }}: {{ b.total|hours:duration_format }} h, davon {{ b.billable|hours:duration_format }} h abrechenbar">
+    <div class="flex h-full min-w-4 flex-1 flex-col items-center justify-end gap-1" title="{% blocktrans trimmed with label=b.label total=b.total|hours:duration_format billable=b.billable|hours:duration_format %}{{ label }}: {{ total }} h, davon {{ billable }} h abrechenbar{% endblocktrans %}">
       <div class="flex w-full max-w-10 flex-col justify-end overflow-hidden rounded-t" style="height: {{ b.share }}%">
         <div class="w-full flex-1 bg-line"></div>
         <div class="w-full bg-primary" style="height: {{ b.billable_part }}%"></div>
@@ -76,10 +77,10 @@
 
 {% if r.retainers %}
 <section class="flex flex-col gap-3">
-  <h2>Retainer im laufenden Zeitraum</h2>
+  <h2>{% trans "Retainer im laufenden Zeitraum" %}</h2>
   <div class="table-wrap">
     <table class="table">
-      <thead><tr><th>Kunde</th><th>Zeitraum</th><th class="w-1/3">Verbraucht</th><th class="text-right">Rest</th></tr></thead>
+      <thead><tr><th>{% trans "Kunde" %}</th><th>{% trans "Zeitraum" %}</th><th class="w-1/3">{% trans "Verbraucht" %}</th><th class="text-right">{% trans "Rest" %}</th></tr></thead>
       <tbody>
         {% for ret in r.retainers %}
         <tr>
@@ -91,7 +92,7 @@
               <span class="whitespace-nowrap text-sm tabular-nums">{{ ret.used|hours:duration_format }} / {{ ret.included|hours:duration_format }} h</span>
             </div>
           </td>
-          <td class="text-right whitespace-nowrap tabular-nums">{% if ret.overage %}<span class="text-danger">+{{ ret.overage|hours:duration_format }} h Mehrstunden</span>{% else %}{{ ret.remaining|hours:duration_format }} h{% endif %}</td>
+          <td class="text-right whitespace-nowrap tabular-nums">{% if ret.overage %}<span class="text-danger">{% blocktrans trimmed with overage=ret.overage|hours:duration_format %}+{{ overage }} h Mehrstunden{% endblocktrans %}</span>{% else %}{{ ret.remaining|hours:duration_format }} h{% endif %}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -101,21 +102,21 @@
 {% endif %}
 
 <section class="flex flex-col gap-3">
-  <h2>Kunden</h2>
+  <h2>{% trans "Kunden" %}</h2>
   <div class="table-wrap">
     <table class="table">
-      <thead><tr><th>Kunde</th><th class="text-right">Erfasst</th><th class="text-right">Abrechenbar</th><th class="text-right">Nicht abgerechnet</th><th class="text-right">Abgerechnet</th></tr></thead>
+      <thead><tr><th>{% trans "Kunde" %}</th><th class="text-right">{% trans "Erfasst" %}</th><th class="text-right">{% trans "Abrechenbar" %}</th><th class="text-right">{% trans "Nicht abgerechnet" %}</th><th class="text-right">{% trans "Abgerechnet" %}</th></tr></thead>
       <tbody>
         {% for row in r.customers %}
         <tr>
-          <td class="w-full font-medium"><a class="text-ink no-underline hover:underline" href="?{{ range_query }}&customer={{ row.obj.pk }}" title="Nur diesen Kunden auswerten">{{ row.obj.name }}</a></td>
+          <td class="w-full font-medium"><a class="text-ink no-underline hover:underline" href="?{{ range_query }}&customer={{ row.obj.pk }}" title="{% trans 'Nur diesen Kunden auswerten' %}">{{ row.obj.name }}</a></td>
           <td class="text-right whitespace-nowrap tabular-nums">{{ row.total|hours:duration_format }} h</td>
           <td class="text-right whitespace-nowrap tabular-nums">{{ row.billable|hours:duration_format }} h</td>
           <td class="text-right whitespace-nowrap tabular-nums{% if not row.unbilled %} text-muted{% endif %}">{{ row.unbilled|hours:duration_format }} h</td>
           <td class="text-right whitespace-nowrap tabular-nums{% if not row.invoiced %} text-muted{% endif %}">{{ row.invoiced|floatformat:2 }} €</td>
         </tr>
         {% empty %}
-        <tr><td colspan="5" class="py-8 text-center text-muted">In diesem Zeitraum ist nichts erfasst.</td></tr>
+        <tr><td colspan="5" class="py-8 text-center text-muted">{% trans "In diesem Zeitraum ist nichts erfasst." %}</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -123,10 +124,10 @@
 </section>
 
 <section class="flex flex-col gap-3">
-  <h2>Projekte</h2>
+  <h2>{% trans "Projekte" %}</h2>
   <div class="table-wrap">
     <table class="table">
-      <thead><tr><th>Projekt</th><th class="text-right">Im Zeitraum</th><th class="text-right">Abrechenbar</th><th class="w-1/4">Budget gesamt</th></tr></thead>
+      <thead><tr><th>{% trans "Projekt" %}</th><th class="text-right">{% trans "Im Zeitraum" %}</th><th class="text-right">{% trans "Abrechenbar" %}</th><th class="w-1/4">{% trans "Budget gesamt" %}</th></tr></thead>
       <tbody>
         {% for row in r.projects %}
         <tr>
@@ -143,12 +144,12 @@
               <span class="whitespace-nowrap text-sm tabular-nums">{{ row.booked_all_time|hours:duration_format }} / {{ row.obj.budget_hours|floatformat:"-2" }} h</span>
             </div>
             {% else %}
-            <span class="text-sm text-muted">{{ row.booked_all_time|hours:duration_format }} h, kein Budget</span>
+            <span class="text-sm text-muted">{% blocktrans trimmed with booked_all_time=row.booked_all_time|hours:duration_format %}{{ booked_all_time }} h, kein Budget{% endblocktrans %}</span>
             {% endif %}
           </td>
         </tr>
         {% empty %}
-        <tr><td colspan="4" class="py-8 text-center text-muted">In diesem Zeitraum ist nichts erfasst.</td></tr>
+        <tr><td colspan="4" class="py-8 text-center text-muted">{% trans "In diesem Zeitraum ist nichts erfasst." %}</td></tr>
         {% endfor %}
       </tbody>
     </table>

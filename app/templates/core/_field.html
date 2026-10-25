@@ -1,5 +1,6 @@
+{% load i18n %}
 <label class="field">
-  <span>{{ field.label }}{% if not field.field.required %} <span class="font-normal text-muted">(optional)</span>{% endif %}</span>
+  <span>{{ field.label }}{% if not field.field.required %} <span class="font-normal text-muted">{% trans "(optional)" %}</span>{% endif %}</span>
   {{ field }}
   {% if field.help_text %}<span class="font-normal text-muted">{{ field.help_text }}</span>{% endif %}
   {% for error in field.errors %}<span class="text-sm text-danger">{{ error }}</span>{% endfor %}

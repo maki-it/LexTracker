@@ -1,7 +1,8 @@
 {% extends "mail/_base.html" %}
+{% load i18n %}
 {% block content %}
-<p style="margin:0 0 12px;font-size:18px;font-weight:600">Dein Anmeldelink</p>
-<p style="margin:0">Hallo{% if user.first_name %} {{ user.first_name }}{% endif %}, mit diesem Link meldest du dich als <strong>{{ user.get_username }}</strong> an, ohne Passwort.</p>
-{% include "mail/_button.html" with label="Jetzt anmelden" %}
-<p style="margin:16px 0 0;font-size:13px;color:#71717a">Der Link gilt {{ minutes }} Minuten und nur einmal. Hast du ihn nicht angefordert, ignoriere diese E-Mail. Ohne den Link kann sich niemand damit anmelden.</p>
+<p style="margin:0 0 12px;font-size:18px;font-weight:600">{% trans "Dein Anmeldelink" %}</p>
+<p style="margin:0">{% if user.first_name %}{% blocktrans trimmed with first_name=user.first_name username=user.get_username %}Hallo {{ first_name }}, mit diesem Link meldest du dich als <strong>{{ username }}</strong> an, ohne Passwort.{% endblocktrans %}{% else %}{% blocktrans trimmed with username=user.get_username %}Hallo, mit diesem Link meldest du dich als <strong>{{ username }}</strong> an, ohne Passwort.{% endblocktrans %}{% endif %}</p>
+{% trans "Jetzt anmelden" as button_label %}{% include "mail/_button.html" with label=button_label %}
+<p style="margin:16px 0 0;font-size:13px;color:#71717a">{% blocktrans trimmed %}Der Link gilt {{ minutes }} Minuten und nur einmal. Hast du ihn nicht angefordert, ignoriere diese E-Mail. Ohne den Link kann sich niemand damit anmelden.{% endblocktrans %}</p>
 {% endblock %}

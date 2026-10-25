@@ -1,8 +1,9 @@
 {% extends "mail/_base.html" %}
+{% load i18n %}
 {% block content %}
 <p style="margin:0 0 12px;font-size:18px;font-weight:600">{{ message.title }}</p>
 <p style="margin:0 0 12px;font-size:13px;color:#71717a">{{ message.get_level_display }}{% if message.count > 1 %} · {{ message.count }}×{% endif %}</p>
 {% if message.body %}<p style="margin:0;white-space:pre-line">{{ message.body }}</p>{% endif %}
-{% if url %}{% include "mail/_button.html" with label="Nachrichten öffnen" %}{% endif %}
+{% if url %}{% trans "Nachrichten öffnen" as button_label %}{% include "mail/_button.html" with label=button_label %}{% endif %}
 {% endblock %}
-{% block footer %}Welche Nachrichten du per E-Mail bekommst, stellst du in LexTracker unter Konto ein.{% endblock %}
+{% block footer %}{% trans "Welche Nachrichten du per E-Mail bekommst, stellst du in LexTracker unter Konto ein." %}{% endblock %}

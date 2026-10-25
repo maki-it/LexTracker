@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 from core.models import TimeStampedModel
 
@@ -8,39 +9,39 @@ class BillingAgreement(TimeStampedModel):
     """How a customer pays for time. Without an agreement, time is billed by the hour."""
 
     class Kind(models.TextChoices):
-        HOURLY = "hourly", "nach Aufwand (Stundensatz)"
-        RETAINER = "retainer", "Retainer (Stundenkontingent zum Festpreis)"
+        HOURLY = "hourly", _("nach Aufwand (Stundensatz)")
+        RETAINER = "retainer", _("Retainer (Stundenkontingent zum Festpreis)")
 
     class Period(models.TextChoices):
-        MONTH = "month", "monatlich"
-        QUARTER = "quarter", "quartalsweise"
-        YEAR = "year", "jährlich"
+        MONTH = "month", _("monatlich")
+        QUARTER = "quarter", _("quartalsweise")
+        YEAR = "year", _("jährlich")
 
     customer = models.ForeignKey(
-        "customers.Customer", verbose_name="Kunde", on_delete=models.CASCADE, related_name="billing_agreements"
+        "customers.Customer", verbose_name=_("Kunde"), on_delete=models.CASCADE, related_name="billing_agreements"
     )
-    kind = models.CharField("Modell", max_length=20, choices=Kind, default=Kind.HOURLY)
-    period = models.CharField("Abrechnungszeitraum", max_length=20, choices=Period, default=Period.MONTH)
+    kind = models.CharField(_("Modell"), max_length=20, choices=Kind, default=Kind.HOURLY)
+    period = models.CharField(_("Abrechnungszeitraum"), max_length=20, choices=Period, default=Period.MONTH)
     included_hours = models.DecimalField(
-        "Enthaltene Stunden pro Zeitraum", max_digits=8, decimal_places=2, null=True, blank=True
+        _("Enthaltene Stunden pro Zeitraum"), max_digits=8, decimal_places=2, null=True, blank=True
     )
     fixed_price = models.DecimalField(
-        "Festpreis pro Zeitraum (netto)", max_digits=10, decimal_places=2, null=True, blank=True
+        _("Festpreis pro Zeitraum (netto)"), max_digits=10, decimal_places=2, null=True, blank=True
     )
     overage_rate = models.DecimalField(
-        "Stundensatz für Mehrstunden (netto)",
+        _("Stundensatz für Mehrstunden (netto)"),
         max_digits=8,
         decimal_places=2,
         null=True,
         blank=True,
-        help_text="Leer lassen, um den normalen Stundensatz der Aufgabe, des Projekts oder Kunden zu verwenden.",
+        help_text=_("Leer lassen, um den normalen Stundensatz der Aufgabe, des Projekts oder Kunden zu verwenden."),
     )
-    valid_from = models.DateField("gültig ab")
-    valid_until = models.DateField("gültig bis", null=True, blank=True)
+    valid_from = models.DateField(_("gültig ab"))
+    valid_until = models.DateField(_("gültig bis"), null=True, blank=True)
 
     class Meta:
-        verbose_name = "Abrechnungsvereinbarung"
-        verbose_name_plural = "Abrechnungsvereinbarungen"
+        verbose_name = _("Abrechnungsvereinbarung")
+        verbose_name_plural = _("Abrechnungsvereinbarungen")
         ordering = ["customer", "-valid_from"]
         constraints = [
             models.CheckConstraint(
@@ -52,7 +53,11 @@ class BillingAgreement(TimeStampedModel):
 
     def __str__(self) -> str:
         if self.kind == self.Kind.RETAINER:
-            return f"{self.included_hours} h {self.get_period_display()} für {self.fixed_price} €"
+            return _("%(hours)s h %(period)s für %(price)s €") % {
+                "hours": self.included_hours,
+                "period": self.get_period_display(),
+                "price": self.fixed_price,
+            }
         return self.get_kind_display()
 
 
@@ -60,41 +65,41 @@ class Invoice(TimeStampedModel):
     """An invoice in Lexware Office for a customer and period, created here or taken over from Lexware."""
 
     class Origin(models.TextChoices):
-        APP = "app", "LexTracker"
-        LEXWARE = "lexware", "Lexware Office"
+        APP = "app", _("LexTracker")
+        LEXWARE = "lexware", _("Lexware Office")
 
     class Status(models.TextChoices):
         # The voucher statuses Lexware uses for invoices, plus "deleted" for drafts deleted there.
-        DRAFT = "draft", "Entwurf"
-        OPEN = "open", "Offen"
-        OVERDUE = "overdue", "Überfällig"
-        TRANSFERRED = "transferred", "Überweisung läuft"
-        SEPADEBIT = "sepadebit", "Lastschrift"
-        PAID = "paid", "Bezahlt"
-        VOIDED = "voided", "Storniert"
-        DELETED = "deleted", "In Lexware gelöscht"
+        DRAFT = "draft", _("Entwurf")
+        OPEN = "open", _("Offen")
+        OVERDUE = "overdue", _("Überfällig")
+        TRANSFERRED = "transferred", _("Überweisung läuft")
+        SEPADEBIT = "sepadebit", _("Lastschrift")
+        PAID = "paid", _("Bezahlt")
+        VOIDED = "voided", _("Storniert")
+        DELETED = "deleted", _("In Lexware gelöscht")
 
     customer = models.ForeignKey(
-        "customers.Customer", verbose_name="Kunde", on_delete=models.PROTECT, related_name="invoices"
+        "customers.Customer", verbose_name=_("Kunde"), on_delete=models.PROTECT, related_name="invoices"
     )
-    period_start = models.DateField("Leistungszeitraum von")
-    period_end = models.DateField("Leistungszeitraum bis")
-    total_net = models.DecimalField("Summe netto", max_digits=12, decimal_places=2)
-    lexware_id = models.UUIDField("Lexware-ID", unique=True, null=True, blank=True, editable=False)
+    period_start = models.DateField(_("Leistungszeitraum von"))
+    period_end = models.DateField(_("Leistungszeitraum bis"))
+    total_net = models.DecimalField(_("Summe netto"), max_digits=12, decimal_places=2)
+    lexware_id = models.UUIDField(_("Lexware-ID"), unique=True, null=True, blank=True, editable=False)
     # Invoices written directly in Lexware are taken over by billing.sync. They have no time entries.
-    origin = models.CharField("erstellt in", max_length=20, choices=Origin, default=Origin.APP)
-    voucher_date = models.DateField("Rechnungsdatum", null=True, blank=True)
+    origin = models.CharField(_("erstellt in"), max_length=20, choices=Origin, default=Origin.APP)
+    voucher_date = models.DateField(_("Rechnungsdatum"), null=True, blank=True)
     # Kept up to date from Lexware by billing.sync.
-    status = models.CharField("Status", max_length=20, choices=Status, default=Status.DRAFT)
-    voucher_number = models.CharField("Rechnungsnummer", max_length=50, blank=True)
-    due_date = models.DateField("fällig am", null=True, blank=True)
+    status = models.CharField(_("Status"), max_length=20, choices=Status, default=Status.DRAFT)
+    voucher_number = models.CharField(_("Rechnungsnummer"), max_length=50, blank=True)
+    due_date = models.DateField(_("fällig am"), null=True, blank=True)
     # Gross, as Lexware's voucher list reports it; None until the first sync.
-    open_amount = models.DecimalField("offener Betrag", max_digits=12, decimal_places=2, null=True, blank=True)
-    status_synced_at = models.DateTimeField("Status abgeglichen", null=True, blank=True, editable=False)
+    open_amount = models.DecimalField(_("offener Betrag"), max_digits=12, decimal_places=2, null=True, blank=True)
+    status_synced_at = models.DateTimeField(_("Status abgeglichen"), null=True, blank=True, editable=False)
 
     class Meta:
-        verbose_name = "Rechnung"
-        verbose_name_plural = "Rechnungen"
+        verbose_name = _("Rechnung")
+        verbose_name_plural = _("Rechnungen")
         ordering = ["-period_end", "-created_at"]
         indexes = [models.Index(fields=["status"])]
 
@@ -131,7 +136,7 @@ class Invoice(TimeStampedModel):
     def status_label(self) -> str:
         """The status as shown in the list; a deleted draft says it was a draft."""
         if self.was_draft_when_deleted:
-            return "Entwurf gelöscht"
+            return _("Entwurf gelöscht")
         return self.get_status_display()
 
     @property

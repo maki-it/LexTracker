@@ -1,19 +1,21 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load timefmt icons dialogs %}
-{% block title %}Aufgaben · LexTracker{% endblock %}
+{% block title %}{% trans "Aufgaben" %} · LexTracker{% endblock %}
 {% block content %}
+{% trans "d.m." context "date format" as short_format %}{% trans "d." context "chart day" as day_format %}{% trans "l, d.m." context "weekday and date" as weekday_format %}
 <div class="page-header">
   <div>
-    <h1>Aufgaben</h1>
-    <p class="page-subtitle">KW {{ monday|date:"W" }} · {{ monday|date:"d.m." }} – {{ sunday|date:date_format }} · <strong class="font-semibold text-ink tabular-nums">{{ week_total|hours:duration_format }} h</strong> erfasst</p>
+    <h1>{% trans "Aufgaben" %}</h1>
+    <p class="page-subtitle">{% blocktrans trimmed with monday=monday|date:"W" monday2=monday|date:short_format sunday=sunday|date:date_format week_total=week_total|hours:duration_format %}KW {{ monday }} · {{ monday2 }} – {{ sunday }} · <strong class="font-semibold text-ink tabular-nums">{{ week_total }} h</strong> erfasst{% endblocktrans %}</p>
   </div>
   <div class="toolbar">
     <div class="btn-group">
-      <a href="?week={{ prev_week }}{{ filter_query }}" class="btn btn-icon" aria-label="Vorherige Woche">{% icon "chevron-left" %}</a>
-      <a href="{% url 'tracking:list' %}{% if filter_query %}?{{ filter_query|slice:'1:' }}{% endif %}" class="btn">Diese Woche</a>
-      <a href="?week={{ next_week }}{{ filter_query }}" class="btn btn-icon" aria-label="Nächste Woche">{% icon "chevron-right" %}</a>
+      <a href="?week={{ prev_week }}{{ filter_query }}" class="btn btn-icon" aria-label="{% trans 'Vorherige Woche' %}">{% icon "chevron-left" %}</a>
+      <a href="{% url 'tracking:list' %}{% if filter_query %}?{{ filter_query|slice:'1:' }}{% endif %}" class="btn">{% trans "Diese Woche" %}</a>
+      <a href="?week={{ next_week }}{{ filter_query }}" class="btn btn-icon" aria-label="{% trans 'Nächste Woche' %}">{% icon "chevron-right" %}</a>
     </div>
-    <a {% dialog_link "tracking:create" %} class="btn btn-primary">{% icon "plus" %}Zeit erfassen</a>
+    <a {% dialog_link "tracking:create" %} class="btn btn-primary">{% icon "plus" %}{% trans "Zeit erfassen" %}</a>
   </div>
 </div>
 
@@ -21,7 +23,7 @@
 <div class="grid grid-cols-7 gap-1.5 sm:gap-2">
   {% for day in days %}
   <div class="flex flex-col gap-1.5 rounded-lg border p-2 sm:p-2.5 {% if day.is_today %}border-primary/40 bg-primary-soft{% else %}border-line bg-surface{% endif %}">
-    <div class="text-xs text-muted">{{ day.date|date:"D" }} <span class="max-sm:hidden">{{ day.date|date:"d." }}</span></div>
+    <div class="text-xs text-muted">{{ day.date|date:"D" }} <span class="max-sm:hidden">{{ day.date|date:day_format }}</span></div>
     <div class="font-semibold tabular-nums max-sm:text-xs">{{ day.total|hours:duration_format }}</div>
     <div class="progress h-1"><div class="progress-bar" style="width: {{ day.share }}%"></div></div>
   </div>
@@ -32,7 +34,7 @@
 {% if day.entries %}
 <section class="row-list">
   <div class="row-list-header">
-    <h2>{{ day.date|date:"l, d.m." }}</h2>
+    <h2>{{ day.date|date:weekday_format }}</h2>
     <span class="font-semibold tabular-nums">{{ day.total|hours:duration_format }} h</span>
   </div>
   {% for entry in day.entries %}
@@ -41,5 +43,5 @@
 </section>
 {% endif %}
 {% endfor %}
-{% if not week_total %}<p class="empty">{% if filter_label %}In dieser Woche ist dafür nichts erfasst.{% else %}In dieser Woche ist noch nichts erfasst.{% endif %}</p>{% endif %}
+{% if not week_total %}<p class="empty">{% if filter_label %}{% trans "In dieser Woche ist dafür nichts erfasst." %}{% else %}{% trans "In dieser Woche ist noch nichts erfasst." %}{% endif %}</p>{% endif %}
 {% endblock %}

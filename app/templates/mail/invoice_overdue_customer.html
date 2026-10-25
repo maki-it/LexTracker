@@ -1,11 +1,12 @@
 {% extends "mail/_base.html" %}
-{% block brand %}{{ sender_name|default:"Zahlungserinnerung" }}{% endblock %}
+{% load i18n %}
+{% block brand %}{% if sender_name %}{{ sender_name }}{% else %}{% trans "Zahlungserinnerung" %}{% endif %}{% endblock %}
 {% block content %}
-<p style="margin:0 0 12px;font-size:18px;font-weight:600">Zahlungserinnerung</p>
-<p style="margin:0">Guten Tag,</p>
-<p style="margin:12px 0 0">zu unserer Rechnung <strong>{{ invoice.voucher_number }}</strong>{% if invoice.voucher_date %} vom {{ invoice.voucher_date|date:"d.m.Y" }}{% endif %} haben wir bisher keinen Zahlungseingang gesehen. Sie war am {{ invoice.due_date|date:"d.m.Y" }} fällig.</p>
-{% if invoice.open_amount is not None %}<p style="margin:12px 0;padding:10px 12px;background:#f4f4f5;border-radius:8px">Offener Betrag: <strong>{{ invoice.open_amount|floatformat:"2g" }} €</strong></p>{% endif %}
-<p style="margin:12px 0 0">Bitte überweisen Sie den Betrag in den nächsten Tagen. Falls Sie bereits bezahlt haben, betrachten Sie diese E-Mail bitte als gegenstandslos.</p>
-<p style="margin:12px 0 0">Viele Grüße{% if sender_name %}<br>{{ sender_name }}{% endif %}</p>
+<p style="margin:0 0 12px;font-size:18px;font-weight:600">{% trans "Zahlungserinnerung" %}</p>
+<p style="margin:0">{% trans "Guten Tag," %}</p>
+<p style="margin:12px 0 0">{% if invoice.voucher_date %}{% blocktrans trimmed with number=invoice.voucher_number invoice_date=invoice.voucher_date|date:"SHORT_DATE_FORMAT" due_date=invoice.due_date|date:"SHORT_DATE_FORMAT" %}zu unserer Rechnung <strong>{{ number }}</strong> vom {{ invoice_date }} haben wir bisher keinen Zahlungseingang gesehen. Sie war am {{ due_date }} fällig.{% endblocktrans %}{% else %}{% blocktrans trimmed with number=invoice.voucher_number due_date=invoice.due_date|date:"SHORT_DATE_FORMAT" %}zu unserer Rechnung <strong>{{ number }}</strong> haben wir bisher keinen Zahlungseingang gesehen. Sie war am {{ due_date }} fällig.{% endblocktrans %}{% endif %}</p>
+{% if invoice.open_amount is not None %}<p style="margin:12px 0;padding:10px 12px;background:#f4f4f5;border-radius:8px">{% blocktrans trimmed with amount=invoice.open_amount|floatformat:"2g" %}Offener Betrag: <strong>{{ amount }} €</strong>{% endblocktrans %}</p>{% endif %}
+<p style="margin:12px 0 0">{% trans "Bitte überweisen Sie den Betrag in den nächsten Tagen. Falls Sie bereits bezahlt haben, betrachten Sie diese E-Mail bitte als gegenstandslos." %}</p>
+<p style="margin:12px 0 0">{% trans "Viele Grüße" %}{% if sender_name %}<br>{{ sender_name }}{% endif %}</p>
 {% endblock %}
-{% block footer %}Diese Erinnerung wurde automatisch verschickt.{% endblock %}
+{% block footer %}{% trans "Diese Erinnerung wurde automatisch verschickt." %}{% endblock %}

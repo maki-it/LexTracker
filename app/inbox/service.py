@@ -6,12 +6,14 @@ the database is the only way a message reaches the web app; the bell and the mes
 
 import enum
 import logging
+from collections.abc import Callable
 from datetime import datetime, timedelta
 
 from django.db import IntegrityError
 from django.db.models import Count, F, Max, Q, QuerySet
 from django.urls import reverse
-from django.utils import timezone
+from django.utils import timezone, translation
+from django.utils.functional import Promise
 
 from accounts.models import User
 from inbox.levels import Level
@@ -31,6 +33,15 @@ KEEP_READ = {
 }
 # No user keeps more than this; the oldest debug and info messages go first.
 KEEP_MAX = 1000
+
+
+# What a message says: a plain string, a lazy translation, or a function that builds the text. The last two are
+# turned into text once per recipient, in their language (see ``User.language``).
+Text = str | Promise | Callable[[], str]
+
+
+def _text(text: Text) -> str:
+    return text() if callable(text) and not isinstance(text, Promise) else str(text)
 
 
 class Audience(enum.Enum):
@@ -56,8 +67,8 @@ def visible_to(user: User) -> QuerySet[Message]:
 async def anotify(
     level: int,
     kind: str,
-    title: str,
-    body: str = "",
+    title: Text,
+    body: Text = "",
     *,
     url: str = "",
     to: User | Audience = Audience.ADMINS,
@@ -66,6 +77,7 @@ async def anotify(
 ) -> list[Message]:
     """Tell the users. Returns the message each of them got.
 
+    ``title`` and ``body`` can be lazy translations or functions, so every recipient gets them in their language.
     ``url`` is a path in the app. Whoever has an unread message with the same ``dedupe_key`` gets it updated
     (counted up) instead of another one. With ``escalate_after`` the message becomes critical once it has repeated that
     often. A message that is new, or has become more important, is also e-mailed to those who asked for that.
@@ -82,10 +94,11 @@ async def anotify(
 
 
 async def _deliver(
-    user: User, level: int, kind: str, title: str, body: str, url: str, dedupe_key: str, escalate_after: int
+    user: User, level: int, kind: str, title: Text, body: Text, url: str, dedupe_key: str, escalate_after: int
 ) -> tuple[Message, bool]:
     """Store the message for the user. The second value tells whether it is new or has become more important."""
-    fields = {"title": title[:200], "body": body, "url": url}
+    with translation.override(user.language):
+        fields = {"title": _text(title)[:200], "body": _text(body), "url": url}
     for _ in range(2):
         if dedupe_key:
             unread = Message.objects.filter(user=user, dedupe_key=dedupe_key, read_at__isnull=True)
@@ -129,10 +142,12 @@ async def _mail(user: User, message: Message) -> None:
     if not config.is_configured:
         return
     base_url = config.base_url.rstrip("/")
+    with translation.override(user.language):
+        subject = f"{message.get_level_display()}: {message.title}"
     await outbox.aqueue(
         OutgoingMail.Kind.NOTIFICATION,
         user.email,
-        f"{message.get_level_display()}: {message.title}",
+        subject,
         "notification",
         {"user": user, "message": message, "url": f"{base_url}{reverse('inbox:panel')}" if base_url else ""},
         user=user,

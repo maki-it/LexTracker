@@ -1,9 +1,10 @@
 from django import forms
+from django.utils.translation import gettext_lazy as _
 
 from core.models import AppSettings
 
 # Help text for text fields that are shown with the |markdown template filter.
-MARKDOWN_HELP = "Markdown möglich: **fett**, *kursiv*, [Linktext](https://example.com), Listen mit „- “."
+MARKDOWN_HELP = _("Markdown möglich: **fett**, *kursiv*, [Linktext](https://example.com), Listen mit „- “.")
 
 
 class StyledFormMixin:

@@ -8,6 +8,7 @@ from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.translation import gettext as _
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from core.dialogs import in_dialog
@@ -98,7 +99,7 @@ def _parse_week(value: str | None) -> date:
 
 
 def _week_param(monday: date) -> str:
-    year, week, _ = monday.isocalendar()
+    year, week, _weekday = monday.isocalendar()
     return f"{year}-W{week:02d}"
 
 
@@ -170,7 +171,7 @@ async def entry_form(request: HttpRequest, pk: UUID | None = None) -> HttpRespon
     form = TimeEntryForm(request.POST or None, instance=entry, initial=initial, user=request.user, rounding=rounding)
     if request.method == "POST" and await sync_to_async(form.is_valid)():
         entry = await sync_to_async(form.save)()
-        messages.success(request, "Zeiteintrag gespeichert.")
+        messages.success(request, _("Zeiteintrag gespeichert."))
         return redirect(_back_to_week(entry))
     return await arender(request, "tracking/form.html", {"form": form, "entry": entry if pk else None})
 
@@ -180,5 +181,5 @@ async def entry_delete(request: HttpRequest, pk: UUID) -> HttpResponse:
     entry = await _get_entry(request, pk)
     back = _back_to_week(entry)
     await entry.adelete()
-    messages.success(request, "Zeiteintrag gelöscht.")
+    messages.success(request, _("Zeiteintrag gelöscht."))
     return redirect(back)

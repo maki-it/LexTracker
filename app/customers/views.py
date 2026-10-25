@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.db.models import Count, Q
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
+from django.utils.translation import gettext as _
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from core.ids import parse_uuid
@@ -121,11 +122,13 @@ async def customer_edit(request: HttpRequest, pk: UUID) -> HttpResponse:
                 async with client_from_settings() as client:
                     await push_to_lexware(client, customer)
         except LexwareError as exc:
-            form.add_error(None, f"Die Änderung konnte nicht in Lexware gespeichert werden: {exc}")
+            form.add_error(
+                None, _("Die Änderung konnte nicht in Lexware gespeichert werden: %(error)s") % {"error": exc}
+            )
         else:
             await customer.asave()
             await sync_to_async(form.save_categories)()
-            messages.success(request, f"{customer.name} gespeichert.")
+            messages.success(request, _("%(name)s gespeichert.") % {"name": customer.name})
             return redirect("customers:list")
     return await arender(
         request,

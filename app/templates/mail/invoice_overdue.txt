@@ -1,11 +1,11 @@
-{% autoescape off %}Hallo{% if user.first_name %} {{ user.first_name }}{% endif %},
+{% load i18n %}{% autoescape off %}{% if user.first_name %}{% blocktrans trimmed with first_name=user.first_name %}Hallo {{ first_name }},{% endblocktrans %}{% else %}{% trans "Hallo," %}{% endif %}
 
-die Rechnung {{ invoice.voucher_number|default:"ohne Nummer" }} an {{ invoice.customer.name }} war am {{ invoice.due_date|date:date_format }} fällig und ist seit {{ days_overdue }} Tag{{ days_overdue|pluralize:"en" }} überfällig.{% if invoice.open_amount is not None %}
-Offen sind noch {{ invoice.open_amount|floatformat:"2g" }} €.{% endif %}
+{% trans "ohne Nummer" as no_number %}{% blocktrans trimmed count days=days_overdue with number=invoice.voucher_number|default:no_number customer=invoice.customer.name due_date=invoice.due_date|date:date_format %}die Rechnung {{ number }} an {{ customer }} war am {{ due_date }} fällig und ist seit {{ days }} Tag überfällig.{% plural %}die Rechnung {{ number }} an {{ customer }} war am {{ due_date }} fällig und ist seit {{ days }} Tagen überfällig.{% endblocktrans %}{% if invoice.open_amount is not None %}
+{% blocktrans trimmed with amount=invoice.open_amount|floatformat:"2g" %}Offen sind noch {{ amount }} €.{% endblocktrans %}{% endif %}
 
-{% if customer_notified %}Der Kunde hat eine Zahlungserinnerung an {{ invoice.customer.email }} bekommen.{% elif customer_without_email %}Der Kunde hat keine E-Mail-Adresse in Lexware, deshalb ging keine Zahlungserinnerung an ihn.{% else %}An den Kunden ging keine Erinnerung.{% endif %}{% if invoice.lexware_url %}
+{% if customer_notified %}{% blocktrans trimmed with email=invoice.customer.email %}Der Kunde hat eine Zahlungserinnerung an {{ email }} bekommen.{% endblocktrans %}{% elif customer_without_email %}{% trans "Der Kunde hat keine E-Mail-Adresse in Lexware, deshalb ging keine Zahlungserinnerung an ihn." %}{% else %}{% trans "An den Kunden ging keine Erinnerung." %}{% endif %}{% if invoice.lexware_url %}
 
-Rechnung in Lexware Office: {{ invoice.lexware_url }}{% endif %}
+{% blocktrans trimmed with url=invoice.lexware_url %}Rechnung in Lexware Office: {{ url }}{% endblocktrans %}{% endif %}
 
-Diese Hinweise stellst du in LexTracker unter Einstellungen ein.
+{% trans "Diese Hinweise stellst du in LexTracker unter Einstellungen ein." %}
 {% endautoescape %}

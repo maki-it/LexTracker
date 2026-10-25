@@ -1,8 +1,9 @@
+{% load i18n %}
 {# Last row of a list that loads more while scrolling (see core/paging.py). Expects `page` and `colspan`. #}
 {% if page.next_query %}
 <tr hx-get="?{{ page.next_query }}" hx-trigger="intersect once" hx-target="this" hx-swap="outerHTML" hx-select="unset" hx-push-url="false">
   <td colspan="{{ colspan }}" class="py-4 text-center text-sm text-muted">
-    <a href="?{{ page.next_query }}" class="hover:underline" hx-get="?{{ page.next_query }}" hx-target="closest tr" hx-swap="outerHTML" hx-select="unset" hx-push-url="false">Weitere laden</a>
+    <a href="?{{ page.next_query }}" class="hover:underline" hx-get="?{{ page.next_query }}" hx-target="closest tr" hx-swap="outerHTML" hx-select="unset" hx-push-url="false">{% trans "Weitere laden" %}</a>
   </td>
 </tr>
 {% endif %}

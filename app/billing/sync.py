@@ -9,6 +9,7 @@ from asgiref.sync import sync_to_async
 from django.db import transaction
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
+from django.utils.translation import gettext as _
 
 from billing.models import Invoice
 from core.models import AppSettings
@@ -49,12 +50,15 @@ class InvoiceSyncResult:
 
     @property
     def summary(self) -> str:
-        summary = f"{self.changed} geändert, {self.unchanged} unverändert"
+        parts = [
+            _("%(count)d geändert") % {"count": self.changed},
+            _("%(count)d unverändert") % {"count": self.unchanged},
+        ]
         if self.imported:
-            summary += f", {self.imported} aus Lexware übernommen"
+            parts.append(_("%(count)d aus Lexware übernommen") % {"count": self.imported})
         if self.deleted:
-            summary += f", {self.deleted} in Lexware gelöscht (Zeiten wieder freigegeben)"
-        return summary + "."
+            parts.append(_("%(count)d in Lexware gelöscht (Zeiten wieder freigegeben)") % {"count": self.deleted})
+        return ", ".join(parts) + "."
 
 
 def _status(lexware_status: str, due_date, today) -> str:

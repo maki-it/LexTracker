@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 from core.models import UUIDModel
 from inbox.levels import BADGES, Level
@@ -12,24 +13,24 @@ class Message(UUIDModel):
     Messages are created with ``inbox.service.anotify``.
     """
 
-    user = models.ForeignKey("accounts.User", verbose_name="Empfänger", on_delete=models.CASCADE, related_name="+")
-    level = models.SmallIntegerField("Priorität", choices=Level)
+    user = models.ForeignKey("accounts.User", verbose_name=_("Empfänger"), on_delete=models.CASCADE, related_name="+")
+    level = models.SmallIntegerField(_("Priorität"), choices=Level)
     # What it is about, e.g. "backup.failed". Lets users mute one kind later.
-    kind = models.CharField("Art", max_length=50)
-    title = models.CharField("Titel", max_length=200)
-    body = models.TextField("Text", blank=True)
+    kind = models.CharField(_("Art"), max_length=50)
+    title = models.CharField(_("Titel"), max_length=200)
+    body = models.TextField(_("Text"), blank=True)
     # A path in the app that the message links to, e.g. the page with the settings concerned.
-    url = models.CharField("Ziel", max_length=300, blank=True)
+    url = models.CharField(_("Ziel"), max_length=300, blank=True)
     # An unread message with the same key is updated instead of adding another one (see ``anotify``).
     dedupe_key = models.CharField(max_length=200, blank=True)
-    count = models.PositiveIntegerField("Anzahl", default=1)
-    created_at = models.DateTimeField("erstellt", auto_now_add=True)
-    last_at = models.DateTimeField("zuletzt", default=timezone.now)
-    read_at = models.DateTimeField("gelesen", null=True, blank=True)
+    count = models.PositiveIntegerField(_("Anzahl"), default=1)
+    created_at = models.DateTimeField(_("erstellt"), auto_now_add=True)
+    last_at = models.DateTimeField(_("zuletzt"), default=timezone.now)
+    read_at = models.DateTimeField(_("gelesen"), null=True, blank=True)
 
     class Meta:
-        verbose_name = "Nachricht"
-        verbose_name_plural = "Nachrichten"
+        verbose_name = _("Nachricht")
+        verbose_name_plural = _("Nachrichten")
         ordering = ["-last_at", "-id"]
         indexes = [
             # The bell counts the unread messages of a user on every page.

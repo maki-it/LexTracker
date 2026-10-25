@@ -1,31 +1,32 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load timefmt icons dialogs markdown %}
-{% block title %}{{ project.name }} · LexTracker{% endblock %}
+{% block title %}{% blocktrans trimmed with name=project.name %}{{ name }} · LexTracker{% endblocktrans %}{% endblock %}
 {% block content %}
 <div class="page-header">
   <div>
-    <p class="breadcrumb"><a href="{% url 'projects:list' %}">Projekte</a> / {{ project.customer.name }}</p>
+    <p class="breadcrumb"><a href="{% url 'projects:list' %}">{% trans "Projekte" %}</a> / {{ project.customer.name }}</p>
     <div class="flex flex-wrap items-center gap-3">
       <h1>{{ project.name }}</h1>
       <span class="badge{% if project.status == 'active' %} badge-primary{% elif project.status == 'done' %} badge-success{% endif %}">{{ project.get_status_display }}</span>
     </div>
   </div>
-  <a {% dialog_link "projects:edit" project.pk %} class="btn">{% icon "pencil" size=14 %}Bearbeiten</a>
+  <a {% dialog_link "projects:edit" project.pk %} class="btn">{% icon "pencil" size=14 %}{% trans "Bearbeiten" %}</a>
 </div>
 
 <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
   <div class="stat">
-    <span class="stat-label">Gebucht</span>
+    <span class="stat-label">{% trans "Gebucht" %}</span>
     <span class="stat-value">{{ booked|hours:duration_format }}{% if project.budget_hours is not None %} / {{ project.budget_hours }}{% endif %} h</span>
   </div>
   <div class="stat">
-    <span class="stat-label">Stundensatz</span>
+    <span class="stat-label">{% trans "Stundensatz" %}</span>
     <span class="stat-value">{% if project.hourly_rate is not None %}{{ project.hourly_rate }} €{% elif project.customer.default_hourly_rate is not None %}{{ project.customer.default_hourly_rate }} €{% else %}–{% endif %}</span>
-    {% if project.hourly_rate is None and project.customer.default_hourly_rate is not None %}<span class="text-xs text-muted">vom Kunden</span>{% endif %}
+    {% if project.hourly_rate is None and project.customer.default_hourly_rate is not None %}<span class="text-xs text-muted">{% trans "vom Kunden" %}</span>{% endif %}
   </div>
   <div class="stat">
-    <span class="stat-label">Zeitraum</span>
-    <span class="stat-value text-base">{{ project.start_date|date:date_format|default:"–" }} – {{ project.end_date|date:date_format|default:"offen" }}</span>
+    <span class="stat-label">{% trans "Zeitraum" %}</span>
+    <span class="stat-value text-base">{{ project.start_date|date:date_format|default:"–" }} – {{ project.end_date|date:date_format|default:_("offen") }}</span>
   </div>
 </div>
 {% if project.description %}<div class="max-w-3xl text-muted">{{ project.description|markdown }}</div>{% endif %}

@@ -9,6 +9,7 @@ from typing import Self
 from uuid import UUID
 
 import httpx
+from django.utils.translation import gettext as _
 
 from lexware.schemas import Contact, ContactPage, Profile, Voucher, VoucherPage
 
@@ -71,7 +72,7 @@ class LexwareClient:
         transport: httpx.AsyncBaseTransport | None = None,
     ) -> None:
         if not api_key:
-            raise LexwareError("Es ist kein Lexware-API-Schlüssel hinterlegt. Trage ihn in den Einstellungen ein.")
+            raise LexwareError(_("Es ist kein Lexware-API-Schlüssel hinterlegt. Trage ihn in den Einstellungen ein."))
         self._http = httpx.AsyncClient(
             base_url=base_url,
             headers={"Authorization": f"Bearer {api_key}", "Accept": "application/json"},
@@ -109,7 +110,7 @@ class LexwareClient:
             try:
                 response = await self._http.request(method, path, params=params, json=json, headers=headers)
             except httpx.HTTPError as exc:
-                raise LexwareError(f"Lexware ist nicht erreichbar: {exc}") from exc
+                raise LexwareError(_("Lexware ist nicht erreichbar: %(error)s") % {"error": exc}) from exc
 
             if response.status_code == httpx.codes.TOO_MANY_REQUESTS and attempt < MAX_RETRIES:
                 retry_after = float(response.headers.get("Retry-After", 1))
@@ -117,13 +118,16 @@ class LexwareClient:
                 await asyncio.sleep(retry_after)
                 continue
             if response.status_code == httpx.codes.UNAUTHORIZED:
-                raise LexwareUnauthorized("Lexware hat den API-Schlüssel abgelehnt.")
+                raise LexwareUnauthorized(_("Lexware hat den API-Schlüssel abgelehnt."))
             if response.status_code == httpx.codes.NOT_FOUND:
-                raise LexwareNotFound(f"Lexware kennt {path} nicht (HTTP 404).")
+                raise LexwareNotFound(_("Lexware kennt %(path)s nicht (HTTP 404).") % {"path": path})
             if response.is_error:
-                raise LexwareError(f"Lexware antwortete mit HTTP {response.status_code}: {_error_detail(response)}")
+                raise LexwareError(
+                    _("Lexware antwortete mit HTTP %(status)s: %(detail)s")
+                    % {"status": response.status_code, "detail": _error_detail(response)}
+                )
             return response
-        raise LexwareError("Lexware hat zu viele Anfragen abgelehnt (Rate-Limit).")
+        raise LexwareError(_("Lexware hat zu viele Anfragen abgelehnt (Rate-Limit)."))
 
     async def get_profile(self) -> Profile:
         return Profile.model_validate(await self._request("GET", "profile"))

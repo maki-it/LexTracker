@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load icons %}
-{% block title %}Anmelden · LexTracker{% endblock %}
+{% block title %}{% trans "Anmelden" %} · LexTracker{% endblock %}
 {% block public_content %}
 <div class="flex w-full max-w-sm flex-col gap-6">
   <div class="flex items-center justify-center gap-2.5 text-lg font-semibold">
@@ -8,17 +9,17 @@
     LexTracker
   </div>
   <form method="post" class="card flex flex-col gap-4 p-6">
-    <h1 class="text-lg">Bestätigungscode</h1>
+    <h1 class="text-lg">{% trans "Bestätigungscode" %}</h1>
     {% csrf_token %}
     <input type="hidden" name="next" value="{{ next }}">
-    <p class="text-sm text-muted">Gib den Code aus deiner Authenticator-App ein. Hast du dein Handy nicht zur Hand, geht auch einer deiner Wiederherstellungscodes.</p>
+    <p class="text-sm text-muted">{% trans "Gib den Code aus deiner Authenticator-App ein. Hast du dein Handy nicht zur Hand, geht auch einer deiner Wiederherstellungscodes." %}</p>
     {% if error %}<div role="alert" class="alert alert-error">{{ error }}</div>{% endif %}
     <label class="field">
       <span>{{ form.code.label }}</span>
       {{ form.code }}
     </label>
-    <button type="submit" class="btn btn-primary mt-1">Anmelden</button>
-    <a href="{% url 'accounts:login' %}" class="text-center text-sm text-muted hover:underline">Zurück</a>
+    <button type="submit" class="btn btn-primary mt-1">{% trans "Anmelden" %}</button>
+    <a href="{% url 'accounts:login' %}" class="text-center text-sm text-muted hover:underline">{% trans "Zurück" %}</a>
   </form>
 </div>
 {% endblock %}

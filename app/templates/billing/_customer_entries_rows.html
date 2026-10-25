@@ -1,3 +1,4 @@
+{% load i18n %}
 {# Rows of one project in the open time entries of a customer (customer_entries.html), or the next page of them. #}
 {% load timefmt %}
 {% for row in rows %}
@@ -11,13 +12,13 @@
   <td>{{ entry.task.name }}</td>
   <td class="text-right whitespace-nowrap tabular-nums">
     {{ entry.duration|hours:duration_format }} h
-    {% if row.included and row.billed %}<span class="block text-xs text-muted">{{ row.included|hours:duration_format }} h im Retainer</span>{% endif %}
+    {% if row.included and row.billed %}<span class="block text-xs text-muted">{% blocktrans trimmed with included=row.included|hours:duration_format %}{{ included }} h im Retainer{% endblocktrans %}</span>{% endif %}
   </td>
   <td class="text-right whitespace-nowrap tabular-nums">
-    {% if row.rate is not None %}{{ row.rate }} €{% elif not row.has_rate %}<span class="badge badge-warning">kein Satz</span>{% else %}–{% endif %}
+    {% if row.rate is not None %}{{ row.rate }} €{% elif not row.has_rate %}<span class="badge badge-warning">{% trans "kein Satz" %}</span>{% else %}–{% endif %}
   </td>
   <td class="text-right whitespace-nowrap tabular-nums">
-    {% if row.billed %}{{ row.amount }} €{% elif row.included %}<span class="badge badge-primary">im Retainer</span>{% else %}–{% endif %}
+    {% if row.billed %}{{ row.amount }} €{% elif row.included %}<span class="badge badge-primary">{% trans "im Retainer" %}</span>{% else %}–{% endif %}
   </td>
   <td class="min-w-48 text-muted whitespace-pre-line break-words">{{ entry.description|default:"–" }}</td>
 </tr>
@@ -27,7 +28,7 @@
 <tr>
   <td colspan="7" class="text-center">
     <button type="button" class="btn btn-ghost btn-sm" hx-get="{% url 'billing:customer_entries' customer.pk %}?project={{ group.project.pk }}&page={{ next_page }}"
-            hx-target="closest tr" hx-swap="outerHTML" hx-select="unset">Weitere {{ remaining }} Zeiteintr{{ remaining|pluralize:"ag,äge" }} anzeigen</button>
+            hx-target="closest tr" hx-swap="outerHTML" hx-select="unset">{% blocktrans trimmed count counter=remaining %}Weitere {{ counter }} Zeiteintrag anzeigen{% plural %}Weitere {{ counter }} Zeiteinträge anzeigen{% endblocktrans %}</button>
   </td>
 </tr>
 {% endif %}

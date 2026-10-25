@@ -1,6 +1,7 @@
 """Recurring jobs, run by ``manage.py run_scheduler`` in its own process (its own container in Docker)."""
 
 import asyncio
+import functools
 import logging
 import tempfile
 from collections.abc import Awaitable, Callable
@@ -11,6 +12,9 @@ from pathlib import Path
 
 from asgiref.sync import sync_to_async
 from django.utils import timezone
+from django.utils.functional import Promise
+from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy
 
 from billing import sync as invoice_sync
 from core import backup, jobs
@@ -45,7 +49,7 @@ class Job:
     run: Callable[[], Awaitable]
     # How messages about it refer to it: the name in the key and the name in the title.
     key: str
-    label: str
+    label: str | Promise
     # The AppSettings fields that configure the job and record its last run.
     interval_field: str
     from_field: str
@@ -58,7 +62,7 @@ JOBS = [
         "customer import",
         customer_sync.sync_and_record,
         "customers",
-        "Kundenimport",
+        gettext_lazy("Kundenimport"),
         "lexware_sync_interval",
         "lexware_sync_from",
         "lexware_sync_until",
@@ -68,7 +72,7 @@ JOBS = [
         "invoice sync",
         invoice_sync.sync_and_record,
         "invoices",
-        "Rechnungsabgleich",
+        gettext_lazy("Rechnungsabgleich"),
         "invoice_sync_interval",
         "invoice_sync_from",
         "invoice_sync_until",
@@ -121,8 +125,12 @@ async def run_due_jobs(now: datetime) -> list[str]:
             await inbox_events.job_failed(job.key, job.label, exc)
         else:
             logger.info("Automatic %s: %s", job.name, result.summary)
+            # The summary is worded for each reader in their language, so it is passed as a function.
             await inbox_events.job_done(
-                job.key, job.label, result.summary, changed=getattr(result, "has_changes", False)
+                job.key,
+                job.label,
+                functools.partial(getattr, result, "summary"),
+                changed=getattr(result, "has_changes", False),
             )
     return ran
 
@@ -189,7 +197,7 @@ async def run(stop: asyncio.Event) -> None:
         try:
             if last_prune is None or now - last_prune >= PRUNE_INTERVAL:
                 async with jobs.tracked("prune") as tracking:
-                    tracking.result = f"{await inbox.prune(now)} gelöscht"
+                    tracking.result = _("%(count)d gelöscht") % {"count": await inbox.prune(now)}
                 last_prune = now
         except Exception:
             logger.exception("Deleting messages failed")

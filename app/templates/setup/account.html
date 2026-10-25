@@ -1,15 +1,15 @@
 {% extends "setup/_layout.html" %}
+{% load i18n %}
 {% block step %}
 <form method="post" class="card flex flex-col gap-4 p-6">
   <div>
-    <h1 class="text-lg">Willkommen bei LexTracker</h1>
+    <h1 class="text-lg">{% trans "Willkommen bei LexTracker" %}</h1>
     <p class="mt-1 text-sm text-muted">
-      Die App ist neu und hat noch kein Konto. Lege zuerst dein Administrator-Konto an.
-      Mitarbeiter und Kunden lädst du später unter „Benutzer“ ein.
+      {% trans "Die App ist neu und hat noch kein Konto. Lege zuerst dein Administrator-Konto an. Mitarbeiter und Kunden lädst du später unter „Benutzer“ ein." %}
     </p>
   </div>
   {% csrf_token %}
   {% include "core/_form_fields.html" %}
-  <button type="submit" class="btn btn-primary mt-1">Konto anlegen und weiter</button>
+  <button type="submit" class="btn btn-primary mt-1">{% trans "Konto anlegen und weiter" %}</button>
 </form>
 {% endblock %}

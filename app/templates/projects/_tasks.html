@@ -1,6 +1,7 @@
+{% load i18n %}
 {% load timefmt icons dialogs markdown %}
 <section id="tasks" class="flex flex-col gap-3">
-  <h2>Aufgaben</h2>
+  <h2>{% trans "Aufgaben" %}</h2>
   <div class="table-wrap">
     <table class="table">
       <tbody>
@@ -10,13 +11,13 @@
             <div class="font-medium">{{ task.name }}</div>
             {% if task.description %}<div class="mt-0.5 max-w-2xl text-[13px] text-muted">{{ task.description|markdown }}</div>{% endif %}
             <div class="text-xs text-muted">
-              {% if not task.is_billable %}nicht abrechenbar · {% endif %}
+              {% if not task.is_billable %}{% trans "nicht abrechenbar ·" %} {% endif %}
               {% if task.hourly_rate is not None %}{{ task.hourly_rate }} €/h · {% endif %}
-              {{ task.booked|hours:duration_format }} h gebucht{% if task.estimated_hours is not None %} von {{ task.estimated_hours }} h geschätzt{% endif %}
+              {% blocktrans trimmed with booked=task.booked|hours:duration_format %}{{ booked }} h gebucht{% endblocktrans %}{% if task.estimated_hours is not None %} {% blocktrans trimmed with estimated_hours=task.estimated_hours %}von {{ estimated_hours }} h geschätzt{% endblocktrans %}{% endif %}
             </div>
           </td>
           <td>
-            <select name="status" class="input h-8 w-36 text-[13px]" aria-label="Status"
+            <select name="status" class="input h-8 w-36 text-[13px]" aria-label="{% trans 'Status' %}"
                     hx-post="{% url 'projects:task_status' project.pk task.pk %}" hx-target="#tasks" hx-swap="outerHTML">
               {% for value, label in status_choices %}
               <option value="{{ value }}"{% if task.status == value %} selected{% endif %}>{{ label }}</option>
@@ -26,13 +27,13 @@
           <td>
             <div class="flex justify-end gap-1.5">
               {% if task.status != 'done' %}{% include "tracking/_start_button.html" %}{% endif %}
-              <a {% dialog_link "tracking:create" task=task.pk %} class="btn btn-ghost btn-sm" title="Zeit nachtragen">{% icon "plus" size=14 %}Zeit</a>
-              <a {% dialog_link "projects:task_edit" project.pk task.pk %} class="btn btn-ghost btn-sm btn-icon size-8" title="Bearbeiten" aria-label="Aufgabe {{ task.name }} bearbeiten">{% icon "pencil" %}</a>
+              <a {% dialog_link "tracking:create" task=task.pk %} class="btn btn-ghost btn-sm" title="{% trans 'Zeit nachtragen' %}">{% icon "plus" size=14 %}{% trans "Zeit" %}</a>
+              <a {% dialog_link "projects:task_edit" project.pk task.pk %} class="btn btn-ghost btn-sm btn-icon size-8" title="{% trans 'Bearbeiten' %}" aria-label="{% blocktrans trimmed with name=task.name %}Aufgabe {{ name }} bearbeiten{% endblocktrans %}">{% icon "pencil" %}</a>
             </div>
           </td>
         </tr>
         {% empty %}
-        <tr><td class="py-8 text-center text-muted">Noch keine Aufgaben.</td></tr>
+        <tr><td class="py-8 text-center text-muted">{% trans "Noch keine Aufgaben." %}</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -42,38 +43,38 @@
   <form hx-post="{% url 'projects:task_from_templates' project.pk %}" hx-target="#tasks" hx-swap="outerHTML"
         method="post" action="{% url 'projects:task_from_templates' project.pk %}" class="card flex flex-col gap-4">
     <div class="flex flex-wrap items-baseline justify-between gap-2">
-      <h3 class="font-semibold">Aus Vorlagen hinzufügen</h3>
-      <a href="{% url 'projects:templates' %}" class="text-[13px]">Vorlagen verwalten</a>
+      <h3 class="font-semibold">{% trans "Aus Vorlagen hinzufügen" %}</h3>
+      <a href="{% url 'projects:templates' %}" class="text-[13px]">{% trans "Vorlagen verwalten" %}</a>
     </div>
     {% csrf_token %}
     <div class="flex flex-wrap gap-x-4 gap-y-2">
       {% for template, in_project in templates %}
-      <label class="flex items-center gap-2 text-sm{% if in_project %} text-muted{% endif %}"{% if in_project %} title="Schon im Projekt"{% endif %}>
+      <label class="flex items-center gap-2 text-sm{% if in_project %} text-muted{% endif %}"{% if in_project %} title="{% trans 'Schon im Projekt' %}"{% endif %}>
         <input type="checkbox" name="template" value="{{ template.pk }}" class="size-4 accent-primary"{% if in_project %} disabled{% endif %}>
         {{ template.name }}
       </label>
       {% endfor %}
     </div>
     <div class="flex justify-end">
-      <button type="submit" class="btn">Ausgewählte hinzufügen</button>
+      <button type="submit" class="btn">{% trans "Ausgewählte hinzufügen" %}</button>
     </div>
   </form>
   {% endif %}
 
   <form hx-post="{% url 'projects:task_create' project.pk %}" hx-target="#tasks" hx-swap="outerHTML"
         method="post" action="{% url 'projects:task_create' project.pk %}" class="card flex flex-col gap-4">
-    <h3 class="font-semibold">Neue Aufgabe</h3>
+    <h3 class="font-semibold">{% trans "Neue Aufgabe" %}</h3>
     {% csrf_token %}
     {% with form=task_form %}
     <div class="grid gap-4 sm:grid-cols-[2fr_1fr_1fr]">
       <label class="field"><span>{{ form.name.label }}</span>{{ form.name }}</label>
-      <label class="field"><span>{{ form.hourly_rate.label }} <span class="font-normal text-muted">(optional)</span></span>{{ form.hourly_rate }}</label>
-      <label class="field"><span>{{ form.estimated_hours.label }} <span class="font-normal text-muted">(optional)</span></span>{{ form.estimated_hours }}</label>
+      <label class="field"><span>{{ form.hourly_rate.label }} <span class="font-normal text-muted">{% trans "(optional)" %}</span></span>{{ form.hourly_rate }}</label>
+      <label class="field"><span>{{ form.estimated_hours.label }} <span class="font-normal text-muted">{% trans "(optional)" %}</span></span>{{ form.estimated_hours }}</label>
     </div>
     {% for field in form %}{% for error in field.errors %}<p class="text-sm text-danger">{{ field.label }}: {{ error }}</p>{% endfor %}{% endfor %}
     <div class="flex flex-wrap items-center justify-between gap-4">
       <label class="flex items-center gap-2 text-[13px] font-medium">{{ form.is_billable }} {{ form.is_billable.label }}</label>
-      <button type="submit" class="btn btn-primary">Hinzufügen</button>
+      <button type="submit" class="btn btn-primary">{% trans "Hinzufügen" %}</button>
     </div>
     {% endwith %}
   </form>

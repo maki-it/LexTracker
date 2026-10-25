@@ -1,28 +1,29 @@
 {% extends "base.html" %}
-{% block title %}Hintergrundaufgaben · LexTracker{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Hintergrundaufgaben" %} · LexTracker{% endblock %}
 {% block content %}
 <div class="page-header">
   <div>
-    <p class="breadcrumb"><a href="{% url 'core:settings' %}">Einstellungen</a></p>
-    <h1>Hintergrundaufgaben</h1>
-    <p class="page-subtitle">Was der Scheduler im Hintergrund erledigt und wie die letzten Läufe ausgingen. Fehler melden sich zusätzlich als Nachricht in der Glocke.</p>
+    <p class="breadcrumb"><a href="{% url 'core:settings' %}">{% trans "Einstellungen" %}</a></p>
+    <h1>{% trans "Hintergrundaufgaben" %}</h1>
+    <p class="page-subtitle">{% trans "Was der Scheduler im Hintergrund erledigt und wie die letzten Läufe ausgingen. Fehler melden sich zusätzlich als Nachricht in der Glocke." %}</p>
   </div>
 </div>
 
 <section class="card flex flex-col gap-1 text-sm">
   <div class="flex items-center gap-2">
-    <h2>Scheduler</h2>
-    {% if alive %}<span class="badge badge-success">läuft</span>
-    {% elif alive is False %}<span class="badge badge-danger">meldet sich nicht</span>
-    {% else %}<span class="badge badge-outline">noch nie gemeldet</span>{% endif %}
+    <h2>{% trans "Scheduler" %}</h2>
+    {% if alive %}<span class="badge badge-success">{% trans "läuft" %}</span>
+    {% elif alive is False %}<span class="badge badge-danger">{% trans "meldet sich nicht" %}</span>
+    {% else %}<span class="badge badge-outline">{% trans "noch nie gemeldet" %}</span>{% endif %}
   </div>
   {% if seen_at %}
-  <p class="text-muted">Zuletzt gemeldet {{ seen_at|date:datetime_format }} Uhr (vor {{ seen_at|timesince:now }}){% if started_at %}, gestartet {{ started_at|date:datetime_format }} Uhr{% endif %}.</p>
+  <p class="text-muted">{% blocktrans trimmed with seen_at=seen_at|date:datetime_format seen_at2=seen_at|timesince:now %}Zuletzt gemeldet {{ seen_at }} Uhr (vor {{ seen_at2 }}){% endblocktrans %}{% if started_at %}{% blocktrans trimmed with started_at=started_at|date:datetime_format %}, gestartet {{ started_at }} Uhr{% endblocktrans %}{% endif %}.</p>
   {% endif %}
   {% if alive is False %}
-  <p role="alert" class="alert alert-error mt-2">Der Scheduler prüft sonst jede Minute. Solange er nicht läuft, werden nichts importiert, keine Sicherung erstellt und keine E-Mails verschickt. Schau nach dem Container <code>scheduler</code> (<code>docker compose logs scheduler</code>) oder starte ihn mit <code>make scheduler</code>.</p>
+  <p role="alert" class="alert alert-error mt-2">{% trans "Der Scheduler prüft sonst jede Minute. Solange er nicht läuft, werden nichts importiert, keine Sicherung erstellt und keine E-Mails verschickt. Schau nach dem Container <code>scheduler</code> (<code>docker compose logs scheduler</code>) oder starte ihn mit <code>make scheduler</code>." %}</p>
   {% elif alive is None %}
-  <p class="text-muted">Der Scheduler ist ein eigener Prozess (Container <code>scheduler</code>, lokal <code>make scheduler</code>). Sobald er läuft, steht hier sein Status.</p>
+  <p class="text-muted">{% trans "Der Scheduler ist ein eigener Prozess (Container <code>scheduler</code>, lokal <code>make scheduler</code>). Sobald er läuft, steht hier sein Status." %}</p>
   {% endif %}
 </section>
 
@@ -30,10 +31,10 @@
   <table class="table">
     <thead>
       <tr>
-        <th>Aufgabe</th>
-        <th>Nächster Lauf</th>
-        <th>Letzter Lauf</th>
-        <th>Ergebnis</th>
+        <th>{% trans "Aufgabe" %}</th>
+        <th>{% trans "Nächster Lauf" %}</th>
+        <th>{% trans "Letzter Lauf" %}</th>
+        <th>{% trans "Ergebnis" %}</th>
       </tr>
     </thead>
     <tbody>
@@ -46,28 +47,28 @@
         </td>
         <td class="whitespace-nowrap text-muted">
           {% if not job.scheduled %}–
-          {% elif not job.next_run %}aus
-          {% elif job.next_run <= now %}beim nächsten Check
-          {% else %}<span title="{{ job.next_run|date:datetime_format }} Uhr">in {{ job.next_run|timeuntil:now }}</span>{% endif %}
+          {% elif not job.next_run %}{% trans "aus" %}
+          {% elif job.next_run <= now %}{% trans "beim nächsten Check" %}
+          {% else %}<span title="{% blocktrans trimmed with at=job.next_run|date:datetime_format %}{{ at }} Uhr{% endblocktrans %}">{% blocktrans trimmed with next_run=job.next_run|timeuntil:now %}in {{ next_run }}{% endblocktrans %}</span>{% endif %}
         </td>
         <td class="whitespace-nowrap">
           {% if status and status.last_run_at %}
-          <div>{{ status.last_run_at|date:datetime_format }} Uhr</div>
-          <div class="text-xs text-muted tabular-nums">{% if status.duration_ms < 1000 %}{{ status.duration_ms }} ms{% else %}{{ status.duration_seconds|floatformat:1 }} s{% endif %}</div>
-          {% else %}<span class="text-muted">noch nicht gelaufen</span>{% endif %}
+          <div>{% blocktrans trimmed with last_run_at=status.last_run_at|date:datetime_format %}{{ last_run_at }} Uhr{% endblocktrans %}</div>
+          <div class="text-xs text-muted tabular-nums">{% if status.duration_ms < 1000 %}{% blocktrans trimmed with duration_ms=status.duration_ms %}{{ duration_ms }} ms{% endblocktrans %}{% else %}{{ status.duration_seconds|floatformat:1 }} s{% endif %}</div>
+          {% else %}<span class="text-muted">{% trans "noch nicht gelaufen" %}</span>{% endif %}
         </td>
         <td class="w-full">
           {% if status and status.last_run_at %}
             {% if status.last_ok %}
-            <span class="badge badge-success">ok</span>
+            <span class="badge badge-success">{% trans "ok" %}</span>
             {% if status.last_result %}<span class="ml-1 text-sm text-muted">{{ status.last_result }}</span>{% endif %}
             {% else %}
-            <span class="badge badge-danger">Fehler</span>
-            {% if status.failures > 1 %}<span class="ml-1 text-xs text-muted">{{ status.failures }}× in Folge</span>{% endif %}
+            <span class="badge badge-danger">{% trans "Fehler" %}</span>
+            {% if status.failures > 1 %}<span class="ml-1 text-xs text-muted">{% blocktrans trimmed with failures=status.failures %}{{ failures }}× in Folge{% endblocktrans %}</span>{% endif %}
             <div class="mt-1 text-sm text-danger">{{ status.last_error }}</div>
             {% endif %}
             {% if status.last_ok and status.last_error %}
-            <div class="mt-1 text-xs text-muted">Letzter Fehler {{ status.last_error_at|date:datetime_format }} Uhr: {{ status.last_error }}</div>
+            <div class="mt-1 text-xs text-muted">{% blocktrans trimmed with last_error_at=status.last_error_at|date:datetime_format last_error=status.last_error %}Letzter Fehler {{ last_error_at }} Uhr: {{ last_error }}{% endblocktrans %}</div>
             {% endif %}
           {% endif %}
         </td>

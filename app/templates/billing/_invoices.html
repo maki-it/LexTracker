@@ -1,14 +1,15 @@
+{% load i18n %}
 {% load icons %}
 <div class="table-wrap">
   <table class="table">
     <thead>
       <tr>
-        <th>Nummer</th>
-        {% if show_customer %}<th>Kunde</th>{% endif %}
-        <th>Datum</th>
-        <th>Leistungszeitraum</th>
-        <th>Status</th>
-        <th class="text-right">Netto</th>
+        <th>{% trans "Nummer" %}</th>
+        {% if show_customer %}<th>{% trans "Kunde" %}</th>{% endif %}
+        <th>{% trans "Datum" %}</th>
+        <th>{% trans "Leistungszeitraum" %}</th>
+        <th>{% trans "Status" %}</th>
+        <th class="text-right">{% trans "Netto" %}</th>
         <th></th>
       </tr>
     </thead>

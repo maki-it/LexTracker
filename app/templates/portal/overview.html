@@ -1,40 +1,41 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load timefmt %}
-{% block title %}Übersicht · LexTracker{% endblock %}
+{% block title %}{% trans "Übersicht" %} · LexTracker{% endblock %}
 {% block content %}
 <div>
   <h1>{{ customer.name }}</h1>
-  <p class="page-subtitle">Deine Projekte und die dafür gebuchten Stunden</p>
+  <p class="page-subtitle">{% trans "Deine Projekte und die dafür gebuchten Stunden" %}</p>
 </div>
 
 <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
   <div class="stat">
-    <span class="stat-label">Diesen Monat gebucht</span>
+    <span class="stat-label">{% trans "Diesen Monat gebucht" %}</span>
     <span class="stat-value">{{ month_total|hours:duration_format }} h</span>
   </div>
   <div class="stat">
-    <span class="stat-label">Laufende Projekte</span>
+    <span class="stat-label">{% trans "Laufende Projekte" %}</span>
     <span class="stat-value">{{ projects|length }}</span>
   </div>
   {% if open_invoices is not None %}
   <a href="{% url 'portal:invoices' %}" class="stat text-ink no-underline hover:border-primary">
-    <span class="stat-label">Offene Rechnungen</span>
+    <span class="stat-label">{% trans "Offene Rechnungen" %}</span>
     <span class="stat-value">{{ open_invoices }}</span>
   </a>
   {% endif %}
 </div>
 
 <section class="flex flex-col gap-3">
-  <h2>Projekte</h2>
+  <h2>{% trans "Projekte" %}</h2>
   <div class="table-wrap">
     <table class="table">
       <thead>
         <tr>
-          <th>Projekt</th>
-          <th>Status</th>
-          <th class="text-right">Diesen Monat</th>
-          <th class="text-right">Gesamt</th>
-          {% if user.portal_budget %}<th>Budget</th>{% endif %}
+          <th>{% trans "Projekt" %}</th>
+          <th>{% trans "Status" %}</th>
+          <th class="text-right">{% trans "Diesen Monat" %}</th>
+          <th class="text-right">{% trans "Gesamt" %}</th>
+          {% if user.portal_budget %}<th>{% trans "Budget" %}</th>{% endif %}
         </tr>
       </thead>
       <tbody>
@@ -42,7 +43,7 @@
         <tr>
           <td class="w-full font-medium">
             {% if user.portal_entries %}<a href="{% url 'portal:entries' %}?project={{ project.pk }}&range=year" class="text-ink no-underline hover:underline">{{ project.name }}</a>{% else %}{{ project.name }}{% endif %}
-            {% if project.end_date %}<div class="text-[13px] font-normal text-muted">bis {{ project.end_date|date:date_format }}</div>{% endif %}
+            {% if project.end_date %}<div class="text-[13px] font-normal text-muted">{% blocktrans trimmed with end_date=project.end_date|date:date_format %}bis {{ end_date }}{% endblocktrans %}</div>{% endif %}
           </td>
           <td><span class="badge{% if project.status == 'active' %} badge-primary{% elif project.status == 'done' %} badge-success{% endif %}">{{ project.get_status_display }}</span></td>
           <td class="text-right whitespace-nowrap tabular-nums">{{ project.booked_month|hours:duration_format }} h</td>
@@ -52,14 +53,14 @@
             {% if project.budget_hours %}
             <div class="flex items-center gap-2">
               <div class="h-1.5 min-w-24 flex-1 overflow-hidden rounded-full bg-surface-muted"><div class="h-full rounded-full {% if project.budget_share > 100 %}bg-danger{% elif project.budget_share > 80 %}bg-warning{% else %}bg-primary{% endif %}" style="width: {% if project.budget_share > 100 %}100{% else %}{{ project.budget_share|default:0 }}{% endif %}%"></div></div>
-              <span class="text-[13px] text-muted tabular-nums">{{ project.budget_share|default:0 }} % von {{ project.budget_hours|floatformat:"-2" }} h</span>
+              <span class="text-[13px] text-muted tabular-nums">{% blocktrans trimmed with budget_share=project.budget_share|default:0 budget_hours=project.budget_hours|floatformat:"-2" %}{{ budget_share }} % von {{ budget_hours }} h{% endblocktrans %}</span>
             </div>
             {% else %}<span class="text-muted">–</span>{% endif %}
           </td>
           {% endif %}
         </tr>
         {% empty %}
-        <tr><td colspan="5" class="py-8 text-center text-muted">Noch keine Projekte.</td></tr>
+        <tr><td colspan="5" class="py-8 text-center text-muted">{% trans "Noch keine Projekte." %}</td></tr>
         {% endfor %}
       </tbody>
     </table>

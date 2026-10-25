@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.db.models import Count, Q
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
+from django.utils.translation import gettext as _
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from core.dialogs import navigate
@@ -59,7 +60,7 @@ async def project_list(request: HttpRequest) -> HttpResponse:
     if wants_rows(request):
         return render(request, "projects/_rows.html", {"page": page})
     counts = await projects.aaggregate(
-        **{key: Count("pk", filter=Q(status__in=statuses)) for key, (_, statuses) in STATUS_FILTERS.items()}
+        **{key: Count("pk", filter=Q(status__in=statuses)) for key, (_label, statuses) in STATUS_FILTERS.items()}
     )
     context = {
         "page": page,
@@ -80,7 +81,7 @@ async def project_form(request: HttpRequest, pk: UUID | None = None) -> HttpResp
     form = ProjectForm(request.POST or None, instance=project, initial=initial, offer_templates=offer_templates)
     if request.method == "POST" and await sync_to_async(form.is_valid)():
         project = await sync_to_async(form.save)()
-        messages.success(request, f"Projekt „{project.name}“ gespeichert.")
+        messages.success(request, _("Projekt „%(name)s“ gespeichert.") % {"name": project.name})
         if pk:
             return redirect("projects:detail", pk=project.pk)
         return navigate("projects:detail", pk=project.pk)
@@ -95,11 +96,12 @@ async def project_delete(request: HttpRequest, pk: UUID) -> HttpResponse:
     if await TimeEntry.objects.filter(task__project=project).aexists():
         messages.error(
             request,
-            f"„{project.name}“ hat gebuchte Zeiten und kann nicht gelöscht werden. Setze es auf abgeschlossen.",
+            _("„%(name)s“ hat gebuchte Zeiten und kann nicht gelöscht werden. Setze es auf abgeschlossen.")
+            % {"name": project.name},
         )
         return redirect("projects:detail", pk=project.pk)
     await project.adelete()
-    messages.success(request, f"Projekt „{project.name}“ gelöscht.")
+    messages.success(request, _("Projekt „%(name)s“ gelöscht.") % {"name": project.name})
     return navigate("projects:list")
 
 
@@ -161,7 +163,7 @@ async def task_edit(request: HttpRequest, pk: UUID, task_pk: int) -> HttpRespons
     form = TaskEditForm(request.POST or None, instance=task)
     if request.method == "POST" and await sync_to_async(form.is_valid)():
         await sync_to_async(form.save)()
-        messages.success(request, f"Aufgabe „{task.name}“ gespeichert.")
+        messages.success(request, _("Aufgabe „%(name)s“ gespeichert.") % {"name": task.name})
         return redirect("projects:detail", pk=project.pk)
     has_entries = await task.time_entries.aexists()
     return render(
@@ -174,10 +176,10 @@ async def task_save_as_template(request: HttpRequest, pk: UUID, task_pk: int) ->
     project = await _get_project(pk)
     task = await _get_task(project, task_pk)
     if await TaskTemplate.objects.filter(name=task.name).aexists():
-        messages.error(request, f"Es gibt schon eine Vorlage „{task.name}“.")
+        messages.error(request, _("Es gibt schon eine Vorlage „%(name)s“.") % {"name": task.name})
     else:
         await TaskTemplate.from_task(task).asave()
-        messages.success(request, f"„{task.name}“ als Vorlage gespeichert.")
+        messages.success(request, _("„%(name)s“ als Vorlage gespeichert.") % {"name": task.name})
     return redirect("projects:detail", pk=project.pk)
 
 
@@ -188,11 +190,13 @@ async def task_delete(request: HttpRequest, pk: UUID, task_pk: int) -> HttpRespo
     # Booked time must not disappear with its task; such tasks can be set to done instead.
     if await task.time_entries.aexists():
         messages.error(
-            request, f"„{task.name}“ hat gebuchte Zeiten und kann nicht gelöscht werden. Setze sie auf erledigt."
+            request,
+            _("„%(name)s“ hat gebuchte Zeiten und kann nicht gelöscht werden. Setze sie auf erledigt.")
+            % {"name": task.name},
         )
         return redirect("projects:task_edit", pk=project.pk, task_pk=task.pk)
     await task.adelete()
-    messages.success(request, f"Aufgabe „{task.name}“ gelöscht.")
+    messages.success(request, _("Aufgabe „%(name)s“ gelöscht.") % {"name": task.name})
     return redirect("projects:detail", pk=project.pk)
 
 
@@ -224,7 +228,7 @@ async def template_form(request: HttpRequest, pk: UUID | None = None) -> HttpRes
     form = TaskTemplateForm(request.POST or None, instance=template)
     if request.method == "POST" and await sync_to_async(form.is_valid)():
         template = await sync_to_async(form.save)()
-        messages.success(request, f"Vorlage „{template.name}“ gespeichert.")
+        messages.success(request, _("Vorlage „%(name)s“ gespeichert.") % {"name": template.name})
         return redirect("projects:templates")
     return render(request, "projects/template_form.html", {"form": form, "template": template})
 
@@ -234,5 +238,5 @@ async def template_delete(request: HttpRequest, pk: UUID) -> HttpResponse:
     # Tasks created from the template are copies and stay untouched.
     template = await _get_template(pk)
     await template.adelete()
-    messages.success(request, f"Vorlage „{template.name}“ gelöscht.")
+    messages.success(request, _("Vorlage „%(name)s“ gelöscht.") % {"name": template.name})
     return redirect("projects:templates")

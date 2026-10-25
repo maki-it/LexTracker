@@ -3,8 +3,11 @@
 from datetime import datetime, timedelta
 
 from django.urls import reverse
+from django.utils.translation import gettext_lazy as _
+from django.utils.translation import ngettext_lazy
 
 from accounts.models import User
+from core.i18n import fmt
 from core.models import AppSettings
 from inbox.levels import Level
 from inbox.models import Message
@@ -14,8 +17,10 @@ from tracking.models import TimeEntry
 KIND = "timer.long"
 
 
-def hours_text(running_for: timedelta) -> str:
-    return f"{int(running_for.total_seconds() // 3600)} Stunden"
+def hours_text(running_for: timedelta):
+    """ "3 Stunden", as a text that is translated for each reader."""
+    hours = int(running_for.total_seconds() // 3600)
+    return fmt(ngettext_lazy("%(count)d Stunde", "%(count)d Stunden", hours), count=hours)
 
 
 async def notify_long_timers(now: datetime, hours: int) -> int:
@@ -41,7 +46,7 @@ async def notify_long_timers(now: datetime, hours: int) -> int:
         await anotify(
             Level.WARNING,
             KIND,
-            f"Dein Timer läuft schon seit {hours_text(now - entry.started_at)}",
+            fmt(_("Dein Timer läuft schon seit %(duration)s"), duration=hours_text(now - entry.started_at)),
             f"{project.customer.name} · {project.name} · {entry.task.name}",
             url=reverse("core:dashboard"),
             to=entry.user,

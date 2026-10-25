@@ -1,10 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Anmelden · LexTracker{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Anmelden" %} · LexTracker{% endblock %}
 {% block public_content %}
 <div class="flex w-full max-w-sm flex-col gap-6">
   {% include "accounts/_public_header.html" %}
   <form method="post" class="card flex flex-col gap-4 p-6">
-    <h1 class="text-lg">Anmelden</h1>
+    <h1 class="text-lg">{% trans "Anmelden" %}</h1>
     {% csrf_token %}
     <input type="hidden" name="next" value="{{ next }}">
     {% for message in messages %}<div role="alert" class="alert{% if message.tags %} alert-{{ message.tags }}{% endif %}">{{ message }}</div>{% endfor %}
@@ -14,12 +15,12 @@
       <input type="text" name="username" value="{{ form.username.value|default:'' }}" class="input" autocomplete="username" required autofocus>
     </label>
     <label class="field">
-      <span class="flex justify-between gap-2">{{ form.password.label }}{% if links.password_reset %}<a href="{% url 'accounts:password_forgot' %}" class="font-normal">Vergessen?</a>{% endif %}</span>
+      <span class="flex justify-between gap-2">{{ form.password.label }}{% if links.password_reset %}<a href="{% url 'accounts:password_forgot' %}" class="font-normal">{% trans "Vergessen?" %}</a>{% endif %}</span>
       <input type="password" name="password" class="input" autocomplete="current-password" required>
     </label>
-    <button type="submit" class="btn btn-primary mt-1">Anmelden</button>
+    <button type="submit" class="btn btn-primary mt-1">{% trans "Anmelden" %}</button>
     {% if links.login_link %}
-    <a href="{% url 'accounts:login_link_request' %}" class="btn">Anmeldelink per E-Mail</a>
+    <a href="{% url 'accounts:login_link_request' %}" class="btn">{% trans "Anmeldelink per E-Mail" %}</a>
     {% endif %}
   </form>
 </div>
