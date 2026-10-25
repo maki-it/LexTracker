@@ -28,19 +28,27 @@ async def _get_project(pk: UUID) -> Project:
 
 # The status filter on the project list: key in the URL, label, statuses. Active projects come first.
 STATUS_FILTERS = {
-    "aktiv": ("Aktiv", [Project.Status.ACTIVE]),
-    "geplant": ("Geplant", [Project.Status.PLANNED]),
-    "pausiert": ("Pausiert", [Project.Status.PAUSED]),
-    "abgeschlossen": ("Abgeschlossen", [Project.Status.DONE]),
-    "alle": ("Alle", list(Project.Status.values)),
+    "active": ("Aktiv", [Project.Status.ACTIVE]),
+    "planned": ("Geplant", [Project.Status.PLANNED]),
+    "paused": ("Pausiert", [Project.Status.PAUSED]),
+    "done": ("Abgeschlossen", [Project.Status.DONE]),
+    "all": ("Alle", list(Project.Status.values)),
+}
+# The subtitle of the list for each filter.
+STATUS_SUBTITLES = {
+    "active": "aktive Projekte",
+    "planned": "geplante Projekte",
+    "paused": "pausierte Projekte",
+    "done": "abgeschlossene Projekte",
+    "all": "Projekte",
 }
 
 
 @require_GET
 async def project_list(request: HttpRequest) -> HttpResponse:
-    status = request.GET.get("status", "aktiv")
+    status = request.GET.get("status", "active")
     if status not in STATUS_FILTERS:
-        status = "aktiv"
+        status = "active"
     query = request.GET.get("q", "").strip()
     projects = Project.objects.all()
     if query:
@@ -62,6 +70,7 @@ async def project_list(request: HttpRequest) -> HttpResponse:
     context = {
         "page": page,
         "status": status,
+        "subtitle": STATUS_SUBTITLES[status],
         "query": query,
         "count": counts[status],
         "filters": [(key, label, counts[key], f"?status={key}{q}") for key, (label, _) in STATUS_FILTERS.items()],
@@ -72,7 +81,7 @@ async def project_list(request: HttpRequest) -> HttpResponse:
 @require_http_methods(["GET", "POST"])
 async def project_form(request: HttpRequest, pk: UUID | None = None) -> HttpResponse:
     project = await _get_project(pk) if pk else None
-    initial = {"customer": request.GET.get("kunde")} if not project else None
+    initial = {"customer": request.GET.get("customer")} if not project else None
     offer_templates = not project and await TaskTemplate.objects.aexists()
     form = ProjectForm(request.POST or None, instance=project, initial=initial, offer_templates=offer_templates)
     if request.method == "POST" and await sync_to_async(form.is_valid)():

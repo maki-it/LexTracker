@@ -73,7 +73,7 @@
   <input type="hidden" name="tab" value="{{ tab }}">
   {% for error in form.non_field_errors %}<div role="alert" class="alert alert-error">{{ error }}</div>{% endfor %}
 
-  <section class="card flex flex-col gap-4"{% if tab != "allgemein" %} hidden{% endif %}>
+  <section class="card flex flex-col gap-4"{% if tab != "general" %} hidden{% endif %}>
     <h2>Abrechnung</h2>
     {% include "core/_field.html" with field=form.default_hourly_rate %}
     {% include "core/_field.html" with field=form.time_rounding %}
@@ -82,7 +82,7 @@
     </p>
   </section>
 
-  <section class="card flex flex-col gap-4"{% if tab != "sicherheit" %} hidden{% endif %}>
+  <section class="card flex flex-col gap-4"{% if tab != "security" %} hidden{% endif %}>
     <h2>Anmeldung</h2>
     <div class="grid gap-3 sm:grid-cols-2">
       {% include "core/_field.html" with field=form.login_max_attempts %}
@@ -94,7 +94,7 @@
     </label>
   </section>
 
-  <section class="card flex flex-col gap-4" id="e-mail"{% if tab != "e-mail" %} hidden{% endif %}>
+  <section class="card flex flex-col gap-4" id="e-mail"{% if tab != "email" %} hidden{% endif %}>
     <div>
       <h2>E-Mail</h2>
       <p class="mt-1 text-sm text-muted">
@@ -161,7 +161,7 @@
     {% endfor %}
   </section>
 
-  <section class="card flex flex-col gap-4"{% if tab != "datensicherung" %} hidden{% endif %}>
+  <section class="card flex flex-col gap-4"{% if tab != "backup" %} hidden{% endif %}>
     <div>
       <h2>Datensicherung</h2>
       <p class="mt-1 text-sm text-muted">

@@ -54,10 +54,12 @@ class Kim(HttpUser):
         )
         self.csrf = self.client.cookies.get("csrftoken", "")
         if not _ids_cache:
-            start_form = self.client.get("/zeiten/timer/start/", headers=HTMX, name="/zeiten/timer/start/").text
+            start_form = self.client.get(
+                "/time-entries/timer/start/", headers=HTMX, name="/time-entries/timer/start/"
+            ).text
             _ids_cache["tasks"] = _ids(start_form, rf'<option value="{UUID}"')
-            _ids_cache["projects"] = _ids(self.client.get("/projekte/").text, rf'href="/projekte/{UUID}/"')
-            _ids_cache["customers"] = _ids(self.client.get("/kunden/").text, rf'href="/kunden/{UUID}/"')
+            _ids_cache["projects"] = _ids(self.client.get("/projects/").text, rf'href="/projects/{UUID}/"')
+            _ids_cache["customers"] = _ids(self.client.get("/customers/").text, rf'href="/customers/{UUID}/"')
         self.task_ids, self.projects, self.customers = (_ids_cache[k] for k in ("tasks", "projects", "customers"))
         # Once everyone is logged in, start counting afresh: logins are rare in real use.
         global _logged_in
@@ -81,34 +83,34 @@ class Kim(HttpUser):
     @task(6)
     def timer_badge(self) -> None:
         # The sidebar reloads it every minute in every open tab.
-        self.client.get("/zeiten/timer/", headers=HTMX, name="/zeiten/timer/")
+        self.client.get("/time-entries/timer/", headers=HTMX, name="/time-entries/timer/")
 
     @task(5)
     def week(self) -> None:
-        self.client.get("/zeiten/", name="/zeiten/")
+        self.client.get("/time-entries/", name="/time-entries/")
 
     @task(2)
     def older_week(self) -> None:
         day = date.today() - timedelta(weeks=random.randint(1, 100))
         year, week, _ = day.isocalendar()
-        self.client.get(f"/zeiten/?woche={year}-W{week:02d}", name="/zeiten/?woche=…")
+        self.client.get(f"/time-entries/?week={year}-W{week:02d}", name="/time-entries/?week=…")
 
     @task(3)
     def start_and_stop_timer(self) -> None:
         if not self.task_ids:
             return
-        self._post("/zeiten/timer/start/", {"task": random.choice(self.task_ids)}, headers=HTMX)
-        self._post("/zeiten/timer/stop/", headers=HTMX)
+        self._post("/time-entries/timer/start/", {"task": random.choice(self.task_ids)}, headers=HTMX)
+        self._post("/time-entries/timer/stop/", headers=HTMX)
 
     @task(2)
     def book_time(self) -> None:
         if not self.task_ids:
             return
-        self.client.get("/zeiten/neu/", name="/zeiten/neu/")
+        self.client.get("/time-entries/new/", name="/time-entries/new/")
         start = date.today() - timedelta(days=random.randint(0, 14))
         hour = random.randint(7, 17)
         self._post(
-            "/zeiten/neu/",
+            "/time-entries/new/",
             {
                 "task": random.choice(self.task_ids),
                 "started_at": f"{start}T{hour:02d}:00",
@@ -116,45 +118,45 @@ class Kim(HttpUser):
                 "description": "Lasttest",
                 "is_billable": "on",
             },
-            name="/zeiten/neu/ [POST]",
+            name="/time-entries/new/ [POST]",
         )
 
     @task(2)
     def customers_page(self) -> None:
-        self.client.get("/kunden/", name="/kunden/")
+        self.client.get("/customers/", name="/customers/")
 
     @task(1)
     def customer_search(self) -> None:
-        self.client.get(f"/kunden/?q={random.randint(1, 299):04d}", headers=HTMX, name="/kunden/?q=…")
+        self.client.get(f"/customers/?q={random.randint(1, 299):04d}", headers=HTMX, name="/customers/?q=…")
 
     @task(2)
     def projects_page(self) -> None:
-        self.client.get("/projekte/", name="/projekte/")
+        self.client.get("/projects/", name="/projects/")
 
     @task(2)
     def project_detail(self) -> None:
         if self.projects:
-            self.client.get(f"/projekte/{random.choice(self.projects)}/", name="/projekte/[id]/")
+            self.client.get(f"/projects/{random.choice(self.projects)}/", name="/projects/[id]/")
 
     @task(1)
     def billing(self) -> None:
-        self.client.get("/abrechnung/", name="/abrechnung/")
+        self.client.get("/billing/", name="/billing/")
 
     @task(1)
     def customer_billing(self) -> None:
         if self.customers:
-            self.client.get(f"/abrechnung/kunde/{random.choice(self.customers)}/", name="/abrechnung/kunde/[id]/")
+            self.client.get(f"/billing/customer/{random.choice(self.customers)}/", name="/billing/customer/[id]/")
 
     @task(1)
     def invoices(self) -> None:
-        self.client.get("/abrechnung/rechnungen/", name="/abrechnung/rechnungen/")
+        self.client.get("/billing/invoices/", name="/billing/invoices/")
 
     @task(1)
     def reports(self) -> None:
-        period = random.choice(["monat", "quartal", "jahr", "vorjahr"])
-        self.client.get(f"/auswertungen/?zeitraum={period}", name="/auswertungen/?zeitraum=…")
+        period = random.choice(["month", "quarter", "year", "last-year"])
+        self.client.get(f"/reports/?range={period}", name="/reports/?range=…")
 
     @task(1)
     def csv_export(self) -> None:
         if random.random() < 0.2:
-            self.client.get("/auswertungen/zeiten.csv?zeitraum=jahr", name="/auswertungen/zeiten.csv")
+            self.client.get("/reports/time-entries.csv?range=year", name="/reports/time-entries.csv")

@@ -120,12 +120,12 @@ def test_project_list_shows_active_projects_and_loads_more(logged_in, task):
 
     page = logged_in.get(reverse("projects:list")).text
     assert "P00" in page and "P23" in page and "P24" not in page and ">Fertig<" not in page
-    assert 'hx-get="?seite=2"' in page
+    assert 'hx-get="?page=2"' in page
 
-    rows = logged_in.get(reverse("projects:list"), {"status": "aktiv", "seite": 2}, headers=HTMX).text
+    rows = logged_in.get(reverse("projects:list"), {"status": "active", "page": 2}, headers=HTMX).text
     assert "P24" in rows and "<html" not in rows and "seite=3" not in rows
 
-    done = logged_in.get(reverse("projects:list"), {"status": "abgeschlossen"}).text
+    done = logged_in.get(reverse("projects:list"), {"status": "done"}).text
     assert ">Fertig<" in done and "P00" not in done
 
 
@@ -135,7 +135,7 @@ def test_customer_list_loads_more(logged_in):
     page = logged_in.get(reverse("customers:list")).text
     assert "Kunde 24" in page and "Kunde 25" not in page
 
-    rows = logged_in.get(reverse("customers:list"), {"seite": 2}, headers=HTMX).text
+    rows = logged_in.get(reverse("customers:list"), {"page": 2}, headers=HTMX).text
     assert "Kunde 25" in rows and "Kunde 29" in rows and "<html" not in rows
 
 
@@ -161,7 +161,7 @@ def test_invoice_list_filters_by_customer_and_sorts_newest_first(logged_in, task
     page = logged_in.get(reverse("billing:invoices")).text
     assert page.index("RE-3") < page.index("RE-2") < page.index("RE-1") < page.index("RE-9")
 
-    page = logged_in.get(reverse("billing:invoices"), {"kunde": other.pk}).text
+    page = logged_in.get(reverse("billing:invoices"), {"customer": other.pk}).text
     assert "RE-9" in page and "RE-1" not in page
 
 
@@ -180,7 +180,7 @@ def test_invoice_list_loads_more(logged_in, task):
     page = logged_in.get(reverse("billing:invoices")).text
     assert "RE-29" in page and "RE-05" in page and "RE-04" not in page
 
-    rows = logged_in.get(reverse("billing:invoices"), {"seite": 2}, headers=HTMX).text
+    rows = logged_in.get(reverse("billing:invoices"), {"page": 2}, headers=HTMX).text
     assert "RE-04" in rows and "RE-00" in rows and "<html" not in rows
 
 

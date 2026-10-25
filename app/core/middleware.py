@@ -13,12 +13,12 @@ ALWAYS_PUBLIC_PREFIXES = ("/health/", "/static/", "/mcp/", "/favicon.ico")
 PUBLIC_PREFIXES = (
     *ALWAYS_PUBLIC_PREFIXES,
     "/accounts/login/",
-    "/accounts/einladung/",
-    "/accounts/passwort/",
+    "/accounts/invite/",
+    "/accounts/password/",
     "/admin/",
 )
 # Open without a login only while no account exists.
-SETUP_PREFIX = "/einrichtung/"
+SETUP_PREFIX = "/setup/"
 
 
 @async_only_middleware

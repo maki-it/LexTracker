@@ -1,7 +1,7 @@
 """Lists that load the next rows while scrolling.
 
 The view loads one page; the last row of the table (``core/_more_rows.html``) asks for the next one as
-soon as it scrolls into view and is replaced by it. Such a request (htmx, ``?seite=2`` …) gets only the
+soon as it scrolls into view and is replaced by it. Such a request (htmx, ``?page=2`` …) gets only the
 rows, rendered by the list's rows template.
 """
 
@@ -27,7 +27,7 @@ class Page:
 
 def page_number(request: HttpRequest) -> int:
     try:
-        return max(1, int(request.GET.get("seite", 1)))
+        return max(1, int(request.GET.get("page", 1)))
     except ValueError:
         return 1
 
@@ -46,6 +46,6 @@ async def apage(request: HttpRequest, queryset: QuerySet) -> Page:
     next_query = ""
     if len(items) > size:
         params = request.GET.copy()
-        params["seite"] = number + 1
+        params["page"] = number + 1
         next_query = params.urlencode()
     return Page(items[:size], number, next_query)

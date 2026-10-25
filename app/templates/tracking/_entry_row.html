@@ -5,9 +5,9 @@
   <div class="min-w-0 flex-[1_1_16rem]">
     <div class="font-medium">{{ entry.task.name }}</div>
     <div class="truncate text-[13px] text-muted">
-      <a class="text-muted no-underline hover:text-ink hover:underline" href="?{{ filter_base }}kunde={{ entry.task.project.customer_id }}" title="Nur Einträge dieses Kunden">{{ entry.task.project.customer.name }}</a>
+      <a class="text-muted no-underline hover:text-ink hover:underline" href="?{{ filter_base }}customer={{ entry.task.project.customer_id }}" title="Nur Einträge dieses Kunden">{{ entry.task.project.customer.name }}</a>
       ·
-      <a class="text-muted no-underline hover:text-ink hover:underline" href="?{{ filter_base }}projekt={{ entry.task.project_id }}" title="Nur Einträge dieses Projekts">{{ entry.task.project.name }}</a>{% if entry.description %} – {{ entry.description }}{% endif %}
+      <a class="text-muted no-underline hover:text-ink hover:underline" href="?{{ filter_base }}project={{ entry.task.project_id }}" title="Nur Einträge dieses Projekts">{{ entry.task.project.name }}</a>{% if entry.description %} – {{ entry.description }}{% endif %}
     </div>
   </div>
   <div class="ml-auto flex items-center gap-3 sm:gap-4">

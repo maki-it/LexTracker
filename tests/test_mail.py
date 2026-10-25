@@ -340,7 +340,7 @@ def test_weekly_report_goes_to_users_who_booked_time(kim, task, smtp):
     assert "Di 20.10.  2:30" in text
     assert "ACME GmbH · Website: 2:30" in text
     assert "Stunden aller Benutzer: 4:30" in text
-    assert "https://zeit.example.de/auswertungen/?von=2026-10-19&bis=2026-10-25" in text
+    assert "https://zeit.example.de/reports/?from=2026-10-19&to=2026-10-25" in text
     assert "Überblick" not in reports["mia@example.de"].text
 
     # Only once per week.
@@ -510,7 +510,7 @@ def test_invitation_by_mail_can_be_turned_off(logged_in, kim, smtp):
     mia = User.objects.get(username="mia")
     page = logged_in.get(reverse("users:invite", args=[mia.pk])).text
     assert "Per E-Mail an mia@example.de schicken" in page
-    assert "https://zeit.example.de/accounts/einladung/" in page
+    assert "https://zeit.example.de/accounts/invite/" in page
     logged_in.post(reverse("users:invite", args=[mia.pk]))
     assert OutgoingMail.objects.get().to == "mia@example.de"
 

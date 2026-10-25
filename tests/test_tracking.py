@@ -60,7 +60,7 @@ def test_create_entry_manually(logged_in, user, task):
     )
 
     entry = TimeEntry.objects.get()
-    assert response.url == reverse("tracking:list") + "?woche=2026-W43"
+    assert response.url == reverse("tracking:list") + "?week=2026-W43"
     assert entry.duration == timedelta(hours=2, minutes=30)
     assert entry.user == user
 
@@ -87,7 +87,7 @@ def test_week_view_groups_entries_and_sums(logged_in, user, task):
             },
         )
 
-    response = logged_in.get(reverse("tracking:list"), {"woche": "2026-W43"})
+    response = logged_in.get(reverse("tracking:list"), {"week": "2026-W43"})
 
     assert "7:00 h" in response.text  # week
     assert "3:00 h" in response.text  # Monday

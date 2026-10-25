@@ -29,7 +29,9 @@ def test_a_new_instance_is_not_saved_although_it_has_a_key():
     assert new.pk is not None and new._state.adding
 
 
-@pytest.mark.parametrize("path", ["/projekte/1/", "/kunden/1/", "/zeiten/1/", "/benutzer/1/", "/abrechnung/kunde/1/"])
+@pytest.mark.parametrize(
+    "path", ["/projects/1/", "/customers/1/", "/time-entries/1/", "/users/1/", "/billing/customer/1/"]
+)
 def test_old_numeric_urls_are_not_found(client, user, path):
     client.force_login(user)
     assert client.get(path).status_code == 404
@@ -43,7 +45,7 @@ def test_a_valid_uuid_of_nothing_is_not_found(client, user):
 def test_filters_ignore_ids_that_are_not_uuids(client, user, task):
     client.force_login(user)
     for url in ("tracking:list", "billing:invoices", "reports:overview", "customers:list"):
-        for query in ({"kunde": "5"}, {"projekt": "5"}, {"kategorie": "5"}, {"kunde": "x" * 40}):
+        for query in ({"customer": "5"}, {"project": "5"}, {"category": "5"}, {"customer": "x" * 40}):
             assert client.get(reverse(url), query).status_code == 200
 
 
@@ -52,8 +54,8 @@ def test_filter_by_customer_and_project(client, user, task):
     customer, project = task.project.customer, task.project
     TimeEntry.objects.create(user=user, task=task)
 
-    assert customer.name in client.get(reverse("tracking:list"), {"kunde": customer.pk}).text
-    assert project.name in client.get(reverse("tracking:list"), {"projekt": project.pk}).text
+    assert customer.name in client.get(reverse("tracking:list"), {"customer": customer.pk}).text
+    assert project.name in client.get(reverse("tracking:list"), {"project": project.pk}).text
 
 
 @pytest.mark.parametrize(

@@ -29,19 +29,19 @@
     <input type="search" name="q" value="{{ query }}" placeholder="Name, Nummer, E-Mail oder Notiz suchen" aria-label="Kunden suchen" class="input max-w-sm"
            hx-get="{% url 'customers:list' %}" hx-trigger="input changed delay:250ms, search" hx-include="closest form"
            hx-target="#customer-list" hx-select="#customer-list" hx-swap="outerHTML" hx-push-url="true">
-    {% if ansicht %}<input type="hidden" name="ansicht" value="{{ ansicht }}">{% endif %}
-    {% if category %}<input type="hidden" name="kategorie" value="{{ category }}">{% endif %}
+    {% if view_param %}<input type="hidden" name="view" value="{{ view_param }}">{% endif %}
+    {% if category %}<input type="hidden" name="category" value="{{ category }}">{% endif %}
     <noscript><button type="submit" class="btn">Suchen</button></noscript>
   </form>
 </div>
 {# Reloads itself when an import has run in the meantime, e.g. the automatic one; see customer_list. #}
 <div id="customer-list" class="flex flex-col gap-4"
-     hx-get="{% url 'customers:list' %}?{% if list_query %}{{ list_query }}&{% endif %}seit={{ synced_marker|urlencode }}"
+     hx-get="{% url 'customers:list' %}?{% if list_query %}{{ list_query }}&{% endif %}since={{ synced_marker|urlencode }}"
      hx-trigger="every 30s" hx-select="#customer-list" hx-swap="outerHTML">
   <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
     <nav aria-label="Aktive oder archivierte Kunden" class="flex flex-wrap gap-1.5">
       {% for key, label, count, link in view_links %}
-      <a href="?{{ link }}" class="pill gap-1.5{% if view == key %} pill-active{% endif %}">{% if key == "archiviert" %}{% icon "archive" size=14 %}{% endif %}{{ label }}<span class="text-muted tabular-nums">{{ count }}</span></a>
+      <a href="?{{ link }}" class="pill gap-1.5{% if view == key %} pill-active{% endif %}">{% if key == "archived" %}{% icon "archive" size=14 %}{% endif %}{{ label }}<span class="text-muted tabular-nums">{{ count }}</span></a>
       {% endfor %}
     </nav>
     {% if category_links %}

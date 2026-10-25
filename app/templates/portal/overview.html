@@ -41,7 +41,7 @@
         {% for project in projects %}
         <tr>
           <td class="w-full font-medium">
-            {% if user.portal_entries %}<a href="{% url 'portal:entries' %}?projekt={{ project.pk }}&zeitraum=jahr" class="text-ink no-underline hover:underline">{{ project.name }}</a>{% else %}{{ project.name }}{% endif %}
+            {% if user.portal_entries %}<a href="{% url 'portal:entries' %}?project={{ project.pk }}&range=year" class="text-ink no-underline hover:underline">{{ project.name }}</a>{% else %}{{ project.name }}{% endif %}
             {% if project.end_date %}<div class="text-[13px] font-normal text-muted">bis {{ project.end_date|date:date_format }}</div>{% endif %}
           </td>
           <td><span class="badge{% if project.status == 'active' %} badge-primary{% elif project.status == 'done' %} badge-success{% endif %}">{{ project.get_status_display }}</span></td>

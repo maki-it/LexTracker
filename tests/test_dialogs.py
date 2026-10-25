@@ -10,7 +10,7 @@ from tracking.models import TimeEntry
 
 pytestmark = pytest.mark.django_db
 
-DIALOG = {"HX-Request": "true", "HX-Target": "dialog-body", "HX-Current-URL": "http://testserver/zeiten/"}
+DIALOG = {"HX-Request": "true", "HX-Target": "dialog-body", "HX-Current-URL": "http://testserver/time-entries/"}
 
 
 @pytest.fixture
@@ -117,10 +117,10 @@ def test_customer_list_archive_filter(logged_in):
     assert "Aktiv GmbH" in response.text and "Alt AG" not in response.text
     assert "Archiviert" in response.text
 
-    response = logged_in.get(url, {"ansicht": "archiviert"})
+    response = logged_in.get(url, {"view": "archived"})
     assert "Alt AG" in response.text and "Aktiv GmbH" not in response.text
 
-    response = logged_in.get(url, {"ansicht": "alle"})
+    response = logged_in.get(url, {"view": "all"})
     assert "Alt AG" in response.text and "Aktiv GmbH" in response.text
 
 
@@ -143,23 +143,23 @@ def test_entries_filter_by_customer_and_project(logged_in, entry, user):
     for url in (reverse("core:dashboard"), reverse("tracking:list")):
         text = logged_in.get(url).text
         assert "– Eins" in text and "– Zwei" in text
-        assert f"kunde={project.customer_id}" in text
+        assert f"customer={project.customer_id}" in text
 
-        text = logged_in.get(url, {"kunde": other_customer.pk}).text
+        text = logged_in.get(url, {"customer": other_customer.pk}).text
         assert "Gefiltert nach" in text
         assert "– Zwei" in text and "– Eins" not in text
 
-        text = logged_in.get(url, {"projekt": project.pk}).text
+        text = logged_in.get(url, {"project": project.pk}).text
         assert "ACME GmbH · Website" in text
         assert "– Eins" in text and "– Zwei" not in text
 
 
 def test_account_settings_open_in_the_dialog(logged_in):
     page = logged_in.get(reverse("core:dashboard")).text
-    assert 'hx-get="/konto/" hx-target="#dialog-body"' in page
+    assert 'hx-get="/account/" hx-target="#dialog-body"' in page
 
     response = logged_in.get(reverse("account:settings"), headers=DIALOG)
-    assert 'id="sidebar"' not in response.text and 'action="/konto/"' in response.text
+    assert 'id="sidebar"' not in response.text and 'action="/account/"' in response.text
 
 
 def test_sidebar_timer_comes_with_the_page(logged_in, entry):

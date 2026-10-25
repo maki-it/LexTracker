@@ -20,7 +20,7 @@ from lexware import credentials
 from lexware.client import LexwareError, client_from_settings
 
 # The archive filter on the customer list: key in the URL, label.
-VIEWS = {"aktiv": "Aktiv", "archiviert": "Archiviert", "alle": "Alle"}
+VIEWS = {"active": "Aktiv", "archived": "Archiviert", "all": "Alle"}
 
 
 def _query_string(**params) -> str:
@@ -28,11 +28,11 @@ def _query_string(**params) -> str:
 
 
 async def _customer_list_context(request: HttpRequest) -> dict:
-    view = request.GET.get("ansicht", "aktiv")
+    view = request.GET.get("view", "active")
     if view not in VIEWS:
-        view = "aktiv"
+        view = "active"
     query = request.GET.get("q", "").strip()
-    category = parse_uuid(request.GET.get("kategorie", ""))
+    category = parse_uuid(request.GET.get("category", ""))
 
     customers = Customer.objects.prefetch_related("categories")
     if query:
@@ -45,16 +45,16 @@ async def _customer_list_context(request: HttpRequest) -> dict:
     if category:
         customers = customers.filter(categories=category)
     counts = await customers.aaggregate(
-        aktiv=Count("pk", filter=Q(is_archived=False), distinct=True),
-        archiviert=Count("pk", filter=Q(is_archived=True), distinct=True),
-        alle=Count("pk", distinct=True),
+        active=Count("pk", filter=Q(is_archived=False), distinct=True),
+        archived=Count("pk", filter=Q(is_archived=True), distinct=True),
+        all=Count("pk", distinct=True),
     )
-    if view == "aktiv":
+    if view == "active":
         customers = customers.filter(is_archived=False)
-    elif view == "archiviert":
+    elif view == "archived":
         customers = customers.filter(is_archived=True)
 
-    ansicht = "" if view == "aktiv" else view
+    view_param = "" if view == "active" else view
     app_settings = await AppSettings.aload()
     return {
         "page": await apage(request, customers.order_by("is_archived", "name")),
@@ -63,15 +63,15 @@ async def _customer_list_context(request: HttpRequest) -> dict:
         "view": view,
         # Links keep the other filters.
         "view_links": [
-            (key, label, counts[key], _query_string(ansicht="" if key == "aktiv" else key, q=query, kategorie=category))
+            (key, label, counts[key], _query_string(view="" if key == "active" else key, q=query, category=category))
             for key, label in VIEWS.items()
         ],
         "category_links": [
-            (c, _query_string(ansicht=ansicht, q=query, kategorie=c.pk)) async for c in Category.objects.all()
+            (c, _query_string(view=view_param, q=query, category=c.pk)) async for c in Category.objects.all()
         ],
-        "all_categories_link": _query_string(ansicht=ansicht, q=query),
-        "list_query": _query_string(ansicht=ansicht, q=query, kategorie=category),
-        "ansicht": ansicht,
+        "all_categories_link": _query_string(view=view_param, q=query),
+        "list_query": _query_string(view=view_param, q=query, category=category),
+        "view_param": view_param,
         "lexware_configured": await credentials.ais_configured(),
         "app_settings": app_settings,
         "synced_marker": _synced_marker(app_settings),
@@ -86,7 +86,7 @@ def _synced_marker(app_settings: AppSettings) -> str:
 @require_GET
 async def customer_list(request: HttpRequest) -> HttpResponse:
     # The list asks every 30 seconds with the time of the import it shows. Nothing new: no content, htmx keeps it.
-    if "seit" in request.GET and request.GET["seit"] == _synced_marker(await AppSettings.aload()):
+    if "since" in request.GET and request.GET["since"] == _synced_marker(await AppSettings.aload()):
         return HttpResponse(status=204)
     context = await _customer_list_context(request)
     if wants_rows(request):

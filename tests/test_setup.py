@@ -43,7 +43,7 @@ def accept_key(monkeypatch):
     monkeypatch.setattr(credentials, "acheck", check)
 
 
-@pytest.mark.parametrize("path", ["/", "/kunden/", "/accounts/login/", "/einstellungen/"])
+@pytest.mark.parametrize("path", ["/", "/customers/", "/accounts/login/", "/settings/"])
 def test_fresh_instance_leads_to_setup(client, path):
     response = client.get(path)
     assert response.status_code == 302

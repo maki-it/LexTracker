@@ -14,15 +14,15 @@
 <div class="flex flex-col gap-3">
   <nav aria-label="Zeitraum" class="flex flex-wrap gap-1.5">
     {% for preset in presets %}
-    <a href="?zeitraum={{ preset.key }}{{ customer_query }}" class="pill{% if preset.key == r.range.key %} pill-active{% endif %}">{{ preset.label }}</a>
+    <a href="?range={{ preset.key }}{{ customer_query }}" class="pill{% if preset.key == r.range.key %} pill-active{% endif %}">{{ preset.label }}</a>
     {% endfor %}
   </nav>
   <form method="get" class="flex flex-wrap items-end gap-3"
         hx-get="{% url 'reports:overview' %}" hx-trigger="change" hx-target="main" hx-select="main" hx-swap="outerHTML" hx-push-url="true">
-    <label class="field"><span>Von</span><input type="date" name="von" value="{{ r.range.start|date:'Y-m-d' }}" class="input"></label>
-    <label class="field"><span>Bis</span><input type="date" name="bis" value="{{ r.range.end|date:'Y-m-d' }}" class="input"></label>
+    <label class="field"><span>Von</span><input type="date" name="from" value="{{ r.range.start|date:'Y-m-d' }}" class="input"></label>
+    <label class="field"><span>Bis</span><input type="date" name="to" value="{{ r.range.end|date:'Y-m-d' }}" class="input"></label>
     <label class="field min-w-56"><span>Kunde</span>
-      <select name="kunde" class="input">
+      <select name="customer" class="input">
         <option value="">Alle Kunden</option>
         {% for c in customers %}<option value="{{ c.pk }}"{% if c.pk == customer_id %} selected{% endif %}>{{ c.name }}</option>{% endfor %}
       </select>
@@ -108,7 +108,7 @@
       <tbody>
         {% for row in r.customers %}
         <tr>
-          <td class="w-full font-medium"><a class="text-ink no-underline hover:underline" href="?{{ range_query }}&kunde={{ row.obj.pk }}" title="Nur diesen Kunden auswerten">{{ row.obj.name }}</a></td>
+          <td class="w-full font-medium"><a class="text-ink no-underline hover:underline" href="?{{ range_query }}&customer={{ row.obj.pk }}" title="Nur diesen Kunden auswerten">{{ row.obj.name }}</a></td>
           <td class="text-right whitespace-nowrap tabular-nums">{{ row.total|hours:duration_format }} h</td>
           <td class="text-right whitespace-nowrap tabular-nums">{{ row.billable|hours:duration_format }} h</td>
           <td class="text-right whitespace-nowrap tabular-nums{% if not row.unbilled %} text-muted{% endif %}">{{ row.unbilled|hours:duration_format }} h</td>

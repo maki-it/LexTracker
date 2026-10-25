@@ -9,9 +9,9 @@
   </div>
   <div class="toolbar">
     <div class="btn-group">
-      <a href="?woche={{ prev_week }}{{ filter_query }}" class="btn btn-icon" aria-label="Vorherige Woche">{% icon "chevron-left" %}</a>
+      <a href="?week={{ prev_week }}{{ filter_query }}" class="btn btn-icon" aria-label="Vorherige Woche">{% icon "chevron-left" %}</a>
       <a href="{% url 'tracking:list' %}{% if filter_query %}?{{ filter_query|slice:'1:' }}{% endif %}" class="btn">Diese Woche</a>
-      <a href="?woche={{ next_week }}{{ filter_query }}" class="btn btn-icon" aria-label="Nächste Woche">{% icon "chevron-right" %}</a>
+      <a href="?week={{ next_week }}{{ filter_query }}" class="btn btn-icon" aria-label="Nächste Woche">{% icon "chevron-right" %}</a>
     </div>
     <a {% dialog_link "tracking:create" %} class="btn btn-primary">{% icon "plus" %}Zeit erfassen</a>
   </div>

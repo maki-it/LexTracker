@@ -95,7 +95,7 @@ def test_backup_command_keeps_the_configured_number(settings, capsys):
 
 def test_settings_page_saves_the_backup_settings(client, settings, user):
     client.force_login(user)
-    page = client.get("/einstellungen/")
+    page = client.get("/settings/")
     assert "Datensicherung" in page.content.decode()
     assert str(settings.BACKUP_DIR) in page.content.decode()
 
@@ -113,11 +113,11 @@ def test_settings_page_saves_the_backup_settings(client, settings, user):
         "overdue_notice": "admins",
         "overdue_notice_days": 3,
     }
-    assert client.post("/einstellungen/", data).status_code == 302
+    assert client.post("/settings/", data).status_code == 302
     app_settings = AppSettings.load()
     assert (app_settings.backup_enabled, app_settings.backup_time, app_settings.backup_keep) == (False, time(4, 30), 7)
 
-    assert client.post("/einstellungen/", data | {"backup_keep": 0}).status_code == 200
+    assert client.post("/settings/", data | {"backup_keep": 0}).status_code == 200
 
 
 def test_copy_made_before_a_restore_does_not_count_as_the_daily_backup():
@@ -134,35 +134,35 @@ def admin(client, user):
 
 
 def test_backup_page_lists_downloads_and_deletes(admin):
-    admin.post("/einstellungen/sicherungen/neu/")
+    admin.post("/settings/backups/new/")
     [item] = backup.listing()
-    page = admin.get("/einstellungen/sicherungen/")
+    page = admin.get("/settings/backups/")
     assert item.name in page.text
 
-    assert admin.post(f"/einstellungen/sicherungen/{item.name}/loeschen/").status_code == 302
+    assert admin.post(f"/settings/backups/{item.name}/delete/").status_code == 302
     assert backup.listing() == []
 
 
 async def test_backup_download(async_client, user):
     await async_client.aforce_login(user)
     path = await sync_to_async(backup.create_backup)(5)
-    download = await async_client.get(f"/einstellungen/sicherungen/{path.name}/")
+    download = await async_client.get(f"/settings/backups/{path.name}/")
     assert download["Content-Disposition"] == f'attachment; filename="{path.name}"'
     assert b"".join([chunk async for chunk in download.streaming_content]) == path.read_bytes()
 
 
 def test_only_backups_from_the_folder_can_be_reached(admin, settings):
     settings.BACKUP_DIR.mkdir(parents=True)
-    assert admin.get("/einstellungen/sicherungen/db.sqlite3/").status_code == 404
-    assert admin.get("/einstellungen/sicherungen/..%2Fdb.sqlite3/").status_code == 404
-    assert admin.post("/einstellungen/sicherungen/db-2026-10-22-030000.sqlite3/loeschen/").status_code == 404
+    assert admin.get("/settings/backups/db.sqlite3/").status_code == 404
+    assert admin.get("/settings/backups/..%2Fdb.sqlite3/").status_code == 404
+    assert admin.post("/settings/backups/db-2026-10-22-030000.sqlite3/delete/").status_code == 404
 
 
 def test_restore_replaces_the_data_and_keeps_the_previous_state(admin):
     Customer.objects.create(name="ACME GmbH")
     saved = backup.create_backup(5, local(20, 3))
     Customer.objects.create(name="Neu AG")
-    url = f"/einstellungen/sicherungen/{saved.name}/wiederherstellen/"
+    url = f"/settings/backups/{saved.name}/restore/"
 
     unconfirmed = admin.post(url)
     assert "Bitte bestätige" in unconfirmed.text
@@ -174,7 +174,7 @@ def test_restore_replaces_the_data_and_keeps_the_previous_state(admin):
     with sqlite3.connect(before.path) as db:
         assert db.execute("select count(*) from customers_customer").fetchone() == (2,)
     # Still signed in, since the account exists in the backup.
-    assert admin.get("/einstellungen/sicherungen/").status_code == 200
+    assert admin.get("/settings/backups/").status_code == 200
 
 
 def test_restore_refuses_files_that_are_not_a_lextracker_database(admin, settings):
@@ -187,7 +187,7 @@ def test_restore_refuses_files_that_are_not_a_lextracker_database(admin, setting
     Customer.objects.create(name="ACME GmbH")
 
     for path in (garbage, foreign):
-        response = admin.post(f"/einstellungen/sicherungen/{path.name}/wiederherstellen/", {"bestaetigt": "1"})
+        response = admin.post(f"/settings/backups/{path.name}/restore/", {"bestaetigt": "1"})
         assert response.status_code == 200
         assert 'role="alert"' in response.text
     assert Customer.objects.count() == 1
@@ -198,12 +198,12 @@ def test_backups_are_for_admins_only(client, user):
     user.role = user.Role.EMPLOYEE
     user.save()
     client.force_login(user)
-    assert client.get("/einstellungen/sicherungen/").status_code == 403
-    assert client.post("/einstellungen/sicherungen/neu/").status_code == 403
+    assert client.get("/settings/backups/").status_code == 403
+    assert client.post("/settings/backups/new/").status_code == 403
 
 
 def upload(admin, content: bytes, name: str = "db.sqlite3"):
-    return admin.post("/einstellungen/sicherungen/hochladen/", {"datei": SimpleUploadedFile(name, content)})
+    return admin.post("/settings/backups/upload/", {"datei": SimpleUploadedFile(name, content)})
 
 
 def test_upload_stores_a_backup_from_elsewhere_and_it_can_be_restored(admin):
@@ -218,11 +218,11 @@ def test_upload_stores_a_backup_from_elsewhere_and_it_can_be_restored(admin):
     [item] = backup.listing()
     assert item.uploaded and not item.before_restore
     assert item.name.endswith("-hochgeladen.sqlite3")
-    assert "Hochgeladen" in admin.get("/einstellungen/sicherungen/").text
+    assert "Hochgeladen" in admin.get("/settings/backups/").text
     # Uploading does not touch the data yet.
     assert Customer.objects.count() == 2
 
-    admin.post(f"/einstellungen/sicherungen/{item.name}/wiederherstellen/", {"bestaetigt": "1"})
+    admin.post(f"/settings/backups/{item.name}/restore/", {"bestaetigt": "1"})
     assert list(Customer.objects.values_list("name", flat=True)) == ["ACME GmbH"]
 
 
@@ -278,7 +278,7 @@ def test_upload_refuses_files_it_could_not_restore(admin, settings, tmp_path, ma
 def test_upload_refuses_large_files_and_missing_ones(admin, settings):
     settings.BACKUP_UPLOAD_MAX_SIZE = 10
     assert "größer als" in upload(admin, b"x" * 11).text
-    assert "Bitte wähle" in admin.post("/einstellungen/sicherungen/hochladen/").text
+    assert "Bitte wähle" in admin.post("/settings/backups/upload/").text
     assert not settings.BACKUP_DIR.exists() or list(settings.BACKUP_DIR.iterdir()) == []
 
 
@@ -295,7 +295,7 @@ def test_upload_is_for_admins_only(client, user):
     user.role = user.Role.EMPLOYEE
     user.save()
     client.force_login(user)
-    assert client.get("/einstellungen/sicherungen/hochladen/").status_code == 403
+    assert client.get("/settings/backups/upload/").status_code == 403
     assert upload(client, b"x").status_code == 403
 
 
@@ -317,40 +317,40 @@ async def call_limited(path: str, headers: list) -> tuple[list, bool]:
 
 async def test_oversized_uploads_are_refused_before_django_reads_them(settings):
     settings.BACKUP_UPLOAD_MAX_SIZE = 1000
-    url = "/einstellungen/sicherungen/hochladen/"
+    url = "/settings/backups/upload/"
     small = str(1000 + FORM_OVERHEAD).encode()
     big = str(1001 + FORM_OVERHEAD).encode()
     assert await call_limited(url, [(b"content-length", small)]) == ([], True)
     assert await call_limited(url, [(b"content-length", big)]) == ([413], False)
     assert await call_limited(url, []) == ([413], False)
     # Other pages are not affected.
-    assert await call_limited("/kunden/", [(b"content-length", big)]) == ([], True)
+    assert await call_limited("/customers/", [(b"content-length", big)]) == ([], True)
 
 
 def test_settings_page_highlights_the_backup_count_and_newest_copy(client, settings, user, tmp_path):
     settings.BACKUP_DIR = tmp_path
     client.force_login(user)
-    html = client.get("/einstellungen/").content.decode()
+    html = client.get("/settings/").content.decode()
     assert "Noch keine Kopie vorhanden" in html
-    assert 'href="/einstellungen/sicherungen/" class="btn btn-primary"' in html
+    assert 'href="/settings/backups/" class="btn btn-primary"' in html
 
     (tmp_path / "db-2026-10-01-030000.sqlite3").write_bytes(b"x")
     (tmp_path / "db-2026-10-02-030000.sqlite3").write_bytes(b"x")
-    html = client.get("/einstellungen/").content.decode()
+    html = client.get("/settings/").content.decode()
     assert "2 Kopien vorhanden" in html
     assert "Letzte Sicherung: 02.10.2026" in html
 
 
 def test_settings_page_shows_one_tab_and_keeps_it_after_saving(client, user):
     client.force_login(user)
-    html = client.get("/einstellungen/", {"tab": "sicherheit"}).content.decode()
-    assert 'href="?tab=sicherheit" class="tab tab-active"' in html
+    html = client.get("/settings/", {"tab": "security"}).content.decode()
+    assert 'href="?tab=security" class="tab tab-active"' in html
     # The other tabs stay in the form (so one save posts everything) and are only hidden.
     assert "backup_keep" in html
     assert 'id="e-mail" hidden>' in html
 
     data = {
-        "tab": "datensicherung",
+        "tab": "backup",
         "time_rounding": 0,
         "login_max_attempts": 5,
         "login_lockout_minutes": 15,
@@ -364,10 +364,10 @@ def test_settings_page_shows_one_tab_and_keeps_it_after_saving(client, user):
         "overdue_notice": "admins",
         "overdue_notice_days": 3,
     }
-    assert client.post("/einstellungen/", data)["Location"] == "/einstellungen/?tab=datensicherung"
-    page = client.post("/einstellungen/", data | {"tab": "allgemein", "backup_keep": 0})
+    assert client.post("/settings/", data)["Location"] == "/settings/?tab=backup"
+    page = client.post("/settings/", data | {"tab": "general", "backup_keep": 0})
     assert page.status_code == 200
-    assert 'href="?tab=datensicherung" class="tab tab-active"' in page.content.decode()
+    assert 'href="?tab=backup" class="tab tab-active"' in page.content.decode()
 
 
 def test_backup_before_upgrade_is_read_while_a_migration_holds_the_write_lock(tmp_path):

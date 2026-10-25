@@ -9,7 +9,7 @@
       <input type="search" name="q" value="{{ query }}" placeholder="Kunde oder Rechnungsnummer suchen" aria-label="Rechnungen suchen" class="input max-w-sm"
              hx-get="{% url 'billing:invoices' %}" hx-trigger="input changed delay:250ms, search" hx-include="closest form"
              hx-target="#invoice-table" hx-select="#invoice-table" hx-swap="outerHTML" hx-push-url="true">
-      <select name="kunde" class="input max-w-xs" aria-label="Nach Kunde filtern"
+      <select name="customer" class="input max-w-xs" aria-label="Nach Kunde filtern"
               hx-get="{% url 'billing:invoices' %}" hx-trigger="change" hx-include="closest form"
               hx-target="#invoice-table" hx-select="#invoice-table" hx-swap="outerHTML" hx-push-url="true">
         <option value="">Alle Kunden</option>
@@ -32,9 +32,9 @@
     {% endif %}
   </div>
   <nav aria-label="Nach Status filtern" class="flex flex-wrap gap-1.5">
-    <a href="?{% if query %}q={{ query|urlencode }}{% endif %}{% if customer_id %}&kunde={{ customer_id }}{% endif %}" class="pill{% if not status %} pill-active{% endif %}">Alle</a>
+    <a href="?{% if query %}q={{ query|urlencode }}{% endif %}{% if customer_id %}&customer={{ customer_id }}{% endif %}" class="pill{% if not status %} pill-active{% endif %}">Alle</a>
     {% for key, label, count in filters %}
-    <a href="?status={{ key }}{% if query %}&q={{ query|urlencode }}{% endif %}{% if customer_id %}&kunde={{ customer_id }}{% endif %}" class="pill gap-1.5{% if status == key %} pill-active{% endif %}">{{ label }}<span class="text-muted tabular-nums">{{ count }}</span></a>
+    <a href="?status={{ key }}{% if query %}&q={{ query|urlencode }}{% endif %}{% if customer_id %}&customer={{ customer_id }}{% endif %}" class="pill gap-1.5{% if status == key %} pill-active{% endif %}">{{ label }}<span class="text-muted tabular-nums">{{ count }}</span></a>
     {% endfor %}
   </nav>
 </div>

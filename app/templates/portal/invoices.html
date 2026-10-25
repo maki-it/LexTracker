@@ -12,22 +12,22 @@
 {# Status and range filters keep each other: every link carries the other one along. #}
 <div class="flex flex-col gap-3">
   <nav aria-label="Status" class="flex flex-wrap gap-1.5">
-    <a href="?{% if range.key %}zeitraum={{ range.key }}{% elif range %}von={{ range.start|date:'Y-m-d' }}&bis={{ range.end|date:'Y-m-d' }}{% endif %}" class="pill{% if not status %} pill-active{% endif %}">Alle</a>
+    <a href="?{% if range.key %}range={{ range.key }}{% elif range %}from={{ range.start|date:'Y-m-d' }}&to={{ range.end|date:'Y-m-d' }}{% endif %}" class="pill{% if not status %} pill-active{% endif %}">Alle</a>
     {% for key, label in status_filters %}
-    <a href="?status={{ key }}{% if range.key %}&zeitraum={{ range.key }}{% elif range %}&von={{ range.start|date:'Y-m-d' }}&bis={{ range.end|date:'Y-m-d' }}{% endif %}" class="pill{% if status == key %} pill-active{% endif %}">{{ label }}</a>
+    <a href="?status={{ key }}{% if range.key %}&range={{ range.key }}{% elif range %}&from={{ range.start|date:'Y-m-d' }}&to={{ range.end|date:'Y-m-d' }}{% endif %}" class="pill{% if status == key %} pill-active{% endif %}">{{ label }}</a>
     {% endfor %}
   </nav>
   <nav aria-label="Zeitraum" class="flex flex-wrap gap-1.5">
     <a href="?{% if status %}status={{ status }}{% endif %}" class="pill{% if not range %} pill-active{% endif %}">Gesamt</a>
     {% for preset in presets %}
-    <a href="?zeitraum={{ preset.key }}{% if status %}&status={{ status }}{% endif %}" class="pill{% if range and preset.key == range.key %} pill-active{% endif %}">{{ preset.label }}</a>
+    <a href="?range={{ preset.key }}{% if status %}&status={{ status }}{% endif %}" class="pill{% if range and preset.key == range.key %} pill-active{% endif %}">{{ preset.label }}</a>
     {% endfor %}
   </nav>
   <form method="get" class="flex flex-wrap items-end gap-3"
         hx-get="{% url 'portal:invoices' %}" hx-trigger="change" hx-target="main" hx-select="main" hx-swap="outerHTML" hx-push-url="true">
     {% if status %}<input type="hidden" name="status" value="{{ status }}">{% endif %}
-    <label class="field"><span>Rechnungsdatum von</span><input type="date" name="von" value="{{ range.start|date:'Y-m-d' }}" class="input"></label>
-    <label class="field"><span>bis</span><input type="date" name="bis" value="{{ range.end|date:'Y-m-d' }}" class="input"></label>
+    <label class="field"><span>Rechnungsdatum von</span><input type="date" name="from" value="{{ range.start|date:'Y-m-d' }}" class="input"></label>
+    <label class="field"><span>bis</span><input type="date" name="to" value="{{ range.end|date:'Y-m-d' }}" class="input"></label>
     <noscript><button type="submit" class="btn">Anzeigen</button></noscript>
   </form>
 </div>
@@ -46,7 +46,7 @@
     <tbody>
       {% for invoice in invoices %}
       <tr>
-        <td class="whitespace-nowrap tabular-nums">{% if invoice.voucher_number and invoice.lexware_id %}<a class="hover:underline" href="{% url 'portal:invoice_pdf' invoice.voucher_number %}?ansehen=1" target="_blank" rel="noopener">{{ invoice.voucher_number }}</a>{% else %}{{ invoice.voucher_number|default:"–" }}{% endif %}</td>
+        <td class="whitespace-nowrap tabular-nums">{% if invoice.voucher_number and invoice.lexware_id %}<a class="hover:underline" href="{% url 'portal:invoice_pdf' invoice.voucher_number %}?inline=1" target="_blank" rel="noopener">{{ invoice.voucher_number }}</a>{% else %}{{ invoice.voucher_number|default:"–" }}{% endif %}</td>
         <td class="whitespace-nowrap tabular-nums">{{ invoice.voucher_date|default:invoice.created_at|date:date_format }}</td>
         <td class="whitespace-nowrap text-muted tabular-nums">{{ invoice.period_start|date:date_format }}{% if invoice.period_end != invoice.period_start %} – {{ invoice.period_end|date:date_format }}{% endif %}</td>
         <td class="w-full whitespace-nowrap">

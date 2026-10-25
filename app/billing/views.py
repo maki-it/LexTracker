@@ -40,12 +40,12 @@ async def _get_customer(pk: UUID) -> Customer:
 
 # The status filters on the invoice list. "Offen" includes payments that are on their way.
 STATUS_FILTERS = {
-    "entwurf": ("Entwürfe", [Invoice.Status.DRAFT]),
-    "offen": ("Offen", [Invoice.Status.OPEN, Invoice.Status.TRANSFERRED, Invoice.Status.SEPADEBIT]),
-    "ueberfaellig": ("Überfällig", [Invoice.Status.OVERDUE]),
-    "bezahlt": ("Bezahlt", [Invoice.Status.PAID]),
-    "storniert": ("Storniert", [Invoice.Status.VOIDED]),
-    "geloescht": ("In Lexware gelöscht", [Invoice.Status.DELETED]),
+    "draft": ("Entwürfe", [Invoice.Status.DRAFT]),
+    "open": ("Offen", [Invoice.Status.OPEN, Invoice.Status.TRANSFERRED, Invoice.Status.SEPADEBIT]),
+    "overdue": ("Überfällig", [Invoice.Status.OVERDUE]),
+    "paid": ("Bezahlt", [Invoice.Status.PAID]),
+    "voided": ("Storniert", [Invoice.Status.VOIDED]),
+    "deleted": ("In Lexware gelöscht", [Invoice.Status.DELETED]),
 }
 
 
@@ -60,7 +60,7 @@ async def _invoice_counts() -> dict[str, int]:
 async def overview(request: HttpRequest) -> HttpResponse:
     """Customers with time that has not been billed yet."""
     query = request.GET.get("q", "").strip()
-    show_all = request.GET.get("alle") == "1"
+    show_all = request.GET.get("all") == "1"
     customers = (
         Customer.objects.filter(is_archived=False)
         .annotate(
@@ -91,7 +91,7 @@ async def invoice_list(request: HttpRequest) -> HttpResponse:
     status = request.GET.get("status", "")
     if status not in STATUS_FILTERS:
         status = ""
-    customer_id = parse_uuid(request.GET.get("kunde", ""))
+    customer_id = parse_uuid(request.GET.get("customer", ""))
     # Newest first: by invoice date (the creation date until Lexware has one), then by number.
     invoices = (
         Invoice.objects.select_related("customer")
@@ -153,7 +153,7 @@ async def invoice_release(request: HttpRequest, invoice_pk: UUID) -> HttpRespons
 def _invoice_list_url(request: HttpRequest) -> str:
     # Back to the list with the filter the form was sent from, from its first page.
     params = QueryDict(request.POST.get("return_query", ""), mutable=True)
-    params.pop("seite", None)
+    params.pop("page", None)
     query = params.urlencode()
     url = reverse("billing:invoices")
     return f"{url}?{query}" if query else url
@@ -262,13 +262,13 @@ async def customer_entries(request: HttpRequest, pk: UUID) -> HttpResponse:
     """The open time entries of a customer by project, as they would go onto the next invoice.
 
     A project's rows come in pages of ``ENTRIES_PER_PAGE``; htmx asks for the next one with
-    ``?projekt=<id>&seite=<n>``.
+    ``?project=<id>&page=<n>``.
     """
     customer = await _get_customer(pk)
     draft = await sync_to_async(open_draft)(customer)
     projects = await sync_to_async(entries_by_project)(draft) if draft else []
-    page = request.GET.get("seite", "")
-    group = next((p for p in projects if str(p.project.pk) == request.GET.get("projekt")), None)
+    page = request.GET.get("page", "")
+    group = next((p for p in projects if str(p.project.pk) == request.GET.get("project")), None)
     if request.htmx and group and page.isdigit() and int(page) >= 1:
         return render(
             request, "billing/_customer_entries_rows.html", {"customer": customer, **_entries_page(group, int(page))}

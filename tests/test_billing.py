@@ -338,7 +338,7 @@ def entries_url(customer) -> str:
 
 
 def test_overview_links_the_customer_to_its_open_entries(logged_in, user, task, customer):
-    assert entries_url(customer) not in logged_in.get(reverse("billing:overview"), {"alle": "1"}).text
+    assert entries_url(customer) not in logged_in.get(reverse("billing:overview"), {"all": "1"}).text
     work(user, task, "2026-10-05", 2)
 
     page = logged_in.get(reverse("billing:overview")).text
@@ -429,10 +429,10 @@ def test_open_entries_are_paged_per_project(logged_in, user, task, customer, mon
     assert first.text.count("<tr") == 1 + 2 + 1  # head, two rows, "more"
     assert "Weitere 3 Zeiteinträge anzeigen" in first.text
 
-    url = f"{entries_url(customer)}?projekt={task.project_id}"
-    second = logged_in.get(f"{url}&seite=2", headers=htmx)
+    url = f"{entries_url(customer)}?project={task.project_id}"
+    second = logged_in.get(f"{url}&page=2", headers=htmx)
     assert second.text.count("<tr") == 3 and "Weitere 1 Zeiteintrag anzeigen" in second.text
-    last = logged_in.get(f"{url}&seite=3", headers=htmx)
+    last = logged_in.get(f"{url}&page=3", headers=htmx)
     assert last.text.count("<tr") == 1 and "Weitere" not in last.text
 
 
