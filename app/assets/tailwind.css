@@ -116,9 +116,13 @@
     @apply bg-danger-soft text-danger;
   }
 
-  /* A note below a link that leads somewhere inside it (indented to line up with the link's text). */
-  .nav-sublink {
-    @apply col-span-2 flex h-8 shrink-0 items-center rounded-lg pr-2.5 pl-9 text-[13px] font-medium text-danger no-underline hover:underline lg:col-span-1;
+  /* Room at the end of the link for a count that is a link of its own, laid over it (nav-count-link). */
+  .nav-link-flagged {
+    @apply pr-11;
+  }
+
+  .nav-count-link {
+    @apply absolute top-1/2 right-2.5 -translate-y-1/2 no-underline hover:bg-danger/20;
   }
 
   .nav-link-active {
