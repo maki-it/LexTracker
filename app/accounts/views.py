@@ -246,7 +246,7 @@ async def _account_page(request: HttpRequest, form, tab: str, token_form=None, n
             "token_form": token_form or ApiTokenForm(),
             "new_key": new_key,
             "mcp_url": mcp_url,
-            "mcp_clients": mcp_clients.clients(mcp_url, new_key),
+            "mcp_clients": mcp_clients.clients(mcp_url, new_key, request.brand.name),
             "token_placeholder": mcp_clients.token_placeholder(),
         },
     )

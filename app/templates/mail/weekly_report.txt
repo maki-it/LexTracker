@@ -15,7 +15,7 @@
   {% blocktrans trimmed with amount=o.open|floatformat:2 %}Rechnungen offen: {{ amount }} €{% endblocktrans %}
 {% for r in o.retainers %}  {% blocktrans trimmed with customer=r.agreement.customer.name period=r.period_label used=r.used|hours:duration_format included=r.included|hours:duration_format %}Retainer {{ customer }} ({{ period }}): {{ used }} von {{ included }}{% endblocktrans %}{% if r.overage %}{% blocktrans trimmed with overage=r.overage|hours:duration_format %}, {{ overage }} darüber{% endblocktrans %}{% endif %}
 {% endfor %}{% endwith %}{% endif %}{% if url %}
-{% blocktrans trimmed %}Mehr in LexTracker: {{ url }}{% endblocktrans %}
+{% blocktrans trimmed with app=brand.name %}Mehr in {{ app }}: {{ url }}{% endblocktrans %}
 {% endif %}
-{% trans "Den Wochenbericht schaltest du in LexTracker unter Konto ab." %}
+{% blocktrans trimmed with app=brand.name %}Den Wochenbericht schaltest du in {{ app }} unter Konto ab.{% endblocktrans %}
 {% endautoescape %}

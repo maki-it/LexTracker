@@ -160,7 +160,7 @@ def check(path: Path) -> None:
                 raise InvalidBackup(_("Die Datei ist beschädigt."))
             tables = {row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
             if not {"django_migrations", "core_appsettings"} <= tables:
-                raise InvalidBackup(_("Die Datei ist keine Datenbank von LexTracker."))
+                raise InvalidBackup(_("Die Datei ist keine Datenbank dieser App."))
             applied = set(db.execute("SELECT app, name FROM django_migrations"))
     except sqlite3.DatabaseError as exc:
         raise InvalidBackup(_("Keine lesbare Datenbank (%(error)s).") % {"error": exc}) from exc

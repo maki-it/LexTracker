@@ -6,4 +6,4 @@
 {% if message.body %}<p style="margin:0;white-space:pre-line">{{ message.body }}</p>{% endif %}
 {% if url %}{% trans "Nachrichten öffnen" as button_label %}{% include "mail/_button.html" with label=button_label %}{% endif %}
 {% endblock %}
-{% block footer %}{% trans "Welche Nachrichten du per E-Mail bekommst, stellst du in LexTracker unter Konto ein." %}{% endblock %}
+{% block footer %}{% blocktrans trimmed with app=brand.name %}Welche Nachrichten du per E-Mail bekommst, stellst du in {{ app }} unter Konto ein.{% endblocktrans %}{% endblock %}

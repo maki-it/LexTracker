@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: LexTracker\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-25 20:12+0000\n"
+"POT-Creation-Date: 2026-10-26 10:57+0100\n"
 "PO-Revision-Date: 2026-10-25 12:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: English\n"
@@ -71,24 +71,28 @@ msgstr "You cannot remove your own administrator role."
 msgid "Du kannst dich nicht selbst deaktivieren."
 msgstr "You cannot deactivate yourself."
 
-msgid "Neues Passwort für LexTracker"
-msgstr "New password for LexTracker"
+#, python-brace-format
+msgid "Neues Passwort für {app}"
+msgstr "New password for {app}"
 
-msgid "Dein Anmeldelink für LexTracker"
-msgstr "Your sign-in link for LexTracker"
+#, python-brace-format
+msgid "Dein Anmeldelink für {app}"
+msgstr "Your sign-in link for {app}"
 
-msgid "Dein Zugang zu LexTracker"
-msgstr "Your LexTracker account"
+#, python-brace-format
+msgid "Dein Zugang zu {app}"
+msgstr "Your {app} account"
 
 msgid "DEIN_TOKEN"
 msgstr "YOUR_TOKEN"
 
+#, python-format
 msgid ""
-"Im Terminal ausführen. Mit <code>--scope user</code> steht LexTracker in all "
+"Im Terminal ausführen. Mit <code>--scope user</code> steht %(app)s in all "
 "deinen Projekten bereit, Claude Code speichert das in <code>~/.claude.json</"
 "code>."
 msgstr ""
-"Run this in the terminal. With <code>--scope user</code>, LexTracker is "
+"Run this in the terminal. With <code>--scope user</code>, %(app)s is "
 "available in all your projects; Claude Code stores this in <code>~/.claude."
 "json</code>."
 
@@ -128,12 +132,13 @@ msgstr ""
 msgid "Wert für den Header authorization"
 msgstr "Value for the authorization header"
 
+#, python-format
 msgid ""
-"Claude verbindet sich aus der Anthropic-Cloud. LexTracker muss dafür über "
-"HTTPS aus dem Internet erreichbar sein."
+"Claude verbindet sich aus der Anthropic-Cloud. %(app)s muss dafür über HTTPS "
+"aus dem Internet erreichbar sein."
 msgstr ""
-"Claude connects from the Anthropic cloud, so LexTracker must be reachable "
-"from the internet over HTTPS."
+"Claude connects from the Anthropic cloud, so %(app)s must be reachable from "
+"the internet over HTTPS."
 
 msgid ""
 "Request headers sind bei Claude noch in der Beta und nicht in jedem Konto "
@@ -142,12 +147,13 @@ msgstr ""
 "Request headers are still in beta in Claude and not visible in every "
 "account. If the section is missing, use Claude Code."
 
+#, python-format
 msgid ""
 "Die Datei <code>claude_desktop_config.json</code> ist nur für lokale Server "
-"gedacht, nicht für LexTracker."
+"gedacht, nicht für %(app)s."
 msgstr ""
 "The <code>claude_desktop_config.json</code> file is only meant for local "
-"servers, not for LexTracker."
+"servers, not for %(app)s."
 
 msgid ""
 "In <code>.vscode/mcp.json</code> im Projekt eintragen. Für alle Projekte "
@@ -158,8 +164,9 @@ msgstr ""
 "open the file via the command palette with <strong>MCP: Open User "
 "Configuration</strong>."
 
-msgid "LexTracker API-Token"
-msgstr "LexTracker API token"
+#, python-format
+msgid "%(app)s API-Token"
+msgstr "%(app)s API token"
 
 msgid ""
 "VS Code fragt beim ersten Start nach dem Token und speichert ihn sicher, die "
@@ -168,12 +175,13 @@ msgstr ""
 "VS Code asks for the token on first start and stores it securely; the file "
 "does not contain it."
 
+#, python-format
 msgid ""
-"In <code>~/.cursor/mcp.json</code> eintragen, dann steht LexTracker in allen "
+"In <code>~/.cursor/mcp.json</code> eintragen, dann steht %(app)s in allen "
 "Projekten bereit. Nur für ein Projekt geht es in <code>.cursor/mcp.json</"
 "code> im Projektordner."
 msgstr ""
-"Add it to <code>~/.cursor/mcp.json</code> and LexTracker is available in all "
+"Add it to <code>~/.cursor/mcp.json</code> and %(app)s is available in all "
 "projects. For a single project, use <code>.cursor/mcp.json</code> in the "
 "project folder."
 
@@ -619,8 +627,8 @@ msgstr "Billing agreement saved."
 msgid "Die Datei ist beschädigt."
 msgstr "The file is damaged."
 
-msgid "Die Datei ist keine Datenbank von LexTracker."
-msgstr "The file is not a LexTracker database."
+msgid "Die Datei ist keine Datenbank dieser App."
+msgstr "The file is not a database of this app."
 
 #, python-format
 msgid "Keine lesbare Datenbank (%(error)s)."
@@ -629,12 +637,31 @@ msgstr "Not a readable database (%(error)s)."
 msgid "Die Sicherung stammt aus einer neueren Version der App."
 msgstr "The backup comes from a newer version of the app."
 
+#, python-format
+msgid "Das Logo ist größer als %(size)s KB."
+msgstr "The logo is larger than %(size)s KB."
+
+msgid "Das Logo muss ein PNG, JPEG, WebP oder SVG sein."
+msgstr "The logo must be a PNG, JPEG, WebP or SVG image."
+
 msgid ""
 "Markdown möglich: **fett**, *kursiv*, [Linktext](https://example.com), "
 "Listen mit „- “."
 msgstr ""
 "Markdown is supported: **bold**, *italic*, [link text](https://example.com), "
 "lists with “- ”."
+
+msgid "Logo"
+msgstr "Logo"
+
+msgid "Eigenes Logo entfernen"
+msgstr "Remove custom logo"
+
+#, python-format
+msgid ""
+"PNG, JPEG, WebP oder SVG, höchstens %(size)s KB. Quadratische Bilder passen "
+"am besten."
+msgstr "PNG, JPEG, WebP or SVG, at most %(size)s KB. Square images work best."
 
 #. Translators: the long date format "31. Dezember 2026" without the full stop that German puts after the day.
 msgctxt "long date format"
@@ -738,6 +765,22 @@ msgstr "Delete old messages"
 
 msgid "geändert"
 msgstr "changed"
+
+msgid "App-Name"
+msgstr "App name"
+
+msgid ""
+"Steht in der Seitenleiste, im Seitentitel, in E-Mails und in der "
+"Authenticator-App. Leer lassen für „LexTracker“."
+msgstr ""
+"Shown in the sidebar, the page title, e-mails and the authenticator app. "
+"Leave empty for “LexTracker”."
+
+msgid "Dateityp des Logos"
+msgstr "Logo file type"
+
+msgid "Logo geändert"
+msgstr "Logo changed"
 
 msgid "Standard-Stundensatz (netto)"
 msgstr "Default hourly rate (net)"
@@ -1462,8 +1505,9 @@ msgstr "E-mail settings saved. Send a test e-mail to check them."
 msgid "Trag zuerst SMTP-Server und Absenderadresse ein."
 msgstr "Enter the SMTP server and sender address first."
 
-msgid "Testmail von LexTracker"
-msgstr "Test e-mail from LexTracker"
+#, python-format
+msgid "Testmail von %(app)s"
+msgstr "Test e-mail from %(app)s"
 
 #, python-format
 msgid "Die Testmail wurde nicht verschickt: %(error)s"
@@ -1820,8 +1864,9 @@ msgstr "The customer import failed: %(error)s"
 msgid "Kunden importiert: %(summary)s"
 msgstr "Customers imported: %(summary)s"
 
-msgid "Die Einrichtung ist abgeschlossen. Viel Spaß mit LexTracker!"
-msgstr "Setup is complete. Enjoy LexTracker!"
+#, python-format
+msgid "Die Einrichtung ist abgeschlossen. Viel Spaß mit %(app)s!"
+msgstr "Setup is complete. Enjoy %(app)s!"
 
 msgid "Kein Zugriff"
 msgstr "No access"
@@ -1872,10 +1917,10 @@ msgstr "Two-factor authentication"
 msgid "Eingeschaltet."
 msgstr "Turned on."
 
-msgid ""
-"Beim Anmelden fragt LexTracker nach dem Code aus deiner Authenticator-App."
+#, python-format
+msgid "Beim Anmelden fragt %(app)s nach dem Code aus deiner Authenticator-App."
 msgstr ""
-"When you sign in, LexTracker asks for the code from your authenticator app."
+"When you sign in, %(app)s asks for the code from your authenticator app."
 
 msgid "Verwalten"
 msgstr "Manage"
@@ -1917,9 +1962,10 @@ msgstr "Example prompts for your agent"
 msgid "Dauerhaft, z. B. in der <code>CLAUDE.md</code> deines Projekts:"
 msgstr "Permanently, e.g. in your project’s <code>CLAUDE.md</code>:"
 
+#, python-format
 msgid ""
 "## Zeiterfassung\n"
-"Erfasse deine Arbeitszeit in LexTracker (MCP-Server „lextracker“):\n"
+"Erfasse deine Arbeitszeit in %(app)s (MCP-Server „lextracker“):\n"
 "- Bevor du mit einer Aufgabe beginnst, suche mit find_tasks die passende "
 "Aufgabe im Projekt „PROJEKTNAME“. Gibt es keine passende, lege sie mit "
 "create_task an.\n"
@@ -1929,33 +1975,36 @@ msgid ""
 "und fasse in der Beschreibung in ein bis zwei Sätzen zusammen, was du "
 "erledigt hast."
 msgstr ""
-"## Time tracking\\nRecord your working time in LexTracker (MCP server "
-"“lextracker”):\\n- Before you start a task, use find_tasks to look for the "
-"matching task in the project “PROJECT NAME”. If there is none, create it "
-"with create_task.\\n- Then start the timer with start_timer and briefly "
-"state what you are working on as the description.\\n- When you are done or "
-"waiting for me, stop the timer with stop_timer and summarize in one or two "
-"sentences in the description what you have done."
+"## Time tracking\n"
+"Record your working time in %(app)s (MCP server “lextracker”):\n"
+"- Before you start a task, use find_tasks to look for the matching task in "
+"the project “PROJECT NAME”. If there is none, create it with create_task.\n"
+"- Then start the timer with start_timer and briefly state what you are "
+"working on as the description.\n"
+"- When you are done or waiting for me, stop the timer with stop_timer and "
+"summarize in one or two sentences in the description what you have done."
 
 msgid "Einmalig im Chat:"
 msgstr "Once, in a chat:"
 
+#, python-format
 msgid ""
-"Starte in LexTracker den Timer auf der passenden Aufgabe im Projekt "
+"Starte in %(app)s den Timer auf der passenden Aufgabe im Projekt "
 "„PROJEKTNAME“, bevor du loslegst, und stoppe ihn mit einer kurzen "
 "Zusammenfassung, wenn du fertig bist."
 msgstr ""
-"In LexTracker, start the timer on the matching task in the project “PROJECT "
+"In %(app)s, start the timer on the matching task in the project “PROJECT "
 "NAME” before you begin, and stop it with a short summary when you are done."
 
 msgid "Zeit nachtragen:"
 msgstr "Add time retroactively:"
 
+#, python-format
 msgid ""
-"Trage in LexTracker für heute 9:00 bis 11:30 auf die Aufgabe „AUFGABE“ im "
+"Trage in %(app)s für heute 9:00 bis 11:30 auf die Aufgabe „AUFGABE“ im "
 "Projekt „PROJEKTNAME“ ein: Abstimmung und Konzept für den Relaunch."
 msgstr ""
-"In LexTracker, add today 9:00 to 11:30 to the task “TASK” in the project "
+"In %(app)s, add today 9:00 to 11:30 to the task “TASK” in the project "
 "“PROJECT NAME”: coordination and concept for the relaunch."
 
 #, python-format
@@ -2053,12 +2102,13 @@ msgstr ""
 msgid "Anmelden ohne Passwort"
 msgstr "Sign in without a password"
 
+#, python-format
 msgid ""
 "Wir schicken dir einen Link, der dich anmeldet. Nutzt du die Zwei-Faktor-"
-"Anmeldung, fragt LexTracker danach noch nach dem Code."
+"Anmeldung, fragt %(app)s danach noch nach dem Code."
 msgstr ""
 "We send you a link that signs you in. If you use two-factor authentication, "
-"LexTracker will still ask for the code afterwards."
+"%(app)s will still ask for the code afterwards."
 
 msgid "Anmeldelink schicken"
 msgstr "Send sign-in link"
@@ -2471,8 +2521,8 @@ msgstr ""
 "charged extra. Unused hours expire."
 
 #, python-format
-msgid "Abrechnung %(name)s · LexTracker"
-msgstr "Billing %(name)s · LexTracker"
+msgid "Abrechnung %(name)s"
+msgstr "Billing %(name)s"
 
 msgid "Neue Vereinbarung"
 msgstr "New agreement"
@@ -2522,8 +2572,8 @@ msgid "Alle Rechnungen des Kunden"
 msgstr "All invoices of the customer"
 
 #, python-format
-msgid "Offene Zeiten %(name)s · LexTracker"
-msgstr "Open time %(name)s · LexTracker"
+msgid "Offene Zeiten %(name)s"
+msgstr "Open time %(name)s"
 
 #, python-format
 msgid "Offene Zeiten · %(name)s"
@@ -2707,12 +2757,12 @@ msgstr ""
 
 #, python-format
 msgid ""
-"Die App prüft die Datei vorher und nimmt nur unbeschädigte Datenbanken von "
-"LexTracker an, die nicht aus einer neueren Version stammen. Höchstens "
+"Die App prüft die Datei vorher und nimmt nur unbeschädigte Datenbanken "
+"dieser App an, die nicht aus einer neueren Version stammen. Höchstens "
 "%(max_size)s."
 msgstr ""
-"The app checks the file beforehand and only accepts undamaged LexTracker "
-"databases that do not come from a newer version. At most %(max_size)s."
+"The app checks the file beforehand and only accepts undamaged databases of "
+"this app that do not come from a newer version. At most %(max_size)s."
 
 msgid "Datei"
 msgstr "File"
@@ -2981,6 +3031,18 @@ msgstr "Test connection"
 msgid "Schlüssel entfernen"
 msgstr "Remove key"
 
+msgid "Erscheinungsbild"
+msgstr "Appearance"
+
+msgid "Name und Logo der App, etwa für den Betrieb unter eigener Marke."
+msgstr "Name and logo of the app, e.g. for running it under your own brand."
+
+msgid "Eigenes Logo"
+msgstr "Custom logo"
+
+msgid "Standard-Logo"
+msgstr "Default logo"
+
 #, python-format
 msgid ""
 "Die Umsatzsteuer auf Rechnungen richtet sich nach deinem Lexware-Konto: als "
@@ -3127,10 +3189,6 @@ msgid "Stundensatz"
 msgstr "Hourly rate"
 
 #, python-format
-msgid "%(name)s · LexTracker"
-msgstr "%(name)s · LexTracker"
-
-#, python-format
 msgid "/ Nr. %(customer_number)s"
 msgstr "/ No. %(customer_number)s"
 
@@ -3234,14 +3292,16 @@ msgstr "Show more messages"
 msgid "Als Seite öffnen"
 msgstr "Open as page"
 
-msgid "Diese E-Mail hat LexTracker automatisch verschickt."
-msgstr "LexTracker sent this e-mail automatically."
+#, python-format
+msgid "Diese E-Mail hat %(app)s automatisch verschickt."
+msgstr "%(app)s sent this e-mail automatically."
 
 msgid "Falls der Knopf nicht geht, kopiere diese Adresse in den Browser:"
 msgstr "If the button does not work, copy this address into your browser:"
 
-msgid "Willkommen bei LexTracker"
-msgstr "Welcome to LexTracker"
+#, python-format
+msgid "Willkommen bei %(app)s"
+msgstr "Welcome to %(app)s"
 
 #, python-format
 msgid "Hallo %(first_name)s,"
@@ -3276,19 +3336,18 @@ msgstr ""
 
 #, python-format
 msgid ""
-"%(inviter)s hat dir einen Zugang zu LexTracker eingerichtet. Dein "
-"Benutzername ist „%(username)s“. Über diesen Link legst du dein Passwort "
-"fest:"
+"%(inviter)s hat dir einen Zugang zu %(app)s eingerichtet. Dein Benutzername "
+"ist „%(username)s“. Über diesen Link legst du dein Passwort fest:"
 msgstr ""
-"%(inviter)s has set up a LexTracker account for you. Your username is "
+"%(inviter)s has set up a %(app)s account for you. Your username is "
 "“%(username)s”. Use this link to set your password:"
 
 #, python-format
 msgid ""
-"du hast dir einen Zugang zu LexTracker eingerichtet. Dein Benutzername ist "
+"du hast dir einen Zugang zu %(app)s eingerichtet. Dein Benutzername ist "
 "„%(username)s“. Über diesen Link legst du dein Passwort fest:"
 msgstr ""
-"you have set up a LexTracker account for yourself. Your username is "
+"you have set up a %(app)s account for yourself. Your username is "
 "“%(username)s”. Use this link to set your password:"
 
 msgid "Rechnung überfällig"
@@ -3329,8 +3388,9 @@ msgstr "No reminder was sent to the customer."
 msgid "In Lexware Office öffnen"
 msgstr "Open in Lexware Office"
 
-msgid "Diese Hinweise stellst du in LexTracker unter Einstellungen ein."
-msgstr "You set these notices in LexTracker under Settings."
+#, python-format
+msgid "Diese Hinweise stellst du in %(app)s unter Einstellungen ein."
+msgstr "You set these notices in %(app)s under Settings."
 
 #, python-format
 msgid ""
@@ -3444,20 +3504,19 @@ msgstr ""
 
 #, python-format
 msgid ""
-"mit diesem Link meldest du dich bei LexTracker als „%(username)s“ an, ohne "
+"mit diesem Link meldest du dich bei %(app)s als „%(username)s“ an, ohne "
 "Passwort:"
 msgstr ""
-"with this link you sign in to LexTracker as “%(username)s” without a "
-"password:"
+"with this link you sign in to %(app)s as “%(username)s” without a password:"
 
 msgid "Nachrichten öffnen"
 msgstr "Open messages"
 
+#, python-format
 msgid ""
-"Welche Nachrichten du per E-Mail bekommst, stellst du in LexTracker unter "
-"Konto ein."
-msgstr ""
-"You set which messages you receive by e-mail in LexTracker under Account."
+"Welche Nachrichten du per E-Mail bekommst, stellst du in %(app)s unter Konto "
+"ein."
+msgstr "You set which messages you receive by e-mail in %(app)s under Account."
 
 msgid "Neues Passwort festlegen"
 msgstr "Set a new password"
@@ -3488,10 +3547,10 @@ msgstr ""
 
 #, python-format
 msgid ""
-"jemand hat ein neues Passwort für deinen LexTracker-Zugang „%(username)s“ "
+"jemand hat ein neues Passwort für deinen %(app)s-Zugang „%(username)s“ "
 "angefordert. Über diesen Link legst du es fest:"
 msgstr ""
-"someone has requested a new password for your LexTracker account "
+"someone has requested a new password for your %(app)s account "
 "“%(username)s”. Use this link to set it:"
 
 msgid "Es klappt."
@@ -3499,20 +3558,19 @@ msgstr "It works."
 
 #, python-format
 msgid ""
-"Diese Testmail zeigt: LexTracker kann über <strong>%(host)s</strong> E-Mails "
+"Diese Testmail zeigt: %(app)s kann über <strong>%(host)s</strong> E-Mails "
 "verschicken."
 msgstr ""
-"This test e-mail shows that LexTracker can send e-mails via "
-"<strong>%(host)s</strong>."
+"This test e-mail shows that %(app)s can send e-mails via <strong>%(host)s</"
+"strong>."
 
 #, python-format
 msgid "Absender: %(sender)s"
 msgstr "Sender: %(sender)s"
 
 #, python-format
-msgid ""
-"diese Testmail zeigt: LexTracker kann über %(host)s E-Mails verschicken."
-msgstr "this test e-mail shows that LexTracker can send e-mails via %(host)s."
+msgid "diese Testmail zeigt: %(app)s kann über %(host)s E-Mails verschicken."
+msgstr "this test e-mail shows that %(app)s can send e-mails via %(host)s."
 
 #, python-format
 msgid "Seit %(started_at)s Uhr, also schon <strong>%(hours)s Stunden</strong>:"
@@ -3522,11 +3580,13 @@ msgid ""
 "Hast du vergessen, ihn zu stoppen? Dann stoppe ihn und korrigiere das Ende."
 msgstr "Did you forget to stop it? Then stop it and correct the end."
 
-msgid "LexTracker öffnen"
-msgstr "Open LexTracker"
+#, python-format
+msgid "%(app)s öffnen"
+msgstr "Open %(app)s"
 
-msgid "Diese Erinnerung schaltest du in LexTracker unter Konto ab."
-msgstr "You turn this reminder off in LexTracker under Account."
+#, python-format
+msgid "Diese Erinnerung schaltest du in %(app)s unter Konto ab."
+msgstr "You turn this reminder off in %(app)s under Account."
 
 #, python-format
 msgid "dein Timer läuft seit %(started_at)s Uhr, also schon %(hours)s Stunden:"
@@ -3561,11 +3621,13 @@ msgstr "Invoices open"
 msgid "Retainer %(customer)s"
 msgstr "Retainer %(customer)s"
 
-msgid "In LexTracker ansehen"
-msgstr "View in LexTracker"
+#, python-format
+msgid "In %(app)s ansehen"
+msgstr "View in %(app)s"
 
-msgid "Den Wochenbericht schaltest du in LexTracker unter Konto ab."
-msgstr "You turn the weekly report off in LexTracker under Account."
+#, python-format
+msgid "Den Wochenbericht schaltest du in %(app)s unter Konto ab."
+msgstr "You turn the weekly report off in %(app)s under Account."
 
 #, python-format
 msgid "dein Wochenbericht für %(label)s."
@@ -3599,8 +3661,8 @@ msgid ", %(overage)s darüber"
 msgstr ", %(overage)s over"
 
 #, python-format
-msgid "Mehr in LexTracker: %(url)s"
-msgstr "More in LexTracker: %(url)s"
+msgid "Mehr in %(app)s: %(url)s"
+msgstr "More in %(app)s: %(url)s"
 
 #, python-format
 msgid ""
@@ -3729,10 +3791,6 @@ msgstr "No time was booked in this period."
 
 msgid "Summe"
 msgstr "Total"
-
-#, python-format
-msgid "Zeiten der Rechnung %(voucher_number)s · LexTracker"
-msgstr "Time of invoice %(voucher_number)s · LexTracker"
 
 #, python-format
 msgid "Zeiten der Rechnung %(voucher_number)s"
@@ -3884,10 +3942,6 @@ msgstr "Search project, customer or description"
 
 msgid "Projekte suchen"
 msgstr "Search projects"
-
-#, python-format
-msgid "%(name)s bearbeiten · LexTracker"
-msgstr "Edit %(name)s · LexTracker"
 
 msgid "Aufgabe bearbeiten"
 msgstr "Edit task"
@@ -4112,14 +4166,15 @@ msgstr "Go to start page"
 msgid "Lexware Office verbinden"
 msgstr "Connect Lexware Office"
 
+#, python-format
 msgid ""
-"Über die Public API importiert LexTracker deine Kunden und erstellt "
+"Über die Public API importiert %(app)s deine Kunden und erstellt "
 "Rechnungsentwürfe. Die API gibt es mit Lexware Office XL. Den Schlüssel "
 "prüft die App mit einem Testaufruf, bevor sie ihn verschlüsselt speichert."
 msgstr ""
-"Through the Public API, LexTracker imports your customers and creates "
-"invoice drafts. The API is available with Lexware Office XL. The app checks "
-"the key with a test call before it stores it encrypted."
+"Through the Public API, %(app)s imports your customers and creates invoice "
+"drafts. The API is available with Lexware Office XL. The app checks the key "
+"with a test call before it stores it encrypted."
 
 #, python-format
 msgid ""
@@ -4146,13 +4201,14 @@ msgstr "Continue"
 msgid "Später einrichten"
 msgstr "Set up later"
 
+#, python-format
 msgid ""
-"Mit einem SMTP-Server verschickt LexTracker Links zum Zurücksetzen des "
+"Mit einem SMTP-Server verschickt %(app)s Links zum Zurücksetzen des "
 "Passworts, Anmeldelinks, Wochenberichte und Erinnerungen. Das Passwort wird "
 "verschlüsselt gespeichert. Du kannst den Schritt überspringen und es später "
 "unter „Einstellungen“ nachholen."
 msgstr ""
-"With an SMTP server, LexTracker sends links to reset the password, sign-in "
+"With an SMTP server, %(app)s sends links to reset the password, sign-in "
 "links, weekly reports and reminders. The password is stored encrypted. You "
 "can skip this step and do it later under “Settings”."
 

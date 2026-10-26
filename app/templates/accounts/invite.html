@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% load i18n %}
 {% load icons %}
-{% block title %}{% trans "Passwort festlegen" %} · LexTracker{% endblock %}
+{% block title %}{% trans "Passwort festlegen" %} · {{ brand.name }}{% endblock %}
 {% block public_content %}
 <div class="flex w-full max-w-sm flex-col gap-6">
   <div class="flex items-center justify-center gap-2.5 text-lg font-semibold">
     {% logo 32 %}
-    LexTracker
+    {{ brand.name }}
   </div>
   {% if invalid %}
   <div class="card flex flex-col gap-3 p-6">

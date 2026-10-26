@@ -13,6 +13,8 @@ from dataclasses import dataclass, field
 
 from django.utils.translation import gettext as _
 
+from core.branding import DEFAULT_NAME
+
 SERVER_NAME = "lextracker"
 TOKEN_ENV = "LEXTRACKER_TOKEN"
 
@@ -40,18 +42,20 @@ def _json(data: dict) -> str:
     return json.dumps(data, indent=2, ensure_ascii=False)
 
 
-def clients(url: str, token: str = "") -> list[Client]:
+def clients(url: str, token: str = "", app_name: str = DEFAULT_NAME) -> list[Client]:
     """The setups for the MCP address `url`, with `token` filled in (or a placeholder without one)."""
     token = token or token_placeholder()
     bearer = f"Bearer {token}"
+    app = {"app": app_name}
     return [
         Client(
             "claude-code",
             "Claude Code",
             _(
-                "Im Terminal ausführen. Mit <code>--scope user</code> steht LexTracker in all deinen Projekten bereit, "
+                "Im Terminal ausführen. Mit <code>--scope user</code> steht %(app)s in all deinen Projekten bereit, "
                 "Claude Code speichert das in <code>~/.claude.json</code>."
-            ),
+            )
+            % app,
             [
                 Snippet(
                     "Terminal",
@@ -96,17 +100,19 @@ def clients(url: str, token: str = "") -> list[Client]:
             ],
             [
                 _(
-                    "Claude verbindet sich aus der Anthropic-Cloud. LexTracker muss dafür über HTTPS aus dem Internet "
+                    "Claude verbindet sich aus der Anthropic-Cloud. %(app)s muss dafür über HTTPS aus dem Internet "
                     "erreichbar sein."
-                ),
+                )
+                % app,
                 _(
                     "Request headers sind bei Claude noch in der Beta und nicht in jedem Konto sichtbar. Fehlt der "
                     "Abschnitt, nutze Claude Code."
                 ),
                 _(
                     "Die Datei <code>claude_desktop_config.json</code> ist nur für lokale Server gedacht, "
-                    "nicht für LexTracker."
-                ),
+                    "nicht für %(app)s."
+                )
+                % app,
             ],
         ),
         Client(
@@ -125,7 +131,7 @@ def clients(url: str, token: str = "") -> list[Client]:
                                 {
                                     "type": "promptString",
                                     "id": "lextracker-token",
-                                    "description": _("LexTracker API-Token"),
+                                    "description": _("%(app)s API-Token") % app,
                                     "password": True,
                                 }
                             ],
@@ -151,9 +157,10 @@ def clients(url: str, token: str = "") -> list[Client]:
             "cursor",
             "Cursor",
             _(
-                "In <code>~/.cursor/mcp.json</code> eintragen, dann steht LexTracker in allen Projekten bereit. "
+                "In <code>~/.cursor/mcp.json</code> eintragen, dann steht %(app)s in allen Projekten bereit. "
                 "Nur für ein Projekt geht es in <code>.cursor/mcp.json</code> im Projektordner."
-            ),
+            )
+            % app,
             [
                 Snippet(
                     "mcp.json",

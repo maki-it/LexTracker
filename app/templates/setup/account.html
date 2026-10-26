@@ -3,7 +3,7 @@
 {% block step %}
 <form method="post" class="card flex flex-col gap-4 p-6">
   <div>
-    <h1 class="text-lg">{% trans "Willkommen bei LexTracker" %}</h1>
+    <h1 class="text-lg">{% blocktrans trimmed with app=brand.name %}Willkommen bei {{ app }}{% endblocktrans %}</h1>
     <p class="mt-1 text-sm text-muted">
       {% trans "Die App ist neu und hat noch kein Konto. Lege zuerst dein Administrator-Konto an. Mitarbeiter und Kunden lädst du später unter „Benutzer“ ein." %}
     </p>

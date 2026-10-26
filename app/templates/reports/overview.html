@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load i18n %}
 {% load timefmt icons %}
-{% block title %}{% trans "Auswertungen" %} · LexTracker{% endblock %}
+{% block title %}{% trans "Auswertungen" %} · {{ brand.name }}{% endblock %}
 {% block content %}
 {% with r=report %}
 <div class="page-header">

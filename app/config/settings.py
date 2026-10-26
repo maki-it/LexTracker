@@ -64,6 +64,7 @@ MIDDLEWARE = [
     "core.middleware.LoginRequiredMiddleware",
     "core.locale.LocaleMiddleware",
     "core.access.RoleAccessMiddleware",
+    "core.branding.BrandingMiddleware",
     "core.nav.NavCountsMiddleware",
     "core.dialogs.DialogMiddleware",
 ]
@@ -85,6 +86,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "accounts.context_processors.preferences",
+                "core.branding.context",
                 "core.dialogs.layout",
             ],
         },
@@ -118,8 +120,14 @@ AUTH_USER_MODEL = "accounts.User"
 LOGIN_URL = "accounts:login"
 LOGIN_REDIRECT_URL = "core:dashboard"
 LOGOUT_REDIRECT_URL = "accounts:login"
-# Name shown for the account in authenticator apps.
-OTP_TOTP_ISSUER = "LexTracker"
+
+
+def OTP_TOTP_ISSUER(device) -> str:
+    """Name shown for the account in authenticator apps: the app name from the settings page."""
+    from core import branding  # needs the app registry, which is not ready while settings load
+
+    return branding.load().name
+
 
 PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.Argon2PasswordHasher",

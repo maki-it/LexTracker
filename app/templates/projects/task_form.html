@@ -1,7 +1,7 @@
 {% extends layout %}
 {% load i18n %}
 {% load icons %}
-{% block title %}{% blocktrans trimmed with name=task.name %}{{ name }} bearbeiten · LexTracker{% endblocktrans %}{% endblock %}
+{% block title %}{% blocktrans trimmed with name=task.name %}{{ name }} bearbeiten{% endblocktrans %} · {{ brand.name }}{% endblock %}
 {% block content %}
 <div>
   <p class="breadcrumb"><a href="{% url 'projects:list' %}">{% trans "Projekte" %}</a> / <a href="{% url 'projects:detail' project.pk %}">{{ project.name }}</a></p>

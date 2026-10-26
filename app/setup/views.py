@@ -21,6 +21,7 @@ from django.views.decorators.http import require_http_methods
 from accounts import mfa
 from accounts.forms import CodeForm
 from accounts.models import User
+from core import branding
 from core.models import AppSettings
 from customers.sync import sync_and_record
 from lexware import credentials
@@ -159,8 +160,9 @@ async def mail(request: HttpRequest) -> HttpResponse:
             if not to:
                 test_result = {"error": _("Dein Konto hat keine E-Mail-Adresse. Trag unter Konto eine ein.")}
             else:
-                subject = _("Testmail von LexTracker")
-                text, html = outbox.render("test", {"subject": subject, "config": config})
+                brand = await branding.aload()
+                subject = _("Testmail von %(app)s") % {"app": brand.name}
+                text, html = outbox.render("test", {"subject": subject, "config": config, "brand": brand})
                 error = await outbox.asend_now(config, outbox.Message(to, subject, text, html))
                 test_result = {"error": error} if error else {"ok": to}
         else:
@@ -193,7 +195,9 @@ async def done(request: HttpRequest) -> HttpResponse:
                 messages.error(request, _("Der Kundenimport ist fehlgeschlagen: %(error)s") % {"error": exc})
             else:
                 messages.success(request, _("Kunden importiert: %(summary)s") % {"summary": result.summary})
-        messages.success(request, _("Die Einrichtung ist abgeschlossen. Viel Spaß mit LexTracker!"))
+        messages.success(
+            request, _("Die Einrichtung ist abgeschlossen. Viel Spaß mit %(app)s!") % {"app": request.brand.name}
+        )
         return redirect("core:dashboard")
     context = {
         "lexware": status,

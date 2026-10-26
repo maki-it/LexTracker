@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load i18n %}
 {% load timefmt dialogs %}
-{% block title %}{% trans "Abrechnung" %} · LexTracker{% endblock %}
+{% block title %}{% trans "Abrechnung" %} · {{ brand.name }}{% endblock %}
 {% block content %}
 {% include "billing/_tabs.html" with tab="abrechnen" %}
 <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">

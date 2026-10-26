@@ -9,7 +9,7 @@ from django.utils.decorators import async_only_middleware
 from accounts.models import User
 
 # Never redirected, not even to the setup. /mcp/ checks its own API token.
-ALWAYS_PUBLIC_PREFIXES = ("/health/", "/static/", "/mcp/", "/favicon.ico")
+ALWAYS_PUBLIC_PREFIXES = ("/health/", "/static/", "/mcp/", "/favicon.ico", "/branding/")
 PUBLIC_PREFIXES = (
     *ALWAYS_PUBLIC_PREFIXES,
     "/accounts/login/",

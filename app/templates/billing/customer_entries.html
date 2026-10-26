@@ -1,7 +1,7 @@
 {% extends layout %}
 {% load i18n %}
 {% load timefmt %}
-{% block title %}{% blocktrans trimmed with name=customer.name %}Offene Zeiten {{ name }} · LexTracker{% endblocktrans %}{% endblock %}
+{% block title %}{% blocktrans trimmed with name=customer.name %}Offene Zeiten {{ name }}{% endblocktrans %} · {{ brand.name }}{% endblock %}
 {% block content %}
 <div class="dialog-wide flex flex-col gap-5">
   <div>

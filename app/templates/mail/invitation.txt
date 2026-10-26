@@ -1,6 +1,6 @@
 {% load i18n %}{% autoescape off %}{% if invited.first_name %}{% blocktrans trimmed with first_name=invited.first_name %}Hallo {{ first_name }},{% endblocktrans %}{% else %}{% trans "Hallo," %}{% endif %}
 
-{% if inviter %}{% blocktrans trimmed with inviter=inviter username=invited.get_username %}{{ inviter }} hat dir einen Zugang zu LexTracker eingerichtet. Dein Benutzername ist „{{ username }}“. Über diesen Link legst du dein Passwort fest:{% endblocktrans %}{% else %}{% blocktrans trimmed with username=invited.get_username %}du hast dir einen Zugang zu LexTracker eingerichtet. Dein Benutzername ist „{{ username }}“. Über diesen Link legst du dein Passwort fest:{% endblocktrans %}{% endif %}
+{% if inviter %}{% blocktrans trimmed with app=brand.name inviter=inviter username=invited.get_username %}{{ inviter }} hat dir einen Zugang zu {{ app }} eingerichtet. Dein Benutzername ist „{{ username }}“. Über diesen Link legst du dein Passwort fest:{% endblocktrans %}{% else %}{% blocktrans trimmed with app=brand.name username=invited.get_username %}du hast dir einen Zugang zu {{ app }} eingerichtet. Dein Benutzername ist „{{ username }}“. Über diesen Link legst du dein Passwort fest:{% endblocktrans %}{% endif %}
 
 {{ url }}
 

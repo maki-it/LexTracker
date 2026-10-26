@@ -7,4 +7,4 @@
 <p style="margin:12px 0 0">{% if customer_notified %}{% blocktrans trimmed with email=invoice.customer.email %}Der Kunde hat eine Zahlungserinnerung an {{ email }} bekommen.{% endblocktrans %}{% elif customer_without_email %}{% trans "Der Kunde hat keine E-Mail-Adresse in Lexware, deshalb ging keine Zahlungserinnerung an ihn." %}{% else %}{% trans "An den Kunden ging keine Erinnerung." %}{% endif %}</p>
 {% if invoice.lexware_url %}{% trans "In Lexware Office öffnen" as button_label %}{% include "mail/_button.html" with url=invoice.lexware_url label=button_label %}{% endif %}
 {% endblock %}
-{% block footer %}{% trans "Diese Hinweise stellst du in LexTracker unter Einstellungen ein." %}{% endblock %}
+{% block footer %}{% blocktrans trimmed with app=brand.name %}Diese Hinweise stellst du in {{ app }} unter Einstellungen ein.{% endblocktrans %}{% endblock %}

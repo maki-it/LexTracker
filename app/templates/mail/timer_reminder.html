@@ -8,6 +8,6 @@
   <strong>{{ entry.task.name }}</strong>{% if entry.description %}<br><span style="color:#71717a">{{ entry.description }}</span>{% endif %}
 </p>
 <p style="margin:0">{% trans "Hast du vergessen, ihn zu stoppen? Dann stoppe ihn und korrigiere das Ende." %}</p>
-{% if url %}{% trans "LexTracker öffnen" as button_label %}{% include "mail/_button.html" with label=button_label %}{% endif %}
+{% if url %}{% blocktrans trimmed with app=brand.name asvar button_label %}{{ app }} öffnen{% endblocktrans %}{% include "mail/_button.html" with label=button_label %}{% endif %}
 {% endblock %}
-{% block footer %}{% trans "Diese Erinnerung schaltest du in LexTracker unter Konto ab." %}{% endblock %}
+{% block footer %}{% blocktrans trimmed with app=brand.name %}Diese Erinnerung schaltest du in {{ app }} unter Konto ab.{% endblocktrans %}{% endblock %}

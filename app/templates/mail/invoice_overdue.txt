@@ -7,5 +7,5 @@
 
 {% blocktrans trimmed with url=invoice.lexware_url %}Rechnung in Lexware Office: {{ url }}{% endblocktrans %}{% endif %}
 
-{% trans "Diese Hinweise stellst du in LexTracker unter Einstellungen ein." %}
+{% blocktrans trimmed with app=brand.name %}Diese Hinweise stellst du in {{ app }} unter Einstellungen ein.{% endblocktrans %}
 {% endautoescape %}

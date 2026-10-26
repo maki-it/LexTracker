@@ -30,6 +30,21 @@ class TimeStampedModel(UUIDModel):
 class AppSettings(models.Model):
     """Settings for the whole app, edited on the settings page. There is only one row."""
 
+    app_name = models.CharField(
+        _("App-Name"),
+        max_length=40,
+        blank=True,
+        help_text=_(
+            "Steht in der Seitenleiste, im Seitentitel, in E-Mails und in der Authenticator-App. "
+            "Leer lassen für „LexTracker“."
+        ),
+    )
+    # Written from the logo upload on the settings page. The file itself is only read to serve it, so pages
+    # defer ``logo_data``; it lives in the database so that backups carry it.
+    logo_data = models.BinaryField(_("Logo"), null=True, blank=True, editable=False)
+    logo_type = models.CharField(_("Dateityp des Logos"), max_length=20, blank=True, editable=False)
+    logo_updated_at = models.DateTimeField(_("Logo geändert"), null=True, blank=True, editable=False)
+
     default_hourly_rate = models.DecimalField(
         _("Standard-Stundensatz (netto)"),
         max_digits=8,
@@ -213,11 +228,11 @@ class AppSettings(models.Model):
 
     @classmethod
     def load(cls) -> AppSettings:
-        return cls.objects.get_or_create(pk=1)[0]
+        return cls.objects.defer("logo_data").get_or_create(pk=1)[0]
 
     @classmethod
     async def aload(cls) -> AppSettings:
-        return (await cls.objects.aget_or_create(pk=1))[0]
+        return (await cls.objects.defer("logo_data").aget_or_create(pk=1))[0]
 
 
 class JobStatus(UUIDModel):

@@ -1,6 +1,6 @@
 {% extends layout %}
 {% load i18n %}
-{% block title %}{% trans "Abrechnungsvereinbarung" %} · LexTracker{% endblock %}
+{% block title %}{% trans "Abrechnungsvereinbarung" %} · {{ brand.name }}{% endblock %}
 {% block content %}
 <div>
   <p class="breadcrumb"><a href="{% url 'billing:overview' %}">{% trans "Abrechnung" %}</a> / <a href="{% url 'billing:customer' customer.pk %}">{{ customer.name }}</a></p>

@@ -19,7 +19,7 @@ CUSTOMER_NAMESPACES = {"portal", "account", "accounts", "admin"}
 CUSTOMER_DENIED = {"account:token_create", "account:token_revoke"}
 
 
-PUBLIC_VIEWS = {"core:health"}
+PUBLIC_VIEWS = {"core:health", "core:logo"}
 
 
 def allowed(user, view_name: str) -> bool:

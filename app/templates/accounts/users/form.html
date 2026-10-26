@@ -1,7 +1,7 @@
 {% extends layout %}
 {% load i18n %}
 {% load icons %}
-{% block title %}{% if not is_new %}{{ edited.get_username }}{% else %}{% trans "Neuer Benutzer" %}{% endif %} · LexTracker{% endblock %}
+{% block title %}{% if not is_new %}{{ edited.get_username }}{% else %}{% trans "Neuer Benutzer" %}{% endif %} · {{ brand.name }}{% endblock %}
 {% block content %}
 <div>
   <p class="breadcrumb"><a href="{% url 'users:list' %}">{% trans "Benutzer" %}</a></p>

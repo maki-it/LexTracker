@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load i18n %}
 {% load timefmt %}
-{% block title %}{% blocktrans trimmed with voucher_number=invoice.voucher_number %}Zeiten der Rechnung {{ voucher_number }} · LexTracker{% endblocktrans %}{% endblock %}
+{% block title %}{% blocktrans trimmed with voucher_number=invoice.voucher_number %}Zeiten der Rechnung {{ voucher_number }}{% endblocktrans %} · {{ brand.name }}{% endblock %}
 {% block content %}
 <div class="page-header">
   <div>

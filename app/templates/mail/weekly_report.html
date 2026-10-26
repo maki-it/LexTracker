@@ -67,6 +67,6 @@
 </table>
 {% endwith %}{% endif %}
 
-{% if url %}{% trans "In LexTracker ansehen" as button_label %}{% include "mail/_button.html" with label=button_label %}{% endif %}
+{% if url %}{% blocktrans trimmed with app=brand.name asvar button_label %}In {{ app }} ansehen{% endblocktrans %}{% include "mail/_button.html" with label=button_label %}{% endif %}
 {% endblock %}
-{% block footer %}{% trans "Den Wochenbericht schaltest du in LexTracker unter Konto ab." %}{% endblock %}
+{% block footer %}{% blocktrans trimmed with app=brand.name %}Den Wochenbericht schaltest du in {{ app }} unter Konto ab.{% endblocktrans %}{% endblock %}

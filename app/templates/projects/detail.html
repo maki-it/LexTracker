@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load i18n %}
 {% load timefmt icons dialogs markdown %}
-{% block title %}{% blocktrans trimmed with name=project.name %}{{ name }} · LexTracker{% endblocktrans %}{% endblock %}
+{% block title %}{{ project.name }} · {{ brand.name }}{% endblock %}
 {% block content %}
 <div class="page-header">
   <div>

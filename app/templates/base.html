@@ -4,10 +4,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}LexTracker{% endblock %}</title>
+  <title>{% block title %}{{ brand.name }}{% endblock %}</title>
+  {% if brand.logo_url %}
+  <link rel="icon" href="{{ brand.logo_url }}" type="{{ brand.logo_type }}">
+  {% if brand.logo_type != "image/svg+xml" %}<link rel="apple-touch-icon" href="{{ brand.logo_url }}">{% endif %}
+  {% else %}
   <link rel="icon" href="{% static 'img/favicon.ico' %}" sizes="48x48">
   <link rel="icon" href="{% static 'img/favicon.svg' %}" type="image/svg+xml">
   <link rel="apple-touch-icon" href="{% static 'img/apple-touch-icon.png' %}">
+  {% endif %}
   <link rel="manifest" href="{% static 'img/site.webmanifest' %}">
   <meta name="theme-color" content="#4f46e5">
   {% tailwind_css %}
@@ -23,7 +28,7 @@
       <div class="mr-auto flex items-center gap-1 lg:mr-0 lg:justify-between">
         <a href="{% url 'core:dashboard' %}" class="flex items-center gap-2.5 px-1.5 py-1 text-[15px] font-semibold text-ink no-underline">
           {% logo 28 %}
-          LexTracker
+          {{ brand.name }}
         </a>
         {% if not user.is_customer %}
         {% if request.nav_inbox %}

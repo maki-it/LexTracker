@@ -264,7 +264,7 @@ def newer_database(tmp_path) -> bytes:
     ("make", "message"),
     [
         (lambda tmp_path: b"not a database" * 100, "Keine lesbare Datenbank"),
-        (foreign_database, "keine Datenbank von LexTracker"),
+        (foreign_database, "keine Datenbank dieser App"),
         (newer_database, "neueren Version"),
     ],
 )

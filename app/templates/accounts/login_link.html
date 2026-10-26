@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load i18n %}
-{% block title %}{% trans "Anmelden" %} · LexTracker{% endblock %}
+{% block title %}{% trans "Anmelden" %} · {{ brand.name }}{% endblock %}
 {% block public_content %}
 <div class="flex w-full max-w-sm flex-col gap-6">
   {% include "accounts/_public_header.html" %}

@@ -4,5 +4,5 @@
 
 {{ url }}{% endif %}
 
-{% trans "Welche Nachrichten du per E-Mail bekommst, stellst du in LexTracker unter Konto ein." %}
+{% blocktrans trimmed with app=brand.name %}Welche Nachrichten du per E-Mail bekommst, stellst du in {{ app }} unter Konto ein.{% endblocktrans %}
 {% endautoescape %}

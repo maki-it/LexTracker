@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load i18n %}
-{% block title %}{% trans "Einladung" %} · LexTracker{% endblock %}
+{% block title %}{% trans "Einladung" %} · {{ brand.name }}{% endblock %}
 {% block content %}
 <div>
   <p class="breadcrumb"><a href="{% url 'users:list' %}">{% trans "Benutzer" %}</a></p>

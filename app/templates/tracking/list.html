@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load i18n %}
 {% load timefmt icons dialogs %}
-{% block title %}{% trans "Aufgaben" %} · LexTracker{% endblock %}
+{% block title %}{% trans "Aufgaben" %} · {{ brand.name }}{% endblock %}
 {% block content %}
 {% trans "d.m." context "date format" as short_format %}{% trans "d." context "chart day" as day_format %}{% trans "l, d.m." context "weekday and date" as weekday_format %}
 <div class="page-header">

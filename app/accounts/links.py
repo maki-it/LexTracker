@@ -16,9 +16,11 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.encoding import force_bytes
 from django.utils.http import base36_to_int, urlsafe_base64_decode, urlsafe_base64_encode
+from django.utils.text import format_lazy
 from django.utils.translation import gettext_lazy as _
 
 from accounts.models import LoginLink, User
+from core import branding
 from core.ids import parse_uuid
 from core.models import AppSettings
 from mailer import outbox
@@ -81,7 +83,7 @@ async def send_password_reset(request: HttpRequest, identifier: str) -> None:
         await outbox.aqueue(
             OutgoingMail.Kind.PASSWORD_RESET,
             user.email,
-            _("Neues Passwort für LexTracker"),
+            format_lazy(_("Neues Passwort für {app}"), app=(await branding.aload()).name),
             "password_reset",
             {"user": user, "url": url, "minutes": RESET_MINUTES},
             user=user,
@@ -115,7 +117,7 @@ async def send_login_link(request: HttpRequest, identifier: str) -> None:
         await outbox.aqueue(
             OutgoingMail.Kind.LOGIN_LINK,
             user.email,
-            _("Dein Anmeldelink für LexTracker"),
+            format_lazy(_("Dein Anmeldelink für {app}"), app=(await branding.aload()).name),
             "login_link",
             {"user": user, "url": url, "minutes": LOGIN_LINK_MINUTES},
             user=user,
@@ -164,7 +166,7 @@ async def send_invitation(request: HttpRequest, user: User) -> None:
     await outbox.aqueue(
         OutgoingMail.Kind.INVITATION,
         user.email,
-        _("Dein Zugang zu LexTracker"),
+        format_lazy(_("Dein Zugang zu {app}"), app=(await branding.aload()).name),
         "invitation",
         {
             "invited": user,
