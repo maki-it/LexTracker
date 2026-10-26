@@ -8,7 +8,7 @@ Zeiterfassung und Projektsteuerung mit Anbindung an die [Lexware Office Public A
 
 ## Schnellstart (Docker, produktiv)
 
-Du brauchst einen Server mit Docker und einem aktuellen Docker Compose (getestet mit v5.6) sowie Git.
+Du brauchst einen Server mit Docker und einem aktuellen Docker Compose (getestet mit v5.6) sowie Git. Die App läuft aus dem veröffentlichten Image `ghcr.io/maki-it/lextracker`, gebaut wird nichts.
 
 1. **Repository holen**
 
@@ -16,6 +16,8 @@ Du brauchst einen Server mit Docker und einem aktuellen Docker Compose (getestet
    git clone https://github.com/maki-it/LexTracker.git
    cd LexTracker
    ```
+
+   Für den Betrieb brauchst du daraus nur `compose.yaml` und `.env.example`.
 
 2. **Konfiguration anlegen**
 
@@ -48,9 +50,11 @@ Du brauchst einen Server mit Docker und einem aktuellen Docker Compose (getestet
 4. **Starten**
 
    ```sh
-   docker compose up -d --build
+   docker compose up -d
    docker compose ps          # app und scheduler sollten "healthy" sein
    ```
+
+   Ist das Image nicht öffentlich, meldest du dich vorher mit `docker login ghcr.io` an (Token mit der Berechtigung `read:packages`). Standardmäßig zieht Compose `latest`; mit `LEXTRACKER_VERSION=0.4.0` in der `.env` bleibst du auf einer Version.
 
 5. **Einrichtung öffnen**: Solange es kein Konto gibt, leitet jede Seite zur Einrichtung. Sie öffnet sich nur mit einem Code, damit niemand eine frische Instanz übernehmen kann. Den Link findest du im Log:
 
@@ -264,6 +268,7 @@ Alle Einstellungen der App kommen aus der Datei `.env` neben der `compose.yaml` 
 | `APP_SECURE_COOKIES` | `false` nur, wenn du die App ohne HTTPS öffnest | `true` |
 | `FORWARDED_ALLOW_IPS` | IP des Reverse Proxys, damit uvicorn dessen `X-Forwarded-*`-Header vertraut | `127.0.0.1` |
 | `UVICORN_WORKERS` | Anzahl der uvicorn-Prozesse | `1` |
+| `LEXTRACKER_VERSION` | Docker: Version des Images (`0.4.0`, `0.4` oder `latest`) | `latest` |
 | `APP_PORT` | Docker: Port, auf dem die App veröffentlicht wird, z. B. `127.0.0.1:8000` | `8000` |
 | `APP_TIME_ZONE` | Zeitzone | `Europe/Berlin` |
 | `APP_LOG_LEVEL` | Log-Stufe | `info` |
@@ -322,11 +327,11 @@ Beim Wiederherstellen in der Oberfläche sichert die App zuerst den aktuellen St
 ### Update
 
 ```sh
-git pull
-docker compose up -d --build
+docker compose pull
+docker compose up -d
 ```
 
-Compose baut das Image neu und führt vor dem Start die Migrationen aus. Vorher lohnt sich ein Backup (`make docker-backup`).
+Compose lädt das neue Image und führt vor dem Start die Migrationen aus. Mit festgelegter `LEXTRACKER_VERSION` trägst du zuerst die neue Version in der `.env` ein. Vorher lohnt sich ein Backup (`make docker-backup`).
 
 ### IDs (UUID-Umstellung)
 
@@ -362,14 +367,14 @@ make format   # Code-Stil korrigieren
 
 ### Entwicklung mit Docker
 
-Wer lieber im Container entwickelt (gleiches Image und Python wie in Produktion), startet die Entwicklungsumgebung aus [dev.compose.yaml](dev.compose.yaml). Sie baut mit `extends` auf der `compose.yaml` auf und braucht ein aktuelles Docker Compose (getestet mit v5.6):
+Wer lieber im Container entwickelt (gleiche Basis und Python wie in Produktion), startet die Entwicklungsumgebung aus [dev.compose.yaml](dev.compose.yaml). Sie baut mit `extends` auf der `compose.yaml` auf und braucht ein aktuelles Docker Compose (getestet mit v5.6):
 
 ```sh
 cp .env.example .env    # APP_SECRET_KEY setzen, für die Entwicklung genügt ein beliebiger Wert
 make docker-dev         # oder: docker compose -f dev.compose.yaml watch
 ```
 
-Das baut das Image, startet App und Scheduler auf http://localhost:8000 und beobachtet danach den Code:
+Das baut das Image aus dem lokalen Quelltext (die `compose.yaml` für den Betrieb nutzt dagegen das veröffentlichte Image), startet App und Scheduler auf http://localhost:8000 und beobachtet danach den Code:
 
 - Änderungen unter `app/` werden in den Container kopiert; `uvicorn --reload` lädt bei Python-Dateien selbst neu, der Scheduler startet neu.
 - Bei Änderungen an Templates, Skripten oder `assets/tailwind.css` wird zusätzlich das Stylesheet neu gebaut (`manage.py tailwind build`). Beim ersten Mal lädt das das Tailwind-CLI herunter; es bleibt in einem Volume erhalten. Die Seite lädst du selbst neu.

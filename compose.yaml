@@ -18,11 +18,11 @@ x-environment: &environment
   DJANGO_SUPERUSER_EMAIL: ${DJANGO_SUPERUSER_EMAIL:-}
 
 # Shared by both services: same image, settings, data and hardening.
+# The image is the published release (see .github/workflows/build.yaml). Pin LEXTRACKER_VERSION
+# (e.g. 0.4.0 or 0.4) in .env to stay on a version; the default follows the newest release.
+# To build from source instead, use dev.compose.yaml.
 x-service: &service
-  build:
-    context: .
-    dockerfile: docker/Dockerfile
-  image: lextracker:latest
+  image: ghcr.io/maki-it/lextracker:${LEXTRACKER_VERSION:-latest}
   restart: unless-stopped
   init: true
   environment: *environment
