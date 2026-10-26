@@ -3,13 +3,14 @@ import uuid
 from decimal import Decimal
 from urllib.parse import unquote
 
+import httpx
 import pytest
 from django.urls import reverse
 from django.utils import timezone
 
 from core.models import AppSettings
 from customers.models import Customer
-from customers.sync import sync_customers
+from customers.sync import sync_contact, sync_customers
 from tests.lexware_fakes import contact, fake_client, page, serve_pages
 
 pytestmark = pytest.mark.django_db(transaction=True)
@@ -154,3 +155,67 @@ async def test_customers_from_before_the_note_sync_keep_their_note_and_get_lexwa
     # Neither note is lost; the local one goes to Lexware with the next save.
     assert both.notes == "lokal\n\naus Lexware"
     assert both.lexware_note == "aus Lexware"
+
+
+# One contact (webhook)
+
+
+def contact_api(raw: dict | None):
+    """Lexware's endpoint for a single contact: the contact, or 404 if it is gone."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if raw is None:
+            return httpx.Response(404, json={"message": "Not found"})
+        return httpx.Response(200, json=raw)
+
+    return handler
+
+
+async def test_one_contact_is_created_and_updated():
+    raw = contact("ACME GmbH", number=10001, version=1, note="Hallo")
+
+    result = await sync_contact(fake_client(contact_api(raw)), uuid.UUID(raw["id"]))
+
+    customer = await Customer.objects.aget(lexware_id=raw["id"])
+    assert (result.created, result.updated) == (1, 0)
+    assert (customer.name, customer.customer_number, customer.notes) == ("ACME GmbH", "10001", "Hallo")
+
+    raw = contact("ACME Holding", number=10001, version=2, id=raw["id"])
+    result = await sync_contact(fake_client(contact_api(raw)), uuid.UUID(raw["id"]))
+    customer = await Customer.objects.aget(lexware_id=raw["id"])
+    assert (result.created, result.updated) == (0, 1)
+    assert customer.name == "ACME Holding"
+    # Nothing else is touched or archived.
+    assert await Customer.objects.acount() == 1
+
+
+async def test_one_unchanged_contact_is_left_alone():
+    raw = contact("ACME GmbH", version=1)
+    client_id = uuid.UUID(raw["id"])
+    await sync_contact(fake_client(contact_api(raw)), client_id)
+
+    result = await sync_contact(fake_client(contact_api(raw)), client_id)
+
+    assert (result.created, result.updated, result.unchanged) == (0, 0, 1)
+
+
+async def test_one_contact_gone_from_lexware_is_archived():
+    other = await Customer.objects.acreate(name="Anderer", lexware_id=uuid.uuid4())
+    kept = contact("ACME GmbH", version=1)
+    await sync_contact(fake_client(contact_api(kept)), uuid.UUID(kept["id"]))
+
+    result = await sync_contact(fake_client(contact_api(None)), uuid.UUID(kept["id"]))
+
+    customer = await Customer.objects.aget(lexware_id=kept["id"])
+    assert result.removed == 1 and customer.lexware_deleted and customer.is_archived
+    await other.arefresh_from_db()
+    assert not other.lexware_deleted
+
+
+async def test_one_contact_without_customer_role_is_not_imported():
+    raw = contact("Lieferant GmbH", version=1, roles={"vendor": {"number": 70001}})
+
+    result = await sync_contact(fake_client(contact_api(raw)), uuid.UUID(raw["id"]))
+
+    assert (result.created, result.removed) == (0, 0)
+    assert not await Customer.objects.aexists()

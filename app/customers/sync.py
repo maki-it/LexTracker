@@ -1,6 +1,7 @@
 """Import and update customers from Lexware Office."""
 
 from dataclasses import dataclass
+from uuid import UUID
 
 from django.utils import timezone
 from django.utils.translation import gettext as _
@@ -8,7 +9,8 @@ from django.utils.translation import gettext as _
 from core.models import AppSettings
 from customers.lexware import merged_note
 from customers.models import Customer
-from lexware.client import LexwareClient, LexwareError, client_from_settings
+from lexware.client import LexwareClient, LexwareError, LexwareNotFound, client_from_settings
+from lexware.schemas import Contact
 
 # Fields that Lexware owns. Everything else (rates, categories) is only edited here. The notes are kept in both
 # places (see ``customers.lexware.merged_note``).
@@ -52,29 +54,29 @@ class SyncResult:
         return ", ".join(parts) + "."
 
 
-async def sync_customers(client: LexwareClient) -> SyncResult:
-    """Create customers that are new in Lexware and update those whose version changed."""
-    existing = {c.lexware_id: c async for c in Customer.objects.filter(lexware_id__isnull=False)}
-    now = timezone.now()
+def _values(contact: Contact, now) -> dict:
+    return {
+        "name": contact.name or "(ohne Namen)",
+        "customer_number": contact.customer_number,
+        "email": contact.email,
+        "phone": contact.phone,
+        "is_archived": contact.archived,
+        "lexware_deleted": False,
+        "lexware_version": contact.version,
+        "lexware_note": contact.note,
+        "lexware_synced_at": now,
+    }
+
+
+async def _apply(contacts: list[Contact], existing: dict[UUID, Customer], now) -> SyncResult:
+    """Create the customers that are new and update those whose version changed. ``existing``: by Lexware ID."""
     to_create: list[Customer] = []
     to_update: list[Customer] = []
     to_backfill: list[Customer] = []
     result = SyncResult()
 
-    seen = []
-    async for contact in client.iter_customers():
-        seen.append(contact.id)
-        values = {
-            "name": contact.name or "(ohne Namen)",
-            "customer_number": contact.customer_number,
-            "email": contact.email,
-            "phone": contact.phone,
-            "is_archived": contact.archived,
-            "lexware_deleted": False,
-            "lexware_version": contact.version,
-            "lexware_note": contact.note,
-            "lexware_synced_at": now,
-        }
+    for contact in contacts:
+        values = _values(contact, now)
         customer = existing.get(contact.id)
         if customer is None:
             to_create.append(Customer(lexware_id=contact.id, notes=contact.note, **values))
@@ -93,7 +95,7 @@ async def sync_customers(client: LexwareClient) -> SyncResult:
                 to_backfill.append(customer)
 
     if result.unchanged:
-        await Customer.objects.filter(lexware_id__in=seen).aupdate(lexware_synced_at=now)
+        await Customer.objects.filter(lexware_id__in=[c.id for c in contacts]).aupdate(lexware_synced_at=now)
     if to_create:
         # Upsert, so two imports running at the same time cannot create duplicates.
         await Customer.objects.abulk_create(
@@ -103,14 +105,43 @@ async def sync_customers(client: LexwareClient) -> SyncResult:
         await Customer.objects.abulk_update(to_update, [*SYNCED_FIELDS, "notes", "updated_at"])
     if to_backfill:
         await Customer.objects.abulk_update(to_backfill, ["notes", "lexware_note"])
+    result.created, result.updated = len(to_create), len(to_update)
+    return result
+
+
+async def sync_customers(client: LexwareClient) -> SyncResult:
+    """Create customers that are new in Lexware and update those whose version changed."""
+    existing = {c.lexware_id: c async for c in Customer.objects.filter(lexware_id__isnull=False)}
+    now = timezone.now()
+    contacts = [contact async for contact in client.iter_customers()]
+    result = await _apply(contacts, existing, now)
     # The import has seen every customer contact, so the rest are gone from Lexware.
     result.removed = await (
         Customer.objects.filter(lexware_id__isnull=False, lexware_deleted=False)
-        .exclude(lexware_id__in=seen)
+        .exclude(lexware_id__in=[c.id for c in contacts])
         .aupdate(lexware_deleted=True, is_archived=True, updated_at=now)
     )
-    result.created, result.updated = len(to_create), len(to_update)
     return result
+
+
+async def sync_contact(client: LexwareClient, contact_id: UUID) -> SyncResult:
+    """Bring the one customer with this Lexware ID up to date, as the import would.
+
+    A contact that is gone from Lexware or has no customer role any more archives its customer, like the import.
+    Contacts that are not customers and unknown here are ignored.
+    """
+    now = timezone.now()
+    try:
+        contact = Contact.model_validate(await client.get_contact(contact_id))
+    except LexwareNotFound:
+        contact = None
+    if contact is None or not contact.customer_number:
+        removed = await Customer.objects.filter(lexware_id=contact_id, lexware_deleted=False).aupdate(
+            lexware_deleted=True, is_archived=True, updated_at=now
+        )
+        return SyncResult(removed=removed)
+    existing = {c.lexware_id: c async for c in Customer.objects.filter(lexware_id=contact_id)}
+    return await _apply([contact], existing, now)
 
 
 async def _record(status: str, *, failed: bool) -> None:
