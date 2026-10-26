@@ -60,8 +60,9 @@ docker-dev: ## Run in Docker with code sync and reload (dev.compose.yaml)
 docker-dev-down: ## Stop the Docker dev environment
 	docker compose -f dev.compose.yaml down
 
-docker-up: ## Build and start the container
-	docker compose up -d --build
+docker-up: ## Pull the published image and start the container
+	docker compose pull
+	docker compose up -d
 
 docker-down: ## Stop the container
 	docker compose down

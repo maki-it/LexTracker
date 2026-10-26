@@ -1,4 +1,5 @@
-# Local development: the production setup from compose.yaml, with code reload and a stylesheet rebuild.
+# Local development: the production setup from compose.yaml, but built from the local source (instead of
+# the published image), with code reload and a stylesheet rebuild.
 #
 #   docker compose -f dev.compose.yaml watch
 #
@@ -26,6 +27,11 @@ x-app-sync: &app-sync
     - .django_tailwind_cli/
     - static/css/tailwind.css
 
+# compose.yaml pulls the published image; here both services build it from the Dockerfile.
+x-build: &build
+  context: .
+  dockerfile: docker/Dockerfile
+
 services:
   app:
     extends:
@@ -33,6 +39,7 @@ services:
       service: app
     container_name: lextracker-dev
     image: lextracker:dev
+    build: *build
     environment: *environment
     # Bound to localhost only, because the dev server runs with DEBUG on.
     ports: !override
@@ -84,6 +91,7 @@ services:
       service: scheduler
     container_name: lextracker-dev-scheduler
     image: lextracker:dev
+    build: *build
     environment: *environment
     read_only: false
     # `extends` does not take over depends_on.
