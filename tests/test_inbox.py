@@ -264,6 +264,23 @@ def test_critical_message_shows_a_banner_on_every_page(logged_in, admin):
     assert "weitere kritische" not in logged_in.get(reverse("core:dashboard")).text
 
 
+def test_bell_reloads_itself_often_and_when_the_tab_comes_back(logged_in):
+    page = logged_in.get(reverse("inbox:bell")).text
+
+    assert "every 15s" in page
+    assert "visibilitychange" in page
+    assert "focus from:window" in page
+    assert "{#" not in page
+
+
+def test_panel_in_the_dialog_reloads_itself_but_not_as_a_page(logged_in):
+    in_dialog = logged_in.get(reverse("inbox:panel"), HTTP_HX_REQUEST="true", HTTP_HX_TARGET="dialog-body").text
+    as_page = logged_in.get(reverse("inbox:panel")).text
+
+    assert "getElementById('dialog').open" in in_dialog
+    assert "getElementById('dialog').open" not in as_page
+
+
 def test_bell_fragment(logged_in, admin):
     notify(Level.INFO, "x", "Info")
     assert "Nachrichten, 1 ungelesen" in logged_in.get(reverse("inbox:bell")).text

@@ -1,15 +1,18 @@
 """Reminders for customers and projects: the page with all of them and the actions on one."""
 
+from urllib.parse import urlencode
 from uuid import UUID
 
 from asgiref.sync import sync_to_async
 from django.contrib import messages
+from django.db.models import Count, Q
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from core.ids import parse_uuid
@@ -22,8 +25,69 @@ from reminders import queries
 from reminders.forms import ReminderForm
 from reminders.models import Reminder
 
-# How many done reminders the page with all of them lists.
-DONE_LISTED = 30
+# How many done reminders the page lists at most.
+DONE_LISTED = 200
+
+# The status filter: key in the URL, label. Only one applies; the open reminders are the default.
+VIEWS = {"open": gettext_lazy("Offen"), "done": gettext_lazy("Erledigt"), "all": gettext_lazy("Alle")}
+DEFAULT_VIEW = "open"
+
+
+def _query_string(**params) -> str:
+    return urlencode({k: v for k, v in params.items() if v})
+
+
+@require_GET
+async def reminder_list(request: HttpRequest) -> HttpResponse:
+    view = request.GET.get("view", DEFAULT_VIEW)
+    if view not in VIEWS:
+        view = DEFAULT_VIEW
+    mine = queries.with_context(Reminder.objects.filter(user=request.user))
+    # What can be filtered by: the customers and projects the user has reminders for.
+    customers = [c async for c in Customer.objects.filter(reminders__user=request.user).distinct()]
+    customer = next((c for c in customers if c.pk == parse_uuid(request.GET.get("customer", ""))), None)
+    projects = Project.objects.filter(reminders__user=request.user).distinct().select_related("customer")
+    if customer:
+        projects = projects.filter(customer=customer)
+    projects = [p async for p in projects]
+    project = next((p for p in projects if p.pk == parse_uuid(request.GET.get("project", ""))), None)
+    if customer:
+        mine = mine.filter(customer=customer)
+    if project:
+        mine = mine.filter(project=project)
+
+    counts = await mine.aaggregate(
+        open=Count("pk", filter=Q(done_at__isnull=True)),
+        done=Count("pk", filter=Q(done_at__isnull=False)),
+        all=Count("pk"),
+    )
+    now = timezone.now()
+    open_ = [r async for r in mine.filter(done_at__isnull=True)] if view != "done" else []
+    done = (
+        [r async for r in mine.filter(done_at__isnull=False).order_by("-done_at")[:DONE_LISTED]]
+        if view != "open"
+        else []
+    )
+    selection = {"customer": customer.pk if customer else "", "project": project.pk if project else ""}
+    context = {
+        "overdue": [r for r in open_ if r.due_at and r.due_at <= now],
+        "upcoming": [r for r in open_ if r.due_at and r.due_at > now],
+        "undated": [r for r in open_ if not r.due_at],
+        "done": done,
+        "view": view,
+        "view_links": [
+            (key, label, counts[key], _query_string(view="" if key == DEFAULT_VIEW else key, **selection))
+            for key, label in VIEWS.items()
+        ],
+        "view_param": "" if view == DEFAULT_VIEW else view,
+        "customers": customers,
+        "projects": projects,
+        "customer": customer,
+        "project": project,
+        "filtered": bool(customer or project),
+        "total": counts["all"],
+    }
+    return render(request, "reminders/list.html", context)
 
 
 async def _get_reminder(request: HttpRequest, pk: UUID) -> Reminder:
@@ -38,20 +102,6 @@ def _back(request: HttpRequest) -> str:
     """Where an action returns to: the page it was started from, else the list."""
     target = request.POST.get("next") or request.GET.get("next") or ""
     return target if url_has_allowed_host_and_scheme(target, allowed_hosts=None) else reverse("reminders:list")
-
-
-@require_GET
-async def reminder_list(request: HttpRequest) -> HttpResponse:
-    reminders = queries.with_context(Reminder.objects.filter(user=request.user))
-    now = timezone.now()
-    open_ = [r async for r in reminders.filter(done_at__isnull=True)]
-    context = {
-        "overdue": [r for r in open_ if r.due_at and r.due_at <= now],
-        "upcoming": [r for r in open_ if r.due_at and r.due_at > now],
-        "undated": [r for r in open_ if not r.due_at],
-        "done": [r async for r in reminders.filter(done_at__isnull=False).order_by("-done_at")[:DONE_LISTED]],
-    }
-    return render(request, "reminders/list.html", context)
 
 
 async def _scope(request: HttpRequest) -> tuple[Customer | None, Project | None]:

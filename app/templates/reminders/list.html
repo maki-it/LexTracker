@@ -10,31 +10,59 @@
   </div>
   <a {% dialog_link "reminders:create" %} class="btn btn-primary">{% icon "plus" %}{% trans "Neue Erinnerung" %}</a>
 </div>
-{% if not overdue and not upcoming and not undated and not done %}
-<p class="py-10 text-center text-muted">{% trans "Noch keine Erinnerungen. Lege eine neue an, hier oder auf der Seite eines Kunden oder Projekts." %}</p>
-{% endif %}
-{% if overdue %}
-<section class="flex flex-col gap-2">
-  <h2>{% trans "Fällig" %}</h2>
-  <ul class="card flex flex-col p-3">{% for reminder in overdue %}{% include "reminders/_row.html" with show_subject=True next_url=request.path %}{% endfor %}</ul>
-</section>
-{% endif %}
-{% if upcoming %}
-<section class="flex flex-col gap-2">
-  <h2>{% trans "Anstehend" %}</h2>
-  <ul class="card flex flex-col p-3">{% for reminder in upcoming %}{% include "reminders/_row.html" with show_subject=True next_url=request.path %}{% endfor %}</ul>
-</section>
-{% endif %}
-{% if undated %}
-<section class="flex flex-col gap-2">
-  <h2>{% trans "Ohne Datum" %}</h2>
-  <ul class="card flex flex-col p-3">{% for reminder in undated %}{% include "reminders/_row.html" with show_subject=True next_url=request.path %}{% endfor %}</ul>
-</section>
-{% endif %}
-{% if done %}
-<section class="flex flex-col gap-2">
-  <h2>{% trans "Erledigt" %}</h2>
-  <ul class="card flex flex-col p-3">{% for reminder in done %}{% include "reminders/_row.html" with show_subject=True next_url=request.path %}{% endfor %}</ul>
-</section>
-{% endif %}
+<div id="reminder-list" class="flex flex-col gap-4">
+  <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+    <nav aria-label="{% trans 'Nach Status filtern' %}" class="flex flex-wrap gap-1.5">
+      {% for key, label, count, link in view_links %}
+      <a href="?{{ link }}" class="pill gap-1.5{% if view == key %} pill-active{% endif %}"{% if view == key %} aria-current="true"{% endif %}>{{ label }}<span class="text-muted tabular-nums">{{ count }}</span></a>
+      {% endfor %}
+    </nav>
+    {% if customers %}
+    <form method="get" class="flex flex-wrap items-center gap-2"
+          hx-get="{% url 'reminders:list' %}" hx-trigger="change" hx-target="#reminder-list" hx-select="#reminder-list" hx-swap="outerHTML" hx-push-url="true">
+      {% if view_param %}<input type="hidden" name="view" value="{{ view_param }}">{% endif %}
+      <select name="customer" class="input h-8 w-48 text-[13px]" aria-label="{% trans 'Nach Kunde filtern' %}">
+        <option value="">{% trans "Alle Kunden" %}</option>
+        {% for c in customers %}<option value="{{ c.pk }}"{% if customer.pk == c.pk %} selected{% endif %}>{{ c.name }}</option>{% endfor %}
+      </select>
+      <select name="project" class="input h-8 w-48 text-[13px]" aria-label="{% trans 'Nach Projekt filtern' %}">
+        <option value="">{% trans "Alle Projekte" %}</option>
+        {% for p in projects %}<option value="{{ p.pk }}"{% if project.pk == p.pk %} selected{% endif %}>{% if not customer %}{{ p.customer.name }} · {% endif %}{{ p.name }}</option>{% endfor %}
+      </select>
+      <noscript><button type="submit" class="btn btn-sm">{% trans "Filtern" %}</button></noscript>
+      {% if filtered %}<a href="?{% if view_param %}view={{ view_param }}{% endif %}" class="btn btn-ghost btn-sm">{% trans "Zurücksetzen" %}</a>{% endif %}
+    </form>
+    {% endif %}
+  </div>
+
+  {% if not overdue and not upcoming and not undated and not done %}
+  <p class="py-10 text-center text-muted">
+    {% if total == 0 and not filtered %}{% trans "Noch keine Erinnerungen. Lege eine neue an, hier oder auf der Seite eines Kunden oder Projekts." %}{% else %}{% trans "Keine Erinnerungen für diese Auswahl." %}{% endif %}
+  </p>
+  {% endif %}
+  {% if overdue %}
+  <section class="flex flex-col gap-2">
+    <h2>{% trans "Fällig" %}</h2>
+    <ul class="card flex flex-col p-3">{% for reminder in overdue %}{% include "reminders/_row.html" with show_subject=True next_url=request.get_full_path %}{% endfor %}</ul>
+  </section>
+  {% endif %}
+  {% if upcoming %}
+  <section class="flex flex-col gap-2">
+    <h2>{% trans "Anstehend" %}</h2>
+    <ul class="card flex flex-col p-3">{% for reminder in upcoming %}{% include "reminders/_row.html" with show_subject=True next_url=request.get_full_path %}{% endfor %}</ul>
+  </section>
+  {% endif %}
+  {% if undated %}
+  <section class="flex flex-col gap-2">
+    <h2>{% trans "Ohne Datum" %}</h2>
+    <ul class="card flex flex-col p-3">{% for reminder in undated %}{% include "reminders/_row.html" with show_subject=True next_url=request.get_full_path %}{% endfor %}</ul>
+  </section>
+  {% endif %}
+  {% if done %}
+  <section class="flex flex-col gap-2">
+    <h2>{% trans "Erledigt" %}</h2>
+    <ul class="card flex flex-col p-3">{% for reminder in done %}{% include "reminders/_row.html" with show_subject=True next_url=request.get_full_path %}{% endfor %}</ul>
+  </section>
+  {% endif %}
+</div>
 {% endblock %}

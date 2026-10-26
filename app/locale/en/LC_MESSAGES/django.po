@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: LexTracker\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-26 15:17+0100\n"
+"POT-Creation-Date: 2026-10-26 15:51+0100\n"
 "PO-Revision-Date: 2026-10-25 12:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: English\n"
@@ -1836,6 +1836,12 @@ msgstr "Remind me by e-mail"
 msgid "benachrichtigt"
 msgstr "notified"
 
+msgid "Erledigt"
+msgstr "Done"
+
+msgid "Alle"
+msgstr "All"
+
 #, python-format
 msgid "Erinnerung „%(title)s“ gespeichert."
 msgstr "Reminder “%(title)s” saved."
@@ -2416,9 +2422,6 @@ msgstr "Contact details"
 msgid "Aktive Projekte"
 msgstr "Active projects"
 
-msgid "Fällige Erinnerungen"
-msgstr "Due reminders"
-
 msgid "Abrechnung"
 msgstr "Billing"
 
@@ -2731,9 +2734,6 @@ msgstr "Update status"
 
 msgid "Nach Status filtern"
 msgstr "Filter by status"
-
-msgid "Alle"
-msgstr "All"
 
 msgid "Noch nicht abgerechnet"
 msgstr "Not billed yet"
@@ -4094,6 +4094,9 @@ msgid ""
 msgstr ""
 "No templates yet. Create a new one or save an existing task as a template."
 
+msgid "Fällige Erinnerungen"
+msgstr "Due reminders"
+
 msgid "fällig"
 msgstr "due"
 
@@ -4112,9 +4115,6 @@ msgstr "Notification by e-mail"
 
 msgid "Wieder öffnen"
 msgstr "Reopen"
-
-msgid "Erledigt"
-msgstr "Done"
 
 #, python-format
 msgid "Erinnerung %(title)s bearbeiten"
@@ -4142,11 +4142,23 @@ msgstr ""
 "Things to remember about a customer or project, with a notification in the "
 "bell and by e-mail if you like."
 
+msgid "Nach Projekt filtern"
+msgstr "Filter by project"
+
+msgid "Filtern"
+msgstr "Filter"
+
+msgid "Zurücksetzen"
+msgstr "Reset"
+
 msgid ""
 "Noch keine Erinnerungen. Lege eine neue an, hier oder auf der Seite eines "
 "Kunden oder Projekts."
 msgstr ""
 "No reminders yet. Create one here or on the page of a customer or project."
+
+msgid "Keine Erinnerungen für diese Auswahl."
+msgstr "No reminders for this selection."
 
 msgid "Fällig"
 msgstr "Due"

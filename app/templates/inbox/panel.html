@@ -4,7 +4,8 @@
 {% block title %}{% trans "Nachrichten" %} · {{ brand.name }}{% endblock %}
 {% block content %}
 <h1>{% trans "Nachrichten" %}</h1>
-<div class="-mt-2 flex flex-col gap-3">
+{# In the dialog the list reloads while it is open (the closed dialog keeps its content, which must not reload and reopen it), so new messages show up without reopening it. #}
+<div class="-mt-2 flex flex-col gap-3"{% if in_dialog %} hx-get="{% url 'inbox:panel' %}{% if show_all %}?filter=all{% endif %}" hx-trigger="every 15s [document.visibilityState === 'visible' && document.getElementById('dialog').open]" hx-target="#dialog-body" hx-swap="innerHTML" hx-select="unset" hx-push-url="false"{% endif %}>
   <nav aria-label="{% trans 'Anzeige' %}" class="flex flex-wrap gap-1.5">
     <a {% dialog_link "inbox:panel" %} class="pill{% if not show_all %} pill-active{% endif %}">{% trans "Ungelesen" %}</a>
     <a {% dialog_link "inbox:panel" filter="all" %} class="pill{% if show_all %} pill-active{% endif %}">{% trans "Alle anzeigen" %}</a>

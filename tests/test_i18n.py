@@ -196,6 +196,7 @@ def test_main_pages_have_no_german_left(client, user, task, english):
         reverse("inbox:all"),
         reverse("inbox:panel"),
         reverse("reminders:list"),
+        reverse("reminders:list") + "?view=all",
         reverse("reminders:create"),
         reverse("reminders:create") + f"?project={task.project.pk}",
         reverse("account:settings"),

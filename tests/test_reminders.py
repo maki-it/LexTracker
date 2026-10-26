@@ -251,7 +251,7 @@ def test_employees_have_no_reminders(client, task):
     assert client.get(reverse("reminders:list")).status_code == 403
 
 
-def test_list_groups_by_state(logged_in, admin, task):
+def test_list_shows_the_open_reminders_by_default(logged_in, admin, task):
     make(admin, task, title="fällig jetzt")
     make(admin, task, title="kommt noch", due_at=timezone.now() + timedelta(days=1))
     make(admin, task, title="irgendwann", due_at=None)
@@ -262,7 +262,65 @@ def test_list_groups_by_state(logged_in, admin, task):
     assert page.context["overdue"][0].title == "fällig jetzt"
     assert [r.title for r in page.context["upcoming"]] == ["kommt noch"]
     assert [r.title for r in page.context["undated"]] == ["irgendwann"]
-    assert [r.title for r in page.context["done"]] == ["schon fertig"]
+    assert page.context["done"] == []
+    assert [(key, count) for key, _, count, _ in page.context["view_links"]] == [("open", 3), ("done", 1), ("all", 4)]
+
+
+def test_list_filters_by_status(logged_in, admin, task):
+    make(admin, task, title="offen")
+    make(admin, task, title="fertig", done_at=timezone.now())
+
+    done = logged_in.get(reverse("reminders:list"), {"view": "done"}).context
+    both = logged_in.get(reverse("reminders:list"), {"view": "all"}).context
+    unknown = logged_in.get(reverse("reminders:list"), {"view": "gibtsnicht"}).context
+
+    assert ([r.title for r in done["overdue"]], [r.title for r in done["done"]]) == ([], ["fertig"])
+    assert ([r.title for r in both["overdue"]], [r.title for r in both["done"]]) == (["offen"], ["fertig"])
+    assert unknown["view"] == "open"
+
+
+def test_list_filters_by_customer_and_project(logged_in, admin, task):
+    from customers.models import Customer
+    from projects.models import Project
+
+    other = Customer.objects.create(name="Beta AG")
+    other_project = Project.objects.create(customer=other, name="Shop")
+    make(admin, task, title="ACME allgemein")
+    make(admin, task, title="ACME Website", project=True)
+    Reminder.objects.create(user=admin, customer=other, project=other_project, title="Beta Shop")
+
+    def titles(**params):
+        context = logged_in.get(reverse("reminders:list"), params).context
+        return sorted(r.title for r in context["overdue"] + context["undated"] + context["upcoming"])
+
+    assert len(titles()) == 3
+    assert titles(customer=task.project.customer.pk) == ["ACME Website", "ACME allgemein"]
+    assert titles(project=task.project.pk) == ["ACME Website"]
+    assert titles(customer=other.pk) == ["Beta Shop"]
+    # A project of another customer does not fit the customer: nothing matches both.
+    assert titles(customer=other.pk, project=task.project.pk) == ["Beta Shop"]
+
+
+def test_list_filter_ignores_unknown_ids_and_other_users(logged_in, admin, task):
+    other = User.objects.create_user(username="ines", password="geheim-123", role=User.Role.ADMIN)
+    make(admin, task)
+    make(other, task, title="von Ines")
+
+    context = logged_in.get(reverse("reminders:list"), {"customer": "kaputt", "project": "0" * 32}).context
+
+    assert [r.title for r in context["overdue"]] == ["Angebot nachfassen"]
+    assert context["customer"] is None and context["project"] is None
+
+
+def test_actions_on_the_list_return_to_the_same_filter(logged_in, admin, task):
+    reminder = make(admin, task)
+    url = reverse("reminders:list") + "?view=all"
+
+    page = logged_in.get(url)
+
+    assert f'value="{url}"' in page.text
+    response = logged_in.post(reverse("reminders:done", args=[reminder.pk]), {"next": url})
+    assert response["Location"] == url
 
 
 def test_customer_and_project_pages_list_their_reminders(logged_in, admin, task):
@@ -284,3 +342,20 @@ def test_sidebar_counts_due_reminders(logged_in, admin, task):
     response = logged_in.get(reverse("projects:list"))
 
     assert response.wsgi_request.nav_counts["reminders"] == 1
+
+
+def test_bell_brings_the_sidebar_count_of_due_reminders(logged_in, admin, task):
+    make(admin, task)
+
+    fragment = logged_in.get(reverse("inbox:bell")).text
+
+    assert 'id="nav-reminders-count"' in fragment
+    assert 'hx-swap-oob="true"' in fragment
+    assert ">1<" in fragment
+
+
+def test_bell_has_no_reminder_count_for_employees(client, task):
+    employee = User.objects.create_user(username="mia", password="geheim-123", role=User.Role.EMPLOYEE)
+    client.force_login(employee)
+
+    assert "nav-reminders-count" not in client.get(reverse("inbox:bell")).text
