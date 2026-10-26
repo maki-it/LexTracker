@@ -62,14 +62,18 @@ LABEL org.opencontainers.image.title="LexTracker" \
       org.opencontainers.image.source="https://github.com/maki-it/LexTracker" \
       org.opencontainers.image.version="${VERSION}"
 
+COPY --chmod=755 docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+
 USER app
 VOLUME ["/data", "/backups"]
 EXPOSE 8000
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
     CMD ["python", "-c", "import urllib.request,sys; sys.exit(urllib.request.urlopen('http://127.0.0.1:8000/health/', timeout=4).status != 200)"]
 
-# Migrations run as a pre_start hook in compose.yaml. Worker count and trusted proxy IPs
-# come from UVICORN_WORKERS and FORWARDED_ALLOW_IPS.
+# The entrypoint runs the migrations and creates the admin account before uvicorn starts (see
+# docker/entrypoint.sh). The start period above leaves room for it. Worker count and trusted
+# proxy IPs come from UVICORN_WORKERS and FORWARDED_ALLOW_IPS.
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["uvicorn", "config.asgi:application", "--host", "0.0.0.0", "--port", "8000", \
      "--proxy-headers", "--lifespan", "off", "--no-server-header"]

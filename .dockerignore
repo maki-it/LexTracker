@@ -5,6 +5,7 @@
 !pyproject.toml
 !uv.lock
 !app
+!docker/entrypoint.sh
 
 # Generated or downloaded locally, rebuilt in the image.
 app/.django_tailwind_cli

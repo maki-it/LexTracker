@@ -289,7 +289,7 @@ Neben der App startet ein zweiter Container `scheduler` aus demselben Image, sob
 
 Unter Einstellungen → Hintergrundaufgaben (oben rechts) siehst du als Admin, ob der Scheduler lebt (er meldet sich bei jeder Prüfung in der Datenbank; nach fünf Minuten Stille warnt die Seite und die Übersicht) und für jede Aufgabe Zeitplan, nächsten und letzten Lauf mit Dauer, Ergebnis, letzter Fehlermeldung und Fehlschlägen in Folge. Fehler kommen weiterhin als Nachricht in die Glocke; die Seite legt keine eigenen an. Prüfungen, die nichts zu tun hatten (E-Mail-Warteschlange, Berichte, Timer-Nachrichten), hinterlassen keine Spur, außer sie folgen auf einen Fehler.
 
-Vor jedem Start führt Compose über `pre_start`-Hooks die Migrationen aus und legt, falls `DJANGO_SUPERUSER_USERNAME` und `DJANGO_SUPERUSER_PASSWORD` gesetzt sind, das Admin-Konto an (sofern es noch nicht existiert). Schlägt ein Hook fehl, startet die App nicht. Dafür ist ein aktuelles Docker Compose nötig (getestet mit v5.6).
+Vor jedem Start führt der Entrypoint des Images (`docker/entrypoint.sh`) die Migrationen aus und legt, falls `DJANGO_SUPERUSER_USERNAME` und `DJANGO_SUPERUSER_PASSWORD` gesetzt sind, das Admin-Konto an (sofern es noch nicht existiert). Schlägt einer der Schritte fehl, beendet sich der Container und die App startet nicht. Das funktioniert mit jedem Compose-Setup, auch in Portainer.
 
 Beide Container laufen ohne Root, mit schreibgeschütztem Dateisystem (beschreibbar sind nur `/data`, `/backups` und `/tmp`), ohne Linux-Capabilities und mit begrenzten Logs (5 × 10 MB).
 

@@ -1,6 +1,6 @@
 # Values come from the .env file next to this file (see .env.example).
-# They are listed under `environment` (shared by both services) instead of using `env_file`, because the
-# pre_start hooks only receive the service's `environment`, not its `env_file`.
+# They are listed under `environment` (shared by both services) instead of using `env_file`, so every
+# setting the services use is visible in one place.
 x-environment: &environment
   APP_ENVIRONMENT: production
   APP_SECRET_KEY: ${APP_SECRET_KEY:?set APP_SECRET_KEY in .env}
@@ -50,12 +50,8 @@ services:
     ports:
       - "${APP_PORT:-8000}:8000"
     stop_grace_period: 30s
-    # Each hook runs in a one-off container with the same image, environment and volumes
-    # before the app starts. If a hook fails, the app does not start.
-    # Needs a recent Docker Compose (tested with v5.6).
-    pre_start:
-      - command: ["python", "manage.py", "migrate", "--noinput"]
-      - command: ["python", "manage.py", "ensure_superuser"]
+    # The image's entrypoint runs the migrations and creates the admin account before uvicorn
+    # starts. If one of them fails, the container exits and the app does not start.
 
   # Runs recurring jobs: the automatic customer import, the invoice sync, the daily database
   # backup, weekly reports and reminders, all set on the settings page. It also sends the queued
@@ -72,7 +68,7 @@ services:
       start_period: 30s
       retries: 3
     depends_on:
-      # Starts once the app answers, so its pre_start hooks have migrated the database.
+      # Starts once the app answers, so the entrypoint has migrated the database.
       app:
         condition: service_healthy
 

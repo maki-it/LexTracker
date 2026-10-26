@@ -84,6 +84,8 @@ services:
           action: rebuild
         - path: ./docker/Dockerfile
           action: rebuild
+        - path: ./docker/entrypoint.sh
+          action: rebuild
 
   scheduler:
     extends:
@@ -108,6 +110,8 @@ services:
         - path: ./uv.lock
           action: rebuild
         - path: ./docker/Dockerfile
+          action: rebuild
+        - path: ./docker/entrypoint.sh
           action: rebuild
 
 volumes:
