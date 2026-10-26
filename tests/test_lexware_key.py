@@ -8,7 +8,7 @@ from django.urls import reverse
 
 from accounts.models import User
 from lexware import credentials
-from lexware.client import LexwareClient, LexwareError
+from lexware.client import LexwareClient, LexwareError, LexwareUnauthorized
 from lexware.models import LexwareConnection
 from lexware.schemas import Profile
 
@@ -133,6 +133,62 @@ def test_test_connection(admin, accept_key, settings):
 
     assert accept_key == [API_KEY]
     assert "Verbindung zu Lexware Office klappt (Maki IT)" in response.text
+
+
+def test_rejected_key_is_not_shown_as_connected(admin, accept_key, monkeypatch, settings):
+    settings.LEXWARE_API_KEY = ""
+    async_to_sync(credentials.astore)(API_KEY, company_name="Maki IT")
+    assert "verbunden" in admin.get(reverse("core:settings")).text
+
+    async def reject(api_key):
+        raise LexwareUnauthorized("Lexware hat den API-Schlüssel abgelehnt.")
+
+    monkeypatch.setattr(credentials, "acheck", reject)
+    response = admin.post(reverse("lexware:test_key"), follow=True)
+
+    assert "Verbindung fehlgeschlagen" in response.text
+    assert "Schlüssel ungültig" in response.text
+    assert "von Lexware abgelehnt" in response.text
+    assert 'badge badge-success">verbunden' not in response.text
+    assert async_to_sync(credentials.astatus)().rejected_at is not None
+    # The stored key stays, so it can be tested again once the key works.
+    assert stored_key() == API_KEY
+
+
+def test_working_connection_clears_rejection(admin, accept_key, settings):
+    settings.LEXWARE_API_KEY = ""
+    async_to_sync(credentials.astore)(API_KEY)
+    async_to_sync(credentials.amark_rejected)()
+
+    response = admin.post(reverse("lexware:test_key"), follow=True)
+
+    assert async_to_sync(credentials.astatus)().rejected_at is None
+    assert 'badge badge-success">verbunden' in response.text
+    assert "Schlüssel ungültig" not in response.text
+
+
+def test_saving_a_new_key_clears_rejection(admin, accept_key, settings):
+    settings.LEXWARE_API_KEY = ""
+    async_to_sync(credentials.astore)("old-key-aaaa")
+    async_to_sync(credentials.amark_rejected)()
+
+    admin.post(reverse("lexware:save_key"), {"api_key": API_KEY})
+
+    assert async_to_sync(credentials.astatus)().rejected_at is None
+
+
+def test_unreachable_lexware_does_not_mark_the_key_as_rejected(admin, monkeypatch, settings):
+    settings.LEXWARE_API_KEY = ""
+    async_to_sync(credentials.astore)(API_KEY)
+
+    async def unreachable(api_key):
+        raise LexwareError("Lexware ist nicht erreichbar: timeout")
+
+    monkeypatch.setattr(credentials, "acheck", unreachable)
+    response = admin.post(reverse("lexware:test_key"), follow=True)
+
+    assert "Verbindung fehlgeschlagen" in response.text
+    assert async_to_sync(credentials.astatus)().rejected_at is None
 
 
 def test_employees_cannot_set_the_key(client, accept_key):

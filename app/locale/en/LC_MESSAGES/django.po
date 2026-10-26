@@ -1321,6 +1321,9 @@ msgstr "Lexware account"
 msgid "zuletzt geprüft"
 msgstr "last checked"
 
+msgid "abgelehnt am"
+msgstr "rejected on"
+
 msgid "Lexware-Verbindung"
 msgstr "Lexware connection"
 
@@ -3119,6 +3122,13 @@ msgstr "connected"
 #, python-format
 msgid "zuletzt geprüft %(verified_at)s Uhr"
 msgstr "last checked %(verified_at)s"
+
+msgid "Schlüssel ungültig"
+msgstr "Key invalid"
+
+#, python-format
+msgid "von Lexware abgelehnt %(rejected_at)s Uhr"
+msgstr "rejected by Lexware %(rejected_at)s"
 
 msgid "aus Umgebungsvariable"
 msgstr "from environment variable"

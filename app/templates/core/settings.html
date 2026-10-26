@@ -27,10 +27,15 @@
   </div>
   {% if lexware.source == "app" %}
   <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+    {% if lexware.rejected_at %}
+    <span class="badge badge-danger">{% trans "Schlüssel ungültig" %}</span>
+    {% else %}
     <span class="badge badge-success">{% trans "verbunden" %}</span>
+    {% endif %}
     <code>{{ lexware.masked }}</code>
     {% if lexware.company_name %}<span>{{ lexware.company_name }}</span>{% endif %}
-    {% if lexware.verified_at %}<span class="text-muted">{% blocktrans trimmed with verified_at=lexware.verified_at|date:datetime_format %}zuletzt geprüft {{ verified_at }} Uhr{% endblocktrans %}</span>{% endif %}
+    {% if lexware.rejected_at %}<span class="text-danger">{% blocktrans trimmed with rejected_at=lexware.rejected_at|date:datetime_format %}von Lexware abgelehnt {{ rejected_at }} Uhr{% endblocktrans %}</span>
+    {% elif lexware.verified_at %}<span class="text-muted">{% blocktrans trimmed with verified_at=lexware.verified_at|date:datetime_format %}zuletzt geprüft {{ verified_at }} Uhr{% endblocktrans %}</span>{% endif %}
   </div>
   {% elif lexware.source == "env" %}
   <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">

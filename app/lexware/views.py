@@ -11,7 +11,7 @@ from django.views.decorators.http import require_http_methods, require_POST
 
 from core.ids import parse_uuid
 from lexware import credentials, webhooks
-from lexware.client import LexwareError, client_from_settings
+from lexware.client import LexwareError, LexwareUnauthorized, client_from_settings
 from lexware.forms import ApiKeyForm
 from lexware.models import WebhookSubscription
 
@@ -59,6 +59,9 @@ async def test_key(request: HttpRequest) -> HttpResponse:
         api_key = await credentials.aget_api_key()
         profile = await credentials.acheck(api_key)
     except LexwareError as exc:
+        # Only a rejected key says something about the key. A network error or a rate limit does not.
+        if isinstance(exc, LexwareUnauthorized) and (await credentials.astatus()).source == "app":
+            await credentials.amark_rejected()
         messages.error(request, _("Verbindung fehlgeschlagen: %(error)s") % {"error": exc})
     else:
         if (await credentials.astatus()).source == "app":
