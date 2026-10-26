@@ -6,7 +6,6 @@ from pathlib import Path
 import pytest
 from django.urls import reverse
 
-from accounts.models import User
 from config.env import Env
 from core import version
 
@@ -85,18 +84,6 @@ def test_info_tab_marks_a_build_from_source(client, user, running):
     page = client.get(reverse("core:settings"), {"tab": "info"}).text
     assert "Entwicklungsstand" in page
     assert "releases/tag" not in page
-
-
-@pytest.mark.django_db
-def test_sidebar_shows_the_version_to_admins_only(client, user, running):
-    running(version="0.7.0")
-    employee = User.objects.create_user(username="mia", password="geheim-123", role=User.Role.EMPLOYEE)
-    client.force_login(user)
-    page = client.get(reverse("core:dashboard")).text
-    assert ">v0.7.0</a>" in page
-    assert f'href="{reverse("core:settings")}?tab=info"' in page
-    client.force_login(employee)
-    assert "v0.7.0" not in client.get(reverse("core:dashboard")).text
 
 
 @pytest.mark.django_db

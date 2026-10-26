@@ -2566,9 +2566,6 @@ msgstr "Administration"
 msgid "Abmelden"
 msgstr "Sign out"
 
-msgid "Info zur App"
-msgstr "About this app"
-
 #, python-format
 msgid "Und %(critical_count)s weitere kritische Nachrichten."
 msgstr "And %(critical_count)s more critical messages."
