@@ -201,15 +201,21 @@ async def run_webhook_syncs(retry_at: dict[str, datetime], now: datetime) -> lis
         resource_ids = {e.resource_id for e in claimed}
         # A few changed contacts or invoices: load only those.
         few = None not in resource_ids and len(resource_ids) <= WEBHOOK_MAX_SINGLE
-        if job.key == "customers" and few:
-            ran.append(_("%(count)d Kunden") % {"count": len(resource_ids)})
-            done = await run_contact_syncs(sorted(resource_ids))
-        elif job.key == "invoices" and few:
-            ran.append(_("%(count)d Rechnungen") % {"count": len(resource_ids)})
-            done = await run_invoice_syncs(sorted(resource_ids))
-        else:
-            ran.append(job.name)
-            done = await run_job(job)
+        try:
+            if job.key == "customers" and few:
+                ran.append(_("%(count)d Kunden") % {"count": len(resource_ids)})
+                done = await run_contact_syncs(sorted(resource_ids))
+            elif job.key == "invoices" and few:
+                ran.append(_("%(count)d Rechnungen") % {"count": len(resource_ids)})
+                done = await run_invoice_syncs(sorted(resource_ids))
+            else:
+                ran.append(job.name)
+                done = await run_job(job)
+        except Exception:
+            # Not a Lexware error (those are reported and give ``done = False``): the calls must not get lost.
+            await webhooks.arelease(claimed)
+            retry_at[job.key] = now + timedelta(seconds=WEBHOOK_RETRY_AFTER)
+            raise
         if done:
             retry_at.pop(job.key, None)
         else:
