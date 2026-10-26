@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.6.0](https://github.com/maki-it/LexTracker/compare/lextracker-v0.5.0...lextracker-v0.6.0) (2026-10-26)
+
+
+### Features
+
+* **lexware:** sync customers and invoices on Lexware webhooks ([#172](https://github.com/maki-it/LexTracker/issues/172)) ([a60bb69](https://github.com/maki-it/LexTracker/commit/a60bb690cf56210a4f4844f744ae135b65ab0fa9))
+* **reminders:** filter reminders by status, customer and project; refresh the bell on its own ([#170](https://github.com/maki-it/LexTracker/issues/170)) ([fdb3cb0](https://github.com/maki-it/LexTracker/commit/fdb3cb062aca704fe2c6d8baef2c50806f17c432))
+* **reminders:** remind about customers and projects, sync customer notes with Lexware ([#168](https://github.com/maki-it/LexTracker/issues/168)) ([687093f](https://github.com/maki-it/LexTracker/commit/687093fadf4743752ef35e9536f37afd4a94cf04))
+
+
+### Bug Fixes
+
+* **reminders:** align the due count in the sidebar with the other counts ([#171](https://github.com/maki-it/LexTracker/issues/171)) ([baeb5e5](https://github.com/maki-it/LexTracker/commit/baeb5e538f42e9c57674ed473cdf602129ba6fcf))
+* **settings:** move the app address to the general settings and make the mail hint visible ([#173](https://github.com/maki-it/LexTracker/issues/173)) ([186df4c](https://github.com/maki-it/LexTracker/commit/186df4ce1f270e27f0f0397eda34c885f31c6945))
+
 ## [0.5.0](https://github.com/maki-it/LexTracker/compare/lextracker-v0.4.0...lextracker-v0.5.0) (2026-10-26)
 
 
