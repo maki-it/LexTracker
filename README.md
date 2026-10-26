@@ -84,6 +84,7 @@ Das kann LexTracker:
 - **MCP-Server**: KI-Agenten erfassen Zeiten über das Model Context Protocol.
 - **Zugänge**: Mitarbeiter und Kunden mit eigenen Rechten, Einladung per Link.
 - **E-Mail**: Passwort zurücksetzen, Anmeldelink ohne Passwort, Einladung neuer Benutzer, Wochenbericht, Erinnerung an laufende Timer und Hinweis auf überfällige Rechnungen.
+- **Erinnerungen**: Notizen zu Kunden und Projekten, auf Wunsch mit Datum und Uhrzeit und einer Benachrichtigung per Glocke und E-Mail.
 - **Nachrichten**: Glocke und Postfach für Meldungen der App (Sicherung, Lexware-Abgleich, E-Mail-Versand, Timer) mit Prioritäten Kritisch, Warnung, Info und Debug, pro Benutzer einstellbar.
 
 Die Einzelheiten stehen in den folgenden Abschnitten.
@@ -95,10 +96,12 @@ Er wird verschlüsselt in der Datenbank gespeichert (mit einem Schlüssel, der a
 `APP_LEXWARE_API_KEY` funktioniert weiter als Ersatz, solange in der App keiner hinterlegt ist; danach kannst du die Variable entfernen.
 
 **Import:** Kontakte mit Kundenrolle werden automatisch importiert, standardmäßig stündlich. Unter **Einstellungen** stellst du für den Kundenimport und den Abgleich des Rechnungsstatus getrennt ein, wie oft sie laufen (aus, alle 15 Minuten bis wöchentlich) und optional in welchem Zeitfenster (z. B. 07:00 bis 19:00, auch über Mitternacht). Bei „täglich“ oder „wöchentlich“ bestimmt „ab“ die Uhrzeit. Der Button **Aus Lexware importieren** auf der Kundenseite startet den Import sofort, auf der Kommandozeile geht das mit `uv run app/manage.py sync_lexware_customers` (im Container `docker compose exec app python manage.py sync_lexware_customers`).
-Der Import legt neue Kunden an und aktualisiert Name, Kundennummer, E-Mail, Telefon und Archiv-Status, wenn sich der Kontakt in Lexware geändert hat (erkannt an der Versionsnummer).
+Der Import legt neue Kunden an und aktualisiert Name, Kundennummer, E-Mail, Telefon, Notiz und Archiv-Status, wenn sich der Kontakt in Lexware geändert hat (erkannt an der Versionsnummer).
 
-**Bearbeiten:** Ein Klick auf den Kundennamen öffnet das Formular. Änderungen an Name, E-Mail und Telefon speichert LexTracker auch im Lexware-Kontakt; der Kontakt wird dafür frisch geladen, damit in Lexware geänderte andere Felder erhalten bleiben. Stundensatz und Notizen gibt es nur hier.
+**Bearbeiten:** Ein Klick auf den Kundennamen öffnet das Formular. Änderungen an Name, E-Mail, Telefon und Notizen speichert LexTracker auch im Lexware-Kontakt; der Kontakt wird dafür frisch geladen, damit in Lexware geänderte andere Felder erhalten bleiben. Den Stundensatz gibt es nur hier.
 Kundennummer und Archiv-Status pflegst du weiter in Lexware.
+
+**Notizen:** Die Notiz eines Kunden ist das Feld „Notiz“ des Lexware-Kontakts und wird in beide Richtungen abgeglichen. Lexware nimmt höchstens 1000 Zeichen an; das Formular prüft das bei Kunden mit Lexware-Kontakt, Kunden nur in LexTracker haben keine Grenze. Eine in Lexware geänderte Notiz übernimmt der nächste Import, solange die Notiz hier nicht anders geändert wurde. Beim ersten Import nach der Umstellung bleiben vorhandene Notizen erhalten: Gibt es hier und in Lexware verschiedene, stehen beide untereinander in der Notiz und gehen beim nächsten Speichern des Kunden nach Lexware. Lexware zeigt Markdown als einfachen Text. Dateien, Aufgaben und Tags der Lexware-Kontakte bietet die Public API nicht an; Erinnerungen und Kategorien gibt es deshalb nur in LexTracker.
 **Kategorien** für Kunden (z. B. „Stammkunde“) vergibst du im Formular; Lexware liefert über die API keine. Auf der Kundenseite filterst du danach und suchst nach Name, Nummer, E-Mail oder Notiz.
 
 **Gelöschte Kontakte:** Taucht ein Kunde beim Import nicht mehr auf (in Lexware gelöscht oder ohne Kundenrolle), wird er archiviert und als „in Lexware gelöscht“ markiert, aber nicht gelöscht, weil Zeiten und Rechnungen an ihm hängen. Kommt der Kontakt zurück, wird die Markierung entfernt.
@@ -214,6 +217,12 @@ Dort schaltest du auch die **Zwei-Faktor-Anmeldung** mit einer Authenticator-App
 Auch die Verwaltung unter `/admin/` meldet über diese Anmeldung an, damit der zweite Faktor dort nicht umgangen wird.
 Nach zu vielen falschen Passwörtern oder Codes von einer IP-Adresse ist die Anmeldung von dort eine Weile gesperrt. Wie viele Fehlversuche und wie lange, legst du unter **Einstellungen** fest (Standard: 5 Versuche, 15 Minuten; 0 Versuche schaltet die Sperre aus). Hinter einem Reverse Proxy muss `FORWARDED_ALLOW_IPS` stimmen, sonst sehen alle Anfragen wie die IP des Proxys aus.
 
+### Erinnerungen
+
+Unter **Erinnerungen** in der Seitenleiste (nur für Admins) legst du Dinge ab, an die du bei einem Kunden oder Projekt denken willst, z. B. „Angebot nachfassen“ oder „Vertrag zum Jahresende prüfen“. Dieselbe Liste steht auch auf der Seite des Kunden und des Projekts, dort legst du eine Erinnerung auch an. Eine Erinnerung hat einen Titel, Notizen (Markdown) und optional Datum und Uhrzeit.
+
+Wird eine Erinnerung fällig, sagt dir der Scheduler Bescheid (jede Minute geprüft, einmal pro Erinnerung): als Nachricht in der Glocke und als E-Mail, beides pro Erinnerung ein- und ausschaltbar (Standard: beides, die E-Mail nur, wenn der E-Mail-Versand eingerichtet ist). Erinnerungen in der Glocke siehst du unabhängig von der Priorität, ab der du Nachrichten angezeigt bekommst, und die E-Mail hängt nicht an der Einstellung für Nachrichten per E-Mail. Die Zahl in der Seitenleiste zeigt, wie viele Erinnerungen fällig sind. Mit **Erledigt** legst du eine ab (die Nachricht in der Glocke gilt dann als gelesen), ein neues Datum macht sie wieder offen und kündigt sie erneut an. Ohne Datum gibt es keine Benachrichtigung.
+
 ### Nachrichten
 
 Die App meldet sich bei dir, wenn im Hintergrund etwas passiert: Die **Glocke** oben in der Seitenleiste zeigt, wie viele Nachrichten ungelesen sind, und öffnet sie als Fenster. Dort liest, löscht und öffnest du sie (der Titel führt zur passenden Seite); **Als Seite öffnen** zeigt alle mit Filtern nach Priorität. Eine ungelesene kritische Nachricht steht zusätzlich als Banner auf jeder Seite, bis du sie gelesen hast.
@@ -296,7 +305,7 @@ Die App lauscht auf Port 8000 (über `APP_PORT` änderbar, z. B. `127.0.0.1:8000
 
 Neben der App startet ein zweiter Container `scheduler` aus demselben Image, sobald die App gesund ist. Er führt wiederkehrende Aufgaben wie den automatischen Kundenimport, den Rechnungsabgleich, das tägliche Backup, Wochenberichte und Erinnerungen aus und prüft dafür jede Minute, was fällig ist. Außerdem verschickt er die E-Mails aus der Warteschlange. Sein Healthcheck schlägt an, wenn er länger als fünf Minuten nicht mehr geprüft hat.
 
-Unter Einstellungen → Hintergrundaufgaben (oben rechts) siehst du als Admin, ob der Scheduler lebt (er meldet sich bei jeder Prüfung in der Datenbank; nach fünf Minuten Stille warnt die Seite und die Übersicht) und für jede Aufgabe Zeitplan, nächsten und letzten Lauf mit Dauer, Ergebnis, letzter Fehlermeldung und Fehlschlägen in Folge. Fehler kommen weiterhin als Nachricht in die Glocke; die Seite legt keine eigenen an. Prüfungen, die nichts zu tun hatten (E-Mail-Warteschlange, Berichte, Timer-Nachrichten), hinterlassen keine Spur, außer sie folgen auf einen Fehler.
+Unter Einstellungen → Hintergrundaufgaben (oben rechts) siehst du als Admin, ob der Scheduler lebt (er meldet sich bei jeder Prüfung in der Datenbank; nach fünf Minuten Stille warnt die Seite und die Übersicht) und für jede Aufgabe Zeitplan, nächsten und letzten Lauf mit Dauer, Ergebnis, letzter Fehlermeldung und Fehlschlägen in Folge. Fehler kommen weiterhin als Nachricht in die Glocke; die Seite legt keine eigenen an. Prüfungen, die nichts zu tun hatten (E-Mail-Warteschlange, Berichte, Timer-Nachrichten, Erinnerungen), hinterlassen keine Spur, außer sie folgen auf einen Fehler.
 
 Vor jedem Start führt Compose über `pre_start`-Hooks die Migrationen aus und legt, falls `DJANGO_SUPERUSER_USERNAME` und `DJANGO_SUPERUSER_PASSWORD` gesetzt sind, das Admin-Konto an (sofern es noch nicht existiert). Schlägt ein Hook fehl, startet die App nicht. Dafür ist ein aktuelles Docker Compose nötig (getestet mit v5.6).
 
@@ -424,6 +433,7 @@ app/
   mcpserver/   MCP-Server für KI-Agenten
   portal/      Kundenportal (nur lesen)
   mailer/      E-Mail-Versand: SMTP-Einstellungen, Warteschlange, Wochenbericht, Erinnerungen und Hinweise
+  reminders/   Erinnerungen zu Kunden und Projekten mit Benachrichtigung
   inbox/       Nachrichten an Benutzer: Glocke, Postfach, Prioritäten, Weitergabe per E-Mail
   setup/       Einrichtung einer neuen Instanz (Admin-Konto mit Zwei-Faktor-Anmeldung, Lexware-Schlüssel, Datensicherung)
   templates/   HTML-Templates

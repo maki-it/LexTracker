@@ -7,10 +7,11 @@ from django.utils.decorators import async_only_middleware
 
 from inbox import service as inbox
 from projects.models import Project
+from reminders import queries as reminder_queries
 from tracking.models import TimeEntry
 
 
-async def nav_counts() -> dict[str, int]:
+async def nav_counts(user) -> dict[str, int]:
     open_time = TimeEntry.objects.filter(
         ended_at__isnull=False,
         invoice__isnull=True,
@@ -21,6 +22,7 @@ async def nav_counts() -> dict[str, int]:
     return {
         "projects": await Project.objects.filter(status=Project.Status.ACTIVE).acount(),
         "billable_customers": await open_time.values("task__project__customer").distinct().acount(),
+        "reminders": await reminder_queries.due_count(user),
     }
 
 
@@ -46,7 +48,7 @@ def NavCountsMiddleware(get_response: Callable[[HttpRequest], Awaitable[HttpResp
                 request.nav_timer = {"running_entry": await running_entry(user)}
                 request.nav_inbox = await inbox.summary(user)
             if user.is_admin:
-                request.nav_counts = await nav_counts()
+                request.nav_counts = await nav_counts(user)
         return await get_response(request)
 
     return middleware

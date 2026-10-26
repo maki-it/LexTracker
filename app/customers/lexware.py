@@ -7,7 +7,10 @@ from lexware.client import LexwareClient
 from lexware.schemas import Contact
 
 # Fields that live in Lexware. Changing one of them here changes the Lexware contact.
-LEXWARE_FIELDS = ("name", "email", "phone")
+LEXWARE_FIELDS = ("name", "email", "phone", "notes")
+
+# The longest note Lexware accepts.
+NOTE_MAX_LENGTH = 1000
 
 # Same order in which the import picks the address or number to show.
 EMAIL_GROUPS = ("business", "office", "other", "private")
@@ -42,7 +45,37 @@ def apply_to_contact(contact: dict, customer: Customer) -> dict:
         _replace(contact.setdefault("emailAddresses", {}), EMAIL_GROUPS, current.email, customer.email)
     if customer.phone != current.phone:
         _replace(contact.setdefault("phoneNumbers", {}), PHONE_GROUPS, current.phone, customer.phone)
+    # Only a note changed here: one that was changed in Lexware since the last import is not overwritten.
+    note = customer.notes.strip()
+    if note != (customer.lexware_note or ""):
+        if note:
+            contact["note"] = note
+        else:
+            contact.pop("note", None)
     return contact
+
+
+def merged_note(customer: Customer, remote: str) -> str:
+    """The notes the customer has after an import: Lexware's note unless there is a change here it must not lose.
+
+    A note edited here is sent to Lexware right away (``push_to_lexware``). One that is still different
+    from what Lexware had last time (``lexware_note``) was never sent, e.g. a note written before notes were
+    synced. It stays, and goes to Lexware with the next save of the customer.
+    """
+    known = customer.lexware_note
+    if known is None:
+        # The first time: both notes are kept if they differ, so neither is lost.
+        if customer.notes and remote and customer.notes != remote:
+            return f"{customer.notes}\n\n{remote}"
+        return customer.notes or remote
+    return customer.notes if customer.notes.strip() != known else remote
+
+
+def needs_push(customer: Customer, changed: list[str]) -> bool:
+    """Whether saving the customer changes the Lexware contact, or still has to send a note Lexware does not have."""
+    if not customer.lexware_id:
+        return False
+    return any(f in LEXWARE_FIELDS for f in changed) or customer.notes.strip() != (customer.lexware_note or "")
 
 
 # The parts of a Lexware address the customer portal shows and changes.
@@ -121,5 +154,9 @@ async def push_to_lexware(client: LexwareClient, customer: Customer) -> None:
     The contact is read fresh first, so changes made in Lexware to other fields are kept.
     """
     contact = await client.get_contact(customer.lexware_id)
+    if customer.lexware_note is None:
+        # Notes were not synced yet: do not overwrite what is in Lexware.
+        customer.notes = merged_note(customer, contact.get("note") or "")
     customer.lexware_version = await client.update_contact(customer.lexware_id, apply_to_contact(contact, customer))
+    customer.lexware_note = customer.notes.strip()
     customer.lexware_synced_at = timezone.now()

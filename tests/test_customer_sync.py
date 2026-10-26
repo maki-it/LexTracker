@@ -98,3 +98,59 @@ def test_customer_list_hints_missing_api_key(client, user, settings):
 
     assert "fehlt der API-Schlüssel" in response.text
     assert "Aus Lexware importieren" not in response.text
+
+
+# Notes
+
+
+async def test_new_customer_takes_the_note_from_lexware():
+    await run_sync(contact("ACME GmbH", note="Zahlt immer pünktlich"))
+
+    customer = await Customer.objects.aget(name="ACME GmbH")
+    assert customer.notes == "Zahlt immer pünktlich"
+    assert customer.lexware_note == "Zahlt immer pünktlich"
+
+
+async def test_note_changed_in_lexware_replaces_the_synced_note():
+    lexware_id = uuid.uuid4()
+    await Customer.objects.acreate(
+        name="ACME GmbH", lexware_id=lexware_id, lexware_version=1, notes="alt", lexware_note="alt"
+    )
+
+    await run_sync(contact("ACME GmbH", id=lexware_id, version=2, note="neu"))
+
+    customer = await Customer.objects.aget(lexware_id=lexware_id)
+    assert (customer.notes, customer.lexware_note) == ("neu", "neu")
+
+
+async def test_unsent_note_is_not_overwritten():
+    lexware_id = uuid.uuid4()
+    await Customer.objects.acreate(
+        name="ACME GmbH", lexware_id=lexware_id, lexware_version=1, notes="nur hier", lexware_note="alt"
+    )
+
+    await run_sync(contact("ACME GmbH", id=lexware_id, version=2, note="anders"))
+
+    customer = await Customer.objects.aget(lexware_id=lexware_id)
+    assert customer.notes == "nur hier"
+    assert customer.lexware_note == "anders"
+
+
+async def test_customers_from_before_the_note_sync_keep_their_note_and_get_lexware_s():
+    keeps = await Customer.objects.acreate(name="Hat Notiz", lexware_id=uuid.uuid4(), lexware_version=1, notes="lokal")
+    takes = await Customer.objects.acreate(name="Ohne Notiz", lexware_id=uuid.uuid4(), lexware_version=1)
+    both = await Customer.objects.acreate(name="Beides", lexware_id=uuid.uuid4(), lexware_version=1, notes="lokal")
+
+    result = await run_sync(
+        contact("Hat Notiz", id=keeps.lexware_id, version=1),
+        contact("Ohne Notiz", id=takes.lexware_id, version=1, note="aus Lexware"),
+        contact("Beides", id=both.lexware_id, version=1, note="aus Lexware"),
+    )
+
+    assert (result.updated, result.unchanged) == (0, 3)
+    keeps, takes, both = [await Customer.objects.aget(pk=c.pk) for c in (keeps, takes, both)]
+    assert (keeps.notes, keeps.lexware_note) == ("lokal", "")
+    assert (takes.notes, takes.lexware_note) == ("aus Lexware", "aus Lexware")
+    # Neither note is lost; the local one goes to Lexware with the next save.
+    assert both.notes == "lokal\n\naus Lexware"
+    assert both.lexware_note == "aus Lexware"

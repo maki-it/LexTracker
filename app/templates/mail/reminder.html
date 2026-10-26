@@ -1,0 +1,10 @@
+{% extends "mail/_base.html" %}
+{% load i18n %}
+{% block content %}
+<p style="margin:0 0 12px;font-size:18px;font-weight:600">{{ reminder.title }}</p>
+<p style="margin:0 0 12px;font-size:13px;color:#71717a">{% blocktrans trimmed with due_at=reminder.due_at|date:datetime_format %}Fällig {{ due_at }} Uhr{% endblocktrans %}</p>
+{% if reminder.subject %}<p style="margin:12px 0;padding:10px 12px;background:#f4f4f5;border-radius:8px">{{ reminder.subject }}</p>{% endif %}
+{% if reminder.notes %}<p style="margin:0;white-space:pre-line">{{ reminder.notes }}</p>{% endif %}
+{% if url %}{% trans "Erinnerungen öffnen" as button_label %}{% include "mail/_button.html" with label=button_label %}{% endif %}
+{% endblock %}
+{% block footer %}{% blocktrans trimmed with app=brand.name %}Ob eine Erinnerung per E-Mail kommt, stellst du in {{ app }} bei der Erinnerung ein.{% endblocktrans %}{% endblock %}

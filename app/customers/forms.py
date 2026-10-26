@@ -2,6 +2,7 @@ from django import forms
 from django.utils.translation import gettext_lazy as _
 
 from core.forms import MARKDOWN_HELP, StyledFormMixin
+from customers.lexware import NOTE_MAX_LENGTH
 from customers.models import Category, Customer
 
 
@@ -24,6 +25,20 @@ class CustomerForm(StyledFormMixin, forms.ModelForm):
         if not self.fields["categories"].queryset.exists():
             # Nothing to tick yet: new categories are typed in below.
             del self.fields["categories"]
+        if self.instance.lexware_id:
+            self.fields["notes"].help_text = _(
+                "Wird mit der Notiz des Kontakts in Lexware Office abgeglichen (höchstens %(max)d Zeichen). "
+                "Markdown wird dort als Text angezeigt."
+            ) % {"max": NOTE_MAX_LENGTH}
+
+    def clean_notes(self) -> str:
+        notes = self.cleaned_data["notes"]
+        if self.instance.lexware_id and len(notes.strip()) > NOTE_MAX_LENGTH:
+            raise forms.ValidationError(
+                _("Lexware Office nimmt Notizen bis %(max)d Zeichen an, diese hat %(length)d."),
+                params={"max": NOTE_MAX_LENGTH, "length": len(notes.strip())},
+            )
+        return notes
 
     def save_categories(self) -> None:
         """Set the customer's categories, creating typed-in ones. Run after the customer is saved."""

@@ -11,6 +11,10 @@ class Level(models.IntegerChoices):
     CRITICAL = 40, _("Kritisch")
 
 
+# Messages a user asked for themselves, such as a reminder they set. They are shown whatever level the user
+# hides from, because that setting is for what the app reports on its own.
+PERSONAL_KINDS = ("reminder.due",)
+
 # What a user can choose as the level from which messages are also sent by e-mail. 0 turns it off.
 NEVER = 0
 EMAIL_CHOICES = [

@@ -63,6 +63,7 @@ class Contact(_Model):
     person: Person | None = None
     email_addresses: EmailAddresses = Field(default_factory=EmailAddresses, alias="emailAddresses")
     phone_numbers: PhoneNumbers = Field(default_factory=PhoneNumbers, alias="phoneNumbers")
+    note: str = ""
 
     @property
     def name(self) -> str:

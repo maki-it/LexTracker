@@ -27,6 +27,7 @@ from lexware import credentials
 from lexware.client import LexwareError
 from mailer import jobs as mail_jobs
 from mailer import outbox
+from reminders import jobs as reminder_jobs
 
 logger = logging.getLogger(__name__)
 
@@ -194,6 +195,15 @@ async def run(stop: asyncio.Event) -> None:
                 logger.info("Created %s %s message%s", count, name, "s" if count > 1 else "")
         except Exception:
             logger.exception("Creating messages failed")
+        try:
+            async with jobs.tracked("reminders") as tracking:
+                announced = {name: count for name, count in (await reminder_jobs.run_due(now)).items() if count}
+                tracking.result = ", ".join(f"{count} {name}" for name, count in announced.items())
+                tracking.idle = not announced
+            for name, count in announced.items():
+                logger.info("Announced %s %s%s", count, name, "s" if count > 1 else "")
+        except Exception:
+            logger.exception("Announcing reminders failed")
         try:
             if last_prune is None or now - last_prune >= PRUNE_INTERVAL:
                 async with jobs.tracked("prune") as tracking:
