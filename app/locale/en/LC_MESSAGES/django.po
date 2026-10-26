@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: LexTracker\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-26 16:40+0100\n"
+"POT-Creation-Date: 2026-10-26 16:56+0100\n"
 "PO-Revision-Date: 2026-10-25 12:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: English\n"
@@ -785,6 +785,18 @@ msgstr ""
 "Shown in the sidebar, the page title, e-mails and the authenticator app. "
 "Leave empty for “LexTracker”."
 
+msgid "Adresse der App"
+msgstr "Address of the app"
+
+msgid ""
+"Die Adresse, unter der die App von außen erreichbar ist, z. B. https://zeit."
+"example.de. Sie steht in Links in E-Mails und ist die Adresse, unter der "
+"Lexware die App aufruft (Webhooks)."
+msgstr ""
+"The address the app can be reached at from outside, e.g. https://zeit."
+"example.de. It is used in links in e-mails and is the address Lexware calls "
+"(webhooks)."
+
 msgid "Dateityp des Logos"
 msgstr "Logo file type"
 
@@ -1387,11 +1399,13 @@ msgid "Lexware signiert mit RSA. Dieser Schlüssel ist kein RSA-Schlüssel."
 msgstr "Lexware signs with RSA. This key is not an RSA key."
 
 msgid ""
-"Lexware ruft nur Adressen mit HTTPS auf. Trage unter „E-Mail“ die "
-"öffentliche Adresse der App ein, zum Beispiel https://zeit.example.de."
+"Lexware ruft nur Adressen mit HTTPS auf. Trage die öffentliche Adresse der "
+"App unter Einstellungen > Allgemein > „Adresse der App“ ein, zum Beispiel "
+"https://zeit.example.de. Eine Adresse wie localhost erreicht Lexware nicht."
 msgstr ""
 "Lexware only calls HTTPS addresses. Enter the public address of the app "
-"under “E-mail”, for example https://zeit.example.de."
+"under Settings > General > “Address of the app”, for example https://zeit."
+"example.de. Lexware cannot reach an address like localhost."
 
 msgid "Gespeichertes Passwort entfernen"
 msgstr "Remove saved password"
@@ -1487,15 +1501,6 @@ msgstr "The SMTP server must allow this for your account."
 
 msgid "Absendername"
 msgstr "Sender name"
-
-msgid "Adresse der App"
-msgstr "Address of the app"
-
-msgid ""
-"Für Links in E-Mails, die der Zeitplan verschickt, z. B. https://zeit."
-"example.de."
-msgstr ""
-"For links in e-mails sent by the schedule, e.g. https://time.example.com."
 
 msgid "wartet"
 msgstr "pending"
@@ -3205,6 +3210,9 @@ msgstr "Set up again"
 msgid "Webhooks entfernen"
 msgstr "Remove webhooks"
 
+msgid "Adresse der App eintragen"
+msgstr "Enter the app address"
+
 msgid "Webhooks einrichten"
 msgstr "Set up webhooks"
 
@@ -3219,6 +3227,12 @@ msgstr "Custom logo"
 
 msgid "Standard-Logo"
 msgstr "Default logo"
+
+msgid "Erreichbarkeit"
+msgstr "Reachability"
+
+msgid "Wie die App von außen aufgerufen wird."
+msgstr "How the app is reached from outside."
 
 #, python-format
 msgid ""
@@ -3235,15 +3249,15 @@ msgstr "Sign-in"
 msgid "Die App verschickt E-Mails über <code>%(host)s</code> als %(sender)s."
 msgstr "The app sends e-mails via <code>%(host)s</code> as %(sender)s."
 
+msgid "verwalten"
+msgstr "manage"
+
 msgid ""
 "Noch kein SMTP-Server eingerichtet. Ohne ihn gibt es keine Links zum "
 "Zurücksetzen des Passworts, keine Anmeldelinks, Berichte oder Erinnerungen."
 msgstr ""
 "No SMTP server set up yet. Without it there are no links to reset the "
 "password, no sign-in links, reports or reminders."
-
-msgid "verwalten"
-msgstr "manage"
 
 msgid "einrichten"
 msgstr "set up"

@@ -39,6 +39,14 @@ class AppSettings(models.Model):
             "Leer lassen für „LexTracker“."
         ),
     )
+    app_url = models.URLField(
+        _("Adresse der App"),
+        blank=True,
+        help_text=_(
+            "Die Adresse, unter der die App von außen erreichbar ist, z. B. https://zeit.example.de. "
+            "Sie steht in Links in E-Mails und ist die Adresse, unter der Lexware die App aufruft (Webhooks)."
+        ),
+    )
     # Written from the logo upload on the settings page. The file itself is only read to serve it, so pages
     # defer ``logo_data``; it lives in the database so that backups carry it.
     logo_data = models.BinaryField(_("Logo"), null=True, blank=True, editable=False)
@@ -233,6 +241,11 @@ class AppSettings(models.Model):
     @classmethod
     async def aload(cls) -> AppSettings:
         return (await cls.objects.defer("logo_data").aget_or_create(pk=1))[0]
+
+    @classmethod
+    async def aurl(cls) -> str:
+        """The address of the app without a trailing slash, or an empty string if none is set."""
+        return (await cls.aload()).app_url.rstrip("/")
 
 
 class JobStatus(UUIDModel):

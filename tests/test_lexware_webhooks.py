@@ -12,10 +12,10 @@ from django.urls import reverse
 from django.utils import timezone
 
 from core import scheduler
+from core.models import AppSettings
 from lexware import views, webhooks
 from lexware.client import LexwareError
 from lexware.models import LexwareConnection, WebhookEvent, WebhookSubscription
-from mailer.models import MailSettings
 from tests.lexware_fakes import fake_client
 
 pytestmark = pytest.mark.django_db
@@ -278,7 +278,7 @@ def lexware_api(monkeypatch, settings):
 
 
 def test_enable_from_the_settings_page(logged_in, lexware_api):
-    MailSettings.objects.create(pk=1, base_url=BASE_URL)
+    AppSettings.objects.update_or_create(pk=1, defaults={"app_url": BASE_URL})
 
     response = logged_in.post(reverse("lexware:enable_webhooks"), follow=True)
 
@@ -293,13 +293,15 @@ def test_enable_from_the_settings_page(logged_in, lexware_api):
 def test_enable_needs_a_public_https_address(logged_in, lexware_api):
     response = logged_in.post(reverse("lexware:enable_webhooks"), follow=True)
 
-    assert "Lexware ruft nur Adressen mit HTTPS auf" in response.content.decode()
+    page = response.content.decode()
+    assert "Lexware ruft nur Adressen mit HTTPS auf" in page
+    assert "Adresse der App" in page and f"{reverse('core:settings')}?tab=general" in page
     assert not WebhookSubscription.objects.exists()
     assert not lexware_api
 
 
 def test_disable_from_the_settings_page(logged_in, lexware_api):
-    MailSettings.objects.create(pk=1, base_url=BASE_URL)
+    AppSettings.objects.update_or_create(pk=1, defaults={"app_url": BASE_URL})
     logged_in.post(reverse("lexware:enable_webhooks"))
 
     response = logged_in.post(reverse("lexware:disable_webhooks"), follow=True)
@@ -396,7 +398,7 @@ def test_public_key_from_the_settings_page(logged_in, lexware_api, signing):
 
     logged_in.post(reverse("lexware:save_webhook_key"), {"public_key": signing.pem})
     assert LexwareConnection.objects.get().webhook_public_key == signing.pem.strip()
-    MailSettings.objects.update_or_create(pk=1, defaults={"base_url": BASE_URL})
+    AppSettings.objects.update_or_create(pk=1, defaults={"app_url": BASE_URL})
     logged_in.post(reverse("lexware:enable_webhooks"))
     assert "Signatur wird geprüft" in logged_in.get(reverse("core:settings") + "?tab=lexware").content.decode()
 
@@ -405,7 +407,7 @@ def test_public_key_from_the_settings_page(logged_in, lexware_api, signing):
 
 
 def test_removing_the_api_key_forgets_the_subscriptions(logged_in, lexware_api):
-    MailSettings.objects.create(pk=1, base_url=BASE_URL)
+    AppSettings.objects.update_or_create(pk=1, defaults={"app_url": BASE_URL})
     logged_in.post(reverse("lexware:enable_webhooks"))
     assert WebhookSubscription.objects.exists()
 
@@ -424,7 +426,7 @@ def test_a_new_api_key_subscribes_again(logged_in, lexware_api, monkeypatch):
         return Profile(companyName="Maki IT")
 
     monkeypatch.setattr(credentials, "acheck", check)
-    MailSettings.objects.create(pk=1, base_url=BASE_URL)
+    AppSettings.objects.update_or_create(pk=1, defaults={"app_url": BASE_URL})
     logged_in.post(reverse("lexware:enable_webhooks"))
     old_token = LexwareConnection.objects.get().webhook_token
     lexware_api.clear()
@@ -433,3 +435,53 @@ def test_a_new_api_key_subscribes_again(logged_in, lexware_api, monkeypatch):
 
     assert LexwareConnection.objects.get().webhook_token not in ("", old_token)
     assert len([r for r in lexware_api if r.method == "POST"]) == len(webhooks.EVENT_AREAS)
+
+
+def test_address_of_the_app_is_a_general_setting(logged_in):
+    from tests.test_branding import SETTINGS
+
+    page = logged_in.get(reverse("core:settings") + "?tab=general").content.decode()
+    assert 'name="app_url"' in page
+
+    logged_in.post(reverse("core:settings"), SETTINGS | {"app_url": "https://zeit.example.de/"})
+    assert async_to_sync(AppSettings.aurl)() == "https://zeit.example.de"
+
+
+def test_address_moves_from_the_mail_settings():
+    """The migration takes over what was entered with the e-mail settings."""
+    import importlib
+
+    copy_address = importlib.import_module("core.migrations.0015_app_url").copy_address
+
+    class Rows:
+        def __init__(self, address):
+            self.objects = self
+            self._address = address
+            self.saved = None
+
+        def using(self, alias):
+            return self
+
+        def values_list(self, *args, **kwargs):
+            return self
+
+        def first(self):
+            return self._address
+
+        def update_or_create(self, **kwargs):
+            self.saved = kwargs
+
+    class Apps:
+        def __init__(self, address):
+            self.mail, self.app = Rows(address), Rows(None)
+
+        def get_model(self, app, name):
+            return self.mail if name == "MailSettings" else self.app
+
+    apps = Apps("https://zeit.example.de")
+    copy_address(apps, SimpleNamespace(connection=SimpleNamespace(alias="default")))
+    assert apps.app.saved == {"pk": 1, "defaults": {"app_url": "https://zeit.example.de"}}
+
+    apps = Apps("")
+    copy_address(apps, SimpleNamespace(connection=SimpleNamespace(alias="default")))
+    assert apps.app.saved is None

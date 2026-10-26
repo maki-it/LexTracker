@@ -27,9 +27,8 @@ send_due = async_to_sync(outbox.send_due)
 
 @pytest.fixture
 def smtp(db) -> MailSettings:
-    config = MailSettings.objects.create(
-        pk=1, host="smtp.example.de", from_address="zeit@example.de", base_url="https://zeit.example.de"
-    )
+    AppSettings.objects.update_or_create(pk=1, defaults={"app_url": "https://zeit.example.de"})
+    config = MailSettings.objects.create(pk=1, host="smtp.example.de", from_address="zeit@example.de")
     config.set_password("smtp-geheim")
     config.save()
     return config
@@ -69,7 +68,6 @@ def test_settings_store_the_password_encrypted(logged_in):
         "password": "smtp-geheim",
         "from_address": "zeit@example.de",
         "from_name": "LexTracker",
-        "base_url": "https://zeit.example.de",
     }
     assert logged_in.post(reverse("mailer:settings"), data).status_code == 302
     config = MailSettings.objects.get()

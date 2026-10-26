@@ -105,7 +105,6 @@ def test_full_setup_ends_on_start_page(unlocked, client, settings, accept_key, m
         "password": "smtp-geheim",
         "from_address": "zeit@example.de",
         "from_name": "LexTracker",
-        "base_url": "https://zeit.example.de",
     }
     response = client.post(reverse("setup:mail"), mail_data)
     assert response.url == reverse("setup:backup")

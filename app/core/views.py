@@ -108,7 +108,7 @@ SETTINGS_TABS = [
     ("security", gettext_lazy("Sicherheit")),
 ]
 _SETTINGS_TAB_FIELDS = {
-    "general": ["app_name", "logo", "remove_logo", "default_hourly_rate", "time_rounding", "invoice_detail"],
+    "general": ["app_name", "app_url", "logo", "remove_logo", "default_hourly_rate", "time_rounding", "invoice_detail"],
     "lexware": [
         "lexware_sync_interval",
         "lexware_sync_from",

@@ -16,6 +16,7 @@ from django.utils import timezone, translation
 from django.utils.functional import Promise
 
 from accounts.models import User
+from core.models import AppSettings
 from inbox.levels import PERSONAL_KINDS, Level
 from inbox.models import Message
 from mailer import outbox
@@ -143,7 +144,7 @@ async def _mail(user: User, message: Message) -> None:
     config = await MailSettings.aload()
     if not config.is_configured:
         return
-    base_url = config.base_url.rstrip("/")
+    base_url = await AppSettings.aurl()
     with translation.override(user.language):
         subject = f"{message.get_level_display()}: {message.title}"
     await outbox.aqueue(

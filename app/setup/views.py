@@ -149,8 +149,7 @@ async def mail(request: HttpRequest) -> HttpResponse:
     if response := await _not_admin(request):
         return response
     config = await MailSettings.aload()
-    initial = {} if config.base_url else {"base_url": request.build_absolute_uri("/").rstrip("/")}
-    form = MailSettingsForm(request.POST or None, instance=config, initial=initial)
+    form = MailSettingsForm(request.POST or None, instance=config)
     test_result = None
     if request.method == "POST" and await sync_to_async(form.is_valid)():
         form.instance.updated_at = timezone.now()

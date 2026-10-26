@@ -7,6 +7,7 @@ from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
 from core.i18n import datetime_format, fmt
+from core.models import AppSettings
 from inbox.levels import Level
 from inbox.service import anotify
 from mailer import outbox
@@ -48,7 +49,7 @@ async def notify_due(now: datetime) -> int:
     A reminder that fell due while the scheduler was not running is announced with the next run.
     """
     config = await MailSettings.aload()
-    base_url = config.base_url.rstrip("/")
+    base_url = await AppSettings.aurl()
     due = (
         Reminder.objects.filter(due_at__lte=now, notified_at__isnull=True, done_at__isnull=True, user__is_active=True)
         .select_related("user", "customer", "project__customer")
