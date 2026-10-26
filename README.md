@@ -1,97 +1,90 @@
 # LexTracker
 
-Zeiterfassung und Projektsteuerung mit Anbindung an die [Lexware Office Public API](https://developers.lexware.io/docs/).
+Zeiterfassung und Projektsteuerung mit Anbindung an die [Lexware Office Public API](https://developers.lexware.io/docs/): Kunden aus Lexware Office übernehmen, Projekte und Aufgaben steuern, Zeiten per Timer oder manuell buchen, nach Stundensatz oder Retainer abrechnen und Rechnungsentwürfe in Lexware anlegen.
 
 > Die erste Version dieser App liegt auf dem Branch `old`. `main` ist ein Neuanfang.
 
-## Stand und Fahrplan
+**Inhalt:** [Schnellstart](#schnellstart-docker-produktiv) · [Funktionen](#funktionen) · [Betrieb](#betrieb) · [Entwicklung](#entwicklung) · [Releases](#releases)
 
-1. **Fundament** ✓: Projektgerüst, Login, Datenmodell für Kunden, Projekte, Aufgaben und Zeiteinträge, Docker, Tests, CI.
-2. **Lexware-Anbindung** ✓: Kunden aus Lexware Office importieren und abgleichen.
-3. **Projekte und Zeiterfassung** ✓: Projekte und Aufgaben anlegen, Zeiten per Timer oder manuell buchen, Wochenübersicht.
-4. **Abrechnung** ✓: Abrechnung nach Stundensatz oder als Retainer (z. B. 20 Stunden pro Quartal zum Festpreis, Rest nach Stundensatz), Vorschau und Rechnungsentwürfe in Lexware.
-5. **Auswertungen** ✓: Stunden, Umsatz, Budgets und Retainer, CSV-Export.
-6. **MCP-Server** ✓: KI-Agenten erfassen Zeiten über das Model Context Protocol.
-7. **Zugänge** ✓: Mitarbeiter und Kunden mit eigenen Rechten, Einladung per Link.
-8. **E-Mail** ✓: Passwort zurücksetzen, Anmeldelink ohne Passwort, Einladung neuer Benutzer, Wochenbericht, Erinnerung an laufende Timer und Hinweis auf überfällige Rechnungen.
-9. **Nachrichten** ✓: Glocke und Postfach für Meldungen der App (Sicherung, Lexware-Abgleich, E-Mail-Versand, Timer) mit Prioritäten Kritisch, Warnung, Info und Debug, pro Benutzer einstellbar.
+## Schnellstart (Docker, produktiv)
 
-## Technik
+Du brauchst einen Server mit Docker und einem aktuellen Docker Compose (getestet mit v5.6) sowie Git.
 
-| Bereich | Wahl | Warum |
-| --- | --- | --- |
-| Backend | Django 6, async Views, ASGI mit uvicorn | Login, Benutzer, Admin und Migrationen sind eingebaut; async Views blockieren sich nicht gegenseitig, z. B. bei langsamen API-Aufrufen an Lexware. |
-| Oberfläche | Server-gerenderte Templates + [htmx](https://htmx.org) | Interaktive Seiten ohne eigenes JavaScript. |
-| Styling | Tailwind CSS 4 über [django-tailwind-cli](https://github.com/django-commons/django-tailwind-cli), eigene Komponenten | Nutzt das Standalone-CLI, also kein Node.js nötig. Farben und Komponenten (`.btn`, `.card`, `.table`, `.badge` …) stehen in `app/assets/tailwind.css`, Icons kommen über `{% icon "name" %}` (`core/templatetags/icons.py`). Schrift ist Inter, selbst gehostet statt über Google Fonts. Hell- und Dunkelmodus folgen der Systemeinstellung. |
-| Sprachen | Djangos i18n: Deutsch (Standard) und Englisch | Die Texte im Code und in den Templates sind deutsch, `app/locale/en` enthält die englische Übersetzung. Siehe [Sprachen](#sprachen). |
-| Datenbank | SQLite (WAL-Modus) | Kein extra DB-Server. WAL erlaubt Lesen während geschrieben wird; das reicht für wenige Benutzer locker. |
-| Statische Dateien | [ServeStatic](https://github.com/Archmonger/ServeStatic) | Liefert CSS/JS async, komprimiert und mit Cache-Headern aus. |
-| Pakete | [uv](https://docs.astral.sh/uv/) | Schnell, mit Lockfile. |
+1. **Repository holen**
 
-### Projektstruktur
+   ```sh
+   git clone https://github.com/maki-it/LexTracker.git
+   cd LexTracker
+   ```
 
-```
-app/
-  config/      Einstellungen (aus Umgebungsvariablen), URLs, ASGI
-  core/        Basis-Modelle, Einstellungen, Middleware, Übersicht, Health-Check, Scheduler
-  accounts/    Benutzer mit Rolle (Admin, Mitarbeiter, Kunde), Login mit Zwei-Faktor, Kontoeinstellungen
-  customers/   Kunden (mit Verknüpfung zum Lexware-Kontakt) und Import aus Lexware
-  lexware/     Async Client für die Lexware Office Public API, verschlüsselt gespeicherter API-Schlüssel
-  projects/    Projekte und Aufgaben
-  tracking/    Zeiteinträge (ein Eintrag ohne Ende ist ein laufender Timer)
-  billing/     Abrechnungsvereinbarungen, Berechnung und Rechnungen
-  reports/     Auswertungen und CSV-Export
-  mcpserver/   MCP-Server für KI-Agenten
-  portal/      Kundenportal (nur lesen)
-  mailer/      E-Mail-Versand: SMTP-Einstellungen, Warteschlange, Wochenbericht, Erinnerungen und Hinweise
-  inbox/       Nachrichten an Benutzer: Glocke, Postfach, Prioritäten, Weitergabe per E-Mail
-  setup/       Einrichtung einer neuen Instanz (Admin-Konto mit Zwei-Faktor-Anmeldung, Lexware-Schlüssel, Datensicherung)
-  templates/   HTML-Templates
-  assets/      Tailwind-Quelle mit Farben und eigenen Komponenten
-  static/      Statische Dateien (htmx, gebautes CSS)
-tests/
-docker/
-```
+2. **Konfiguration anlegen**
 
-## Entwicklung
+   ```sh
+   cp .env.example .env
+   ```
 
-Voraussetzung: [uv](https://docs.astral.sh/uv/getting-started/installation/) (installiert Python 3.15 bei Bedarf selbst).
+   Öffne `.env` und setze mindestens diese zwei Werte:
 
-```sh
-make install     # Abhängigkeiten installieren, .env anlegen
-make css         # Stylesheet bauen (lädt beim ersten Mal das Tailwind-CLI)
-make migrate     # Datenbank anlegen (liegt in ./data)
-make run         # http://localhost:8000
-```
+   ```env
+   APP_ENVIRONMENT=production
+   APP_SECRET_KEY=<zufälliger Wert>
+   ```
 
-Beim ersten Aufruf führt die **Einrichtung** durch das Anlegen des Admin-Kontos (mit verpflichtender Zwei-Faktor-Anmeldung per Authenticator-App), das Verbinden mit Lexware Office und die Datensicherung (das Konto alternativ mit `make superuser`).
-Solange es kein Konto gibt, leitet jede Seite dorthin. Damit niemand anderes eine frische Instanz übernehmen kann, öffnet sich die Einrichtung nur mit einem Code: Die App schreibt den Einrichtungslink beim ersten Aufruf ins Log (`docker compose logs app`), alternativ zeigt ihn `manage.py setup_link` (`docker compose exec app python manage.py setup_link`). Der Code ist aus `APP_SECRET_KEY` abgeleitet und nach dem ersten Konto wertlos.
+   Einen Wert erzeugst du mit `python -c "import secrets; print(secrets.token_urlsafe(50))"`. Bewahre ihn gut auf: Daraus leitet die App die Verschlüsselung des Lexware-Schlüssels ab.
 
-Neue oder geänderte Texte übersetzt du mit `make messages` (siehe [Sprachen](#sprachen)).
-Während du an Templates arbeitest, hält `make css-watch` in einem zweiten Terminal das Stylesheet aktuell.
-Den automatischen Kundenimport und den E-Mail-Versand startest du lokal bei Bedarf mit `make scheduler`.
-`make test` startet die Tests, `make lint` prüft den Code-Stil. `make help` zeigt alle Befehle.
-Einen Last- und Performancetest mit Testdaten beschreibt [loadtest/README.md](loadtest/README.md).
+3. **Adresse festlegen**, unter der du die App öffnest (nur eine der beiden Varianten):
 
-### Entwicklung mit Docker
+   - **Mit HTTPS hinter einem Reverse Proxy (empfohlen):**
 
-Wer lieber im Container entwickelt (gleiches Image und Python wie in Produktion), startet die Entwicklungsumgebung aus [dev.compose.yaml](dev.compose.yaml). Sie baut mit `extends` auf der `compose.yaml` auf und braucht ein aktuelles Docker Compose (getestet mit v5.6):
+     ```env
+     APP_ALLOWED_HOSTS=zeit.example.de
+     APP_CSRF_TRUSTED_ORIGINS=https://zeit.example.de
+     FORWARDED_ALLOW_IPS=<IP des Proxys>
+     APP_PORT=127.0.0.1:8000
+     ```
 
-```sh
-cp .env.example .env    # APP_SECRET_KEY setzen, für die Entwicklung genügt ein beliebiger Wert
-make docker-dev         # oder: docker compose -f dev.compose.yaml watch
-```
+   - **Zum Ausprobieren über HTTP:** `APP_SECURE_COOKIES=false` setzen und die Adresse, unter der du die App aufrufst, in `APP_ALLOWED_HOSTS` eintragen (Standard: `localhost,127.0.0.1`). Ohne HTTPS funktioniert der Login nur so.
 
-Das baut das Image, startet App und Scheduler auf http://localhost:8000 und beobachtet danach den Code:
+4. **Starten**
 
-- Änderungen unter `app/` werden in den Container kopiert; `uvicorn --reload` lädt bei Python-Dateien selbst neu, der Scheduler startet neu.
-- Bei Änderungen an Templates, Skripten oder `assets/tailwind.css` wird zusätzlich das Stylesheet neu gebaut (`manage.py tailwind build`). Beim ersten Mal lädt das das Tailwind-CLI herunter; es bleibt in einem Volume erhalten. Die Seite lädst du selbst neu.
-- Änderungen an `pyproject.toml`, `uv.lock` oder `docker/Dockerfile` bauen das Image neu.
+   ```sh
+   docker compose up -d --build
+   docker compose ps          # app und scheduler sollten "healthy" sein
+   ```
 
-Die Umgebung läuft als eigenes Compose-Projekt `lextracker-dev` mit eigenen Volumes und Containernamen, berührt also keine Produktionsdaten auf demselben Rechner. Sie nutzt `APP_ENVIRONMENT=development`, hört nur auf `127.0.0.1:8000`, und das Dateisystem ist beschreibbar, weil `watch` Dateien hineinkopiert.
-Neue Migrationen wendest du mit `docker compose -f dev.compose.yaml exec app python manage.py migrate` an (beim Neustart laufen sie ohnehin). Zum Aufräumen: `make docker-dev-down`, mit `-v` an `docker compose -f dev.compose.yaml down` auch die Daten.
+5. **Einrichtung öffnen**: Solange es kein Konto gibt, leitet jede Seite zur Einrichtung. Sie öffnet sich nur mit einem Code, damit niemand eine frische Instanz übernehmen kann. Den Link findest du im Log:
 
-## Lexware Office
+   ```sh
+   docker compose logs app
+   # oder
+   docker compose exec app python manage.py setup_link
+   ```
+
+6. **Einrichtung durchlaufen**: Admin-Konto anlegen (mit Zwei-Faktor-Anmeldung per Authenticator-App), Lexware Office verbinden und die Datensicherung einstellen. Den API-Schlüssel erstellst du in Lexware Office unter *Erweiterungen > Public API*.
+
+7. **Loslegen**: Unter **Kunden** mit **Aus Lexware importieren** die Kunden holen, dann Projekte und Aufgaben anlegen und über **Timer starten** Zeiten buchen.
+
+Optional danach: den E-Mail-Versand unter **Einstellungen → E-Mail-Versand verwalten** einrichten ([E-Mail](#e-mail)), weitere Benutzer unter **Benutzer** einladen ([Benutzer und Rechte](#benutzer-und-rechte)) und einen KI-Agenten verbinden ([KI-Agenten](#ki-agenten-mcp)).
+
+Alle Einstellungen, Sicherungen, Updates und den Betrieb hinter einem Reverse Proxy beschreibt der Abschnitt [Betrieb](#betrieb).
+
+## Funktionen
+
+Das kann LexTracker:
+
+- **Fundament**: Projektgerüst, Login, Datenmodell für Kunden, Projekte, Aufgaben und Zeiteinträge, Docker, Tests, CI.
+- **Lexware-Anbindung**: Kunden aus Lexware Office importieren und abgleichen.
+- **Projekte und Zeiterfassung**: Projekte und Aufgaben anlegen, Zeiten per Timer oder manuell buchen, Wochenübersicht.
+- **Abrechnung**: Abrechnung nach Stundensatz oder als Retainer (z. B. 20 Stunden pro Quartal zum Festpreis, Rest nach Stundensatz), Vorschau und Rechnungsentwürfe in Lexware.
+- **Auswertungen**: Stunden, Umsatz, Budgets und Retainer, CSV-Export.
+- **MCP-Server**: KI-Agenten erfassen Zeiten über das Model Context Protocol.
+- **Zugänge**: Mitarbeiter und Kunden mit eigenen Rechten, Einladung per Link.
+- **E-Mail**: Passwort zurücksetzen, Anmeldelink ohne Passwort, Einladung neuer Benutzer, Wochenbericht, Erinnerung an laufende Timer und Hinweis auf überfällige Rechnungen.
+- **Nachrichten**: Glocke und Postfach für Meldungen der App (Sicherung, Lexware-Abgleich, E-Mail-Versand, Timer) mit Prioritäten Kritisch, Warnung, Info und Debug, pro Benutzer einstellbar.
+
+Die Einzelheiten stehen in den folgenden Abschnitten.
+
+### Lexware Office
 
 Den API-Schlüssel erstellst du in Lexware Office unter *Erweiterungen > Public API* und trägst ihn bei der Einrichtung oder später unter **Einstellungen > Lexware Office** ein. Die App prüft ihn vorher mit einem Testaufruf.
 Er wird verschlüsselt in der Datenbank gespeichert (mit einem Schlüssel, der aus `APP_SECRET_KEY` abgeleitet ist; auch Backups enthalten ihn also nicht im Klartext) und danach nur noch maskiert angezeigt. Zum Ändern trägst du einfach einen neuen ein. Änderst du `APP_SECRET_KEY`, musst du den Lexware-Schlüssel neu eintragen; die Einstellungsseite weist dann darauf hin. Der Schlüssel landet nie in Logs.
@@ -108,19 +101,19 @@ Kundennummer und Archiv-Status pflegst du weiter in Lexware.
 
 Der Client hält das Rate-Limit der API ein (2 Anfragen pro Sekunde) und wiederholt Anfragen, die mit HTTP 429 abgelehnt werden.
 
-## Zeiterfassung
+### Zeiterfassung
 
 Unter **Einstellungen** legst du fest, ob Zeiten exakt oder auf einen Schritt (z. B. Viertelstunde) gerundet werden. Beim Stoppen des Timers und beim Speichern eines Eintrags werden Beginn und Ende auf den nächstgelegenen Schritt gerundet (9:07 wird 9:00, 9:08 wird 9:15); ein Eintrag dauert mindestens einen Schritt. Gespeichert werden die gerundeten Zeiten, so sind Anzeige, Summen und Abrechnung immer gleich. Bestehende Einträge bleiben unverändert.
 Ob Dauern als `2:45` oder als Dezimalstunden `2,75` angezeigt werden, stellt jeder im Konto ein. Abgerechnet wird immer in Dezimalstunden (z. B. 2,75 Stunden × 80 €).
 
-## Bedienung
+### Bedienung
 
 Bearbeiten-Masken (Zeiteinträge, Projekte, Aufgaben, Kunden, Abrechnungsvereinbarungen) und **Timer starten** in der Seitenleiste öffnen sich als Dialog über der aktuellen Seite. Nach dem Speichern lädt die Seite dahinter neu; Esc, das X oder ein Klick daneben schließt den Dialog. Jeder dieser Links funktioniert auch als eigene Seite (z. B. in einem neuen Tab).
 In der Übersicht und unter **Aufgaben** filtert ein Klick auf Kunde oder Projekt eines Eintrags die Liste. Projekte ohne gebuchte Zeiten lassen sich in ihrer Bearbeiten-Maske löschen.
 Beim Zeitbuchen (Übersicht, Timer starten, Zeiteintrag) stehen nur Aufgaben aktiver Projekte zur Wahl, die zuletzt benutzten zuerst.
 Die Listen der Kunden, Projekte und Rechnungen laden beim Scrollen weitere Einträge nach. Wie viele auf einmal, stellt jeder im Konto ein (25, 50, 100 oder 200). Die Projektliste zeigt zuerst die aktiven Projekte; geplante, pausierte, abgeschlossene oder alle wählst du darüber aus.
 
-## Abrechnung
+### Abrechnung
 
 Pro Kunde legst du unter **Abrechnung** eine Vereinbarung an:
 
@@ -137,7 +130,7 @@ Der Rechnungsabgleich übernimmt auch Rechnungen, die du direkt in Lexware für 
 Den Status holt der Scheduler nach dem eingestellten Zeitplan aus der Belegliste von Lexware; **Status aktualisieren** gleicht sofort ab.
 Löschst du einen Entwurf in Lexware, wird die Rechnung hier als gelöscht markiert und ihre Zeiten sind wieder offen. Bei einer stornierten Rechnung gibst du die Zeiten mit **Zeiten freigeben** selbst wieder frei, falls du sie neu abrechnen willst.
 
-## Auswertungen
+### Auswertungen
 
 Unter **Auswertungen** wählst du einen Zeitraum (dieser oder letzter Monat, Quartal, Jahr oder frei) und optional einen Kunden. Die Seite zeigt:
 
@@ -149,7 +142,7 @@ Unter **Auswertungen** wählst du einen Zeitraum (dieser oder letzter Monat, Qua
 
 **Zeiten als CSV** lädt alle Einträge des Zeitraums herunter (Semikolon-getrennt, Dezimalkomma, für Excel und LibreOffice).
 
-## KI-Agenten (MCP)
+### KI-Agenten (MCP)
 
 LexTracker ist ein [MCP-Server](https://modelcontextprotocol.io): Ein KI-Agent wie Claude Code kann damit Zeiten erfassen, während er an einer Aufgabe arbeitet. Er handelt dabei als der Benutzer, dem der Token gehört.
 
@@ -177,7 +170,7 @@ Ein Hinweis für den Agenten, etwa in der `CLAUDE.md` eines Projekts, sorgt daf�
 
 Der Server ist zustandslos und antwortet mit JSON, ohne Event-Stream. Ein widerrufener Token funktioniert sofort nicht mehr.
 
-## Benutzer und Rechte
+### Benutzer und Rechte
 
 Unter **Benutzer** legst du Zugänge an. Danach zeigt die App einen Einladungslink, den du der Person schickst. Damit legt sie ihr Passwort fest. Der Link gilt eine Woche und nur einmal; über **Einladungslink** in der Liste erzeugst du jederzeit einen neuen, auch wenn jemand sein Passwort vergessen hat.
 
@@ -189,7 +182,7 @@ Unter **Benutzer** legst du Zugänge an. Danach zeigt die App einen Einladungsli
 
 Was ein Kundenzugang sieht, stellst du pro Zugang beim Benutzer ein. Welche Seiten eine Rolle öffnen darf, steht in `app/core/access.py`.
 
-## Sprachen
+### Sprachen
 
 Die Oberfläche gibt es auf Deutsch (Standard) und Englisch. Jeder Benutzer wählt seine Sprache unter **Konto → Darstellung**; E-Mails und Nachrichten der App kommen in der Sprache des Empfängers. Auf der Anmeldeseite gilt die Sprache, die der Browser verlangt, und nach dem Abmelden die zuletzt gewählte. Datumsformat und Dezimaltrenner richten sich nach Sprache und Kontoeinstellung.
 
@@ -201,14 +194,14 @@ make messages    # Texte einsammeln und die .po-Datei aktualisieren, dann kompil
 
 Neue Einträge in `django.po` bekommen ihre englische Übersetzung (`msgstr`); die CI prüft, dass der Katalog aktuell und vollständig ist. Die kompilierten `.mo`-Dateien liegen nicht im Git: Das Docker-Image erzeugt sie beim Bauen (gettext steckt nur in der Build-Stufe), lokal und in der CI übernimmt das `compilemessages`. Absichtlich nicht übersetzt sind Texte, die in Lexware Office auf Rechnungen landen, und die Ausgaben des MCP-Servers.
 
-## Konto und Sicherheit
+### Konto und Sicherheit
 
 Unter deinem Namen oben rechts stellst du Sprache (Deutsch oder Englisch), Darstellung (hell, dunkel oder wie das System) und Datumsformat ein und änderst dein Passwort.
 Dort schaltest du auch die **Zwei-Faktor-Anmeldung** mit einer Authenticator-App ein (TOTP, über [django-otp](https://django-otp-official.readthedocs.io/)). Dabei entstehen zehn Wiederherstellungscodes, die je einmal statt des App-Codes funktionieren.
 Auch die Verwaltung unter `/admin/` meldet über diese Anmeldung an, damit der zweite Faktor dort nicht umgangen wird.
 Nach zu vielen falschen Passwörtern oder Codes von einer IP-Adresse ist die Anmeldung von dort eine Weile gesperrt. Wie viele Fehlversuche und wie lange, legst du unter **Einstellungen** fest (Standard: 5 Versuche, 15 Minuten; 0 Versuche schaltet die Sperre aus). Hinter einem Reverse Proxy muss `FORWARDED_ALLOW_IPS` stimmen, sonst sehen alle Anfragen wie die IP des Proxys aus.
 
-## Nachrichten
+### Nachrichten
 
 Die App meldet sich bei dir, wenn im Hintergrund etwas passiert: Die **Glocke** oben in der Seitenleiste zeigt, wie viele Nachrichten ungelesen sind, und öffnet sie als Fenster. Dort liest, löscht und öffnest du sie (der Titel führt zur passenden Seite); **Als Seite öffnen** zeigt alle mit Filtern nach Priorität. Eine ungelesene kritische Nachricht steht zusätzlich als Banner auf jeder Seite, bis du sie gelesen hast.
 
@@ -230,7 +223,7 @@ Gleiche Meldungen werden zusammengefasst: Scheitert der stündliche Abgleich ein
 
 Aufgeräumt wird stündlich im Scheduler: Gelesene Nachrichten bleiben bei Debug 3 Tage, Info 30, Warnung 90 und Kritisch 365 Tage; ungelesene Debug- und Info-Nachrichten gehen nach der doppelten Zeit, ungelesene Warnungen und kritische bleiben, bis du sie liest. Mehr als 1000 Nachrichten pro Benutzer werden nicht aufbewahrt. Kunden haben (noch) kein Postfach.
 
-## E-Mail
+### E-Mail
 
 Unter **Einstellungen → E-Mail-Versand verwalten** trägst du den SMTP-Server ein (Server, Port, Verschlüsselung, Zugangsdaten, Absender). Das Passwort wird wie der Lexware-Schlüssel verschlüsselt gespeichert. Eine **Testmail** geht sofort raus und zeigt direkt, was der Server antwortet. Port 587 gehört zu STARTTLS, Port 465 zu SSL/TLS; passen Port und Verschlüsselung nicht zusammen, weist dich das Formular darauf hin, und ein TLS-Fehler der Testmail nennt die passende Einstellung.
 
@@ -254,20 +247,48 @@ Beides geht an Administratoren und Mitarbeiter mit E-Mail-Adresse; jeder schalte
 
 Der **Hinweis auf überfällige Rechnungen** (Standard: an Administratoren, 3 Tage nach Fälligkeit) geht einmal pro Rechnung und Fälligkeitsdatum raus. Wahlweise bekommt auch der Kunde eine freundliche Zahlungserinnerung an seine E-Mail-Adresse aus Lexware, unterschrieben mit dem Absendernamen aus den E-Mail-Einstellungen; der Hinweis an dich sagt dann, wohin sie ging. Damit keine bezahlte Rechnung angemahnt wird, zählt nur der Status aus dem Rechnungsabgleich, und der muss jünger als einen Tag sein. Rechnungen, die schon mehr als eine Woche über die Frist sind, bekommen keinen Hinweis mehr, damit das Einschalten nicht alle alten Rechnungen auf einmal anmahnt.
 
-## Betrieb mit Docker
+## Betrieb
 
-```sh
-cp .env.example .env    # APP_ENVIRONMENT=production und APP_SECRET_KEY setzen
-docker compose up -d --build
-```
+Der Schnellstart genügt für den Start. Dieser Abschnitt beschreibt, was danach wichtig wird.
+
+### Konfiguration
+
+Alle Einstellungen der App kommen aus der Datei `.env` neben der `compose.yaml` (Vorlage: [.env.example](.env.example)) und tragen das Präfix `APP_`. Alles Weitere (Lexware, E-Mail, Zeitpläne, Datensicherung) stellst du in der App unter **Einstellungen** ein.
+
+| Variable | Bedeutung | Standard |
+| --- | --- | --- |
+| `APP_ENVIRONMENT` | `development` oder `production` | `development` in der Vorlage, `production` in `compose.yaml` |
+| `APP_SECRET_KEY` | Pflicht. Daraus sind Sitzungen, Einrichtungscode und die Verschlüsselung von Lexware-Schlüssel und SMTP-Passwort abgeleitet | – |
+| `APP_ALLOWED_HOSTS` | Host-Namen, unter denen die App erreichbar ist (kommagetrennt) | `localhost,127.0.0.1` |
+| `APP_CSRF_TRUSTED_ORIGINS` | Ursprünge mit Schema, z. B. `https://zeit.example.de` (nötig hinter einem Reverse Proxy mit HTTPS) | leer |
+| `APP_SECURE_COOKIES` | `false` nur, wenn du die App ohne HTTPS öffnest | `true` |
+| `FORWARDED_ALLOW_IPS` | IP des Reverse Proxys, damit uvicorn dessen `X-Forwarded-*`-Header vertraut | `127.0.0.1` |
+| `UVICORN_WORKERS` | Anzahl der uvicorn-Prozesse | `1` |
+| `APP_PORT` | Docker: Port, auf dem die App veröffentlicht wird, z. B. `127.0.0.1:8000` | `8000` |
+| `APP_TIME_ZONE` | Zeitzone | `Europe/Berlin` |
+| `APP_LOG_LEVEL` | Log-Stufe | `info` |
+| `APP_LEXWARE_API_KEY` | Ersatz für den Lexware-Schlüssel, solange in der App keiner hinterlegt ist ([Lexware Office](#lexware-office)) | leer |
+| `DJANGO_SUPERUSER_USERNAME`, `DJANGO_SUPERUSER_PASSWORD`, `DJANGO_SUPERUSER_EMAIL` | Legt beim Start das Admin-Konto an, falls es noch nicht existiert. Ohne sie legt die Einrichtung im Browser das Konto an | leer |
+
+Das Backup-Ziel `APP_BACKUP_DIR` ist in Docker fest `/backups` (siehe [Datensicherung](#datensicherung)).
+
+### Container und Scheduler
 
 Seiten gehen mit Brotli oder gzip komprimiert an den Browser.
+
 Ein Worker (`UVICORN_WORKERS`) nutzt höchstens einen CPU-Kern und braucht etwa 80 bis 200 MB RAM; bei mehreren Kernen und mehreren gleichzeitigen Benutzern lohnt einer pro Kern (siehe [loadtest/README.md](loadtest/README.md)).
+
 Die App lauscht auf Port 8000 (über `APP_PORT` änderbar, z. B. `127.0.0.1:8000`, wenn nur ein Reverse Proxy auf demselben Server sie erreichen soll). Datenbank und alle Daten liegen im Volume `lextracker-data` (`/data` im Container), Backups im Volume `lextracker-backups` (`/backups`).
+
 Neben der App startet ein zweiter Container `scheduler` aus demselben Image, sobald die App gesund ist. Er führt wiederkehrende Aufgaben wie den automatischen Kundenimport, den Rechnungsabgleich, das tägliche Backup, Wochenberichte und Erinnerungen aus und prüft dafür jede Minute, was fällig ist. Außerdem verschickt er die E-Mails aus der Warteschlange. Sein Healthcheck schlägt an, wenn er länger als fünf Minuten nicht mehr geprüft hat.
+
 Unter Einstellungen → Hintergrundaufgaben (oben rechts) siehst du als Admin, ob der Scheduler lebt (er meldet sich bei jeder Prüfung in der Datenbank; nach fünf Minuten Stille warnt die Seite und die Übersicht) und für jede Aufgabe Zeitplan, nächsten und letzten Lauf mit Dauer, Ergebnis, letzter Fehlermeldung und Fehlschlägen in Folge. Fehler kommen weiterhin als Nachricht in die Glocke; die Seite legt keine eigenen an. Prüfungen, die nichts zu tun hatten (E-Mail-Warteschlange, Berichte, Timer-Nachrichten), hinterlassen keine Spur, außer sie folgen auf einen Fehler.
+
 Vor jedem Start führt Compose über `pre_start`-Hooks die Migrationen aus und legt, falls `DJANGO_SUPERUSER_USERNAME` und `DJANGO_SUPERUSER_PASSWORD` gesetzt sind, das Admin-Konto an (sofern es noch nicht existiert). Schlägt ein Hook fehl, startet die App nicht. Dafür ist ein aktuelles Docker Compose nötig (getestet mit v5.6).
+
 Beide Container laufen ohne Root, mit schreibgeschütztem Dateisystem (beschreibbar sind nur `/data`, `/backups` und `/tmp`), ohne Linux-Capabilities und mit begrenzten Logs (5 × 10 MB).
+
+### Reverse Proxy und HTTPS
 
 Hinter einem Reverse Proxy mit HTTPS (empfohlen) zusätzlich setzen:
 
@@ -279,8 +300,12 @@ FORWARDED_ALLOW_IPS=<IP des Proxys>
 
 Ohne HTTPS funktioniert der Login nur mit `APP_SECURE_COOKIES=false`.
 
+### Datensicherung
+
 **Backup:** Der Scheduler kopiert die Datenbank täglich nach `/backups`. Ob, ab welcher Uhrzeit (Standard 03:00) und wie viele Kopien er behält (Standard 14), stellst du unter Einstellungen → Datensicherung ein; dort steht auch, wann die letzte Sicherung lief. Nur der Zielordner kommt aus der Umgebung (`APP_BACKUP_DIR`, in Docker fest `/backups`, ohne Docker `data/backups`). Der Scheduler nutzt dafür die Backup-Funktion von SQLite, die auch im laufenden Betrieb eine stimmige Kopie liefert; die Datei einfach zu kopieren reicht im WAL-Modus nicht.
+
 Unter Einstellungen → Sicherungen siehst du alle Kopien, kannst sofort eine anlegen, sie herunterladen, löschen oder wiederherstellen. Über „Hochladen“ legst du eine Sicherung von einem anderen Server in den Ordner (Name mit `-hochgeladen`) und stellst sie danach wie jede andere wieder her. Die App prüft die Datei vorher wie beim Wiederherstellen und nimmt höchstens 100 MB an (`APP_BACKUP_UPLOAD_MAX_MB`); größere Anfragen weist sie ab, bevor sie gelesen werden. Ein Backup sofort geht auch mit `make docker-backup` (oder `docker compose exec scheduler python manage.py backup_database`).
+
 Damit die Backups auch außerhalb von Docker liegen, z. B. für ein Offsite-Backup, kannst du das Volume durch einen Ordner auf dem Server ersetzen. Er muss dem Benutzer mit der UID 1000 gehören:
 
 ```yaml
@@ -294,7 +319,105 @@ services:
 
 Beim Wiederherstellen in der Oberfläche sichert die App zuerst den aktuellen Stand (Datei mit `-vorher` im Namen), schreibt die Kopie mit der Backup-Funktion von SQLite in die laufende Datenbank und führt danach die Migrationen aus. App und Scheduler laufen dabei weiter. Kopien aus einer neueren Version der App lehnt sie ab. Startet die App gar nicht mehr, geht es auch von Hand: App stoppen (`docker compose down`), die gewünschte Kopie als `/data/db.sqlite3` zurückspielen und dabei `db.sqlite3-wal` und `db.sqlite3-shm` löschen, dann wieder starten.
 
-**IDs:** Alle Datensätze (Kunden, Projekte, Aufgaben, Zeiteinträge, Rechnungen, Benutzer …) haben eine UUID (Version 7, zeitlich sortierbar) als ID, auch in URLs, Formularen und im MCP-Server. Nur die Einzeleinträge der Einstellungen (Einstellungen, E-Mail-Versand, Lexware-Verbindung) behalten ihre feste interne Nummer 1. Beim Update einer älteren Instanz stellt die Migration `core.0011` alle IDs und Verweise um (auch in den Tabellen von django-otp und dem Admin-Log). Vorher legt `core.0010` eine Kopie mit `-vor-umstellung` im Namen im Backup-Ordner an. Danach sind alle angemeldeten Sitzungen ungültig (einmal neu anmelden), und Links mit den alten Nummern (Lesezeichen, verschickte Einladungen) liefern 404. Zurück auf die alte Version geht nur mit dieser Kopie: erst die alte Version starten, dann die Kopie wiederherstellen; in der neuen Version würde die Wiederherstellung sie sofort wieder umstellen.
+### Update
+
+```sh
+git pull
+docker compose up -d --build
+```
+
+Compose baut das Image neu und führt vor dem Start die Migrationen aus. Vorher lohnt sich ein Backup (`make docker-backup`).
+
+### IDs (UUID-Umstellung)
+
+Alle Datensätze (Kunden, Projekte, Aufgaben, Zeiteinträge, Rechnungen, Benutzer …) haben eine UUID (Version 7, zeitlich sortierbar) als ID, auch in URLs, Formularen und im MCP-Server. Nur die Einzeleinträge der Einstellungen (Einstellungen, E-Mail-Versand, Lexware-Verbindung) behalten ihre feste interne Nummer 1. Beim Update einer älteren Instanz stellt die Migration `core.0011` alle IDs und Verweise um (auch in den Tabellen von django-otp und dem Admin-Log). Vorher legt `core.0010` eine Kopie mit `-vor-umstellung` im Namen im Backup-Ordner an. Danach sind alle angemeldeten Sitzungen ungültig (einmal neu anmelden), und Links mit den alten Nummern (Lesezeichen, verschickte Einladungen) liefern 404. Zurück auf die alte Version geht nur mit dieser Kopie: erst die alte Version starten, dann die Kopie wiederherstellen; in der neuen Version würde die Wiederherstellung sie sofort wieder umstellen.
+
+## Entwicklung
+
+Voraussetzung: [uv](https://docs.astral.sh/uv/getting-started/installation/) (installiert Python 3.15 bei Bedarf selbst).
+
+### Lokal starten
+
+```sh
+make install     # Abhängigkeiten installieren, .env anlegen
+make css         # Stylesheet bauen (lädt beim ersten Mal das Tailwind-CLI)
+make migrate     # Datenbank anlegen (liegt in ./data)
+make run         # http://localhost:8000
+```
+
+Beim ersten Aufruf führt die [Einrichtung](#schnellstart-docker-produktiv) durch das Anlegen des Admin-Kontos (das Konto geht alternativ mit `make superuser`). Den Einrichtungslink schreibt die App beim ersten Aufruf ins Terminal, alternativ zeigt ihn `uv run app/manage.py setup_link`.
+
+Neue oder geänderte Texte übersetzt du mit `make messages` (siehe [Sprachen](#sprachen)).
+Während du an Templates arbeitest, hält `make css-watch` in einem zweiten Terminal das Stylesheet aktuell.
+Den automatischen Kundenimport und den E-Mail-Versand startest du lokal bei Bedarf mit `make scheduler`.
+`make help` zeigt alle Befehle.
+
+### Tests und Code-Stil
+
+```sh
+make test     # Testsuite (pytest)
+make lint     # Code-Stil prüfen (ruff)
+make format   # Code-Stil korrigieren
+```
+
+### Entwicklung mit Docker
+
+Wer lieber im Container entwickelt (gleiches Image und Python wie in Produktion), startet die Entwicklungsumgebung aus [dev.compose.yaml](dev.compose.yaml). Sie baut mit `extends` auf der `compose.yaml` auf und braucht ein aktuelles Docker Compose (getestet mit v5.6):
+
+```sh
+cp .env.example .env    # APP_SECRET_KEY setzen, für die Entwicklung genügt ein beliebiger Wert
+make docker-dev         # oder: docker compose -f dev.compose.yaml watch
+```
+
+Das baut das Image, startet App und Scheduler auf http://localhost:8000 und beobachtet danach den Code:
+
+- Änderungen unter `app/` werden in den Container kopiert; `uvicorn --reload` lädt bei Python-Dateien selbst neu, der Scheduler startet neu.
+- Bei Änderungen an Templates, Skripten oder `assets/tailwind.css` wird zusätzlich das Stylesheet neu gebaut (`manage.py tailwind build`). Beim ersten Mal lädt das das Tailwind-CLI herunter; es bleibt in einem Volume erhalten. Die Seite lädst du selbst neu.
+- Änderungen an `pyproject.toml`, `uv.lock` oder `docker/Dockerfile` bauen das Image neu.
+
+Die Umgebung läuft als eigenes Compose-Projekt `lextracker-dev` mit eigenen Volumes und Containernamen, berührt also keine Produktionsdaten auf demselben Rechner. Sie nutzt `APP_ENVIRONMENT=development`, hört nur auf `127.0.0.1:8000`, und das Dateisystem ist beschreibbar, weil `watch` Dateien hineinkopiert.
+Neue Migrationen wendest du mit `docker compose -f dev.compose.yaml exec app python manage.py migrate` an (beim Neustart laufen sie ohnehin). Zum Aufräumen: `make docker-dev-down`, mit `-v` an `docker compose -f dev.compose.yaml down` auch die Daten.
+
+### Lasttest
+
+Einen Last- und Performancetest mit Testdaten beschreibt [loadtest/README.md](loadtest/README.md) (`make loadtest`).
+
+### Technik
+
+| Bereich | Wahl | Warum |
+| --- | --- | --- |
+| Backend | Django 6, async Views, ASGI mit uvicorn | Login, Benutzer, Admin und Migrationen sind eingebaut; async Views blockieren sich nicht gegenseitig, z. B. bei langsamen API-Aufrufen an Lexware. |
+| Oberfläche | Server-gerenderte Templates + [htmx](https://htmx.org) | Interaktive Seiten ohne eigenes JavaScript. |
+| Styling | Tailwind CSS 4 über [django-tailwind-cli](https://github.com/django-commons/django-tailwind-cli), eigene Komponenten | Nutzt das Standalone-CLI, also kein Node.js nötig. Farben und Komponenten (`.btn`, `.card`, `.table`, `.badge` …) stehen in `app/assets/tailwind.css`, Icons kommen über `{% icon "name" %}` (`core/templatetags/icons.py`). Schrift ist Inter, selbst gehostet statt über Google Fonts. Hell- und Dunkelmodus folgen der Systemeinstellung. |
+| Sprachen | Djangos i18n: Deutsch (Standard) und Englisch | Die Texte im Code und in den Templates sind deutsch, `app/locale/en` enthält die englische Übersetzung. Siehe [Sprachen](#sprachen). |
+| Datenbank | SQLite (WAL-Modus) | Kein extra DB-Server. WAL erlaubt Lesen während geschrieben wird; das reicht für wenige Benutzer locker. |
+| Statische Dateien | [ServeStatic](https://github.com/Archmonger/ServeStatic) | Liefert CSS/JS async, komprimiert und mit Cache-Headern aus. |
+| Pakete | [uv](https://docs.astral.sh/uv/) | Schnell, mit Lockfile. |
+
+#### Projektstruktur
+
+```
+app/
+  config/      Einstellungen (aus Umgebungsvariablen), URLs, ASGI
+  core/        Basis-Modelle, Einstellungen, Middleware, Übersicht, Health-Check, Scheduler
+  accounts/    Benutzer mit Rolle (Admin, Mitarbeiter, Kunde), Login mit Zwei-Faktor, Kontoeinstellungen
+  customers/   Kunden (mit Verknüpfung zum Lexware-Kontakt) und Import aus Lexware
+  lexware/     Async Client für die Lexware Office Public API, verschlüsselt gespeicherter API-Schlüssel
+  projects/    Projekte und Aufgaben
+  tracking/    Zeiteinträge (ein Eintrag ohne Ende ist ein laufender Timer)
+  billing/     Abrechnungsvereinbarungen, Berechnung und Rechnungen
+  reports/     Auswertungen und CSV-Export
+  mcpserver/   MCP-Server für KI-Agenten
+  portal/      Kundenportal (nur lesen)
+  mailer/      E-Mail-Versand: SMTP-Einstellungen, Warteschlange, Wochenbericht, Erinnerungen und Hinweise
+  inbox/       Nachrichten an Benutzer: Glocke, Postfach, Prioritäten, Weitergabe per E-Mail
+  setup/       Einrichtung einer neuen Instanz (Admin-Konto mit Zwei-Faktor-Anmeldung, Lexware-Schlüssel, Datensicherung)
+  templates/   HTML-Templates
+  assets/      Tailwind-Quelle mit Farben und eigenen Komponenten
+  static/      Statische Dateien (htmx, gebautes CSS)
+tests/
+docker/
+```
 
 ## Releases
 
