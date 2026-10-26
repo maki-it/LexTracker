@@ -4,17 +4,27 @@ Lexware calls an address of this app whenever a contact or an invoice changes. T
 says which kind of thing changed, and the scheduler then runs the usual import or status sync for it
 (``core.scheduler.process_webhooks``). Nothing in the call is stored as data, so a forged call can at worst
 make the scheduler look at Lexware a little early. The address also contains a secret, so only Lexware, which
-was given it when the subscription was created, can reach the endpoint at all.
+was given it when the subscription was created, can reach the endpoint at all. Lexware also signs every call
+(RSA-SHA512, header ``X-Lxo-Signature``); once its public key is stored, calls without a valid signature are refused.
+
+See https://developers.lexware.io/docs/#event-subscriptions-endpoint
 
 The regular sync interval stays as a safety net for calls that never arrive.
 """
 
+import base64
+import binascii
+import contextlib
+import json
 import logging
 import secrets
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from uuid import UUID
 
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext as _
@@ -59,6 +69,61 @@ async def aensure_token() -> str:
 async def avalid_token(token: str) -> bool:
     stored = (await LexwareConnection.aload()).webhook_token
     return bool(stored) and secrets.compare_digest(stored.encode(), token.encode())
+
+
+def parse_public_key(pem: str) -> rsa.RSAPublicKey:
+    """The RSA public key in ``pem``. Raises ValueError if it is anything else."""
+    try:
+        key = serialization.load_pem_public_key(pem.strip().encode())
+    except (ValueError, TypeError) as exc:
+        raise ValueError(_("Das ist kein öffentlicher Schlüssel im PEM-Format (-----BEGIN PUBLIC KEY-----).")) from exc
+    if not isinstance(key, rsa.RSAPublicKey):
+        raise ValueError(_("Lexware signiert mit RSA. Dieser Schlüssel ist kein RSA-Schlüssel."))
+    return key
+
+
+def signature_valid(public_key_pem: str, body: bytes, signature: str) -> bool:
+    """Whether ``signature`` (base64, from ``X-Lxo-Signature``) is Lexware's RSA-SHA512 signature of the body.
+
+    Lexware signs the compact JSON, so a body with whitespace is also tried in that form.
+    """
+    try:
+        key = parse_public_key(public_key_pem)
+        raw = base64.b64decode(signature, validate=True)
+    except ValueError, binascii.Error:
+        return False
+    candidates = [body]
+    with contextlib.suppress(ValueError):
+        candidates.append(json.dumps(json.loads(body), separators=(",", ":"), ensure_ascii=False).encode())
+    for candidate in candidates:
+        try:
+            key.verify(raw, candidate, padding.PKCS1v15(), hashes.SHA512())
+        except InvalidSignature:
+            continue
+        return True
+    return False
+
+
+async def asignature_ok(body: bytes, signature: str) -> bool:
+    """False if a public key is stored and the call is not signed with it; true if there is no key to check."""
+    pem = (await LexwareConnection.aload()).webhook_public_key
+    return not pem or signature_valid(pem, body, signature)
+
+
+async def astore_public_key(pem: str) -> None:
+    """Keep Lexware's public key. Raises ValueError if it is not a usable RSA key."""
+    parse_public_key(pem)
+    await LexwareConnection.objects.filter(pk=1).aupdate(webhook_public_key=pem.strip())
+
+
+async def aremove_public_key() -> None:
+    await LexwareConnection.objects.filter(pk=1).aupdate(webhook_public_key="")
+
+
+async def aforget() -> None:
+    """Drop what we know about the subscriptions, because Lexware removed them with the API key they belong to."""
+    await WebhookSubscription.objects.all().adelete()
+    await LexwareConnection.objects.filter(pk=1).aupdate(webhook_token="")
 
 
 async def arecord(event_type: str, resource_id: UUID | None) -> bool:
@@ -109,6 +174,7 @@ class WebhookStatus:
     problem: str = ""
     subscriptions: list[WebhookSubscription] = field(default_factory=list)
     last_event_at: datetime | None = None
+    signature_check: bool = False
 
     @property
     def active(self) -> bool:
@@ -130,6 +196,7 @@ async def astatus(request_origin: str = "") -> WebhookStatus:
         )
     elif token := (await LexwareConnection.aload()).webhook_token:
         status.callback_url = base_url + callback_path(token)
+    status.signature_check = bool((await LexwareConnection.aload()).webhook_public_key)
     last = await WebhookEvent.objects.order_by("-received_at").values_list("received_at", flat=True).afirst()
     status.last_event_at = last
     return status

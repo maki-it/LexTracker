@@ -328,3 +328,108 @@ def test_jobs_page_lists_the_webhook_check():
 
     rows = async_to_sync(overview)(timezone.now(), AppSettings.objects.create(pk=1))
     assert "webhooks" in {row.key for row in rows}
+
+
+@pytest.fixture(scope="module")
+def signing():
+    """A key pair that stands in for Lexware's: the public PEM and a function that signs like Lexware."""
+    import base64
+
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import padding, rsa
+
+    private = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    pem = (
+        private.public_key()
+        .public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo)
+        .decode()
+    )
+
+    def sign(body: bytes) -> str:
+        return base64.b64encode(private.sign(body, padding.PKCS1v15(), hashes.SHA512())).decode()
+
+    return SimpleNamespace(pem=pem, sign=sign)
+
+
+def signed_call(client, token, signing, payload, *, signature=None, body=None):
+    body = body if body is not None else json.dumps(payload, separators=(",", ":")).encode()
+    headers = {"HTTP_X_LXO_SIGNATURE": signing.sign(body) if signature is None else signature}
+    return client.post(reverse("webhooks:lexware", args=[token]), body, content_type="application/json", **headers)
+
+
+PAYLOAD = {"eventType": "contact.changed", "resourceId": "4d43ad14-671d-4e0c-fd4b-2fd8cc117eff"}
+
+
+def test_with_a_key_only_signed_calls_are_accepted(client, token, signing):
+    async_to_sync(webhooks.astore_public_key)(signing.pem)
+
+    assert signed_call(client, token, signing, PAYLOAD).status_code == 200
+    assert WebhookEvent.objects.count() == 1
+
+    # Whitespace in the body: Lexware signs the compact form.
+    spaced = json.dumps(PAYLOAD, indent=2).encode()
+    compact = json.dumps(PAYLOAD, separators=(",", ":")).encode()
+    assert signed_call(client, token, signing, PAYLOAD, body=spaced, signature=signing.sign(compact)).status_code == 200
+
+
+def test_unsigned_or_wrongly_signed_calls_are_refused(client, token, signing):
+    async_to_sync(webhooks.astore_public_key)(signing.pem)
+
+    assert call(client, token, PAYLOAD).status_code == 401
+    assert signed_call(client, token, signing, PAYLOAD, signature="kein base64!").status_code == 401
+    assert signed_call(client, token, signing, PAYLOAD, signature=signing.sign(b"{}")).status_code == 401
+    assert not WebhookEvent.objects.exists()
+    # Lexware's check of a new address does not carry a signature.
+    assert client.head(reverse("webhooks:lexware", args=[token])).status_code == 200
+
+
+def test_public_key_must_be_an_rsa_key():
+    for pem in ("irgendwas", "-----BEGIN PUBLIC KEY-----\nabc\n-----END PUBLIC KEY-----"):
+        with pytest.raises(ValueError):
+            async_to_sync(webhooks.astore_public_key)(pem)
+    assert LexwareConnection.objects.filter(webhook_public_key="").count() == LexwareConnection.objects.count()
+
+
+def test_public_key_from_the_settings_page(logged_in, lexware_api, signing):
+    page = logged_in.post(reverse("lexware:save_webhook_key"), {"public_key": "kein Schlüssel"}, follow=True)
+    assert "kein öffentlicher Schlüssel" in page.content.decode()
+
+    logged_in.post(reverse("lexware:save_webhook_key"), {"public_key": signing.pem})
+    assert LexwareConnection.objects.get().webhook_public_key == signing.pem.strip()
+    MailSettings.objects.update_or_create(pk=1, defaults={"base_url": BASE_URL})
+    logged_in.post(reverse("lexware:enable_webhooks"))
+    assert "Signatur wird geprüft" in logged_in.get(reverse("core:settings") + "?tab=lexware").content.decode()
+
+    logged_in.post(reverse("lexware:remove_webhook_key"))
+    assert LexwareConnection.objects.get().webhook_public_key == ""
+
+
+def test_removing_the_api_key_forgets_the_subscriptions(logged_in, lexware_api):
+    MailSettings.objects.create(pk=1, base_url=BASE_URL)
+    logged_in.post(reverse("lexware:enable_webhooks"))
+    assert WebhookSubscription.objects.exists()
+
+    logged_in.post(reverse("lexware:remove_key"))
+
+    # Lexware removes them together with the key.
+    assert not WebhookSubscription.objects.exists()
+    assert LexwareConnection.objects.get().webhook_token == ""
+
+
+def test_a_new_api_key_subscribes_again(logged_in, lexware_api, monkeypatch):
+    from lexware import credentials
+    from lexware.schemas import Profile
+
+    async def check(api_key):
+        return Profile(companyName="Maki IT")
+
+    monkeypatch.setattr(credentials, "acheck", check)
+    MailSettings.objects.create(pk=1, base_url=BASE_URL)
+    logged_in.post(reverse("lexware:enable_webhooks"))
+    old_token = LexwareConnection.objects.get().webhook_token
+    lexware_api.clear()
+
+    logged_in.post(reverse("lexware:save_key"), {"api_key": "neuer-schluessel-1234"})
+
+    assert LexwareConnection.objects.get().webhook_token not in ("", old_token)
+    assert len([r for r in lexware_api if r.method == "POST"]) == len(webhooks.EVENT_AREAS)

@@ -91,6 +91,21 @@
     <code class="break-all">{{ webhooks.callback_url }}</code>
     <p class="text-muted">{% trans "Die Adresse enthält ein Geheimnis. Gib sie nicht weiter." %}</p>
   </div>
+  <form method="post" action="{% url 'lexware:save_webhook_key' %}" class="flex flex-col gap-2">
+    {% csrf_token %}
+    <label class="flex flex-col gap-1 text-sm font-medium" for="webhook-public-key">
+      {% trans "Öffentlicher Schlüssel von Lexware (optional)" %}
+      {% if webhooks.signature_check %}<span class="badge badge-success w-fit">{% trans "Signatur wird geprüft" %}</span>{% endif %}
+    </label>
+    <textarea id="webhook-public-key" name="public_key" rows="4" spellcheck="false" class="input font-mono text-xs" placeholder="-----BEGIN PUBLIC KEY-----"></textarea>
+    <span class="text-sm text-muted">{% trans "Lexware signiert jeden Aufruf. Den Schlüssel findest du in der API-Dokumentation unter Event Subscriptions > Verify Authenticity (Link „this public key“). Ist er hinterlegt, nimmt die App nur noch signierte Aufrufe an." %}</span>
+    <div class="flex flex-wrap gap-2">
+      <button type="submit" class="btn">{% trans "Schlüssel speichern" %}</button>
+      {% if webhooks.signature_check %}
+      <button type="submit" formaction="{% url 'lexware:remove_webhook_key' %}" class="btn btn-danger">{% trans "Schlüssel entfernen" %}</button>
+      {% endif %}
+    </div>
+  </form>
   <div class="flex flex-wrap gap-2">
     <form method="post" action="{% url 'lexware:enable_webhooks' %}">
       {% csrf_token %}

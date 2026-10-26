@@ -18,6 +18,8 @@ class LexwareConnection(models.Model):
     updated_at = models.DateTimeField(_("geändert"), null=True, blank=True, editable=False)
     # The secret part of the webhook address (see ``lexware.webhooks``). Empty while webhooks are off.
     webhook_token = models.CharField(max_length=64, blank=True, editable=False)
+    # Lexware's public key (PEM) for the signature of its calls. Empty: calls are not checked for a signature.
+    webhook_public_key = models.TextField(blank=True, editable=False)
 
     class Meta:
         verbose_name = verbose_name_plural = _("Lexware-Verbindung")

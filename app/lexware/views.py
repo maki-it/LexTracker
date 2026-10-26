@@ -13,6 +13,7 @@ from core.ids import parse_uuid
 from lexware import credentials, webhooks
 from lexware.client import LexwareError, client_from_settings
 from lexware.forms import ApiKeyForm
+from lexware.models import WebhookSubscription
 
 # Lexware's calls are a few hundred bytes. Anything bigger is not from Lexware.
 WEBHOOK_MAX_BYTES = 16_384
@@ -44,6 +45,9 @@ async def save_key(request: HttpRequest) -> HttpResponse:
             request,
             _("API-Schlüssel geprüft und gespeichert (%(company)s).") % {"company": company_name or "Lexware Office"},
         )
+        if await WebhookSubscription.objects.aexists():
+            # Lexware removes the subscriptions together with the key they were created with.
+            await _subscribe(request)
     else:
         messages.error(request, form.errors["api_key"][0])
     return redirect(f"{reverse('core:settings')}?tab=lexware")
@@ -70,32 +74,38 @@ async def test_key(request: HttpRequest) -> HttpResponse:
 @require_POST
 async def remove_key(request: HttpRequest) -> HttpResponse:
     await credentials.aremove()
+    await webhooks.aforget()
     messages.success(request, _("API-Schlüssel entfernt."))
     return redirect(f"{reverse('core:settings')}?tab=lexware")
 
 
-@require_POST
-async def enable_webhooks(request: HttpRequest) -> HttpResponse:
+async def _subscribe(request: HttpRequest) -> None:
+    """Subscribe to Lexware's events and tell the user how it went."""
     base_url = await webhooks.abase_url(request.build_absolute_uri("/"))
     if not base_url.startswith("https://"):
         messages.error(request, (await webhooks.astatus(base_url)).problem)
-        return redirect(f"{reverse('core:settings')}?tab=lexware")
+        return
     try:
         async with client_from_settings() as client:
             result = await webhooks.aenable(client, base_url)
     except LexwareError as exc:
         messages.error(request, _("Webhooks konnten nicht eingerichtet werden: %(error)s") % {"error": exc})
-    else:
-        if result.subscribed:
-            messages.success(
-                request,
-                _("Lexware meldet Änderungen jetzt direkt (%(count)d Ereignisse abonniert).")
-                % {"count": len(result.subscribed)},
-            )
-        for event_type, error in result.failed.items():
-            messages.warning(request, f"{event_type}: {error}")
-        if not result.subscribed:
-            messages.error(request, _("Lexware hat kein Ereignis angenommen. Ist die Adresse von außen erreichbar?"))
+        return
+    if result.subscribed:
+        messages.success(
+            request,
+            _("Lexware meldet Änderungen jetzt direkt (%(count)d Ereignisse abonniert).")
+            % {"count": len(result.subscribed)},
+        )
+    for event_type, error in result.failed.items():
+        messages.warning(request, f"{event_type}: {error}")
+    if not result.subscribed:
+        messages.error(request, _("Lexware hat kein Ereignis angenommen. Ist die Adresse von außen erreichbar?"))
+
+
+@require_POST
+async def enable_webhooks(request: HttpRequest) -> HttpResponse:
+    await _subscribe(request)
     return redirect(f"{reverse('core:settings')}?tab=lexware")
 
 
@@ -108,6 +118,24 @@ async def disable_webhooks(request: HttpRequest) -> HttpResponse:
         messages.error(request, _("Webhooks konnten nicht entfernt werden: %(error)s") % {"error": exc})
     else:
         messages.success(request, _("Webhooks entfernt. Lexware ruft die App nicht mehr auf."))
+    return redirect(f"{reverse('core:settings')}?tab=lexware")
+
+
+@require_POST
+async def save_webhook_key(request: HttpRequest) -> HttpResponse:
+    try:
+        await webhooks.astore_public_key(request.POST.get("public_key", ""))
+    except ValueError as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(request, _("Schlüssel gespeichert. Die App nimmt nur noch von Lexware signierte Aufrufe an."))
+    return redirect(f"{reverse('core:settings')}?tab=lexware")
+
+
+@require_POST
+async def remove_webhook_key(request: HttpRequest) -> HttpResponse:
+    await webhooks.aremove_public_key()
+    messages.success(request, _("Schlüssel entfernt. Aufrufe werden nicht mehr auf eine Signatur geprüft."))
     return redirect(f"{reverse('core:settings')}?tab=lexware")
 
 
@@ -130,5 +158,7 @@ async def webhook(request: HttpRequest, token: str) -> HttpResponse:
         return HttpResponse(status=400)
     if not isinstance(payload, dict):
         return HttpResponse(status=400)
+    if not await webhooks.asignature_ok(request.body, request.headers.get("X-Lxo-Signature", "")):
+        return HttpResponse(status=401)
     await webhooks.arecord(str(payload.get("eventType", "")), parse_uuid(payload.get("resourceId")))
     return HttpResponse(status=200)
