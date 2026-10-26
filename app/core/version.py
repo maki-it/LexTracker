@@ -76,8 +76,3 @@ def load() -> Info:
         django=django.get_version(),
         sqlite=sqlite3.sqlite_version,
     )
-
-
-def context(request) -> dict:
-    """The running version as ``app_version``, for the sidebar."""
-    return {"app_version": load().version}
