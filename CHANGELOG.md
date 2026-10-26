@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.8.0](https://github.com/maki-it/LexTracker/compare/lextracker-v0.7.0...lextracker-v0.8.0) (2026-10-26)
+
+
+### Features
+
+* **lexware:** update only the changed customer or invoice on a webhook ([#180](https://github.com/maki-it/LexTracker/issues/180)) ([cb1d29f](https://github.com/maki-it/LexTracker/commit/cb1d29f1acffda75623f5db27e2ec65b3ee5310e))
+
+
+### Bug Fixes
+
+* **customers:** keep notes local when Lexware does not let the API change the contact ([#178](https://github.com/maki-it/LexTracker/issues/178)) ([fde8657](https://github.com/maki-it/LexTracker/commit/fde865742e7998554b820fcaa98e7dabf134d041))
+
 ## [0.7.0](https://github.com/maki-it/LexTracker/compare/lextracker-v0.6.0...lextracker-v0.7.0) (2026-10-26)
 
 
