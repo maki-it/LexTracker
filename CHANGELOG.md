@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.4.0](https://github.com/maki-it/LexTracker/compare/lextracker-v0.3.0...lextracker-v0.4.0) (2026-10-26)
+
+
+### Features
+
+* **docker:** add dev.compose.yaml for local development with watch ([#153](https://github.com/maki-it/LexTracker/issues/153)) ([1e29572](https://github.com/maki-it/LexTracker/commit/1e29572729ec934ade3421c08bb44db294399239))
+* **i18n:** offer the interface in English next to German ([#159](https://github.com/maki-it/LexTracker/issues/159)) ([58edf6b](https://github.com/maki-it/LexTracker/commit/58edf6b8d61c6da5827171fb8e5f860d29b5d01d))
+* **inbox:** show only unread messages by default ([#157](https://github.com/maki-it/LexTracker/issues/157)) ([60b75c4](https://github.com/maki-it/LexTracker/commit/60b75c4234ad1d4349ef3b8330f780a8f33d9426))
+* **loadtest:** add make loadtest-ui to start the Locust web UI ([#158](https://github.com/maki-it/LexTracker/issues/158)) ([1a607c1](https://github.com/maki-it/LexTracker/commit/1a607c1ffb8b5fee075c6d1321f5f6961aadcfbd))
+* **portal:** rename the "Zeiten" page to "Aufgaben" ([#160](https://github.com/maki-it/LexTracker/issues/160)) ([c38375c](https://github.com/maki-it/LexTracker/commit/c38375ce7de3107a06d1d6c0498e6b5a8564f21a))
+* **setup:** ask for last name and require two-factor login for the first admin ([#155](https://github.com/maki-it/LexTracker/issues/155)) ([e977774](https://github.com/maki-it/LexTracker/commit/e97777432be87a5a42cc40c85813217d1206faa0))
+* use English URL paths and query parameters ([#156](https://github.com/maki-it/LexTracker/issues/156)) ([3d9c823](https://github.com/maki-it/LexTracker/commit/3d9c8231fe598074639de4352bdd8c76230f13f3))
+
+
+### Dependencies
+
+* **project:** update project dependencies ([#137](https://github.com/maki-it/LexTracker/issues/137)) ([e90cb3d](https://github.com/maki-it/LexTracker/commit/e90cb3d195bbc2d4e0471fa8385098aabb967ef8))
+
 ## [0.3.0](https://github.com/maki-it/LexTracker/compare/lextracker-v0.2.0...lextracker-v0.3.0) (2026-10-25)
 
 
