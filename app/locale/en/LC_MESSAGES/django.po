@@ -3116,19 +3116,19 @@ msgstr ""
 "The API key is stored encrypted and not shown again. To change it, simply "
 "enter a new one; you do not need the old one."
 
+msgid "Schlüssel ungültig"
+msgstr "Key invalid"
+
 msgid "verbunden"
 msgstr "connected"
 
 #, python-format
-msgid "zuletzt geprüft %(verified_at)s Uhr"
-msgstr "last checked %(verified_at)s"
-
-msgid "Schlüssel ungültig"
-msgstr "Key invalid"
-
-#, python-format
 msgid "von Lexware abgelehnt %(rejected_at)s Uhr"
 msgstr "rejected by Lexware %(rejected_at)s"
+
+#, python-format
+msgid "zuletzt geprüft %(verified_at)s Uhr"
+msgstr "last checked %(verified_at)s"
 
 msgid "aus Umgebungsvariable"
 msgstr "from environment variable"
