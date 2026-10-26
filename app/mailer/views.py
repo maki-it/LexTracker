@@ -9,6 +9,7 @@ from django.utils.translation import gettext as _
 from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.http import require_http_methods, require_POST
 
+from core import branding
 from mailer import outbox
 from mailer.forms import MailSettingsForm, TestMailForm
 from mailer.models import MailSettings, OutgoingMail
@@ -54,8 +55,9 @@ async def test_mail(request: HttpRequest) -> HttpResponse:
         messages.error(request, _("Trag zuerst SMTP-Server und Absenderadresse ein."))
         return redirect("mailer:settings")
     to = test_form.cleaned_data["to"]
-    subject = _("Testmail von LexTracker")
-    text, html = outbox.render("test", {"subject": subject, "config": config})
+    brand = await branding.aload()
+    subject = _("Testmail von %(app)s") % {"app": brand.name}
+    text, html = outbox.render("test", {"subject": subject, "config": config, "brand": brand})
     error = await outbox.asend_now(config, outbox.Message(to, subject, text, html))
     if error:
         messages.error(request, _("Die Testmail wurde nicht verschickt: %(error)s") % {"error": error})

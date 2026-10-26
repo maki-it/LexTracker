@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load i18n %}
 {% load icons dialogs %}
-{% block title %}{% blocktrans trimmed with name=customer.name %}Abrechnung {{ name }} · LexTracker{% endblocktrans %}{% endblock %}
+{% block title %}{% blocktrans trimmed with name=customer.name %}Abrechnung {{ name }}{% endblocktrans %} · {{ brand.name }}{% endblock %}
 {% block content %}
 <div>
   <p class="breadcrumb"><a href="{% url 'billing:overview' %}">{% trans "Abrechnung" %}</a> / {{ customer.name }}</p>

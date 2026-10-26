@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load i18n %}
-{% block title %}{% trans "Kein Zugriff" %} · LexTracker{% endblock %}
+{% block title %}{% trans "Kein Zugriff" %} · {{ brand.name }}{% endblock %}
 {% block content %}
 <div class="card flex max-w-xl flex-col gap-3">
   <h1>{% trans "Kein Zugriff" %}</h1>

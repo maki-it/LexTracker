@@ -12,15 +12,16 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 
 from accounts.models import ApiToken
+from core import branding
 from mcpserver.tools import TOOLS, ToolError
 
 logger = logging.getLogger(__name__)
 
 # Newest first. A client asking for another version gets the newest one.
 PROTOCOL_VERSIONS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"]
-SERVER_INFO = {"name": "lextracker", "title": "LexTracker", "version": "1.0"}
+SERVER_NAME = "lextracker"
 INSTRUCTIONS = (
-    "LexTracker tracks working time on tasks of customer projects. "
+    "{app} tracks working time on tasks of customer projects. "
     "Before starting work, find the task with find_tasks or list_projects (create one with create_task "
     "if none fits) and call start_timer. Call stop_timer when the work is done. "
     "Use add_time_entry to book time afterwards."
@@ -75,13 +76,15 @@ async def _handle(user, message) -> dict | None:
     match method:
         case "initialize":
             asked = params.get("protocolVersion")
+            brand = await branding.aload()
             return _result(
                 msg_id,
                 {
                     "protocolVersion": asked if asked in PROTOCOL_VERSIONS else PROTOCOL_VERSIONS[0],
                     "capabilities": {"tools": {}},
-                    "serverInfo": SERVER_INFO,
-                    "instructions": INSTRUCTIONS,
+                    # The name stays a fixed identifier, since clients key their configuration on it.
+                    "serverInfo": {"name": SERVER_NAME, "title": brand.name, "version": "1.0"},
+                    "instructions": INSTRUCTIONS.format(app=brand.name),
                 },
             )
         case "ping":

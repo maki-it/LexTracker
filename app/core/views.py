@@ -81,6 +81,20 @@ async def health(request: HttpRequest) -> JsonResponse:
     return JsonResponse({"status": "ok" if ok else "error"}, status=200 if ok else 503)
 
 
+@require_GET
+async def logo(request: HttpRequest) -> HttpResponse:
+    """The uploaded logo. Public, since the login page shows it, too."""
+    row = await AppSettings.objects.filter(pk=1).values("logo_data", "logo_type").afirst()
+    if not row or not row["logo_type"] or not row["logo_data"]:
+        raise Http404
+    response = HttpResponse(bytes(row["logo_data"]), content_type=row["logo_type"])
+    # The page links the logo with a timestamp, so a new one is fetched as soon as it is uploaded.
+    response["Cache-Control"] = "public, max-age=86400"
+    # An SVG opened directly (not as an image) must not run scripts or load anything.
+    response["Content-Security-Policy"] = "default-src 'none'; style-src 'unsafe-inline'; sandbox"
+    return response
+
+
 def _require_admin(request: HttpRequest) -> None:
     if request.user.role != User.Role.ADMIN:
         raise PermissionDenied
@@ -94,7 +108,7 @@ SETTINGS_TABS = [
     ("security", gettext_lazy("Sicherheit")),
 ]
 _SETTINGS_TAB_FIELDS = {
-    "general": ["default_hourly_rate", "time_rounding", "invoice_detail"],
+    "general": ["app_name", "logo", "remove_logo", "default_hourly_rate", "time_rounding", "invoice_detail"],
     "lexware": [
         "lexware_sync_interval",
         "lexware_sync_from",
@@ -126,12 +140,12 @@ def settings_tab(name: str | None) -> str:
 @require_http_methods(["GET", "POST"])
 async def app_settings(request: HttpRequest) -> HttpResponse:
     _require_admin(request)
-    form = AppSettingsForm(request.POST or None, instance=await AppSettings.aload())
+    form = AppSettingsForm(request.POST or None, request.FILES or None, instance=await AppSettings.aload())
     # The tab is only a view onto one long form: every tab's fields are always on the page and posted together.
     tab = settings_tab(request.POST.get("tab") or request.GET.get("tab"))
     if request.method == "POST" and await sync_to_async(form.is_valid)():
         # Save only the fields on the page; the import writes its status columns itself.
-        await form.instance.asave(update_fields=list(form.fields))
+        await form.instance.asave(update_fields=form.saved_fields)
         messages.success(request, _("Einstellungen gespeichert."))
         return redirect(f"{reverse('core:settings')}?tab={tab}")
     if form.errors and not form.non_field_errors():

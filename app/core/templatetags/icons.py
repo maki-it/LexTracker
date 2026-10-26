@@ -70,9 +70,17 @@ LOGO = (
 )
 
 
-@register.simple_tag
-def logo(size: int = 28) -> str:
-    """Inline SVG of the app logo, hidden from screen readers (the name stands next to it)."""
+@register.simple_tag(takes_context=True)
+def logo(context, size: int = 28) -> str:
+    """The uploaded logo, or the built-in mark, hidden from screen readers (the name stands next to it)."""
+    brand = context.get("brand")
+    if brand and brand.logo_url:
+        return format_html(
+            '<img src="{}" alt="" class="shrink-0 rounded-md object-contain" width="{}" height="{}">',
+            brand.logo_url,
+            size,
+            size,
+        )
     return format_html(
         '<svg aria-hidden="true" class="shrink-0" width="{}" height="{}" viewBox="0 0 32 32">{}</svg>',
         size,

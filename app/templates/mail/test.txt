@@ -1,6 +1,6 @@
 {% load i18n %}{% autoescape off %}{% trans "Hallo," %}
 
-{% blocktrans trimmed with host=config.host %}diese Testmail zeigt: LexTracker kann über {{ host }} E-Mails verschicken.{% endblocktrans %}
+{% blocktrans trimmed with app=brand.name host=config.host %}diese Testmail zeigt: {{ app }} kann über {{ host }} E-Mails verschicken.{% endblocktrans %}
 
 {% blocktrans trimmed with sender=config.sender %}Absender: {{ sender }}{% endblocktrans %}
 {% endautoescape %}

@@ -214,7 +214,7 @@ def stop_timer(user, description: str | None = None):
 
 @tool(
     "Books time on a task after the fact. Give either end or duration_minutes. "
-    "Times without a time zone are local time. Start and end are rounded to the nearest step set in LexTracker.",
+    "Times without a time zone are local time. Start and end are rounded to the nearest step set in the app.",
     {
         "task_id": ID_PROPERTY,
         "start": {"type": "string", "description": "ISO 8601, e.g. 2026-10-22T09:30"},

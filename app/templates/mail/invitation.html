@@ -1,7 +1,7 @@
 {% extends "mail/_base.html" %}
 {% load i18n %}
 {% block content %}
-<p style="margin:0 0 12px;font-size:18px;font-weight:600">{% trans "Willkommen bei LexTracker" %}</p>
+<p style="margin:0 0 12px;font-size:18px;font-weight:600">{% blocktrans trimmed with app=brand.name %}Willkommen bei {{ app }}{% endblocktrans %}</p>
 <p style="margin:0">{% if invited.first_name %}{% blocktrans trimmed with first_name=invited.first_name %}Hallo {{ first_name }},{% endblocktrans %}{% else %}{% trans "Hallo," %}{% endif %} {% if inviter %}{% blocktrans trimmed with inviter=inviter username=invited.get_username %}{{ inviter }} hat dir einen Zugang eingerichtet. Dein Benutzername ist <strong>{{ username }}</strong>.{% endblocktrans %}{% else %}{% blocktrans trimmed with username=invited.get_username %}du hast dir einen Zugang eingerichtet. Dein Benutzername ist <strong>{{ username }}</strong>.{% endblocktrans %}{% endif %}</p>
 {% trans "Passwort festlegen" as button_label %}{% include "mail/_button.html" with label=button_label %}
 <p style="margin:16px 0 0;font-size:13px;color:#71717a">{% blocktrans trimmed %}Der Link gilt {{ days }} Tage und nur einmal. Danach meldest du dich mit Benutzername und Passwort an.{% endblocktrans %}</p>

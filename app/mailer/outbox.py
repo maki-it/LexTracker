@@ -21,6 +21,7 @@ from django.utils import timezone, translation
 from django.utils.module_loading import import_string
 from django.utils.translation import gettext as _
 
+from core import branding
 from mailer.models import SSL_PORT, MailSettings, OutgoingMail
 
 logger = logging.getLogger(__name__)
@@ -66,9 +67,10 @@ async def aqueue(
 
     ``subject`` can be a lazy translation. Without a user, e-mails are written in the default language.
     """
+    brand = await branding.aload()
     with translation.override(language or (user.language if user else settings.LANGUAGE_CODE)):
         subject = str(subject)
-        text, html = render(template, {"subject": subject, **context})
+        text, html = render(template, {"subject": subject, "brand": brand, **context})
     return await OutgoingMail.objects.acreate(
         kind=kind,
         user=user,

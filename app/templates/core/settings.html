@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load i18n %}
 {% load icons %}
-{% block title %}{% trans "Einstellungen" %} · LexTracker{% endblock %}
+{% block title %}{% trans "Einstellungen" %} · {{ brand.name }}{% endblock %}
 {% block content %}
 <div class="page-header">
   <div>
@@ -73,10 +73,31 @@
   {% endif %}
 </section>
 
-<form method="post" class="flex max-w-2xl flex-col gap-6">
+<form method="post" enctype="multipart/form-data" class="flex max-w-2xl flex-col gap-6">
   {% csrf_token %}
   <input type="hidden" name="tab" value="{{ tab }}">
   {% for error in form.non_field_errors %}<div role="alert" class="alert alert-error">{{ error }}</div>{% endfor %}
+
+  <section class="card flex flex-col gap-4"{% if tab != "general" %} hidden{% endif %}>
+    <div>
+      <h2>{% trans "Erscheinungsbild" %}</h2>
+      <p class="mt-1 text-sm text-muted">{% trans "Name und Logo der App, etwa für den Betrieb unter eigener Marke." %}</p>
+    </div>
+    {% include "core/_field.html" with field=form.app_name %}
+    <div class="flex flex-col gap-2">
+      <span class="text-sm font-medium">{{ form.logo.label }} <span class="font-normal text-muted">{% trans "(optional)" %}</span></span>
+      <div class="flex items-center gap-3 text-sm">
+        {% logo 40 %}
+        <span class="text-muted">{% if brand.logo_url %}{% trans "Eigenes Logo" %}{% else %}{% trans "Standard-Logo" %}{% endif %}</span>
+      </div>
+      {{ form.logo }}
+      <span class="text-sm font-normal text-muted">{{ form.logo.help_text }}</span>
+      {% for error in form.logo.errors %}<span class="text-sm text-danger">{{ error }}</span>{% endfor %}
+      {% if brand.logo_url %}
+      <label class="flex items-center gap-2 text-sm font-medium">{{ form.remove_logo }} {{ form.remove_logo.label }}</label>
+      {% endif %}
+    </div>
+  </section>
 
   <section class="card flex flex-col gap-4"{% if tab != "general" %} hidden{% endif %}>
     <h2>{% trans "Abrechnung" %}</h2>

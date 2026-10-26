@@ -1,7 +1,7 @@
 {% extends layout %}
 {% load i18n %}
 {% load icons %}
-{% block title %}{% if project %}{% blocktrans trimmed with name=project.name %}{{ name }} bearbeiten{% endblocktrans %}{% else %}{% trans "Neues Projekt" %}{% endif %} · LexTracker{% endblock %}
+{% block title %}{% if project %}{% blocktrans trimmed with name=project.name %}{{ name }} bearbeiten{% endblocktrans %}{% else %}{% trans "Neues Projekt" %}{% endif %} · {{ brand.name }}{% endblock %}
 {% block content %}
 <div>
   <p class="breadcrumb"><a href="{% url 'projects:list' %}">{% trans "Projekte" %}</a>{% if project %} / <a href="{% url 'projects:detail' project.pk %}">{{ project.name }}</a>{% endif %}</p>

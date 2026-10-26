@@ -1,6 +1,6 @@
 {% extends layout %}
 {% load i18n %}
-{% block title %}{% trans "Zwei-Faktor-Anmeldung" %} · LexTracker{% endblock %}
+{% block title %}{% trans "Zwei-Faktor-Anmeldung" %} · {{ brand.name }}{% endblock %}
 {% block content %}
 <div>
   <p class="breadcrumb"><a href="{% url 'account:settings' %}?tab=security">{% trans "Konto" %}</a></p>

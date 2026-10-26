@@ -5,7 +5,7 @@
   <div>
     <h1 class="text-lg">{% trans "E-Mail-Versand" %}</h1>
     <p class="mt-1 text-sm text-muted">
-      {% trans "Mit einem SMTP-Server verschickt LexTracker Links zum Zurücksetzen des Passworts, Anmeldelinks, Wochenberichte und Erinnerungen. Das Passwort wird verschlüsselt gespeichert. Du kannst den Schritt überspringen und es später unter „Einstellungen“ nachholen." %}
+      {% blocktrans trimmed with app=brand.name %}Mit einem SMTP-Server verschickt {{ app }} Links zum Zurücksetzen des Passworts, Anmeldelinks, Wochenberichte und Erinnerungen. Das Passwort wird verschlüsselt gespeichert. Du kannst den Schritt überspringen und es später unter „Einstellungen“ nachholen.{% endblocktrans %}
     </p>
   </div>
   {% if test_result.ok %}

@@ -9,5 +9,5 @@
 
 {{ url }}{% endif %}
 
-{% trans "Diese Erinnerung schaltest du in LexTracker unter Konto ab." %}
+{% blocktrans trimmed with app=brand.name %}Diese Erinnerung schaltest du in {{ app }} unter Konto ab.{% endblocktrans %}
 {% endautoescape %}

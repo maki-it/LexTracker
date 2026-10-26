@@ -1,6 +1,6 @@
 {% load i18n %}{% autoescape off %}{% if user.first_name %}{% blocktrans trimmed with first_name=user.first_name %}Hallo {{ first_name }},{% endblocktrans %}{% else %}{% trans "Hallo," %}{% endif %}
 
-{% blocktrans trimmed with username=user.get_username %}mit diesem Link meldest du dich bei LexTracker als „{{ username }}“ an, ohne Passwort:{% endblocktrans %}
+{% blocktrans trimmed with app=brand.name username=user.get_username %}mit diesem Link meldest du dich bei {{ app }} als „{{ username }}“ an, ohne Passwort:{% endblocktrans %}
 
 {{ url }}
 

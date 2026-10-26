@@ -1,5 +1,5 @@
 {# Layout for pages shown in the dialog of base.html: only the page content. See core/dialogs.py. #}
-<title>{% block title %}LexTracker{% endblock %}</title>
+<title>{% block title %}{{ brand.name }}{% endblock %}</title>
 <div class="dialog-content">
   {% for message in messages %}
   <div role="alert" class="alert{% if message.tags %} alert-{{ message.tags }}{% endif %}">{{ message }}</div>

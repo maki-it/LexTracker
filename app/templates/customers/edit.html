@@ -1,6 +1,6 @@
 {% extends layout %}
 {% load i18n %}
-{% block title %}{% blocktrans trimmed with name=customer.name %}{{ name }} · LexTracker{% endblocktrans %}{% endblock %}
+{% block title %}{{ customer.name }} · {{ brand.name }}{% endblock %}
 {% block content %}
 <div>
   <p class="breadcrumb"><a href="{% url 'customers:list' %}">{% trans "Kunden" %}</a>{% if customer.customer_number %} {% blocktrans trimmed with customer_number=customer.customer_number %}/ Nr. {{ customer_number }}{% endblocktrans %}{% endif %}</p>

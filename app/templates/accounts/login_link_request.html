@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load i18n %}
-{% block title %}{% trans "Anmeldelink" %} · LexTracker{% endblock %}
+{% block title %}{% trans "Anmeldelink" %} · {{ brand.name }}{% endblock %}
 {% block public_content %}
 <div class="flex w-full max-w-sm flex-col gap-6">
   {% include "accounts/_public_header.html" %}
@@ -14,7 +14,7 @@
   <form method="post" class="card flex flex-col gap-4 p-6">
     <div>
       <h1 class="text-lg">{% trans "Anmelden ohne Passwort" %}</h1>
-      <p class="mt-1 text-sm text-muted">{% trans "Wir schicken dir einen Link, der dich anmeldet. Nutzt du die Zwei-Faktor-Anmeldung, fragt LexTracker danach noch nach dem Code." %}</p>
+      <p class="mt-1 text-sm text-muted">{% blocktrans trimmed with app=brand.name %}Wir schicken dir einen Link, der dich anmeldet. Nutzt du die Zwei-Faktor-Anmeldung, fragt {{ app }} danach noch nach dem Code.{% endblocktrans %}</p>
     </div>
     {% csrf_token %}
     {% if error %}<div role="alert" class="alert alert-error">{{ error }}</div>{% endif %}

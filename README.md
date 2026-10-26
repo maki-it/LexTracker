@@ -198,6 +198,15 @@ make messages    # Texte einsammeln und die .po-Datei aktualisieren, dann kompil
 
 Neue Einträge in `django.po` bekommen ihre englische Übersetzung (`msgstr`); die CI prüft, dass der Katalog aktuell und vollständig ist. Die kompilierten `.mo`-Dateien liegen nicht im Git: Das Docker-Image erzeugt sie beim Bauen (gettext steckt nur in der Build-Stufe), lokal und in der CI übernimmt das `compilemessages`. Absichtlich nicht übersetzt sind Texte, die in Lexware Office auf Rechnungen landen, und die Ausgaben des MCP-Servers.
 
+### Name und Logo (Whitelabel)
+
+Unter **Einstellungen → Allgemein → Erscheinungsbild** ersetzt du „LexTracker“ und das Logo, ohne Code oder Umgebungsvariablen anzufassen. Die Einstellung gilt für alle Benutzer.
+
+- **App-Name** (höchstens 40 Zeichen): Seitenleiste und Anmeldeseiten, Titel des Browser-Tabs, Betreff, Kopfzeile, Text und Fußzeile aller E-Mails, die Texte der Einrichtung, die Beispiele unter **Konto → Agenten**, der Name im Authenticator (für Codes, die danach eingerichtet werden) und der Titel des MCP-Servers. Leer lassen heißt „LexTracker“.
+- **Logo**: PNG, JPEG, WebP oder SVG, höchstens 256 KB, möglichst quadratisch. Es ersetzt die Marke neben dem Namen und das Tab-Symbol (SVG nur dort, das Symbol für den iOS-Home-Bildschirm braucht ein Rasterbild). Die App prüft den Inhalt der Datei, nicht nur die Endung. Ohne Logo bleibt die Uhr-Marke. Das Logo liegt in der Datenbank, steckt also auch in den Sicherungen, und ist ohne Anmeldung abrufbar (`/branding/logo/`), weil die Anmeldeseite es zeigt.
+
+Fest bleiben technische Namen, auf die sich Clients und Docker verlassen (MCP-Server-Kennung `lextracker`, Containernamen, Image) sowie das Manifest für die Installation als Web-App (`site.webmanifest`). Der Absendername der E-Mails ist eine eigene Einstellung unter **Einstellungen → E-Mail-Versand**.
+
 ### Konto und Sicherheit
 
 Unter deinem Namen oben rechts stellst du Sprache (Deutsch oder Englisch), Darstellung (hell, dunkel oder wie das System) und Datumsformat ein und änderst dein Passwort.

@@ -5,7 +5,7 @@
   <div>
     <h1 class="text-lg">{% trans "Lexware Office verbinden" %}</h1>
     <p class="mt-1 text-sm text-muted">
-      {% trans "Über die Public API importiert LexTracker deine Kunden und erstellt Rechnungsentwürfe. Die API gibt es mit Lexware Office XL. Den Schlüssel prüft die App mit einem Testaufruf, bevor sie ihn verschlüsselt speichert." %}
+      {% blocktrans trimmed with app=brand.name %}Über die Public API importiert {{ app }} deine Kunden und erstellt Rechnungsentwürfe. Die API gibt es mit Lexware Office XL. Den Schlüssel prüft die App mit einem Testaufruf, bevor sie ihn verschlüsselt speichert.{% endblocktrans %}
     </p>
   </div>
   {% if lexware.configured %}

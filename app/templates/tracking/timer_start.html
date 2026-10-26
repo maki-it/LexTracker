@@ -1,7 +1,7 @@
 {% extends layout %}
 {% load i18n %}
 {% load icons %}
-{% block title %}{% trans "Timer starten" %} · LexTracker{% endblock %}
+{% block title %}{% trans "Timer starten" %} · {{ brand.name }}{% endblock %}
 {% block content %}
 <h1>{% trans "Timer starten" %}</h1>
 {% if last_task %}

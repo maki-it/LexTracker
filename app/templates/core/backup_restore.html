@@ -1,6 +1,6 @@
 {% extends layout %}
 {% load i18n %}
-{% block title %}{% trans "Sicherung wiederherstellen" %} · LexTracker{% endblock %}
+{% block title %}{% trans "Sicherung wiederherstellen" %} · {{ brand.name }}{% endblock %}
 {% block content %}
 <div>
   <p class="breadcrumb"><a href="{% url 'core:settings' %}?tab=backup">{% trans "Einstellungen" %}</a> / <a href="{% url 'core:backups' %}">{% trans "Sicherungen" %}</a></p>

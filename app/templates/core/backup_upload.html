@@ -1,6 +1,6 @@
 {% extends layout %}
 {% load i18n %}
-{% block title %}{% trans "Sicherung hochladen" %} · LexTracker{% endblock %}
+{% block title %}{% trans "Sicherung hochladen" %} · {{ brand.name }}{% endblock %}
 {% block content %}
 <div>
   <p class="breadcrumb"><a href="{% url 'core:settings' %}?tab=backup">{% trans "Einstellungen" %}</a> / <a href="{% url 'core:backups' %}">{% trans "Sicherungen" %}</a></p>
@@ -13,7 +13,7 @@
     {% trans "Eine Sicherung von einem anderen Server, z. B. eine heruntergeladene <code>db-….sqlite3</code>, kommt hier in den Ordner der Sicherungen. Die Daten der App ändern sich dabei noch nicht: Wiederherstellen kannst du sie danach in der Liste." %}
   </p>
   <p class="text-sm text-muted">
-    {% blocktrans trimmed with max_size=max_size|filesizeformat %}Die App prüft die Datei vorher und nimmt nur unbeschädigte Datenbanken von LexTracker an, die nicht aus einer neueren Version stammen. Höchstens {{ max_size }}.{% endblocktrans %}
+    {% blocktrans trimmed with max_size=max_size|filesizeformat %}Die App prüft die Datei vorher und nimmt nur unbeschädigte Datenbanken dieser App an, die nicht aus einer neueren Version stammen. Höchstens {{ max_size }}.{% endblocktrans %}
   </p>
   <label class="flex flex-col gap-1 text-sm font-medium">
     {% trans "Datei" %}
