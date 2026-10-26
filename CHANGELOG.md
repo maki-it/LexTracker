@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.7.0](https://github.com/maki-it/LexTracker/compare/lextracker-v0.6.0...lextracker-v0.7.0) (2026-10-26)
+
+
+### Features
+
+* **settings:** show the app version and repository link on an info tab ([#177](https://github.com/maki-it/LexTracker/issues/177)) ([72f01a1](https://github.com/maki-it/LexTracker/commit/72f01a1628c9ad08a6467940ed285e069e2dee97))
+
+
+### Bug Fixes
+
+* **lexware:** show a rejected API key as invalid instead of connected ([#175](https://github.com/maki-it/LexTracker/issues/175)) ([2d43380](https://github.com/maki-it/LexTracker/commit/2d4338033a1b21d26e9a585a422e050be2b26e91))
+
 ## [0.6.0](https://github.com/maki-it/LexTracker/compare/lextracker-v0.5.0...lextracker-v0.6.0) (2026-10-26)
 
 
