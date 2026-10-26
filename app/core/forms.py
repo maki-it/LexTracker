@@ -35,6 +35,7 @@ class AppSettingsForm(StyledFormMixin, forms.ModelForm):
         model = AppSettings
         fields = [
             "app_name",
+            "app_url",
             "default_hourly_rate",
             "time_rounding",
             "invoice_detail",

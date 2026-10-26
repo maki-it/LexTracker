@@ -130,7 +130,7 @@ def _recipients(**flags):
 async def queue_weekly_reports(slot: datetime) -> int:
     sent_on = timezone.localtime(slot).date()
     rng = report_range(sent_on)
-    base_url = (await MailSettings.aload()).base_url.rstrip("/")
+    base_url = await AppSettings.aurl()
     queued = 0
     async for user in _recipients(weekly_report=True):
         key = f"weekly-report:{user.pk}:{rng.start.isoformat()}"
@@ -164,7 +164,7 @@ async def queue_weekly_reports(slot: datetime) -> int:
 
 
 async def queue_timer_reminders(now: datetime, hours: int) -> int:
-    base_url = (await MailSettings.aload()).base_url.rstrip("/")
+    base_url = await AppSettings.aurl()
     running = (
         TimeEntry.objects.filter(
             ended_at__isnull=True,

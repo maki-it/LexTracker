@@ -34,8 +34,7 @@ async def _page(request: HttpRequest, form: MailSettingsForm, test_form: TestMai
 @require_http_methods(["GET", "POST"])
 async def mail_settings(request: HttpRequest) -> HttpResponse:
     config = await MailSettings.aload()
-    initial = {} if config.base_url else {"base_url": request.build_absolute_uri("/").rstrip("/")}
-    form = MailSettingsForm(request.POST or None, instance=config, initial=initial)
+    form = MailSettingsForm(request.POST or None, instance=config)
     if request.method == "POST" and await sync_to_async(form.is_valid)():
         form.instance.updated_at = timezone.now()
         await sync_to_async(form.save)()

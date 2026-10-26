@@ -24,7 +24,7 @@ from core import branding
 from core.ids import parse_uuid
 from core.models import AppSettings
 from mailer import outbox
-from mailer.models import MailSettings, OutgoingMail
+from mailer.models import OutgoingMail
 
 RESET_MINUTES = 60
 LOGIN_LINK_MINUTES = 15
@@ -70,7 +70,7 @@ async def _too_many(user: User, kind: str) -> bool:
 
 
 async def _absolute(request: HttpRequest, path: str) -> str:
-    base_url = (await MailSettings.aload()).base_url.rstrip("/")
+    base_url = await AppSettings.aurl()
     return f"{base_url}{path}" if base_url else request.build_absolute_uri(path)
 
 

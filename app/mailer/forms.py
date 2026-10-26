@@ -18,7 +18,7 @@ class MailSettingsForm(StyledFormMixin, forms.ModelForm):
 
     class Meta:
         model = MailSettings
-        fields = ["host", "port", "security", "username", "from_address", "from_name", "base_url"]
+        fields = ["host", "port", "security", "username", "from_address", "from_name"]
 
     field_order = ["host", "port", "security", "username", "password", "remove_password"]
 

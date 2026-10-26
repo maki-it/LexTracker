@@ -30,9 +30,9 @@ from django.utils import timezone
 from django.utils.translation import gettext as _
 
 from core.ids import parse_uuid
+from core.models import AppSettings
 from lexware.client import LexwareClient, LexwareError
 from lexware.models import LexwareConnection, WebhookEvent, WebhookSubscription
-from mailer.models import MailSettings
 
 logger = logging.getLogger(__name__)
 
@@ -182,8 +182,8 @@ class WebhookStatus:
 
 
 async def abase_url(request_origin: str = "") -> str:
-    """The address the app is reachable at from outside: the one set for e-mails, else the one of this request."""
-    return ((await MailSettings.aload()).base_url or request_origin).rstrip("/")
+    """The address the app is reachable at from outside: the one in the settings, else the one of this request."""
+    return (await AppSettings.aurl()) or request_origin.rstrip("/")
 
 
 async def astatus(request_origin: str = "") -> WebhookStatus:
@@ -191,8 +191,9 @@ async def astatus(request_origin: str = "") -> WebhookStatus:
     base_url = await abase_url(request_origin)
     if not base_url.startswith("https://"):
         status.problem = _(
-            "Lexware ruft nur Adressen mit HTTPS auf. Trage unter „E-Mail“ die öffentliche Adresse der App "
-            "ein, zum Beispiel https://zeit.example.de."
+            "Lexware ruft nur Adressen mit HTTPS auf. Trage die öffentliche Adresse der App unter Einstellungen > "
+            "Allgemein > „Adresse der App“ ein, zum Beispiel https://zeit.example.de. "
+            "Eine Adresse wie localhost erreicht Lexware nicht."
         )
     elif token := (await LexwareConnection.aload()).webhook_token:
         status.callback_url = base_url + callback_path(token)

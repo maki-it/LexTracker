@@ -31,11 +31,6 @@ class MailSettings(models.Model):
         _("Absenderadresse"), blank=True, help_text=_("Muss der SMTP-Server für dein Konto erlauben.")
     )
     from_name = models.CharField(_("Absendername"), max_length=100, default="LexTracker", blank=True)
-    base_url = models.URLField(
-        _("Adresse der App"),
-        blank=True,
-        help_text=_("Für Links in E-Mails, die der Zeitplan verschickt, z. B. https://zeit.example.de."),
-    )
     updated_at = models.DateTimeField(_("geändert"), null=True, blank=True, editable=False)
 
     class Meta:
