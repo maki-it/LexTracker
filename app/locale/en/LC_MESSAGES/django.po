@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: LexTracker\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-26 16:56+0100\n"
+"POT-Creation-Date: 2026-10-26 17:38+0100\n"
 "PO-Revision-Date: 2026-10-25 12:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: English\n"
@@ -1144,6 +1144,49 @@ msgstr ""
 "Lexware Office accepts notes of up to %(max)d characters; this one has "
 "%(length)d."
 
+msgid "geschäftlich"
+msgstr "business"
+
+msgid "Büro"
+msgstr "office"
+
+msgid "privat"
+msgstr "private"
+
+msgid "mobil"
+msgstr "mobile"
+
+msgid "Fax"
+msgstr "fax"
+
+msgid "sonstige"
+msgstr "other"
+
+msgid "Rechnungsadressen"
+msgstr "Billing addresses"
+
+msgid "Lieferadressen"
+msgstr "Shipping addresses"
+
+msgid "Ansprechpartner"
+msgstr "Contact person"
+
+#, python-format
+msgid "E-Mail-Adressen (%(kind)s)"
+msgstr "E-mail addresses (%(kind)s)"
+
+#, python-format
+msgid "Telefonnummern (%(kind)s)"
+msgstr "Phone numbers (%(kind)s)"
+
+#, python-format
+msgid ""
+"Lexware lässt diesen Kontakt nicht über die API ändern, weil er mehrere "
+"Einträge hat bei: %(lists)s."
+msgstr ""
+"Lexware does not allow changing this contact through the API because it has "
+"more than one entry for: %(lists)s."
+
 msgid "Kategorie"
 msgstr "Category"
 
@@ -1184,8 +1227,16 @@ msgid "%(count)d in Lexware nicht mehr vorhanden (archiviert)"
 msgstr "%(count)d no longer in Lexware (archived)"
 
 #, python-format
+msgid "%(error)s Name, E-Mail und Telefon ändere bitte in Lexware."
+msgstr "%(error)s Please change name, e-mail and phone in Lexware."
+
+#, python-format
 msgid "Die Änderung konnte nicht in Lexware gespeichert werden: %(error)s"
 msgstr "The change could not be saved in Lexware: %(error)s"
+
+#, python-format
+msgid "Die Notiz bleibt nur in LexTracker. %(error)s"
+msgstr "The note stays in LexTracker only. %(error)s"
 
 #, python-format
 msgid "%(label)s abgeschlossen"
@@ -4016,9 +4067,6 @@ msgstr ""
 
 msgid "Rechnungsadresse"
 msgstr "Billing address"
-
-msgid "Ansprechpartner"
-msgstr "Contact person"
 
 msgid "Alle Projekte"
 msgstr "All projects"

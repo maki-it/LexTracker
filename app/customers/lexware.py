@@ -1,9 +1,10 @@
 """Write changes to a customer back to its contact in Lexware Office."""
 
 from django.utils import timezone
+from django.utils.translation import gettext as _
 
 from customers.models import Customer
-from lexware.client import LexwareClient
+from lexware.client import LexwareClient, LexwareError
 from lexware.schemas import Contact
 
 # Fields that live in Lexware. Changing one of them here changes the Lexware contact.
@@ -15,6 +16,54 @@ NOTE_MAX_LENGTH = 1000
 # Same order in which the import picks the address or number to show.
 EMAIL_GROUPS = ("business", "office", "other", "private")
 PHONE_GROUPS = ("business", "office", "mobile", "other", "private")
+
+
+def _group_labels() -> dict[str, str]:
+    """What the lists are called for a reader; the keys are the paths in the Lexware contact."""
+    kinds = {
+        "business": _("geschäftlich"),
+        "office": _("Büro"),
+        "private": _("privat"),
+        "mobile": _("mobil"),
+        "fax": _("Fax"),
+        "other": _("sonstige"),
+    }
+    labels = {
+        "addresses.billing": _("Rechnungsadressen"),
+        "addresses.shipping": _("Lieferadressen"),
+        "company.contactPersons": _("Ansprechpartner"),
+    }
+    for group in ("business", "office", "private", "other"):
+        labels[f"emailAddresses.{group}"] = _("E-Mail-Adressen (%(kind)s)") % {"kind": kinds[group]}
+    for group in ("business", "office", "mobile", "private", "fax", "other"):
+        labels[f"phoneNumbers.{group}"] = _("Telefonnummern (%(kind)s)") % {"kind": kinds[group]}
+    return labels
+
+
+class ReadOnlyContact(LexwareError):
+    """Lexware does not let the API change this contact: one of its lists has more than one entry."""
+
+    def __init__(self, paths: list[str]) -> None:
+        self.paths = paths
+        labels = _group_labels()
+        super().__init__(
+            _("Lexware lässt diesen Kontakt nicht über die API ändern, weil er mehrere Einträge hat bei: %(lists)s.")
+            % {"lists": ", ".join(labels[path] for path in paths)}
+        )
+
+
+def _entries(contact: dict, path: str) -> list:
+    node = contact
+    for key in path.split("."):
+        node = (node or {}).get(key)
+    return node or []
+
+
+def ensure_writable(contact: dict) -> None:
+    """Raise ReadOnlyContact if Lexware would refuse to update ``contact`` ("Update a Contact" in its docs)."""
+    paths = [path for path in _group_labels() if len(_entries(contact, path)) > 1]
+    if paths:
+        raise ReadOnlyContact(paths)
 
 
 def _replace(groups: dict, groups_order: tuple[str, ...], old: str, new: str) -> None:
@@ -154,6 +203,7 @@ async def push_to_lexware(client: LexwareClient, customer: Customer) -> None:
     The contact is read fresh first, so changes made in Lexware to other fields are kept.
     """
     contact = await client.get_contact(customer.lexware_id)
+    ensure_writable(contact)
     if customer.lexware_note is None:
         # Notes were not synced yet: do not overwrite what is in Lexware.
         customer.notes = merged_note(customer, contact.get("note") or "")

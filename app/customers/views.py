@@ -14,7 +14,7 @@ from core.models import AppSettings
 from core.paging import apage, wants_rows
 from core.shortcuts import arender
 from customers.forms import CustomerForm
-from customers.lexware import LEXWARE_FIELDS, needs_push, push_to_lexware
+from customers.lexware import LEXWARE_FIELDS, ReadOnlyContact, needs_push, push_to_lexware
 from customers.models import Category, Customer
 from customers.sync import sync_and_record
 from lexware import credentials
@@ -118,18 +118,33 @@ async def customer_edit(request: HttpRequest, pk: UUID) -> HttpResponse:
 
     form = await sync_to_async(CustomerForm)(request.POST or None, instance=customer)
     if request.method == "POST" and await sync_to_async(form.is_valid)():
+        local_only = None
         try:
             if needs_push(customer, form.changed_data):
                 async with client_from_settings() as client:
                     await push_to_lexware(client, customer)
+        except ReadOnlyContact as exc:
+            # Only the notes may stay here: name, e-mail and phone would silently differ from Lexware.
+            if any(f in LEXWARE_FIELDS and f != "notes" for f in form.changed_data):
+                form.add_error(
+                    None,
+                    _("%(error)s Name, E-Mail und Telefon ändere bitte in Lexware.") % {"error": exc},
+                )
+            else:
+                local_only = exc
         except LexwareError as exc:
             form.add_error(
                 None, _("Die Änderung konnte nicht in Lexware gespeichert werden: %(error)s") % {"error": exc}
             )
-        else:
+        if not form.errors:
             await customer.asave()
             await sync_to_async(form.save_categories)()
             messages.success(request, _("%(name)s gespeichert.") % {"name": customer.name})
+            if local_only:
+                messages.warning(
+                    request,
+                    _("Die Notiz bleibt nur in LexTracker. %(error)s") % {"error": local_only},
+                )
             return redirect("customers:list")
     return await arender(
         request,
