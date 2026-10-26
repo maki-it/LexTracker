@@ -303,6 +303,35 @@ async def test_failed_invoice_sync_is_tried_again_after_a_pause(fake_jobs, invoi
 
 
 @pytest.mark.django_db(transaction=True)
+async def test_unexpected_error_does_not_lose_the_calls(fake_jobs, contact_syncs, monkeypatch):
+    async def broken(client, contact_id):
+        raise ValueError("kaputt")
+
+    monkeypatch.setattr(scheduler.customer_sync, "sync_contact", broken)
+    await webhooks.arecord("contact.changed", uuid.uuid4())
+    retry_at = {}
+    now = timezone.now()
+
+    with pytest.raises(ValueError):
+        await scheduler.run_webhook_syncs(retry_at, now)
+
+    # Waiting again, to be tried after the pause.
+    assert await WebhookEvent.objects.filter(processed_at__isnull=True).acount() == 1
+    assert await scheduler.run_webhook_syncs(retry_at, now + timedelta(seconds=10)) == []
+    monkeypatch.setattr(scheduler.customer_sync, "sync_contact", contact_syncs_ok(contact_syncs))
+    later = now + timedelta(seconds=scheduler.WEBHOOK_RETRY_AFTER + 1)
+    assert await scheduler.run_webhook_syncs(retry_at, later) == ["1 Kunden"]
+    assert not await WebhookEvent.objects.filter(processed_at__isnull=True).aexists()
+
+
+def contact_syncs_ok(state):
+    async def sync_contact(client, contact_id):
+        state.ids.append(contact_id)
+
+    return sync_contact
+
+
+@pytest.mark.django_db(transaction=True)
 async def test_nothing_runs_without_api_key(settings):
     settings.LEXWARE_API_KEY = ""
     await webhooks.arecord("contact.changed", uuid.uuid4())
