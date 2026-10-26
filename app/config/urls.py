@@ -24,6 +24,7 @@ urlpatterns = [
     path("settings/email/", include("mailer.urls")),
     path("setup/", include("setup.urls")),
     path("mcp/", include("mcpserver.urls")),
+    path("webhooks/", include("lexware.webhook_urls")),
     path("portal/", include("portal.urls")),
     path("", include("core.urls")),
 ]

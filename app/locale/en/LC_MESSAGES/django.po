@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: LexTracker\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-26 15:51+0100\n"
+"POT-Creation-Date: 2026-10-26 16:12+0100\n"
 "PO-Revision-Date: 2026-10-25 12:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: English\n"
@@ -738,6 +738,12 @@ msgstr "Backup"
 msgid "täglich ab %(time)s Uhr"
 msgstr "daily from %(time)s"
 
+msgid "Abgleich auf Meldung von Lexware"
+msgstr "Sync on call from Lexware"
+
+msgid "alle 5 Sekunden geprüft"
+msgstr "checked every 5 seconds"
+
 msgid "E-Mail-Versand"
 msgstr "E-mail sending"
 
@@ -1306,6 +1312,18 @@ msgstr "last checked"
 msgid "Lexware-Verbindung"
 msgstr "Lexware connection"
 
+msgid "Ereignis"
+msgstr "Event"
+
+msgid "Abo-ID bei Lexware"
+msgstr "Subscription ID at Lexware"
+
+msgid "Webhook-Abo"
+msgstr "Webhook subscription"
+
+msgid "Webhook-Abos"
+msgstr "Webhook subscriptions"
+
 #, python-format
 msgid "Der Schlüssel wurde nicht gespeichert: %(error)s"
 msgstr "The key was not saved: %(error)s"
@@ -1330,6 +1348,33 @@ msgstr "without company name"
 
 msgid "API-Schlüssel entfernt."
 msgstr "API key removed."
+
+#, python-format
+msgid "Webhooks konnten nicht eingerichtet werden: %(error)s"
+msgstr "Webhooks could not be set up: %(error)s"
+
+#, python-format
+msgid ""
+"Lexware meldet Änderungen jetzt direkt (%(count)d Ereignisse abonniert)."
+msgstr "Lexware now reports changes directly (subscribed to %(count)d events)."
+
+msgid ""
+"Lexware hat kein Ereignis angenommen. Ist die Adresse von außen erreichbar?"
+msgstr "Lexware accepted no event. Is the address reachable from outside?"
+
+#, python-format
+msgid "Webhooks konnten nicht entfernt werden: %(error)s"
+msgstr "Webhooks could not be removed: %(error)s"
+
+msgid "Webhooks entfernt. Lexware ruft die App nicht mehr auf."
+msgstr "Webhooks removed. Lexware no longer calls the app."
+
+msgid ""
+"Lexware ruft nur Adressen mit HTTPS auf. Trage unter „E-Mail“ die "
+"öffentliche Adresse der App ein, zum Beispiel https://zeit.example.de."
+msgstr ""
+"Lexware only calls HTTPS addresses. Enter the public address of the app "
+"under “E-mail”, for example https://zeit.example.de."
 
 msgid "Gespeichertes Passwort entfernen"
 msgstr "Remove saved password"
@@ -3089,6 +3134,44 @@ msgstr "Test connection"
 
 msgid "Schlüssel entfernen"
 msgstr "Remove key"
+
+msgid "Webhooks"
+msgstr "Webhooks"
+
+msgid ""
+"Lexware meldet Änderungen an Kontakten und Rechnungen dann selbst, und die "
+"App gleicht sie innerhalb weniger Sekunden ab. Den regelmäßigen Abgleich "
+"unten kannst du dann seltener laufen lassen; er fängt Meldungen auf, die nie "
+"ankommen."
+msgstr ""
+"Lexware then reports changes to contacts and invoices itself, and the app "
+"syncs them within a few seconds. You can run the regular sync below less "
+"often; it catches calls that never arrive."
+
+#, python-format
+msgid "%(count)s Ereignis abonniert"
+msgid_plural "%(count)s Ereignisse abonniert"
+msgstr[0] "%(count)s event subscribed"
+msgstr[1] "%(count)s events subscribed"
+
+#, python-format
+msgid "letzte Meldung %(at)s Uhr"
+msgstr "last call %(at)s"
+
+msgid "noch keine Meldung erhalten"
+msgstr "no call received yet"
+
+msgid "Die Adresse enthält ein Geheimnis. Gib sie nicht weiter."
+msgstr "The address contains a secret. Do not share it."
+
+msgid "Neu einrichten"
+msgstr "Set up again"
+
+msgid "Webhooks entfernen"
+msgstr "Remove webhooks"
+
+msgid "Webhooks einrichten"
+msgstr "Set up webhooks"
 
 msgid "Erscheinungsbild"
 msgstr "Appearance"

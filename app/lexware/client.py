@@ -2,7 +2,7 @@ import asyncio
 import logging
 import time
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from datetime import date
 from types import TracebackType
 from typing import Self
@@ -43,6 +43,13 @@ class LexwareUnauthorized(LexwareError):
 
 class LexwareNotFound(LexwareError):
     """Lexware does not know the requested resource (HTTP 404), for example a deleted draft."""
+
+
+def _uuid_or_none(value: object) -> UUID | None:
+    try:
+        return UUID(str(value))
+    except ValueError:
+        return None
 
 
 @asynccontextmanager
@@ -184,3 +191,23 @@ class LexwareClient:
             if result.last or page + 1 >= result.total_pages:
                 return
             page += 1
+
+    async def create_event_subscription(self, event_type: str, callback_url: str) -> UUID | None:
+        """Ask Lexware to call ``callback_url`` for every event of this type; returns the subscription's ID.
+
+        Lexware checks the address with a HEAD request first and rejects the subscription if that fails.
+        """
+        data = await self._request(
+            "POST", "event-subscriptions", json={"eventType": event_type, "callbackUrl": callback_url}
+        )
+        return _uuid_or_none(data.get("subscriptionId") or data.get("id"))
+
+    async def list_event_subscriptions(self) -> list[dict]:
+        """The subscriptions of this Lexware account, with ``subscriptionId``, ``eventType`` and ``callbackUrl``."""
+        data = await self._request("GET", "event-subscriptions")
+        return data.get("content", []) if isinstance(data, dict) else list(data)
+
+    async def delete_event_subscription(self, subscription_id: UUID) -> None:
+        """Remove a subscription. One that is already gone counts as removed."""
+        with suppress(LexwareNotFound):
+            await self._send("DELETE", f"event-subscriptions/{subscription_id}")

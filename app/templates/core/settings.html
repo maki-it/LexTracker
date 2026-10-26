@@ -71,6 +71,44 @@
     {% endif %}
   </div>
   {% endif %}
+  {% if lexware.configured %}
+  <hr class="border-line">
+  <div>
+    <h3 class="font-semibold">{% trans "Webhooks" %}</h3>
+    <p class="mt-1 text-sm text-muted">
+      {% trans "Lexware meldet Änderungen an Kontakten und Rechnungen dann selbst, und die App gleicht sie innerhalb weniger Sekunden ab. Den regelmäßigen Abgleich unten kannst du dann seltener laufen lassen; er fängt Meldungen auf, die nie ankommen." %}
+    </p>
+  </div>
+  {% if webhooks.active %}
+  <div class="flex flex-col gap-2 text-sm">
+    <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+      <span class="badge badge-success">{% trans "aktiv" %}</span>
+      <span>{% blocktrans trimmed count count=webhooks.subscriptions|length %}{{ count }} Ereignis abonniert{% plural %}{{ count }} Ereignisse abonniert{% endblocktrans %}</span>
+      <span class="text-muted">
+        {% if webhooks.last_event_at %}{% blocktrans trimmed with at=webhooks.last_event_at|date:datetime_format %}letzte Meldung {{ at }} Uhr{% endblocktrans %}{% else %}{% trans "noch keine Meldung erhalten" %}{% endif %}
+      </span>
+    </div>
+    <code class="break-all">{{ webhooks.callback_url }}</code>
+    <p class="text-muted">{% trans "Die Adresse enthält ein Geheimnis. Gib sie nicht weiter." %}</p>
+  </div>
+  <div class="flex flex-wrap gap-2">
+    <form method="post" action="{% url 'lexware:enable_webhooks' %}">
+      {% csrf_token %}
+      <button type="submit" class="btn">{% trans "Neu einrichten" %}</button>
+    </form>
+    <form method="post" action="{% url 'lexware:disable_webhooks' %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">{% trans "Webhooks entfernen" %}</button>
+    </form>
+  </div>
+  {% else %}
+  {% if webhooks.problem %}<div role="alert" class="alert alert-warning">{{ webhooks.problem }}</div>{% endif %}
+  <form method="post" action="{% url 'lexware:enable_webhooks' %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-primary">{% trans "Webhooks einrichten" %}</button>
+  </form>
+  {% endif %}
+  {% endif %}
 </section>
 
 <form method="post" enctype="multipart/form-data" class="flex max-w-2xl flex-col gap-6">

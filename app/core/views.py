@@ -25,7 +25,7 @@ from core.dialogs import navigate
 from core.forms import AppSettingsForm
 from core.models import AppSettings
 from inbox import events as inbox_events
-from lexware import credentials
+from lexware import credentials, webhooks
 from lexware.forms import ApiKeyForm
 from mailer.models import MailSettings, OutgoingMail
 from tracking.forms import task_choices
@@ -186,6 +186,7 @@ async def app_settings(request: HttpRequest) -> HttpResponse:
         "sync_jobs": sync_jobs,
         "backup": backup_info,
         "lexware": await credentials.astatus(),
+        "webhooks": await webhooks.astatus(request.build_absolute_uri("/")),
         "key_form": ApiKeyForm(),
         "mail": await MailSettings.aload(),
         "mail_failed": await OutgoingMail.objects.filter(

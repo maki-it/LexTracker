@@ -121,6 +121,7 @@ async def overview(now: datetime, app_settings: AppSettings) -> list[JobRow]:
             await sync_to_async(next_backup)(now, s),
             True,
         ),
+        row("webhooks", _("Abgleich auf Meldung von Lexware"), _("alle 5 Sekunden geprüft")),
         row("mail-queue", _("E-Mail-Versand"), _("alle 5 Sekunden")),
         row(
             "mail-reports",
