@@ -16,7 +16,7 @@ from django.utils import timezone, translation
 from django.utils.functional import Promise
 
 from accounts.models import User
-from inbox.levels import Level
+from inbox.levels import PERSONAL_KINDS, Level
 from inbox.models import Message
 from mailer import outbox
 from mailer.models import MailSettings, OutgoingMail
@@ -61,7 +61,7 @@ def recipients(to: User | Audience) -> QuerySet[User]:
 
 def visible_to(user: User) -> QuerySet[Message]:
     """The messages the user's settings let them see. Critical ones always pass: nothing ranks above them."""
-    return Message.objects.filter(user=user, level__gte=user.message_level)
+    return Message.objects.filter(Q(level__gte=user.message_level) | Q(kind__in=PERSONAL_KINDS), user=user)
 
 
 async def anotify(
@@ -74,13 +74,15 @@ async def anotify(
     to: User | Audience = Audience.ADMINS,
     dedupe_key: str = "",
     escalate_after: int = 0,
+    mail: bool = True,
 ) -> list[Message]:
     """Tell the users. Returns the message each of them got.
 
     ``title`` and ``body`` can be lazy translations or functions, so every recipient gets them in their language.
     ``url`` is a path in the app. Whoever has an unread message with the same ``dedupe_key`` gets it updated
     (counted up) instead of another one. With ``escalate_after`` the message becomes critical once it has repeated that
-    often. A message that is new, or has become more important, is also e-mailed to those who asked for that.
+    often. A message that is new, or has become more important, is also e-mailed to those who asked for that,
+    unless ``mail`` is False because the caller sends its own e-mail.
     """
     if url and not (url.startswith("/") and not url.startswith("//")):
         raise ValueError(f"A message links to a path in the app, not to {url!r}")
@@ -88,7 +90,7 @@ async def anotify(
     async for user in recipients(to):
         message, notable = await _deliver(user, level, kind, title, body, url, dedupe_key, escalate_after)
         result.append(message)
-        if notable:
+        if notable and mail:
             await _mail(user, message)
     return result
 

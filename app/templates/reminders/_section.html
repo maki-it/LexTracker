@@ -1,0 +1,20 @@
+{% load i18n %}
+{% load icons dialogs %}
+{# The reminders of a customer (`customer`) or a project (`project`) with the button for a new one. Expects `reminders`. #}
+<section id="reminders" class="flex flex-col gap-3">
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <h2>{% trans "Erinnerungen" %}</h2>
+    {% if project %}
+    <a {% dialog_link "reminders:create" project=project.pk %} class="btn btn-sm">{% icon "plus" size=14 %}{% trans "Neue Erinnerung" %}</a>
+    {% else %}
+    <a {% dialog_link "reminders:create" customer=customer.pk %} class="btn btn-sm">{% icon "plus" size=14 %}{% trans "Neue Erinnerung" %}</a>
+    {% endif %}
+  </div>
+  {% if reminders %}
+  <ul class="card flex flex-col p-3">
+    {% for reminder in reminders %}{% include "reminders/_row.html" with show_project=True next_url=request.path %}{% endfor %}
+  </ul>
+  {% else %}
+  <p class="text-sm text-muted">{% trans "Noch keine Erinnerungen." %}</p>
+  {% endif %}
+</section>

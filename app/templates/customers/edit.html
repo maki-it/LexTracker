@@ -10,7 +10,7 @@
   {% csrf_token %}
   {% if customer.lexware_id %}
   <p class="rounded-lg bg-surface-muted px-4 py-3 text-[13px] text-muted">
-    {% trans "Name, E-Mail und Telefon gehören zum Kontakt in Lexware Office. Änderungen daran werden beim Speichern auch dort gespeichert." %}
+    {% trans "Name, E-Mail, Telefon und Notizen gehören zum Kontakt in Lexware Office. Änderungen daran werden beim Speichern auch dort gespeichert." %}
     {% if customer.lexware_synced_at %}{% blocktrans trimmed with lexware_synced_at=customer.lexware_synced_at|date:datetime_format %}Zuletzt abgeglichen {{ lexware_synced_at }} Uhr.{% endblocktrans %}{% endif %}
   </p>
   {% endif %}
@@ -20,4 +20,5 @@
     <a href="{% url 'customers:list' %}" class="btn btn-ghost" data-close-dialog>{% trans "Abbrechen" %}</a>
   </div>
 </form>
+<div class="max-w-2xl">{% include "reminders/_section.html" %}</div>
 {% endblock %}

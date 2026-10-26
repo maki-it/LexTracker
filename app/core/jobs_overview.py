@@ -129,5 +129,6 @@ async def overview(now: datetime, app_settings: AppSettings) -> list[JobRow]:
             % {"weekly": weekly, "reminder": reminder},
         ),
         row("timer-messages", _("Nachricht zu lange laufender Timer"), _("jede Minute geprüft")),
+        row("reminders", _("Erinnerungen"), _("jede Minute geprüft")),
         row("prune", _("Alte Nachrichten löschen"), _("stündlich")),
     ]

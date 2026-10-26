@@ -16,6 +16,7 @@ from core.paging import apage, wants_rows
 from core.shortcuts import arender
 from projects.forms import ProjectForm, TaskEditForm, TaskForm, TaskTemplateForm
 from projects.models import Project, Task, TaskTemplate
+from reminders import queries as reminder_queries
 from tracking.models import TimeEntry
 from tracking.queries import booked_time
 
@@ -123,6 +124,7 @@ async def project_detail(request: HttpRequest, pk: UUID) -> HttpResponse:
     project = await _get_project(pk)
     context = await _task_context(project)
     context["booked"] = sum((t.booked for t in context["tasks"] if t.booked), timedelta())
+    context["reminders"] = await reminder_queries.for_page(project.reminders.filter(user=request.user))
     return render(request, "projects/detail.html", context)
 
 

@@ -1,0 +1,11 @@
+{% load i18n %}{% autoescape off %}{{ reminder.title }}
+
+{% blocktrans trimmed with due_at=reminder.due_at|date:datetime_format %}Fällig {{ due_at }} Uhr{% endblocktrans %}{% if reminder.subject %}
+{{ reminder.subject }}{% endif %}{% if reminder.notes %}
+
+{{ reminder.notes }}{% endif %}{% if url %}
+
+{{ url }}{% endif %}
+
+{% blocktrans trimmed with app=brand.name %}Ob eine Erinnerung per E-Mail kommt, stellst du in {{ app }} bei der Erinnerung ein.{% endblocktrans %}
+{% endautoescape %}

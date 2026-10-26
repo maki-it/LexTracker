@@ -14,11 +14,12 @@ from core.models import AppSettings
 from core.paging import apage, wants_rows
 from core.shortcuts import arender
 from customers.forms import CustomerForm
-from customers.lexware import LEXWARE_FIELDS, push_to_lexware
+from customers.lexware import LEXWARE_FIELDS, needs_push, push_to_lexware
 from customers.models import Category, Customer
 from customers.sync import sync_and_record
 from lexware import credentials
 from lexware.client import LexwareError, client_from_settings
+from reminders import queries as reminder_queries
 
 # The archive filter on the customer list: key in the URL, label.
 VIEWS = {"active": "Aktiv", "archived": "Archiviert", "all": "Alle"}
@@ -118,7 +119,7 @@ async def customer_edit(request: HttpRequest, pk: UUID) -> HttpResponse:
     form = await sync_to_async(CustomerForm)(request.POST or None, instance=customer)
     if request.method == "POST" and await sync_to_async(form.is_valid)():
         try:
-            if customer.lexware_id and any(f in LEXWARE_FIELDS for f in form.changed_data):
+            if needs_push(customer, form.changed_data):
                 async with client_from_settings() as client:
                     await push_to_lexware(client, customer)
         except LexwareError as exc:
@@ -133,5 +134,10 @@ async def customer_edit(request: HttpRequest, pk: UUID) -> HttpResponse:
     return await arender(
         request,
         "customers/edit.html",
-        {"form": form, "customer": customer, "lexware_fields": LEXWARE_FIELDS},
+        {
+            "form": form,
+            "customer": customer,
+            "lexware_fields": LEXWARE_FIELDS,
+            "reminders": await reminder_queries.for_page(customer.reminders.filter(user=request.user)),
+        },
     )

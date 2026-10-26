@@ -1,0 +1,42 @@
+{% load i18n %}
+{% load icons dialogs markdown %}
+{# One reminder. Expects `reminder`; `show_subject` names the customer or project, `show_project` only the project; `next_url` is where its buttons return to. #}
+<li class="flex flex-wrap items-start gap-x-3 gap-y-2 border-b border-line-soft px-1 py-3 last:border-b-0">
+  <div class="flex min-w-0 flex-1 flex-col gap-1">
+    <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+      <span class="font-medium{% if reminder.is_done %} text-muted line-through{% endif %}">{{ reminder.title }}</span>
+      {% if reminder.is_overdue %}<span class="badge badge-danger">{% trans "fällig" %}</span>{% endif %}
+    </div>
+    <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted">
+      {% if reminder.due_at %}<time datetime="{{ reminder.due_at|date:'c' }}">{% blocktrans trimmed with due_at=reminder.due_at|date:datetime_format %}{{ due_at }} Uhr{% endblocktrans %}</time>{% else %}<span>{% trans "ohne Datum" %}</span>{% endif %}
+      {% if show_subject %}
+      <span>
+        {% if reminder.project %}<a href="{% url 'projects:detail' reminder.project.pk %}">{{ reminder.subject }}</a>{% elif reminder.customer %}<a href="{% url 'customers:edit' reminder.customer.pk %}">{{ reminder.subject }}</a>{% endif %}
+      </span>
+      {% elif show_project and reminder.project %}
+      <a href="{% url 'projects:detail' reminder.project.pk %}">{{ reminder.project.name }}</a>
+      {% endif %}
+      {% if reminder.due_at %}
+      <span class="inline-flex items-center gap-1.5">
+        {% if reminder.notify_bell %}<span title="{% trans 'Benachrichtigung per Glocke' %}">{% icon "bell" size=14 %}</span>{% endif %}
+        {% if reminder.notify_email %}<span title="{% trans 'Benachrichtigung per E-Mail' %}">{% trans "E-Mail" %}</span>{% endif %}
+      </span>
+      {% endif %}
+    </div>
+    {% if reminder.notes %}<div class="max-w-2xl text-[13px] text-muted">{{ reminder.notes|markdown }}</div>{% endif %}
+  </div>
+  <div class="flex items-center gap-1.5">
+    {% if reminder.is_done %}
+    <form method="post" action="{% url 'reminders:reopen' reminder.pk %}">
+      {% csrf_token %}<input type="hidden" name="next" value="{{ next_url }}">
+      <button type="submit" class="btn btn-ghost btn-sm">{% trans "Wieder öffnen" %}</button>
+    </form>
+    {% else %}
+    <form method="post" action="{% url 'reminders:done' reminder.pk %}">
+      {% csrf_token %}<input type="hidden" name="next" value="{{ next_url }}">
+      <button type="submit" class="btn btn-sm">{% icon "check" size=14 %}{% trans "Erledigt" %}</button>
+    </form>
+    {% endif %}
+    <a {% dialog_link "reminders:edit" reminder.pk %} class="btn btn-ghost btn-sm btn-icon size-8" title="{% trans 'Bearbeiten' %}" aria-label="{% blocktrans trimmed with title=reminder.title %}Erinnerung {{ title }} bearbeiten{% endblocktrans %}">{% icon "pencil" %}</a>
+  </div>
+</li>

@@ -84,6 +84,7 @@ class OutgoingMail(UUIDModel):
         INVITATION = "invitation", _("Einladung")
         INVOICE_OVERDUE = "invoice_overdue", _("Hinweis auf überfällige Rechnung")
         NOTIFICATION = "notification", _("Nachricht")
+        REMINDER = "reminder", _("Erinnerung")
 
     # Their links sign in or set a password, so their text is not kept once it no longer needs sending.
     SECRET_KINDS = (Kind.PASSWORD_RESET, Kind.LOGIN_LINK, Kind.INVITATION)

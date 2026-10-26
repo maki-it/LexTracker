@@ -400,7 +400,7 @@ def test_period_options_mark_open_time_and_span_months(logged_in, user, task, cu
 
 def test_sidebar_counts(logged_in, user, task, customer):
     response = logged_in.get(reverse("core:dashboard"))
-    assert response.wsgi_request.nav_counts == {"projects": 1, "billable_customers": 0}
+    assert response.wsgi_request.nav_counts == {"projects": 1, "billable_customers": 0, "reminders": 0}
 
     work(user, task, "2026-10-05", 2)
     response = logged_in.get(reverse("core:dashboard"))

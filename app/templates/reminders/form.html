@@ -1,0 +1,27 @@
+{% extends layout %}
+{% load i18n %}
+{% load icons %}
+{% block title %}{% if reminder %}{% trans "Erinnerung bearbeiten" %}{% else %}{% trans "Neue Erinnerung" %}{% endif %} · {{ brand.name }}{% endblock %}
+{% block content %}
+<div>
+  <p class="breadcrumb"><a href="{% url 'reminders:list' %}">{% trans "Erinnerungen" %}</a>{% if reminder %} / {{ reminder.subject }}{% elif form.project %} / {{ form.project.customer.name }} · {{ form.project.name }}{% elif form.customer %} / {{ form.customer.name }}{% endif %}</p>
+  <h1>{% if reminder %}{% trans "Erinnerung bearbeiten" %}{% else %}{% trans "Neue Erinnerung" %}{% endif %}</h1>
+</div>
+<form method="post" action="{{ request.get_full_path }}" class="card flex max-w-2xl flex-col gap-4">
+  {% csrf_token %}
+  {% include "core/_form_fields.html" %}
+  <div class="flex gap-2 border-t border-line pt-4">
+    <button type="submit" class="btn btn-primary">{% trans "Speichern" %}</button>
+    <a href="{% url 'reminders:list' %}" class="btn btn-ghost" data-close-dialog>{% trans "Abbrechen" %}</a>
+  </div>
+</form>
+{% if reminder %}
+<section class="card flex max-w-2xl flex-col gap-3">
+  <h2>{% trans "Erinnerung löschen" %}</h2>
+  <form method="post" action="{% url 'reminders:delete' reminder.pk %}" onsubmit="return confirm('{% filter escapejs %}{% trans "Diese Erinnerung wirklich löschen?" %}{% endfilter %}')">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">{% icon "trash" size=14 %}{% trans "Löschen" %}</button>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

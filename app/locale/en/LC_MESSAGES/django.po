@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: LexTracker\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-26 10:57+0100\n"
+"POT-Creation-Date: 2026-10-26 15:17+0100\n"
 "PO-Revision-Date: 2026-10-25 12:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: English\n"
@@ -760,6 +760,9 @@ msgstr "Message about timers that run too long"
 msgid "jede Minute geprüft"
 msgstr "checked every minute"
 
+msgid "Erinnerungen"
+msgstr "Reminders"
+
 msgid "Alte Nachrichten löschen"
 msgstr "Delete old messages"
 
@@ -1105,6 +1108,21 @@ msgstr "New categories"
 msgid "Mehrere durch Komma trennen, z. B. „Stammkunde, Hosting“."
 msgstr "Separate several with commas, e.g. “Regular customer, Hosting”."
 
+#, python-format
+msgid ""
+"Wird mit der Notiz des Kontakts in Lexware Office abgeglichen (höchstens "
+"%(max)d Zeichen). Markdown wird dort als Text angezeigt."
+msgstr ""
+"Kept in sync with the contact’s note in Lexware Office (at most %(max)d "
+"characters). Lexware shows Markdown as plain text."
+
+#, python-format
+msgid ""
+"Lexware Office nimmt Notizen bis %(max)d Zeichen an, diese hat %(length)d."
+msgstr ""
+"Lexware Office accepts notes of up to %(max)d characters; this one has "
+"%(length)d."
+
 msgid "Kategorie"
 msgstr "Category"
 
@@ -1443,6 +1461,9 @@ msgstr "Invitation"
 
 msgid "Hinweis auf überfällige Rechnung"
 msgstr "Notice about an overdue invoice"
+
+msgid "Erinnerung"
+msgstr "Reminder"
 
 msgid "an"
 msgstr "to"
@@ -1787,6 +1808,41 @@ msgstr "Template “%(name)s” saved."
 #, python-format
 msgid "Vorlage „%(name)s“ gelöscht."
 msgstr "Template “%(name)s” deleted."
+
+msgid "Bezug"
+msgstr "Related to"
+
+msgid "Ohne Datum gibt es keine Benachrichtigung."
+msgstr "Without a date there is no notification."
+
+msgid ""
+"Der E-Mail-Versand ist noch nicht eingerichtet. Das geht in den "
+"Einstellungen."
+msgstr "E-mail sending is not set up yet. You can do that in the settings."
+
+#, python-format
+msgid "Erinnerung: %(title)s"
+msgstr "Reminder: %(title)s"
+
+msgid "Fällig am"
+msgstr "Due on"
+
+msgid "Per Glocke erinnern"
+msgstr "Remind me in the bell"
+
+msgid "Per E-Mail erinnern"
+msgstr "Remind me by e-mail"
+
+msgid "benachrichtigt"
+msgstr "notified"
+
+#, python-format
+msgid "Erinnerung „%(title)s“ gespeichert."
+msgstr "Reminder “%(title)s” saved."
+
+#, python-format
+msgid "Erinnerung „%(title)s“ gelöscht."
+msgstr "Reminder “%(title)s” deleted."
 
 #. Translators: Django date format for the day of the month in a chart.
 msgctxt "chart day"
@@ -2359,6 +2415,9 @@ msgstr "Contact details"
 
 msgid "Aktive Projekte"
 msgstr "Active projects"
+
+msgid "Fällige Erinnerungen"
+msgstr "Due reminders"
 
 msgid "Abrechnung"
 msgstr "Billing"
@@ -3193,11 +3252,11 @@ msgid "/ Nr. %(customer_number)s"
 msgstr "/ No. %(customer_number)s"
 
 msgid ""
-"Name, E-Mail und Telefon gehören zum Kontakt in Lexware Office. Änderungen "
-"daran werden beim Speichern auch dort gespeichert."
+"Name, E-Mail, Telefon und Notizen gehören zum Kontakt in Lexware Office. "
+"Änderungen daran werden beim Speichern auch dort gespeichert."
 msgstr ""
-"Name, e-mail and phone belong to the contact in Lexware Office. Changes to "
-"them are also saved there when you save."
+"Name, e-mail, phone and notes belong to the contact in Lexware Office. "
+"Changes to them are also saved there when you save."
 
 #, python-format
 msgid "Zuletzt abgeglichen %(lexware_synced_at)s Uhr."
@@ -3552,6 +3611,20 @@ msgid ""
 msgstr ""
 "someone has requested a new password for your %(app)s account "
 "“%(username)s”. Use this link to set it:"
+
+#, python-format
+msgid "Fällig %(due_at)s Uhr"
+msgstr "Due %(due_at)s"
+
+msgid "Erinnerungen öffnen"
+msgstr "Open reminders"
+
+#, python-format
+msgid ""
+"Ob eine Erinnerung per E-Mail kommt, stellst du in %(app)s bei der "
+"Erinnerung ein."
+msgstr ""
+"You set whether a reminder is sent by e-mail in %(app)s, on the reminder."
 
 msgid "Es klappt."
 msgstr "It works."
@@ -4020,6 +4093,69 @@ msgid ""
 "Aufgabe als Vorlage."
 msgstr ""
 "No templates yet. Create a new one or save an existing task as a template."
+
+msgid "fällig"
+msgstr "due"
+
+#, python-format
+msgid "%(due_at)s Uhr"
+msgstr "%(due_at)s"
+
+msgid "ohne Datum"
+msgstr "no date"
+
+msgid "Benachrichtigung per Glocke"
+msgstr "Notification in the bell"
+
+msgid "Benachrichtigung per E-Mail"
+msgstr "Notification by e-mail"
+
+msgid "Wieder öffnen"
+msgstr "Reopen"
+
+msgid "Erledigt"
+msgstr "Done"
+
+#, python-format
+msgid "Erinnerung %(title)s bearbeiten"
+msgstr "Edit reminder %(title)s"
+
+msgid "Neue Erinnerung"
+msgstr "New reminder"
+
+msgid "Noch keine Erinnerungen."
+msgstr "No reminders yet."
+
+msgid "Erinnerung bearbeiten"
+msgstr "Edit reminder"
+
+msgid "Erinnerung löschen"
+msgstr "Delete reminder"
+
+msgid "Diese Erinnerung wirklich löschen?"
+msgstr "Really delete this reminder?"
+
+msgid ""
+"Dinge, an die du bei einem Kunden oder Projekt denken willst, auf Wunsch mit "
+"Benachrichtigung per Glocke und E-Mail."
+msgstr ""
+"Things to remember about a customer or project, with a notification in the "
+"bell and by e-mail if you like."
+
+msgid ""
+"Noch keine Erinnerungen. Lege eine neue an, hier oder auf der Seite eines "
+"Kunden oder Projekts."
+msgstr ""
+"No reminders yet. Create one here or on the page of a customer or project."
+
+msgid "Fällig"
+msgstr "Due"
+
+msgid "Anstehend"
+msgstr "Upcoming"
+
+msgid "Ohne Datum"
+msgstr "No date"
 
 msgid "Zeiten als CSV"
 msgstr "Time as CSV"

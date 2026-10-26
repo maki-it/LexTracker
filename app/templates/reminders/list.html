@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load icons dialogs %}
+{% block title %}{% trans "Erinnerungen" %} · {{ brand.name }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>{% trans "Erinnerungen" %}</h1>
+    <p class="page-subtitle">{% trans "Dinge, an die du bei einem Kunden oder Projekt denken willst, auf Wunsch mit Benachrichtigung per Glocke und E-Mail." %}</p>
+  </div>
+  <a {% dialog_link "reminders:create" %} class="btn btn-primary">{% icon "plus" %}{% trans "Neue Erinnerung" %}</a>
+</div>
+{% if not overdue and not upcoming and not undated and not done %}
+<p class="py-10 text-center text-muted">{% trans "Noch keine Erinnerungen. Lege eine neue an, hier oder auf der Seite eines Kunden oder Projekts." %}</p>
+{% endif %}
+{% if overdue %}
+<section class="flex flex-col gap-2">
+  <h2>{% trans "Fällig" %}</h2>
+  <ul class="card flex flex-col p-3">{% for reminder in overdue %}{% include "reminders/_row.html" with show_subject=True next_url=request.path %}{% endfor %}</ul>
+</section>
+{% endif %}
+{% if upcoming %}
+<section class="flex flex-col gap-2">
+  <h2>{% trans "Anstehend" %}</h2>
+  <ul class="card flex flex-col p-3">{% for reminder in upcoming %}{% include "reminders/_row.html" with show_subject=True next_url=request.path %}{% endfor %}</ul>
+</section>
+{% endif %}
+{% if undated %}
+<section class="flex flex-col gap-2">
+  <h2>{% trans "Ohne Datum" %}</h2>
+  <ul class="card flex flex-col p-3">{% for reminder in undated %}{% include "reminders/_row.html" with show_subject=True next_url=request.path %}{% endfor %}</ul>
+</section>
+{% endif %}
+{% if done %}
+<section class="flex flex-col gap-2">
+  <h2>{% trans "Erledigt" %}</h2>
+  <ul class="card flex flex-col p-3">{% for reminder in done %}{% include "reminders/_row.html" with show_subject=True next_url=request.path %}{% endfor %}</ul>
+</section>
+{% endif %}
+{% endblock %}

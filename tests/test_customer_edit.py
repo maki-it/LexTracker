@@ -88,11 +88,11 @@ def test_edit_of_local_fields_does_not_call_lexware(logged_in, monkeypatch):
 
     logged_in.post(
         reverse("customers:edit", args=[customer.pk]),
-        {"name": "ACME GmbH", "email": "", "phone": "", "default_hourly_rate": "", "notes": "Wichtig"},
+        {"name": "ACME GmbH", "email": "", "phone": "", "default_hourly_rate": "80", "notes": ""},
     )
 
     customer.refresh_from_db()
-    assert customer.notes == "Wichtig"
+    assert customer.default_hourly_rate == Decimal("80")
 
 
 def test_edit_keeps_data_when_lexware_fails(logged_in, monkeypatch, settings):
@@ -187,3 +187,106 @@ async def test_scheduler_records_failures(monkeypatch, settings):
     app_settings = await AppSettings.aload()
     assert app_settings.lexware_sync_failed
     assert "API-Schlüssel" in app_settings.lexware_sync_status
+
+
+# Notes
+
+
+def test_apply_to_contact_sends_a_note_changed_here():
+    raw = contact("ACME GmbH", note="alt")
+    customer = Customer(name="ACME GmbH", notes=" neu \n", lexware_note="alt")
+
+    assert apply_to_contact(raw, customer)["note"] == "neu"
+
+
+def test_apply_to_contact_removes_a_deleted_note():
+    raw = contact("ACME GmbH", note="alt")
+
+    assert "note" not in apply_to_contact(raw, Customer(name="ACME GmbH", notes="", lexware_note="alt"))
+
+
+def test_apply_to_contact_keeps_a_note_changed_in_lexware():
+    raw = contact("ACME GmbH", note="in Lexware geändert")
+    customer = Customer(name="ACME GmbH", notes="alt", lexware_note="alt")
+
+    assert apply_to_contact(raw, customer)["note"] == "in Lexware geändert"
+
+
+def test_saving_a_note_sends_it_to_lexware(logged_in, monkeypatch, settings):
+    settings.LEXWARE_API_KEY = "test-key"
+    raw = contact("ACME GmbH", version=4)
+    customer = Customer.objects.create(
+        name="ACME GmbH", lexware_id=uuid.UUID(raw["id"]), lexware_version=4, lexware_note=""
+    )
+    requests = []
+    monkeypatch.setattr("customers.views.client_from_settings", lambda: fake_client(lexware_contact_api(raw, requests)))
+
+    response = logged_in.post(
+        reverse("customers:edit", args=[customer.pk]),
+        {"name": "ACME GmbH", "email": "", "phone": "", "default_hourly_rate": "", "notes": "Zahlt pünktlich"},
+    )
+
+    assert response.status_code == 302
+    assert json.loads(requests[1].content)["note"] == "Zahlt pünktlich"
+    customer.refresh_from_db()
+    assert (customer.notes, customer.lexware_note) == ("Zahlt pünktlich", "Zahlt pünktlich")
+
+
+def test_note_that_lexware_does_not_have_yet_goes_out_with_any_save(logged_in, monkeypatch, settings):
+    settings.LEXWARE_API_KEY = "test-key"
+    raw = contact("ACME GmbH", version=4)
+    customer = Customer.objects.create(
+        name="ACME GmbH", lexware_id=uuid.UUID(raw["id"]), lexware_version=4, notes="vom Anfang", lexware_note="x"
+    )
+    requests = []
+    monkeypatch.setattr("customers.views.client_from_settings", lambda: fake_client(lexware_contact_api(raw, requests)))
+
+    logged_in.post(
+        reverse("customers:edit", args=[customer.pk]),
+        {"name": "ACME GmbH", "email": "", "phone": "", "default_hourly_rate": "80", "notes": "vom Anfang"},
+    )
+
+    assert json.loads(requests[1].content)["note"] == "vom Anfang"
+
+
+def test_first_save_keeps_the_note_that_is_in_lexware(logged_in, monkeypatch, settings):
+    settings.LEXWARE_API_KEY = "test-key"
+    raw = contact("ACME GmbH", version=4, note="aus Lexware")
+    customer = Customer.objects.create(name="ACME GmbH", lexware_id=uuid.UUID(raw["id"]), lexware_version=4)
+    requests = []
+    monkeypatch.setattr("customers.views.client_from_settings", lambda: fake_client(lexware_contact_api(raw, requests)))
+
+    logged_in.post(
+        reverse("customers:edit", args=[customer.pk]),
+        {"name": "ACME GmbH", "email": "", "phone": "", "default_hourly_rate": "", "notes": "lokal"},
+    )
+
+    assert json.loads(requests[1].content)["note"] == "lokal\n\naus Lexware"
+    customer.refresh_from_db()
+    assert customer.notes == "lokal\n\naus Lexware"
+
+
+def test_note_for_lexware_may_not_be_too_long(logged_in, monkeypatch):
+    customer = Customer.objects.create(name="ACME GmbH", lexware_id=uuid.uuid4(), lexware_version=1)
+    monkeypatch.setattr("customers.views.client_from_settings", lambda: pytest.fail("Lexware called"))
+
+    response = logged_in.post(
+        reverse("customers:edit", args=[customer.pk]),
+        {"name": "ACME GmbH", "email": "", "phone": "", "default_hourly_rate": "", "notes": "x" * 1001},
+    )
+
+    assert response.status_code == 200
+    assert "1000" in response.text
+
+
+def test_customer_without_lexware_may_have_long_notes(logged_in):
+    customer = Customer.objects.create(name="Lokal")
+
+    response = logged_in.post(
+        reverse("customers:edit", args=[customer.pk]),
+        {"name": "Lokal", "email": "", "phone": "", "default_hourly_rate": "", "notes": "x" * 2000},
+    )
+
+    assert response.status_code == 302
+    customer.refresh_from_db()
+    assert len(customer.notes) == 2000

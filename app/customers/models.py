@@ -36,6 +36,9 @@ class Customer(TimeStampedModel):
     lexware_synced_at = models.DateTimeField(_("zuletzt synchronisiert"), null=True, blank=True, editable=False)
     # The contact no longer comes back from the import (deleted in Lexware or no longer a customer).
     # The customer is kept, because time and invoices refer to it, and archived.
+    # The note of the Lexware contact as it was last imported or sent, to tell a change made here from one made
+    # there. None until the first import after notes were synced.
+    lexware_note = models.TextField(null=True, blank=True, editable=False)  # noqa: DJ001 (None: never synced)
     lexware_deleted = models.BooleanField(_("in Lexware gelöscht"), default=False, editable=False)
 
     class Meta:

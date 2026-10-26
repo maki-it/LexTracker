@@ -6,10 +6,12 @@ from django.utils import timezone
 from django.utils.translation import gettext as _
 
 from core.models import AppSettings
+from customers.lexware import merged_note
 from customers.models import Customer
 from lexware.client import LexwareClient, LexwareError, client_from_settings
 
-# Fields that Lexware owns. Everything else (rates, notes) is only edited here.
+# Fields that Lexware owns. Everything else (rates, categories) is only edited here. The notes are kept in both
+# places (see ``customers.lexware.merged_note``).
 SYNCED_FIELDS = [
     "name",
     "customer_number",
@@ -18,6 +20,7 @@ SYNCED_FIELDS = [
     "is_archived",
     "lexware_deleted",
     "lexware_version",
+    "lexware_note",
     "lexware_synced_at",
 ]
 
@@ -55,6 +58,7 @@ async def sync_customers(client: LexwareClient) -> SyncResult:
     now = timezone.now()
     to_create: list[Customer] = []
     to_update: list[Customer] = []
+    to_backfill: list[Customer] = []
     result = SyncResult()
 
     seen = []
@@ -68,18 +72,25 @@ async def sync_customers(client: LexwareClient) -> SyncResult:
             "is_archived": contact.archived,
             "lexware_deleted": False,
             "lexware_version": contact.version,
+            "lexware_note": contact.note,
             "lexware_synced_at": now,
         }
         customer = existing.get(contact.id)
         if customer is None:
-            to_create.append(Customer(lexware_id=contact.id, **values))
+            to_create.append(Customer(lexware_id=contact.id, notes=contact.note, **values))
         elif customer.lexware_version != contact.version or customer.lexware_deleted:
+            customer.notes = merged_note(customer, contact.note)
             for field, value in values.items():
                 setattr(customer, field, value)
             customer.updated_at = now  # bulk_update skips auto_now
             to_update.append(customer)
         else:
             result.unchanged += 1
+            if customer.lexware_note is None:
+                # From before notes were synced: the contact is the same, but its note is not known here yet.
+                customer.notes = merged_note(customer, contact.note)
+                customer.lexware_note = contact.note
+                to_backfill.append(customer)
 
     if result.unchanged:
         await Customer.objects.filter(lexware_id__in=seen).aupdate(lexware_synced_at=now)
@@ -89,7 +100,9 @@ async def sync_customers(client: LexwareClient) -> SyncResult:
             to_create, update_conflicts=True, unique_fields=["lexware_id"], update_fields=SYNCED_FIELDS
         )
     if to_update:
-        await Customer.objects.abulk_update(to_update, [*SYNCED_FIELDS, "updated_at"])
+        await Customer.objects.abulk_update(to_update, [*SYNCED_FIELDS, "notes", "updated_at"])
+    if to_backfill:
+        await Customer.objects.abulk_update(to_backfill, ["notes", "lexware_note"])
     # The import has seen every customer contact, so the rest are gone from Lexware.
     result.removed = await (
         Customer.objects.filter(lexware_id__isnull=False, lexware_deleted=False)
