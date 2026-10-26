@@ -20,6 +20,7 @@ from billing.calculation import ProjectRows, active_agreement, build_draft, entr
 from billing.forms import BillingAgreementForm, PeriodForm
 from billing.models import BillingAgreement, Invoice
 from billing.periods import Period, period_containing, recent_periods
+from billing.queries import OVERDUE_STATUSES
 from billing.services import create_invoice
 from billing.sync import sync_and_record
 from core.filters import filter_pills, query_with, selected_filters
@@ -45,7 +46,7 @@ async def _get_customer(pk: UUID) -> Customer:
 STATUS_FILTERS = {
     "draft": (gettext_lazy("Entwürfe"), [Invoice.Status.DRAFT]),
     "open": (gettext_lazy("Offen"), [Invoice.Status.OPEN, Invoice.Status.TRANSFERRED, Invoice.Status.SEPADEBIT]),
-    "overdue": (gettext_lazy("Überfällig"), [Invoice.Status.OVERDUE]),
+    "overdue": (gettext_lazy("Überfällig"), OVERDUE_STATUSES),
     "paid": (gettext_lazy("Bezahlt"), [Invoice.Status.PAID]),
     "voided": (gettext_lazy("Storniert"), [Invoice.Status.VOIDED]),
     "deleted": (gettext_lazy("In Lexware gelöscht"), [Invoice.Status.DELETED]),

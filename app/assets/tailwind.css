@@ -116,6 +116,15 @@
     @apply bg-primary-soft text-primary-ink;
   }
 
+  .nav-count-danger {
+    @apply bg-danger-soft text-danger;
+  }
+
+  /* A note below a link that leads somewhere inside it (indented to line up with the link's text). */
+  .nav-sublink {
+    @apply col-span-2 flex h-8 shrink-0 items-center rounded-lg pr-2.5 pl-9 text-[13px] font-medium text-danger no-underline hover:underline lg:col-span-1;
+  }
+
   .nav-link-active {
     @apply bg-line/70 text-ink hover:bg-line/70;
   }

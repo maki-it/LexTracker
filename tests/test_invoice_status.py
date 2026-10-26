@@ -368,6 +368,40 @@ def test_invoice_list_filters_by_status(logged_in, billed):
     assert other.lexware_url == ""
 
 
+def test_sidebar_links_overdue_invoices_to_their_filter(logged_in, billed):
+    _, invoice, _ = billed
+    dashboard = reverse("core:dashboard")
+    assert logged_in.get(dashboard).wsgi_request.nav_counts["overdue_invoices"] == 0
+    assert "Überfällige Rechnungen" not in logged_in.get(dashboard).text
+
+    others = {
+        "RE0001": Invoice.Status.OVERDUE,
+        "RE0002": Invoice.Status.OVERDUE,
+        "RE0003": Invoice.Status.OPEN,
+        "RE0004": Invoice.Status.PAID,
+    }
+    for number, status in others.items():
+        Invoice.objects.create(
+            customer=invoice.customer,
+            period_start=date(2026, 9, 1),
+            period_end=date(2026, 9, 30),
+            total_net=Decimal("80.00"),
+            status=status,
+            voucher_number=number,
+        )
+
+    response = logged_in.get(dashboard)
+    assert response.wsgi_request.nav_counts["overdue_invoices"] == 2
+    assert f'href="{reverse("billing:invoices")}?status=overdue"' in response.text
+    assert 'nav-count nav-count-danger">2<' in response.text
+
+    # The same number as the "Überfällig" filter on the invoice list, which the link leads to.
+    invoices = logged_in.get(reverse("billing:invoices"), {"status": "overdue"})
+    overdue = next(pill for pill in invoices.context["filters"] if pill.key == "overdue")
+    assert overdue.active and overdue.count == 2
+    assert len(invoices.context["invoices"]) == 2
+
+
 def test_invoice_number_links_to_lexware(logged_in, billed):
     _, draft, _ = billed
     sent = Invoice.objects.create(
