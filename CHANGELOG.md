@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.9.0](https://github.com/maki-it/LexTracker/compare/lextracker-v0.8.0...lextracker-v0.9.0) (2026-10-26)
+
+
+### Features
+
+* **billing:** show the number of overdue invoices in the sidebar ([#184](https://github.com/maki-it/LexTracker/issues/184)) ([d65c763](https://github.com/maki-it/LexTracker/commit/d65c763ec43a67f6f0ad9c57b80d17b7f46a3997))
+
+
+### Bug Fixes
+
+* **lexware:** do not lose webhook calls when a sync fails unexpectedly ([#181](https://github.com/maki-it/LexTracker/issues/181)) ([1c6cf1f](https://github.com/maki-it/LexTracker/commit/1c6cf1fee5813ed182fbca8b5eef3b0c6b2ef735))
+
 ## [0.8.0](https://github.com/maki-it/LexTracker/compare/lextracker-v0.7.0...lextracker-v0.8.0) (2026-10-26)
 
 
