@@ -8,7 +8,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from billing.models import Invoice
-from billing.sync import sync_and_record, sync_invoices
+from billing.sync import sync_and_record, sync_invoice, sync_invoices
 from core.models import AppSettings
 from customers.models import Customer
 from projects.models import Project, Task
@@ -189,6 +189,135 @@ async def test_invoices_written_in_lexware_are_taken_over(billed):
     async with fake_client(voucher_list(voucher(invoice, "draft"))) as client:
         await sync_invoices(client)
     assert not await Invoice.objects.filter(lexware_id=lexware_id).aexists()
+
+
+def single_invoice(**by_id):
+    """A Lexware fake for the single invoice and its payments. ``by_id`` maps an id to (invoice, payment)."""
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        kind, invoice_id = request.url.path.rsplit("/", 2)[1:]
+        if (found := handler.by_id.get(invoice_id)) is None or found[kind == "payments"] is None:
+            return httpx.Response(404, json={"message": "not found"})
+        return httpx.Response(200, json=found[kind == "payments"])
+
+    handler.requests = requests
+    handler.by_id = {str(key): value for key, value in by_id.items()}
+    return handler
+
+
+async def test_a_single_invoice_is_updated_with_its_payments(billed):
+    _, invoice, _ = billed
+    handler = single_invoice(
+        **{
+            str(invoice.lexware_id): (
+                {"voucherStatus": "open", "voucherNumber": "RE0042", "dueDate": "2020-01-15T00:00:00.000+01:00"},
+                {"openAmount": 238.1, "voucherStatus": "open"},
+            )
+        }
+    )
+
+    async with fake_client(handler) as client:
+        result = await sync_invoice(client, invoice.lexware_id)
+
+    await invoice.arefresh_from_db()
+    assert (invoice.status, invoice.voucher_number) == (Invoice.Status.OVERDUE, "RE0042")
+    assert (invoice.due_date, invoice.open_amount) == (date(2020, 1, 15), Decimal("238.10"))
+    assert invoice.status_synced_at
+    assert result.changed == 1
+    assert [r.url.path.rsplit("/", 2)[1] for r in handler.requests] == ["invoices", "payments"]
+
+    async with fake_client(handler) as client:
+        assert (await sync_invoice(client, invoice.lexware_id)).unchanged == 1
+
+
+async def test_a_single_draft_has_no_payments_to_ask_for(billed):
+    _, invoice, _ = billed
+    handler = single_invoice(**{str(invoice.lexware_id): ({"voucherStatus": "draft"}, None)})
+
+    async with fake_client(handler) as client:
+        result = await sync_invoice(client, invoice.lexware_id)
+
+    assert result.unchanged == 1
+    assert [r.url.path.rsplit("/", 2)[1] for r in handler.requests] == ["invoices"]
+
+
+async def test_a_single_invoice_paid_in_lexware_is_paid_here(billed):
+    _, invoice, _ = billed
+    handler = single_invoice(
+        **{str(invoice.lexware_id): ({"voucherStatus": "paid"}, {"openAmount": 0.0, "voucherStatus": "paid"})}
+    )
+
+    async with fake_client(handler) as client:
+        await sync_invoice(client, invoice.lexware_id)
+
+    await invoice.arefresh_from_db()
+    assert invoice.status == Invoice.Status.PAID and invoice.open_amount == Decimal("0.00")
+
+
+async def test_a_single_invoice_deleted_in_lexware_releases_its_time(billed):
+    _, invoice, entry = billed
+
+    async with fake_client(single_invoice()) as client:
+        result = await sync_invoice(client, invoice.lexware_id)
+
+    await invoice.arefresh_from_db()
+    await entry.arefresh_from_db()
+    assert invoice.status == Invoice.Status.DELETED and entry.invoice_id is None
+    assert result.deleted == 1
+
+
+async def test_a_single_final_invoice_is_left_alone(billed):
+    _, invoice, _ = billed
+    await Invoice.objects.filter(pk=invoice.pk).aupdate(status=Invoice.Status.PAID)
+    handler = single_invoice()
+
+    async with fake_client(handler) as client:
+        result = await sync_invoice(client, invoice.lexware_id)
+
+    assert not result.has_changes and not handler.requests
+
+
+async def test_a_single_invoice_written_in_lexware_is_taken_over(billed):
+    _, invoice, _ = billed
+    new_id, stranger_id = uuid.uuid4(), uuid.uuid4()
+    body = {
+        "voucherStatus": "open",
+        "voucherNumber": "RE0100",
+        "voucherDate": "2026-09-30T00:00:00.000+02:00",
+        "dueDate": "2099-10-14T00:00:00.000+02:00",
+        "address": {"contactId": str(invoice.customer.lexware_id)},
+        "totalPrice": {"totalNetAmount": 450.5},
+    }
+    handler = single_invoice(
+        **{
+            str(new_id): (body, {"openAmount": 536.1}),
+            # An invoice of someone who is not a customer here.
+            str(stranger_id): ({**body, "address": {"contactId": str(uuid.uuid4())}}, {"openAmount": 1}),
+        }
+    )
+
+    async with fake_client(handler) as client:
+        assert (await sync_invoice(client, new_id)).imported == 1
+        assert (await sync_invoice(client, stranger_id)).imported == 0
+
+    taken = await Invoice.objects.aget(lexware_id=new_id)
+    assert taken.origin == Invoice.Origin.LEXWARE and taken.customer_id == invoice.customer_id
+    assert (taken.voucher_number, taken.status, taken.total_net) == ("RE0100", Invoice.Status.OPEN, Decimal("450.50"))
+    assert (taken.voucher_date, taken.due_date, taken.open_amount) == (
+        date(2026, 9, 30),
+        date(2099, 10, 14),
+        Decimal("536.10"),
+    )
+    assert not await Invoice.objects.filter(lexware_id=stranger_id).aexists()
+
+
+async def test_a_single_call_about_something_that_is_no_invoice_is_ignored(billed):
+    # Payments of credit notes and the like are reported too.
+    async with fake_client(single_invoice()) as client:
+        assert not (await sync_invoice(client, uuid.uuid4())).has_changes
+    assert await Invoice.objects.acount() == 1
 
 
 async def test_sync_is_recorded(billed, monkeypatch):

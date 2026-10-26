@@ -148,6 +148,10 @@ class LexwareClient:
         """The invoice as Lexware returns it. Raises LexwareNotFound if it was deleted."""
         return await self._request("GET", f"invoices/{invoice_id}")
 
+    async def get_payment(self, voucher_id: UUID) -> dict:
+        """The payment status of an invoice (or another voucher): what is still open, and the payments so far."""
+        return await self._request("GET", f"payments/{voucher_id}")
+
     async def get_invoice_pdf(self, invoice_id: UUID) -> bytes:
         """The finalized invoice as PDF. Drafts have none."""
         response = await self._send("GET", f"invoices/{invoice_id}/file", accept="application/pdf")
