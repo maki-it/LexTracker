@@ -15,6 +15,8 @@ class LexwareConnection(models.Model):
     key_suffix = models.CharField(_("Ende des Schlüssels"), max_length=4, blank=True, editable=False)
     company_name = models.CharField(_("Lexware-Konto"), max_length=200, blank=True, editable=False)
     verified_at = models.DateTimeField(_("zuletzt geprüft"), null=True, blank=True, editable=False)
+    # When Lexware last rejected the stored key. Cleared as soon as the key works again or is replaced.
+    rejected_at = models.DateTimeField(_("abgelehnt am"), null=True, blank=True, editable=False)
     updated_at = models.DateTimeField(_("geändert"), null=True, blank=True, editable=False)
     # The secret part of the webhook address (see ``lexware.webhooks``). Empty while webhooks are off.
     webhook_token = models.CharField(max_length=64, blank=True, editable=False)

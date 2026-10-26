@@ -42,6 +42,8 @@ class KeyStatus:
     masked: str = ""
     company_name: str = ""
     verified_at: datetime | None = None
+    # Set when Lexware rejected the key at the last check; the key is stored but does not work.
+    rejected_at: datetime | None = None
     updated_at: datetime | None = None
     # Stored, but APP_SECRET_KEY changed since, so it cannot be decrypted.
     unreadable: bool = False
@@ -68,6 +70,7 @@ async def astatus() -> KeyStatus:
     details = {
         "company_name": connection.company_name,
         "verified_at": connection.verified_at,
+        "rejected_at": connection.rejected_at,
         "updated_at": connection.updated_at,
     }
     if connection.encrypted_api_key:
@@ -89,17 +92,30 @@ async def astore(api_key: str, *, company_name: str = "") -> None:
         key_suffix=api_key[-SUFFIX_LENGTH:],
         company_name=company_name[:200],
         verified_at=now,
+        rejected_at=None,
         updated_at=now,
     )
 
 
 async def amark_verified(company_name: str) -> None:
-    await LexwareConnection.objects.filter(pk=1).aupdate(company_name=company_name[:200], verified_at=timezone.now())
+    await LexwareConnection.objects.filter(pk=1).aupdate(
+        company_name=company_name[:200], verified_at=timezone.now(), rejected_at=None
+    )
+
+
+async def amark_rejected() -> None:
+    """Remember that Lexware rejected the stored key, so the settings page stops showing it as connected."""
+    await LexwareConnection.objects.filter(pk=1).aupdate(rejected_at=timezone.now())
 
 
 async def aremove() -> None:
     await LexwareConnection.objects.filter(pk=1).aupdate(
-        encrypted_api_key="", key_suffix="", company_name="", verified_at=None, updated_at=timezone.now()
+        encrypted_api_key="",
+        key_suffix="",
+        company_name="",
+        verified_at=None,
+        rejected_at=None,
+        updated_at=timezone.now(),
     )
 
 
