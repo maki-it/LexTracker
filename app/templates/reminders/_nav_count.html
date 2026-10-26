@@ -1,2 +1,2 @@
-{% load i18n %}{# The number of due reminders next to the sidebar link. With `oob`, the bell sends it along to replace the old one. #}
-<span id="nav-reminders-count"{% if oob %} hx-swap-oob="true"{% endif %}>{% if count %}<span class="nav-count nav-count-primary" title="{% trans 'Fällige Erinnerungen' %}">{{ count }}</span>{% endif %}</span>
+{% load i18n %}{# The number of due reminders next to the sidebar link. With `oob`, the bell sends it along to replace the old one. The wrapper has no box of its own (contents), so the number lines up like the others (nav-count: ml-auto). #}
+<span id="nav-reminders-count" class="contents"{% if oob %} hx-swap-oob="true"{% endif %}>{% if count %}<span class="nav-count nav-count-primary" title="{% trans 'Fällige Erinnerungen' %}">{{ count }}</span>{% endif %}</span>
