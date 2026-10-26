@@ -15,6 +15,7 @@ from core.paging import apage, wants_rows
 from inbox import service
 from inbox.levels import Level
 from inbox.models import Message
+from reminders import queries as reminder_queries
 
 # How many messages the panel behind the bell lists. The page "all" has the rest.
 PANEL_SIZE = 8
@@ -57,7 +58,11 @@ async def _get_message(request: HttpRequest, pk: UUID) -> Message:
 @require_GET
 async def bell(request: HttpRequest) -> HttpResponse:
     """The bell alone, which the sidebar reloads every minute and after something changed."""
-    return render(request, "inbox/_bell.html", {"inbox": await service.summary(request.user)})
+    context = {"inbox": await service.summary(request.user)}
+    if request.user.is_admin:
+        # The sidebar link to the reminders shows how many are due; the bell brings the new number along.
+        context |= {"oob": True, "reminders_due": await reminder_queries.due_count(request.user)}
+    return render(request, "inbox/_bell.html", context)
 
 
 async def _panel(request: HttpRequest) -> HttpResponse:

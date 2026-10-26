@@ -1,7 +1,9 @@
 {% load i18n %}
 {% load icons dialogs %}
-{# The bell in the sidebar. Reloads itself every minute and whenever a message was read or deleted (inbox-changed). #}
-<div id="nav-bell" hx-get="{% url 'inbox:bell' %}" hx-trigger="every 60s, inbox-changed from:body" hx-swap="outerHTML">
+{# The bell in the sidebar. It reloads itself often, see hx-trigger below, and whenever a message was read or deleted. #}
+<div id="nav-bell" hx-get="{% url 'inbox:bell' %}" hx-swap="outerHTML"
+     {# Every 15 seconds while the tab is open, and when it is shown or focused again. #}
+     hx-trigger="every 15s [document.visibilityState === 'visible'], visibilitychange[document.visibilityState === 'visible'] from:document, focus from:window, inbox-changed from:body">
   <a {% dialog_link "inbox:panel" %} class="btn btn-ghost btn-icon relative" title="{% trans 'Nachrichten' %}"
      aria-label="{% if inbox.count %}{% blocktrans trimmed with count=inbox.count %}Nachrichten, {{ count }} ungelesen{% endblocktrans %}{% else %}{% trans 'Nachrichten' %}{% endif %}">
     {% icon "bell" size=18 %}
@@ -11,3 +13,4 @@
     {% endif %}
   </a>
 </div>
+{% if oob %}{% include "reminders/_nav_count.html" with count=reminders_due oob=True %}{% endif %}
