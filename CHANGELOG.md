@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/maki-it/LexTracker/compare/lextracker-v0.4.0...lextracker-v0.5.0) (2026-10-26)
+
+
+### Features
+
+* **branding:** configure app name and logo on the settings page ([#166](https://github.com/maki-it/LexTracker/issues/166)) ([e8ec19a](https://github.com/maki-it/LexTracker/commit/e8ec19a3d5012a123a562737f25187f81c9a14b1))
+
 ## [0.4.0](https://github.com/maki-it/LexTracker/compare/lextracker-v0.3.0...lextracker-v0.4.0) (2026-10-26)
 
 
