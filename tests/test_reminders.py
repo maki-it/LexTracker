@@ -349,7 +349,7 @@ def test_bell_brings_the_sidebar_count_of_due_reminders(logged_in, admin, task):
 
     fragment = logged_in.get(reverse("inbox:bell")).text
 
-    assert 'id="nav-reminders-count"' in fragment
+    assert 'id="nav-reminders-count" class="contents"' in fragment
     assert 'hx-swap-oob="true"' in fragment
     assert ">1<" in fragment
 
