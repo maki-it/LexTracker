@@ -23,7 +23,7 @@ from customers import sync as customer_sync
 from inbox import events as inbox_events
 from inbox import jobs as inbox_jobs
 from inbox import service as inbox
-from lexware import credentials
+from lexware import credentials, webhooks
 from lexware.client import LexwareError
 from mailer import jobs as mail_jobs
 from mailer import outbox
@@ -36,6 +36,12 @@ CHECK_INTERVAL = 60
 
 # How often the outgoing mail queue is looked at, so a login link arrives within seconds.
 MAIL_INTERVAL = 5
+
+# How often the calls from Lexware (webhooks) are looked at, so a change shows up within seconds.
+WEBHOOK_INTERVAL = 5
+
+# After a failed sync that a webhook asked for, wait this long before trying again.
+WEBHOOK_RETRY_AFTER = 60
 
 # How often old messages are deleted.
 PRUNE_INTERVAL = timedelta(hours=1)
@@ -82,6 +88,9 @@ JOBS = [
 ]
 
 
+job_locks = {job.key: asyncio.Lock() for job in JOBS}
+
+
 def in_window(now: time, start: time | None, end: time | None) -> bool:
     """Whether ``now`` lies in [start, end). Open ends mean midnight; start after end wraps past midnight."""
     start = start or time.min
@@ -97,6 +106,29 @@ def is_due(now: datetime, interval: int, start: time | None, end: time | None, l
         return False
     # Allow one check of slack, so a daily job does not slowly drift later than its start time.
     return last is None or now - last >= timedelta(minutes=interval) - timedelta(seconds=CHECK_INTERVAL)
+
+
+async def run_job(job: Job) -> bool:
+    """Run one sync and tell the users how it went. False if it failed (the failure is reported as a message)."""
+    # Only one at a time per sync, so a run on a webhook and a run on the interval never overlap.
+    async with job_locks[job.key]:
+        try:
+            async with jobs.tracked(job.key) as tracking:
+                result = await job.run()
+                tracking.result = result.summary
+        except LexwareError as exc:
+            logger.warning("Automatic %s failed: %s", job.name, exc)
+            await inbox_events.job_failed(job.key, job.label, exc)
+            return False
+        logger.info("Automatic %s: %s", job.name, result.summary)
+        # The summary is worded for each reader in their language, so it is passed as a function.
+        await inbox_events.job_done(
+            job.key,
+            job.label,
+            functools.partial(getattr, result, "summary"),
+            changed=getattr(result, "has_changes", False),
+        )
+        return True
 
 
 async def run_due_jobs(now: datetime) -> list[str]:
@@ -117,23 +149,44 @@ async def run_due_jobs(now: datetime) -> list[str]:
             continue
         ran.append(job.name)
         # One job failing must not stop the others.
-        try:
-            async with jobs.tracked(job.key) as tracking:
-                result = await job.run()
-                tracking.result = result.summary
-        except LexwareError as exc:
-            logger.warning("Automatic %s failed: %s", job.name, exc)
-            await inbox_events.job_failed(job.key, job.label, exc)
-        else:
-            logger.info("Automatic %s: %s", job.name, result.summary)
-            # The summary is worded for each reader in their language, so it is passed as a function.
-            await inbox_events.job_done(
-                job.key,
-                job.label,
-                functools.partial(getattr, result, "summary"),
-                changed=getattr(result, "has_changes", False),
-            )
+        await run_job(job)
     return ran
+
+
+async def run_webhook_syncs(retry_at: dict[str, datetime], now: datetime) -> list[str]:
+    """Run the syncs that Lexware has called for. ``retry_at`` holds when a failed one may be tried again."""
+    if not await credentials.ais_configured():
+        return []
+    waiting = {key for key, at in retry_at.items() if at > now}
+    ran = []
+    for job in JOBS:
+        if job.key in waiting:
+            continue
+        # Claim per sync, so a sync that has to wait does not hold back the calls for the others.
+        if not (claimed := await webhooks.aclaim(job.key)):
+            continue
+        ran.append(job.name)
+        if await run_job(job):
+            retry_at.pop(job.key, None)
+        else:
+            await webhooks.arelease(claimed)
+            retry_at[job.key] = now + timedelta(seconds=WEBHOOK_RETRY_AFTER)
+    return ran
+
+
+async def process_webhooks(stop: asyncio.Event) -> None:
+    """Look every few seconds for calls from Lexware and run the syncs they ask for."""
+    retry_at: dict[str, datetime] = {}
+    while not stop.is_set():
+        try:
+            async with jobs.tracked("webhooks") as tracking:
+                ran = await run_webhook_syncs(retry_at, timezone.now())
+                tracking.result = ", ".join(ran)
+                tracking.idle = not ran
+        except Exception:
+            logger.exception("Syncing on a call from Lexware failed")
+        with suppress(TimeoutError):
+            await asyncio.wait_for(stop.wait(), WEBHOOK_INTERVAL)
 
 
 async def send_mail(stop: asyncio.Event) -> None:
@@ -155,6 +208,7 @@ async def send_mail(stop: asyncio.Event) -> None:
 async def run(stop: asyncio.Event) -> None:
     logger.info("Scheduler started")
     mailer = asyncio.create_task(send_mail(stop))
+    hooks = asyncio.create_task(process_webhooks(stop))
     last_prune = None
     first = True
     while not stop.is_set():
@@ -207,11 +261,13 @@ async def run(stop: asyncio.Event) -> None:
         try:
             if last_prune is None or now - last_prune >= PRUNE_INTERVAL:
                 async with jobs.tracked("prune") as tracking:
-                    tracking.result = _("%(count)d gelöscht") % {"count": await inbox.prune(now)}
+                    deleted = await inbox.prune(now) + await webhooks.aprune(now)
+                    tracking.result = _("%(count)d gelöscht") % {"count": deleted}
                 last_prune = now
         except Exception:
             logger.exception("Deleting messages failed")
         with suppress(TimeoutError):
             await asyncio.wait_for(stop.wait(), CHECK_INTERVAL)
     await mailer
+    await hooks
     logger.info("Scheduler stopped")
