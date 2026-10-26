@@ -135,6 +135,39 @@
   {% endif %}
 </section>
 
+<section class="card flex max-w-2xl flex-col gap-4" id="info"{% if tab != "info" %} hidden{% endif %}>
+  <div>
+    <h2>{{ brand.name }}</h2>
+    <p class="mt-1 text-sm text-muted">{% trans "Welche Version läuft und wo der Quellcode liegt." %}</p>
+  </div>
+  <dl class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
+    <dt class="text-muted">{% trans "Version" %}</dt>
+    <dd class="flex flex-wrap items-center gap-x-3 gap-y-1">
+      <span class="font-medium">{{ about.version }}</span>
+      {% if not about.released %}<span class="badge badge-warning">{% trans "Entwicklungsstand" %}</span>{% endif %}
+      {% if about.release_url %}<a href="{{ about.release_url }}" target="_blank" rel="noopener noreferrer">{% trans "Änderungen in dieser Version" %}</a>{% endif %}
+    </dd>
+    {% if about.commit %}
+    <dt class="text-muted">{% trans "Commit" %}</dt>
+    <dd><a href="{{ about.commit_url }}" target="_blank" rel="noopener noreferrer"><code>{{ about.short_commit }}</code></a></dd>
+    {% endif %}
+    {% if about.built_at %}
+    <dt class="text-muted">{% trans "Gebaut am" %}</dt>
+    <dd>{% blocktrans trimmed with built_at=about.built_at|date:datetime_format %}{{ built_at }} Uhr{% endblocktrans %}</dd>
+    {% endif %}
+    <dt class="text-muted">{% trans "Quellcode" %}</dt>
+    <dd><a href="{{ repository_url }}" target="_blank" rel="noopener noreferrer">{{ repository_url }}</a></dd>
+    <dt class="text-muted">{% trans "Fehler melden" %}</dt>
+    <dd><a href="{{ repository_url }}/issues" target="_blank" rel="noopener noreferrer">{% trans "Issues auf GitHub" %}</a></dd>
+    <dt class="text-muted">Python</dt>
+    <dd>{{ about.python }}</dd>
+    <dt class="text-muted">Django</dt>
+    <dd>{{ about.django }}</dd>
+    <dt class="text-muted">SQLite</dt>
+    <dd>{{ about.sqlite }}</dd>
+  </dl>
+</section>
+
 <form method="post" enctype="multipart/form-data" class="flex max-w-2xl flex-col gap-6">
   {% csrf_token %}
   <input type="hidden" name="tab" value="{{ tab }}">
@@ -292,7 +325,7 @@
     </p>
   </section>
 
-  <div>
+  <div{% if tab == "info" %} hidden{% endif %}>
     <button type="submit" class="btn btn-primary">{% trans "Speichern" %}</button>
   </div>
 </form>

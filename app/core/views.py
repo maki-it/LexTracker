@@ -20,7 +20,7 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 from django.views.generic import RedirectView
 
 from accounts.models import User
-from core import backup, jobs, jobs_overview
+from core import backup, jobs, jobs_overview, version
 from core.dialogs import navigate
 from core.forms import AppSettingsForm
 from core.models import AppSettings
@@ -106,6 +106,7 @@ SETTINGS_TABS = [
     ("email", gettext_lazy("E-Mail")),
     ("backup", gettext_lazy("Datensicherung")),
     ("security", gettext_lazy("Sicherheit")),
+    ("info", gettext_lazy("Info")),
 ]
 _SETTINGS_TAB_FIELDS = {
     "general": ["app_name", "app_url", "logo", "remove_logo", "default_hourly_rate", "time_rounding", "invoice_detail"],
@@ -188,6 +189,8 @@ async def app_settings(request: HttpRequest) -> HttpResponse:
         "lexware": await credentials.astatus(),
         "webhooks": await webhooks.astatus(request.build_absolute_uri("/")),
         "key_form": ApiKeyForm(),
+        "about": version.load(),
+        "repository_url": version.REPOSITORY_URL,
         "mail": await MailSettings.aload(),
         "mail_failed": await OutgoingMail.objects.filter(
             status=OutgoingMail.Status.FAILED, created_at__gte=timezone.now() - timedelta(days=7)

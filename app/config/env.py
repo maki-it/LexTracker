@@ -38,6 +38,11 @@ class Env(BaseSettings):
     backup_dir: Path | None = None
     # Largest file accepted when uploading a backup on the backups page, in MB.
     backup_upload_max_mb: int = Field(default=100, ge=1)
+    # Set by the Docker image from the release it was built for (docker/Dockerfile), not meant to be set by hand.
+    # Empty when the app runs from source, see core.version.
+    version: str = ""
+    commit: str = ""
+    build_date: str = ""
 
     @property
     def debug(self) -> bool:

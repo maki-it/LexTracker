@@ -88,6 +88,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "accounts.context_processors.preferences",
                 "core.branding.context",
+                "core.version.context",
                 "core.dialogs.layout",
             ],
         },

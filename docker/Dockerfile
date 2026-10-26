@@ -56,11 +56,19 @@ COPY --link --from=build /srv/staticfiles /srv/staticfiles
 COPY --link --from=build /srv/app /srv/app
 
 # Declared late so a new version only changes the metadata, not any cached layer above.
+# The app shows these on the info page of the settings (core/version.py).
 ARG VERSION=dev
+ARG COMMIT=
+ARG BUILD_DATE=
+ENV APP_VERSION=${VERSION} \
+    APP_COMMIT=${COMMIT} \
+    APP_BUILD_DATE=${BUILD_DATE}
 LABEL org.opencontainers.image.title="LexTracker" \
       org.opencontainers.image.description="Zeiterfassung und Projektsteuerung mit Anbindung an Lexware Office" \
       org.opencontainers.image.source="https://github.com/maki-it/LexTracker" \
-      org.opencontainers.image.version="${VERSION}"
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${COMMIT}" \
+      org.opencontainers.image.created="${BUILD_DATE}"
 
 USER app
 VOLUME ["/data", "/backups"]

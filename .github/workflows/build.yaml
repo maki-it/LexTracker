@@ -56,6 +56,13 @@ jobs:
         env:
           TAG: ${{ inputs.tag }}
 
+      # The tag is checked out, so this is the commit of the release, not the one that triggered the workflow.
+      - name: Get the commit and the build date
+        id: build
+        run: |
+          echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+
       - name: Extract metadata for the Docker image
         id: meta
         uses: docker/metadata-action@v6
@@ -80,6 +87,8 @@ jobs:
           push: true
           build-args: |
             VERSION=${{ steps.meta.outputs.version }}
+            COMMIT=${{ steps.build.outputs.commit }}
+            BUILD_DATE=${{ steps.build.outputs.date }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           provenance: false # Fix for unknown/unknown image build
