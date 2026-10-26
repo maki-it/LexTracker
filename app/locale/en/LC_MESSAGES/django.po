@@ -2557,6 +2557,9 @@ msgstr "Billing"
 msgid "Kunden mit offenen, abrechenbaren Zeiten"
 msgstr "Customers with open, billable time"
 
+msgid "Überfällige Rechnungen"
+msgstr "Overdue invoices"
+
 msgid "Auswertungen"
 msgstr "Reports"
 

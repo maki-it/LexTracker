@@ -5,6 +5,7 @@ from collections.abc import Awaitable, Callable
 from django.http import HttpRequest, HttpResponse
 from django.utils.decorators import async_only_middleware
 
+from billing import queries as billing_queries
 from inbox import service as inbox
 from projects.models import Project
 from reminders import queries as reminder_queries
@@ -22,6 +23,7 @@ async def nav_counts(user) -> dict[str, int]:
     return {
         "projects": await Project.objects.filter(status=Project.Status.ACTIVE).acount(),
         "billable_customers": await open_time.values("task__project__customer").distinct().acount(),
+        "overdue_invoices": await billing_queries.overdue_count(),
         "reminders": await reminder_queries.due_count(user),
     }
 
