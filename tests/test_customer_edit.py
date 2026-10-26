@@ -290,3 +290,83 @@ def test_customer_without_lexware_may_have_long_notes(logged_in):
     assert response.status_code == 302
     customer.refresh_from_db()
     assert len(customer.notes) == 2000
+
+
+def two_business_emails() -> dict:
+    return contact("ACME GmbH", version=4, emailAddresses={"business": ["test@mail-tester.com", "kontakt@acme.de"]})
+
+
+def test_contact_with_two_entries_is_read_only_for_the_api():
+    from customers.lexware import ReadOnlyContact, ensure_writable
+
+    ensure_writable(contact("ACME GmbH", emailAddresses={"business": ["a@acme.de"], "private": ["b@acme.de"]}))
+    with pytest.raises(ReadOnlyContact) as error:
+        ensure_writable(
+            contact(
+                "ACME GmbH",
+                emailAddresses={"business": ["a@acme.de", "b@acme.de"]},
+                company={"name": "ACME GmbH", "contactPersons": [{"lastName": "A"}, {"lastName": "B"}]},
+            )
+        )
+    assert error.value.paths == ["company.contactPersons", "emailAddresses.business"]
+    assert "Ansprechpartner, E-Mail-Adressen (geschäftlich)" in str(error.value)
+
+
+def test_note_of_a_read_only_contact_stays_in_lextracker(logged_in, monkeypatch, settings):
+    settings.LEXWARE_API_KEY = "test-key"
+    raw = two_business_emails()
+    customer = Customer.objects.create(name="ACME GmbH", lexware_id=uuid.UUID(raw["id"]), lexware_version=4)
+    requests = []
+    monkeypatch.setattr("customers.views.client_from_settings", lambda: fake_client(lexware_contact_api(raw, requests)))
+
+    response = logged_in.post(
+        reverse("customers:edit", args=[customer.pk]),
+        {"name": "ACME GmbH", "email": "", "phone": "", "default_hourly_rate": "", "notes": "Nur hier"},
+        follow=True,
+    )
+
+    # Lexware was only asked, not changed.
+    assert [r.method for r in requests] == ["GET"]
+    customer.refresh_from_db()
+    assert customer.notes == "Nur hier"
+    page = response.content.decode()
+    assert "gespeichert" in page
+    assert "Die Notiz bleibt nur in LexTracker" in page
+    assert "E-Mail-Adressen (geschäftlich)" in page
+
+
+def test_other_lexware_fields_of_a_read_only_contact_are_refused(logged_in, monkeypatch, settings):
+    settings.LEXWARE_API_KEY = "test-key"
+    raw = two_business_emails()
+    customer = Customer.objects.create(name="ACME GmbH", lexware_id=uuid.UUID(raw["id"]), lexware_version=4)
+    requests = []
+    monkeypatch.setattr("customers.views.client_from_settings", lambda: fake_client(lexware_contact_api(raw, requests)))
+
+    response = logged_in.post(
+        reverse("customers:edit", args=[customer.pk]),
+        {"name": "Neu GmbH", "email": "", "phone": "", "default_hourly_rate": "", "notes": "Nur hier"},
+    )
+
+    assert response.status_code == 200
+    assert "ändere bitte in Lexware" in response.content.decode()
+    assert [r.method for r in requests] == ["GET"]
+    customer.refresh_from_db()
+    assert (customer.name, customer.notes) == ("ACME GmbH", "")
+
+
+def test_local_fields_of_a_read_only_contact_can_still_be_saved(logged_in, monkeypatch, settings):
+    settings.LEXWARE_API_KEY = "test-key"
+    raw = two_business_emails()
+    customer = Customer.objects.create(
+        name="ACME GmbH", lexware_id=uuid.UUID(raw["id"]), lexware_version=4, notes="Nur hier", lexware_note=""
+    )
+    monkeypatch.setattr("customers.views.client_from_settings", lambda: fake_client(lexware_contact_api(raw, [])))
+
+    response = logged_in.post(
+        reverse("customers:edit", args=[customer.pk]),
+        {"name": "ACME GmbH", "email": "", "phone": "", "default_hourly_rate": "95", "notes": "Nur hier"},
+    )
+
+    assert response.status_code == 302
+    customer.refresh_from_db()
+    assert customer.default_hourly_rate == Decimal("95")
