@@ -100,6 +100,10 @@
     @apply hidden w-full items-center gap-2.5 border-t border-line pt-3 pb-1 group-data-open:flex lg:mt-auto lg:flex lg:pb-0;
   }
 
+  .sidebar-version {
+    @apply hidden px-1 text-xs text-muted no-underline hover:text-ink hover:underline group-data-open:block lg:-mt-2 lg:block;
+  }
+
   .nav-link {
     @apply flex h-9 shrink-0 items-center gap-2.5 rounded-lg px-2.5 font-medium text-ink/80 no-underline transition-colors hover:bg-surface-muted hover:text-ink;
   }

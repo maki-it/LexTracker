@@ -1087,6 +1087,9 @@ msgstr "General"
 msgid "E-Mail"
 msgstr "E-mail"
 
+msgid "Info"
+msgstr "Info"
+
 #, python-format
 msgid "Die Sicherung ist fehlgeschlagen: %(error)s"
 msgstr "The backup failed: %(error)s"
@@ -1236,9 +1239,6 @@ msgstr "Your timer has been running for %(duration)s"
 
 msgid "Debug"
 msgstr "Debug"
-
-msgid "Info"
-msgstr "Info"
 
 msgid "Warnung"
 msgstr "Warning"
@@ -2507,6 +2507,9 @@ msgstr "Administration"
 msgid "Abmelden"
 msgstr "Sign out"
 
+msgid "Info zur App"
+msgstr "About this app"
+
 #, python-format
 msgid "Und %(critical_count)s weitere kritische Nachrichten."
 msgstr "And %(critical_count)s more critical messages."
@@ -3225,6 +3228,37 @@ msgstr "Enter the app address"
 
 msgid "Webhooks einrichten"
 msgstr "Set up webhooks"
+
+msgid "Welche Version läuft und wo der Quellcode liegt."
+msgstr "Which version is running and where the source code lives."
+
+msgid "Version"
+msgstr "Version"
+
+msgid "Entwicklungsstand"
+msgstr "Development build"
+
+msgid "Änderungen in dieser Version"
+msgstr "Changes in this version"
+
+msgid "Commit"
+msgstr "Commit"
+
+msgid "Gebaut am"
+msgstr "Built on"
+
+#, python-format
+msgid "%(built_at)s Uhr"
+msgstr "%(built_at)s"
+
+msgid "Quellcode"
+msgstr "Source code"
+
+msgid "Fehler melden"
+msgstr "Report a problem"
+
+msgid "Issues auf GitHub"
+msgstr "Issues on GitHub"
 
 msgid "Erscheinungsbild"
 msgstr "Appearance"
