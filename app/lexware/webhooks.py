@@ -138,26 +138,26 @@ async def arecord(event_type: str, resource_id: UUID | None) -> bool:
     return done is None
 
 
-async def aclaim(area: str) -> list[UUID]:
-    """Take up the waiting calls that ask for this sync (a ``core.scheduler.JOBS`` key) and return their IDs.
+async def aclaim(area: str) -> list[WebhookEvent]:
+    """Take up the waiting calls that ask for this sync (a ``core.scheduler.JOBS`` key) and return them.
 
     Calls that arrive from now on stay waiting, so a change during a sync is not lost.
     """
     types = [event_type for event_type, wanted in EVENT_AREAS.items() if wanted == area]
     waiting = [
-        pk
-        async for pk in WebhookEvent.objects.filter(event_type__in=types, processed_at__isnull=True).values_list(
-            "pk", flat=True
+        event
+        async for event in WebhookEvent.objects.filter(event_type__in=types, processed_at__isnull=True).only(
+            "id", "event_type", "resource_id"
         )
     ]
     if waiting:
-        await WebhookEvent.objects.filter(pk__in=waiting).aupdate(processed_at=timezone.now())
+        await WebhookEvent.objects.filter(pk__in=[e.pk for e in waiting]).aupdate(processed_at=timezone.now())
     return waiting
 
 
-async def arelease(claimed: list[UUID]) -> None:
+async def arelease(claimed: list[WebhookEvent]) -> None:
     """Put claimed calls back, because the sync failed and has to be tried again."""
-    await WebhookEvent.objects.filter(pk__in=claimed).aupdate(processed_at=None)
+    await WebhookEvent.objects.filter(pk__in=[e.pk for e in claimed]).aupdate(processed_at=None)
 
 
 async def aprune(now: datetime | None = None) -> int:

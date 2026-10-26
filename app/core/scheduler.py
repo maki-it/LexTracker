@@ -9,6 +9,7 @@ from contextlib import suppress
 from dataclasses import dataclass
 from datetime import datetime, time, timedelta
 from pathlib import Path
+from uuid import UUID
 
 from asgiref.sync import sync_to_async
 from django.utils import timezone
@@ -24,7 +25,7 @@ from inbox import events as inbox_events
 from inbox import jobs as inbox_jobs
 from inbox import service as inbox
 from lexware import credentials, webhooks
-from lexware.client import LexwareError
+from lexware.client import LexwareError, client_from_settings
 from mailer import jobs as mail_jobs
 from mailer import outbox
 from reminders import jobs as reminder_jobs
@@ -39,6 +40,9 @@ MAIL_INTERVAL = 5
 
 # How often the calls from Lexware (webhooks) are looked at, so a change shows up within seconds.
 WEBHOOK_INTERVAL = 5
+
+# Up to this many changed contacts or invoices are loaded one by one; more than that are cheaper as a full sync.
+WEBHOOK_MAX_SINGLE = 10
 
 # After a failed sync that a webhook asked for, wait this long before trying again.
 WEBHOOK_RETRY_AFTER = 60
@@ -153,6 +157,35 @@ async def run_due_jobs(now: datetime) -> list[str]:
     return ran
 
 
+async def _run_single_syncs(key: str, what: str, resource_ids: list[UUID], sync_one) -> bool:
+    """Run ``sync_one(client, resource_id)`` for each id. False if that failed (reported as a message).
+
+    Unlike the full sync this leaves the time of the last full run alone, so the sync on schedule still runs.
+    """
+    job = next(job for job in JOBS if job.key == key)
+    async with job_locks[key]:
+        try:
+            async with client_from_settings() as client:
+                for resource_id in resource_ids:
+                    await sync_one(client, resource_id)
+        except LexwareError as exc:
+            logger.warning("Updating %s %s on a call from Lexware failed: %s", len(resource_ids), what, exc)
+            await inbox_events.job_failed(job.key, job.label, exc)
+            return False
+    logger.info("Updated %s %s on a call from Lexware", len(resource_ids), what)
+    return True
+
+
+async def run_contact_syncs(contact_ids: list[UUID]) -> bool:
+    """Update just these customers from Lexware."""
+    return await _run_single_syncs("customers", "customer(s)", contact_ids, customer_sync.sync_contact)
+
+
+async def run_invoice_syncs(invoice_ids: list[UUID]) -> bool:
+    """Update just these invoices from Lexware."""
+    return await _run_single_syncs("invoices", "invoice(s)", invoice_ids, invoice_sync.sync_invoice)
+
+
 async def run_webhook_syncs(retry_at: dict[str, datetime], now: datetime) -> list[str]:
     """Run the syncs that Lexware has called for. ``retry_at`` holds when a failed one may be tried again."""
     if not await credentials.ais_configured():
@@ -165,8 +198,19 @@ async def run_webhook_syncs(retry_at: dict[str, datetime], now: datetime) -> lis
         # Claim per sync, so a sync that has to wait does not hold back the calls for the others.
         if not (claimed := await webhooks.aclaim(job.key)):
             continue
-        ran.append(job.name)
-        if await run_job(job):
+        resource_ids = {e.resource_id for e in claimed}
+        # A few changed contacts or invoices: load only those.
+        few = None not in resource_ids and len(resource_ids) <= WEBHOOK_MAX_SINGLE
+        if job.key == "customers" and few:
+            ran.append(_("%(count)d Kunden") % {"count": len(resource_ids)})
+            done = await run_contact_syncs(sorted(resource_ids))
+        elif job.key == "invoices" and few:
+            ran.append(_("%(count)d Rechnungen") % {"count": len(resource_ids)})
+            done = await run_invoice_syncs(sorted(resource_ids))
+        else:
+            ran.append(job.name)
+            done = await run_job(job)
+        if done:
             retry_at.pop(job.key, None)
         else:
             await webhooks.arelease(claimed)

@@ -135,8 +135,8 @@ def fake_jobs(monkeypatch, settings):
 @pytest.mark.django_db(transaction=True)
 async def test_a_call_runs_only_its_sync(fake_jobs):
     await webhooks.aensure_token()
-    await webhooks.arecord("invoice.status.changed", uuid.uuid4())
-    await webhooks.arecord("invoice.status.changed", uuid.uuid4())
+    await webhooks.arecord("invoice.status.changed", None)
+    await webhooks.arecord("invoice.created", None)
     now = timezone.now()
 
     assert await scheduler.run_webhook_syncs({}, now) == ["invoice sync"]
@@ -148,21 +148,157 @@ async def test_a_call_runs_only_its_sync(fake_jobs):
 @pytest.mark.django_db(transaction=True)
 async def test_failed_sync_is_tried_again_after_a_pause(fake_jobs):
     fake_jobs.fail = True
-    await webhooks.arecord("contact.changed", uuid.uuid4())
+    await webhooks.arecord("invoice.status.changed", None)
     retry_at = {}
     now = timezone.now()
 
-    assert await scheduler.run_webhook_syncs(retry_at, now) == ["customer import"]
+    assert await scheduler.run_webhook_syncs(retry_at, now) == ["invoice sync"]
     assert await WebhookEvent.objects.filter(processed_at__isnull=True).acount() == 1
 
     # Not before the pause is over.
     assert await scheduler.run_webhook_syncs(retry_at, now + timedelta(seconds=10)) == []
-    assert fake_jobs.calls == ["customers"]
+    assert fake_jobs.calls == ["invoices"]
 
     fake_jobs.fail = False
     later = now + timedelta(seconds=scheduler.WEBHOOK_RETRY_AFTER + 1)
-    assert await scheduler.run_webhook_syncs(retry_at, later) == ["customer import"]
+    assert await scheduler.run_webhook_syncs(retry_at, later) == ["invoice sync"]
     assert not await WebhookEvent.objects.filter(processed_at__isnull=True).aexists()
+    assert retry_at == {}
+
+
+@pytest.fixture
+def contact_syncs(monkeypatch, fake_jobs):
+    """``sync_contact`` replaced by one that notes the contacts it was asked for."""
+    state = SimpleNamespace(ids=[], fail=False)
+
+    @asynccontextmanager
+    async def connect():
+        yield object()
+
+    async def sync_contact(client, contact_id):
+        state.ids.append(contact_id)
+        if state.fail:
+            raise LexwareError("Lexware nicht erreichbar")
+
+    monkeypatch.setattr(scheduler, "client_from_settings", connect)
+    monkeypatch.setattr(scheduler.customer_sync, "sync_contact", sync_contact)
+    return state
+
+
+@pytest.mark.django_db(transaction=True)
+async def test_a_changed_contact_is_loaded_alone(fake_jobs, contact_syncs):
+    first, second = uuid.uuid4(), uuid.uuid4()
+    for event_type, resource in [("contact.changed", first), ("contact.created", second), ("contact.changed", second)]:
+        await webhooks.arecord(event_type, resource)
+
+    assert await scheduler.run_webhook_syncs({}, timezone.now()) == ["2 Kunden"]
+
+    assert sorted(contact_syncs.ids) == sorted([first, second])
+    # Not the full import.
+    assert fake_jobs.calls == []
+    assert not await WebhookEvent.objects.filter(processed_at__isnull=True).aexists()
+
+
+@pytest.mark.django_db(transaction=True)
+async def test_many_changed_contacts_run_the_full_import(fake_jobs, contact_syncs):
+    for _ in range(scheduler.WEBHOOK_MAX_SINGLE + 1):
+        await webhooks.arecord("contact.changed", uuid.uuid4())
+
+    assert await scheduler.run_webhook_syncs({}, timezone.now()) == ["customer import"]
+    assert fake_jobs.calls == ["customers"] and contact_syncs.ids == []
+
+
+@pytest.mark.django_db(transaction=True)
+async def test_a_call_without_a_contact_runs_the_full_import(fake_jobs, contact_syncs):
+    await webhooks.arecord("contact.changed", None)
+
+    assert await scheduler.run_webhook_syncs({}, timezone.now()) == ["customer import"]
+    assert fake_jobs.calls == ["customers"]
+
+
+@pytest.mark.django_db(transaction=True)
+async def test_failed_contact_sync_is_tried_again_after_a_pause(fake_jobs, contact_syncs):
+    contact_syncs.fail = True
+    resource = uuid.uuid4()
+    await webhooks.arecord("contact.changed", resource)
+    retry_at = {}
+    now = timezone.now()
+
+    assert await scheduler.run_webhook_syncs(retry_at, now) == ["1 Kunden"]
+    assert await WebhookEvent.objects.filter(processed_at__isnull=True).acount() == 1
+    assert await scheduler.run_webhook_syncs(retry_at, now + timedelta(seconds=10)) == []
+
+    contact_syncs.fail = False
+    later = now + timedelta(seconds=scheduler.WEBHOOK_RETRY_AFTER + 1)
+    assert await scheduler.run_webhook_syncs(retry_at, later) == ["1 Kunden"]
+    assert contact_syncs.ids == [resource, resource]
+    assert retry_at == {}
+
+
+@pytest.fixture
+def invoice_syncs(monkeypatch, fake_jobs):
+    """``sync_invoice`` replaced by one that notes the invoices it was asked for."""
+    state = SimpleNamespace(ids=[], fail=False)
+
+    @asynccontextmanager
+    async def connect():
+        yield object()
+
+    async def sync_invoice(client, invoice_id):
+        state.ids.append(invoice_id)
+        if state.fail:
+            raise LexwareError("Lexware nicht erreichbar")
+
+    monkeypatch.setattr(scheduler, "client_from_settings", connect)
+    monkeypatch.setattr(scheduler.invoice_sync, "sync_invoice", sync_invoice)
+    return state
+
+
+@pytest.mark.django_db(transaction=True)
+async def test_a_changed_invoice_is_loaded_alone(fake_jobs, invoice_syncs):
+    first, second = uuid.uuid4(), uuid.uuid4()
+    for event_type, resource in [
+        ("invoice.status.changed", first),
+        ("payment.changed", second),
+        ("invoice.changed", second),
+    ]:
+        await webhooks.arecord(event_type, resource)
+
+    assert await scheduler.run_webhook_syncs({}, timezone.now()) == ["2 Rechnungen"]
+
+    assert sorted(invoice_syncs.ids) == sorted([first, second])
+    # Not the full sync.
+    assert fake_jobs.calls == []
+    assert not await WebhookEvent.objects.filter(processed_at__isnull=True).aexists()
+    # The time of the last full sync stays as it was.
+    assert (await AppSettings.aload()).invoices_synced_at is None
+
+
+@pytest.mark.django_db(transaction=True)
+async def test_many_changed_invoices_run_the_full_sync(fake_jobs, invoice_syncs):
+    for _ in range(scheduler.WEBHOOK_MAX_SINGLE + 1):
+        await webhooks.arecord("invoice.changed", uuid.uuid4())
+
+    assert await scheduler.run_webhook_syncs({}, timezone.now()) == ["invoice sync"]
+    assert fake_jobs.calls == ["invoices"] and invoice_syncs.ids == []
+
+
+@pytest.mark.django_db(transaction=True)
+async def test_failed_invoice_sync_is_tried_again_after_a_pause(fake_jobs, invoice_syncs):
+    invoice_syncs.fail = True
+    resource = uuid.uuid4()
+    await webhooks.arecord("invoice.changed", resource)
+    retry_at = {}
+    now = timezone.now()
+
+    assert await scheduler.run_webhook_syncs(retry_at, now) == ["1 Rechnungen"]
+    assert await WebhookEvent.objects.filter(processed_at__isnull=True).acount() == 1
+    assert await scheduler.run_webhook_syncs(retry_at, now + timedelta(seconds=10)) == []
+
+    invoice_syncs.fail = False
+    later = now + timedelta(seconds=scheduler.WEBHOOK_RETRY_AFTER + 1)
+    assert await scheduler.run_webhook_syncs(retry_at, later) == ["1 Rechnungen"]
+    assert invoice_syncs.ids == [resource, resource]
     assert retry_at == {}
 
 

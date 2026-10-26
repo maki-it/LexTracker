@@ -12,6 +12,7 @@ from django.utils.dateparse import parse_datetime
 from django.utils.translation import gettext as _
 
 from billing.models import Invoice
+from core.ids import parse_uuid
 from core.models import AppSettings
 from customers.models import Customer
 from lexware.client import LexwareClient, LexwareError, LexwareNotFound, client_from_settings
@@ -25,6 +26,14 @@ OPEN_STATUSES = [
     Invoice.Status.OVERDUE,
     Invoice.Status.TRANSFERRED,
     Invoice.Status.SEPADEBIT,
+]
+# Statuses of invoices that have payments to ask for.
+PAYABLE_STATUSES = [
+    Invoice.Status.OPEN,
+    Invoice.Status.TRANSFERRED,
+    Invoice.Status.SEPADEBIT,
+    Invoice.Status.PAID,
+    "paidoff",
 ]
 SYNCED_FIELDS = [
     "status",
@@ -138,10 +147,7 @@ async def sync_invoices(client: LexwareClient) -> InvoiceSyncResult:
         try:
             data = await client.get_invoice(invoice.lexware_id)
         except LexwareNotFound:
-            if invoice.origin == Invoice.Origin.LEXWARE:
-                await invoice.adelete()  # Never ours and gone: nothing to keep.
-            else:
-                await sync_to_async(mark_deleted)(invoice, now)
+            await _forget(invoice, now)
             result.deleted += 1
             continue
         status, number = data.get("voucherStatus", invoice.status), data.get("voucherNumber")
@@ -156,29 +162,123 @@ async def sync_invoices(client: LexwareClient) -> InvoiceSyncResult:
             data = await client.get_invoice(voucher.id)
         except LexwareNotFound:
             continue
-        await _create_from_lexware(voucher, data, customers[voucher.contact_id], now, today)
+        await _create_from_lexware(
+            voucher.id,
+            data,
+            customer_id=customers[voucher.contact_id],
+            voucher_date=_local_date(data.get("voucherDate")) or _day(voucher.voucher_date),
+            status=_status(voucher.voucher_status, _due_date(voucher), today),
+            voucher_number=voucher.voucher_number,
+            due_date=_due_date(voucher),
+            open_amount=_amount(voucher.open_amount),
+            now=now,
+        )
         result.imported += 1
     return result
 
 
-async def _create_from_lexware(voucher: Voucher, data: dict, customer_id: UUID, now, today) -> Invoice:
-    voucher_date = _local_date(data.get("voucherDate")) or _day(voucher.voucher_date)
+async def _forget(invoice: Invoice, now) -> None:
+    """The invoice is gone from Lexware."""
+    if invoice.origin == Invoice.Origin.LEXWARE:
+        await invoice.adelete()  # Never ours and gone: nothing to keep.
+    else:
+        await sync_to_async(mark_deleted)(invoice, now)
+
+
+async def sync_invoice(client: LexwareClient, invoice_id: UUID) -> InvoiceSyncResult:
+    """Look at just this invoice in Lexware, as the sync of everything would do.
+
+    For a call from Lexware that names the invoice. Ids that are no invoice of ours (Lexware also reports payments
+    of credit notes and other vouchers) are ignored. It reads the invoice and its payments instead of the whole
+    voucher list, so the sync of everything stays the safety net.
+    """
+    result = InvoiceSyncResult()
+    now = timezone.now()
+    invoice = await Invoice.objects.filter(lexware_id=invoice_id).afirst()
+    if invoice and invoice.status not in OPEN_STATUSES:
+        return result
+    try:
+        data = await client.get_invoice(invoice_id)
+    except LexwareNotFound:
+        if invoice:
+            await _forget(invoice, now)
+            result.deleted += 1
+        return result
+
+    contact_id = parse_uuid((data.get("address") or {}).get("contactId"))
+    customer_id = None
+    if invoice is None:
+        if contact_id:
+            customer_id = await Customer.objects.filter(lexware_id=contact_id).values_list("pk", flat=True).afirst()
+        if customer_id is None:
+            return result  # Not for a customer we know.
+
+    today = timezone.localdate()
+    due_date = _local_date(data.get("dueDate"))
+    lexware_status = data.get("voucherStatus", invoice.status if invoice else Invoice.Status.DRAFT)
+    status = _status(lexware_status, due_date, today)
+    open_amount = await _open_amount(client, invoice_id, lexware_status, invoice.open_amount if invoice else None)
+    voucher_date = _local_date(data.get("voucherDate"))
+    if invoice:
+        if _apply(invoice, status, data.get("voucherNumber"), voucher_date, due_date, open_amount, now):
+            result.changed += 1
+        else:
+            result.unchanged += 1
+        await Invoice.objects.abulk_update([invoice], SYNCED_FIELDS)
+    else:
+        await _create_from_lexware(
+            invoice_id,
+            data,
+            customer_id=customer_id,
+            voucher_date=voucher_date,
+            status=status,
+            voucher_number=data.get("voucherNumber"),
+            due_date=due_date,
+            open_amount=open_amount,
+            now=now,
+        )
+        result.imported += 1
+    return result
+
+
+async def _open_amount(client: LexwareClient, invoice_id: UUID, lexware_status: str, current: Decimal | None):
+    """What is still to be paid, from the payments of the invoice. The invoice itself does not say."""
+    if lexware_status not in PAYABLE_STATUSES:
+        return current  # Drafts and voided invoices have no payments.
+    try:
+        payment = await client.get_payment(invoice_id)
+    except LexwareNotFound:
+        return current
+    return _amount(payment.get("openAmount"))
+
+
+async def _create_from_lexware(
+    lexware_id: UUID,
+    data: dict,
+    *,
+    customer_id: UUID,
+    voucher_date: date | None,
+    status: str,
+    voucher_number: str | None,
+    due_date: date | None,
+    open_amount: Decimal | None,
+    now,
+) -> Invoice:
     shipping = data.get("shippingConditions") or {}
-    start = _local_date(shipping.get("shippingDate")) or voucher_date or today
+    start = _local_date(shipping.get("shippingDate")) or voucher_date or timezone.localdate()
     end = _local_date(shipping.get("shippingEndDate")) or start
-    due_date = _due_date(voucher)
     return await Invoice.objects.acreate(
         customer_id=customer_id,
         origin=Invoice.Origin.LEXWARE,
-        lexware_id=voucher.id,
+        lexware_id=lexware_id,
         voucher_date=voucher_date,
         period_start=start,
         period_end=end,
         total_net=Decimal(str((data.get("totalPrice") or {}).get("totalNetAmount") or 0)),
-        status=_status(voucher.voucher_status, due_date, today),
-        voucher_number=voucher.voucher_number or "",
+        status=status,
+        voucher_number=voucher_number or "",
         due_date=due_date,
-        open_amount=_amount(voucher.open_amount),
+        open_amount=open_amount,
         status_synced_at=now,
     )
 
