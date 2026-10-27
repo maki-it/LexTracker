@@ -1,20 +1,29 @@
 import json
 
 import pytest
+from django.http.request import split_domain_port
 from django.urls import reverse
 
 from accounts import mfa, passkeys
 from accounts.models import LoginFailure, Passkey, User
 from core.models import AppSettings
-from tests.passkey_fakes import ORIGIN, RP_ID, Authenticator
+from tests.passkey_fakes import RP_ID, Authenticator
 
 pytestmark = pytest.mark.django_db
 
 
+def open_at(client, settings, host, *, https=True):
+    """Point the client at another address, the way a browser opens the app."""
+    settings.ALLOWED_HOSTS = [split_domain_port(host)[0]]
+    client.defaults["HTTP_HOST"] = host
+    # The test client always speaks HTTP; the proxy header is how the app learns about HTTPS in production.
+    settings.SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    client.defaults["HTTP_X_FORWARDED_PROTO"] = "https" if https else "http"
+
+
 @pytest.fixture(autouse=True)
-def configured(settings):
-    settings.PASSKEY_RP_ID = RP_ID
-    settings.PASSKEY_ORIGINS = [ORIGIN]
+def secure_site(client, settings):
+    open_at(client, settings, RP_ID)
 
 
 def post_json(client, url, body):
@@ -57,9 +66,13 @@ def test_login_page_offers_passkeys_below_the_password_login(client, user):
     assert page.index("Anmelden</button>") < page.index('role="separator"') < page.index("Mit Passkey anmelden")
 
 
-def test_login_page_without_a_domain_has_no_passkeys(client, user, settings):
-    settings.PASSKEY_RP_ID = ""
-    settings.PASSKEY_ORIGINS = []
+@pytest.mark.parametrize(
+    ("host", "https"),
+    [(RP_ID, False), ("203.0.113.7", True), ("[2001:db8::1]:8443", True), ("192.168.0.5:8000", False)],
+    ids=["http", "ipv4", "ipv6", "ipv4-http"],
+)
+def test_login_page_has_no_passkeys_where_browsers_do_not_allow_them(client, user, settings, host, https):
+    open_at(client, settings, host, https=https)
 
     page = client.get(reverse("accounts:login")).text
 
@@ -67,6 +80,26 @@ def test_login_page_without_a_domain_has_no_passkeys(client, user, settings):
     assert 'role="separator"' not in page
     assert client.post(reverse("accounts:passkey_options")).status_code == 404
     assert client.post(reverse("accounts:passkey_login")).status_code == 404
+
+
+@pytest.mark.parametrize("host", ["localhost", "localhost:8000", "kim.localhost"])
+def test_localhost_does_passkeys_over_http(client, user, settings, host):
+    open_at(client, settings, host, https=False)
+
+    options = client.post(reverse("accounts:passkey_options")).json()
+
+    assert options["rpId"] == host.split(":")[0]
+    assert "Mit Passkey anmelden" in client.get(reverse("accounts:login")).text
+
+
+def test_a_port_is_part_of_the_origin_but_not_of_the_domain(client, user, settings):
+    open_at(client, settings, f"{RP_ID}:8443")
+    client.force_login(user)
+    authenticator = Authenticator(origin=f"https://{RP_ID}:8443")
+
+    assert register(client, authenticator).status_code == 200
+    client.logout()
+    assert sign_in(client, authenticator, user).status_code == 200
 
 
 def test_passkey_options_ask_for_a_discoverable_credential_with_user_verification(client, user):
@@ -293,27 +326,14 @@ def test_account_page_lists_the_passkeys(client, user):
     assert "Passkey hinzufügen" in page
 
 
-def test_account_page_tells_the_administrator_how_to_turn_passkeys_on(client, user, settings):
-    settings.PASSKEY_RP_ID = ""
-    settings.PASSKEY_ORIGINS = []
-    user.role = User.Role.ADMIN
-    user.save()
+def test_account_page_explains_when_passkeys_are_not_possible(client, user, settings):
+    open_at(client, settings, "203.0.113.7")
     client.force_login(user)
 
     page = client.get(reverse("account:settings")).text
 
-    assert "APP_PASSKEY_RP_ID" in page
+    assert "Passkeys gehen nur über eine sichere Verbindung" in page
     assert "Passkey hinzufügen" not in page
-
-
-def test_account_page_without_a_domain_shows_others_nothing(client, user, settings):
-    settings.PASSKEY_RP_ID = ""
-    settings.PASSKEY_ORIGINS = []
-    user.role = User.Role.EMPLOYEE
-    user.save()
-    client.force_login(user)
-
-    assert "Passkey" not in client.get(reverse("account:settings")).text
 
 
 def test_removing_a_passkey(client, user, signed_up):

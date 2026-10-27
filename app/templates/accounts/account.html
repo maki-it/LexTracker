@@ -105,10 +105,10 @@
       <p class="text-sm text-muted" data-passkey-unsupported>{% trans "Dieser Browser unterstützt keine Passkeys." %}</p>
     </form>
   </section>
-  {% elif user.is_admin %}
+  {% else %}
   <section class="card flex flex-col gap-2" id="passkeys"{% if tab != "security" %} hidden{% endif %}>
     <h2>{% trans "Passkeys" %}</h2>
-    <p class="text-sm text-muted">{% blocktrans trimmed %}Passkeys sind nicht eingerichtet. Trage die Domain, unter der die App erreichbar ist, als <code>APP_PASSKEY_RP_ID</code> in die <code>.env</code> ein, z. B. <code>zeit.example.de</code>. Danach können alle Benutzer Passkeys anlegen.{% endblocktrans %}</p>
+    <p class="text-sm text-muted">{% trans "Passkeys gehen nur über eine sichere Verbindung (HTTPS) und mit einem Domainnamen statt einer IP-Adresse. Öffne die App auf diesem Weg, dann kannst du hier Passkeys anlegen." %}</p>
   </section>
   {% endif %}
 

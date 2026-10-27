@@ -1,6 +1,7 @@
 """Sign in with passkeys (WebAuthn), for the phone as well as the desktop.
 
-Configured with ``APP_PASSKEY_RP_ID``: a passkey belongs to that domain for good, so it is set once and not changed.
+There is nothing to configure: a passkey belongs to the domain the app is opened under (``site``), so it works wherever
+the browser allows passkeys, which is over HTTPS under a domain name. A passkey stays tied to its domain for good.
 The login with password, the e-mail link and SSO stay. A passkey is checked with the user's fingerprint, face or PIN
 (user verification is required), so it counts as both factors and skips the code from an authenticator app.
 
@@ -9,10 +10,12 @@ state to remember (in the session) and ``finish_*`` checks the browser's answer 
 query the database synchronously; call them with ``sync_to_async``.
 """
 
+import ipaddress
 import time
 from dataclasses import dataclass
 
-from django.conf import settings
+from django.http import HttpRequest
+from django.http.request import split_domain_port
 from django.utils import timezone
 from webauthn import (
     base64url_to_bytes,
@@ -47,8 +50,39 @@ class PasskeyError(Exception):
     """The browser's answer is not valid, or too late."""
 
 
-def enabled() -> bool:
-    return bool(settings.PASSKEY_RP_ID)
+@dataclass(frozen=True)
+class Site:
+    """Where the app is opened: the domain a passkey belongs to and the address the browser reports as its origin."""
+
+    rp_id: str
+    origin: str
+
+
+def _is_ip(host: str) -> bool:
+    try:
+        ipaddress.ip_address(host.strip("[]"))
+    except ValueError:
+        return False
+    return True
+
+
+def site(request: HttpRequest) -> Site | None:
+    """The site of this request, or None where browsers do not do passkeys.
+
+    They need a domain name (no IP address) and a secure connection; ``localhost`` counts as secure for development.
+    The host has been checked against ``ALLOWED_HOSTS``, and the scheme follows the proxy's header like everywhere else.
+    """
+    host = request.get_host()
+    name, _port = split_domain_port(host)
+    if not name or _is_ip(name):
+        return None
+    if not (request.is_secure() or name == "localhost" or name.endswith(".localhost")):
+        return None
+    return Site(rp_id=name, origin=f"{request.scheme}://{host}")
+
+
+def available(request: HttpRequest) -> bool:
+    return site(request) is not None
 
 
 @dataclass(frozen=True)
@@ -69,10 +103,10 @@ def _challenge_of(state: dict | None) -> bytes:
     return base64url_to_bytes(state["challenge"])
 
 
-def begin_registration(user: User, app_name: str) -> Begun:
+def begin_registration(site: Site, user: User, app_name: str) -> Begun:
     existing = [PublicKeyCredentialDescriptor(id=base64url_to_bytes(p.credential_id)) for p in user.passkeys.all()]
     options = generate_registration_options(
-        rp_id=settings.PASSKEY_RP_ID,
+        rp_id=site.rp_id,
         rp_name=app_name,
         user_id=user.pk.bytes,
         user_name=user.get_username(),
@@ -88,7 +122,7 @@ def begin_registration(user: User, app_name: str) -> Begun:
     return Begun(options_to_json_dict(options), _state(options.challenge, user=str(user.pk)))
 
 
-def finish_registration(user: User, credential: dict, state: dict | None, name: str) -> Passkey:
+def finish_registration(site: Site, user: User, credential: dict, state: dict | None, name: str) -> Passkey:
     challenge = _challenge_of(state)
     if state.get("user") != str(user.pk):
         raise PasskeyError("The attempt belongs to another account")
@@ -96,8 +130,8 @@ def finish_registration(user: User, credential: dict, state: dict | None, name: 
         verified = verify_registration_response(
             credential=parse_registration_credential_json(credential),
             expected_challenge=challenge,
-            expected_rp_id=settings.PASSKEY_RP_ID,
-            expected_origin=settings.PASSKEY_ORIGINS,
+            expected_rp_id=site.rp_id,
+            expected_origin=site.origin,
             require_user_verification=True,
         )
     except (InvalidRegistrationResponse, InvalidJSONStructure, KeyError, TypeError, ValueError) as error:
@@ -115,9 +149,9 @@ def finish_registration(user: User, credential: dict, state: dict | None, name: 
     )
 
 
-def begin_authentication() -> Begun:
+def begin_authentication(site: Site) -> Begun:
     options = generate_authentication_options(
-        rp_id=settings.PASSKEY_RP_ID,
+        rp_id=site.rp_id,
         # No list of credentials: the browser offers the passkeys it has for this domain, whoever they belong to.
         user_verification=UserVerificationRequirement.REQUIRED,
         timeout=CHALLENGE_SECONDS * 1000,
@@ -125,7 +159,7 @@ def begin_authentication() -> Begun:
     return Begun(options_to_json_dict(options), _state(options.challenge))
 
 
-def finish_authentication(credential: dict, state: dict | None) -> User:
+def finish_authentication(site: Site, credential: dict, state: dict | None) -> User:
     """The user whose passkey signed the challenge. Raises ``PasskeyError`` for anything else."""
     challenge = _challenge_of(state)
     try:
@@ -134,8 +168,8 @@ def finish_authentication(credential: dict, state: dict | None) -> User:
         verified = verify_authentication_response(
             credential=parsed,
             expected_challenge=challenge,
-            expected_rp_id=settings.PASSKEY_RP_ID,
-            expected_origin=settings.PASSKEY_ORIGINS,
+            expected_rp_id=site.rp_id,
+            expected_origin=site.origin,
             credential_public_key=bytes(passkey.public_key),
             credential_current_sign_count=passkey.sign_count,
             require_user_verification=True,
