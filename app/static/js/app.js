@@ -690,3 +690,36 @@ document.addEventListener("keydown", (event) => {
     button.focus();
   }
 });
+
+// Browsers without Speculation Rules (Brave, Firefox, Safari) do not read the rule in base.html. They get the same
+// effect here: a navigation link is fetched in the background once the mouse rests on it for 100 ms or a finger touches it.
+if (!(window.HTMLScriptElement && HTMLScriptElement.supports && HTMLScriptElement.supports("speculationrules"))) {
+  const NAV_LINKS = "#sidebar-nav a, .bottom-bar a";
+  const prefetched = new Set();
+  let hoverTimer;
+
+  const prefetch = (link) => {
+    if (link.origin !== location.origin || link.href === location.href || prefetched.has(link.href)) return;
+    prefetched.add(link.href);
+    const hint = document.createElement("link");
+    hint.rel = "prefetch";
+    hint.as = "document";
+    hint.href = link.href;
+    document.head.append(hint);
+  };
+
+  document.addEventListener("mouseover", (event) => {
+    const link = event.target.closest?.(NAV_LINKS);
+    clearTimeout(hoverTimer);
+    if (link) hoverTimer = setTimeout(() => prefetch(link), 100);
+  });
+  document.addEventListener("mouseout", () => clearTimeout(hoverTimer));
+  document.addEventListener(
+    "touchstart",
+    (event) => {
+      const link = event.target.closest?.(NAV_LINKS);
+      if (link) prefetch(link);
+    },
+    { passive: true },
+  );
+}
