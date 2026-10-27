@@ -28,8 +28,8 @@
     <a href="?{{ pill.query }}" class="pill gap-1.5{% if pill.active %} pill-active{% endif %}"{% if pill.active %} aria-current="true"{% endif %}>{{ pill.label }}<span class="text-muted tabular-nums">{{ pill.count }}</span></a>
     {% endfor %}
   </nav>
-  <div class="table-wrap" id="project-table">
-    <table class="table">
+  <div class="table-wrap table-wrap-cards" id="project-table">
+    <table class="table table-cards">
       <thead>
         <tr>
           <th>{% trans "Projekt" %}</th>

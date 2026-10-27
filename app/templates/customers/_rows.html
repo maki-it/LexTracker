@@ -2,16 +2,16 @@
 {% load icons dialogs markdown %}
 {% for customer in page.items %}
 <tr{% if customer.is_archived %} class="bg-surface-muted text-muted"{% endif %}>
-  <td class="text-muted tabular-nums">{{ customer.customer_number|default:"–" }}</td>
-  <td class="font-medium">
+  <td class="cell-sub text-muted tabular-nums{% if not customer.customer_number %} cell-hide{% endif %}" data-label="{% trans 'Nr.' %}"><span>{{ customer.customer_number|default:"–" }}</span></td>
+  <td class="cell-title font-medium">
     <a class="hover:underline{% if customer.is_archived %} text-muted{% endif %}" {% dialog_link "customers:edit" customer.pk %}>{{ customer.name }}</a>
     {% if customer.lexware_deleted %}<span class="badge badge-danger ml-2">{% icon "archive" size=12 %}{% trans "in Lexware gelöscht" %}</span>{% elif customer.is_archived %}<span class="badge badge-warning ml-2">{% icon "archive" size=12 %}{% trans "Archiviert" %}</span>{% endif %}
     {% for c in customer.categories.all %}<span class="badge ml-1.5">{{ c.name }}</span>{% endfor %}
     {% if customer.notes %}<div class="mt-0.5 line-clamp-2 max-w-xl text-xs font-normal text-muted">{{ customer.notes|markdown }}</div>{% endif %}
   </td>
-  <td>{% if customer.email %}<a class="hover:underline" href="mailto:{{ customer.email }}">{{ customer.email }}</a>{% else %}<span class="text-muted">–</span>{% endif %}</td>
-  <td class="whitespace-nowrap">{{ customer.phone|default:"–" }}</td>
-  <td class="text-right tabular-nums">{% if customer.default_hourly_rate is not None %}{{ customer.default_hourly_rate }} €{% else %}<span class="text-muted">–</span>{% endif %}</td>
+  <td class="min-w-0{% if not customer.email %} cell-hide{% endif %}" data-label="{% trans 'E-Mail' %}">{% if customer.email %}<a class="truncate hover:underline" href="mailto:{{ customer.email }}">{{ customer.email }}</a>{% else %}<span class="text-muted">–</span>{% endif %}</td>
+  <td class="whitespace-nowrap{% if not customer.phone %} cell-hide{% endif %}" data-label="{% trans 'Telefon' %}"><span>{{ customer.phone|default:"–" }}</span></td>
+  <td class="text-right tabular-nums{% if customer.default_hourly_rate is None %} cell-hide{% endif %}" data-label="{% trans 'Stundensatz' %}"><span>{% if customer.default_hourly_rate is not None %}{{ customer.default_hourly_rate }} €{% else %}<span class="text-muted">–</span>{% endif %}</span></td>
 </tr>
 {% empty %}
 {% if page.is_first %}<tr><td colspan="5" class="py-10 text-center text-muted">{% if query or category %}{% trans "Keine Kunden gefunden." %}{% else %}{% trans "Noch keine Kunden. Importiere sie aus Lexware Office." %}{% endif %}</td></tr>{% endif %}

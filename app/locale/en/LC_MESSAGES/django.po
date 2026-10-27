@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: LexTracker\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-27 06:53+0000\n"
+"POT-Creation-Date: 2026-10-27 08:56+0100\n"
 "PO-Revision-Date: 2026-10-25 12:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: English\n"
@@ -2558,9 +2558,6 @@ msgstr "Edit user"
 msgid "%(app)s: Zeiterfassung und Projektsteuerung"
 msgstr "%(app)s: time tracking and project management"
 
-msgid "Menü"
-msgstr "Menu"
-
 msgid "Hauptnavigation"
 msgstr "Main navigation"
 
@@ -2598,6 +2595,12 @@ msgstr "And %(critical_count)s more critical messages."
 msgid "Ansehen"
 msgstr "View"
 
+msgid "Fällige Erinnerungen"
+msgstr "Due reminders"
+
+msgid "Menü"
+msgstr "Menu"
+
 msgid "Schließen"
 msgstr "Close"
 
@@ -2619,6 +2622,9 @@ msgstr[1] "Show %(counter)s more time entries"
 
 msgid "Entwurf öffnen"
 msgstr "Open draft"
+
+msgid "Leistungszeitraum"
+msgstr "Service period"
 
 msgid ""
 "Die Zeiten dieser stornierten Rechnung können dann neu abgerechnet werden"
@@ -2654,9 +2660,6 @@ msgstr "Time open again"
 
 msgid "Nummer"
 msgstr "Number"
-
-msgid "Leistungszeitraum"
-msgstr "Service period"
 
 msgid "Netto"
 msgstr "Net"
@@ -3473,8 +3476,14 @@ msgstr "Manage backups"
 msgid "Noch keine Sicherung aufgezeichnet."
 msgstr "No backup recorded yet."
 
+msgid "Nr."
+msgstr "No."
+
 msgid "Archiviert"
 msgstr "Archived"
+
+msgid "Stundensatz"
+msgstr "Hourly rate"
 
 msgid "Keine Kunden gefunden."
 msgstr "No customers found."
@@ -3497,12 +3506,6 @@ msgstr "failed (%(lexware_sync_status)s)"
 #, python-format
 msgid "· automatisch %(get_lexware_sync_interval_display)s"
 msgstr "· automatically %(get_lexware_sync_interval_display)s"
-
-msgid "Nr."
-msgstr "No."
-
-msgid "Stundensatz"
-msgstr "Hourly rate"
 
 #, python-format
 msgid "/ Nr. %(customer_number)s"
@@ -4180,6 +4183,9 @@ msgstr "%(budget_share)s %% of %(budget_hours)s h"
 msgid "Noch keine Projekte."
 msgstr "No projects yet."
 
+msgid "Gebucht"
+msgstr "Booked"
+
 msgid "Keine Projekte gefunden."
 msgstr "No projects found."
 
@@ -4224,9 +4230,6 @@ msgstr "New task"
 
 msgid "Hinzufügen"
 msgstr "Add"
-
-msgid "Gebucht"
-msgstr "Booked"
 
 msgid "vom Kunden"
 msgstr "from the customer"
@@ -4347,9 +4350,6 @@ msgid ""
 "Aufgabe als Vorlage."
 msgstr ""
 "No templates yet. Create a new one or save an existing task as a template."
-
-msgid "Fällige Erinnerungen"
-msgstr "Due reminders"
 
 msgid "fällig"
 msgstr "due"
@@ -4681,6 +4681,9 @@ msgstr "No matching task."
 
 msgid "Bitte eine Aufgabe aus den Vorschlägen auswählen."
 msgstr "Please choose a task from the suggestions."
+
+msgid "Aufgabe ändern"
+msgstr "Change task"
 
 msgid "Aufgabe, Projekt oder Kunde suchen"
 msgstr "Search task, project or customer"

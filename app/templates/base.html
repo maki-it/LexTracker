@@ -3,7 +3,7 @@
 <html lang="{{ LANGUAGE_CODE }}" data-theme="{{ theme }}">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>{% block title %}{{ brand.name }}{% endblock %}</title>
   {% blocktrans trimmed with app=brand.name asvar description %}{{ app }}: Zeiterfassung und Projektsteuerung{% endblocktrans %}
   <meta name="description" content="{% block meta_description %}{{ description }}{% endblock %}">
@@ -25,8 +25,8 @@
   {% if user.is_authenticated and not bare_layout %}
   {% with section=request.resolver_match.app_name %}
   <div class="lg:flex">
-    {# On phones this is a slim top bar (logo, timer, menu button); the menu button opens nav and user row. #}
-    <aside class="sidebar group" id="sidebar">
+    {# On phones this is a slim top bar (logo, bell, running timer); the links are in the bottom bar further down. #}
+    <aside class="sidebar" id="sidebar">
       <div class="mr-auto flex items-center gap-1 lg:mr-0 lg:justify-between">
         <a href="{% url 'core:dashboard' %}" class="flex items-center gap-2.5 px-1.5 py-1 text-[15px] font-semibold text-ink no-underline">
           {% logo 28 %}
@@ -47,11 +47,6 @@
       <div hx-get="{% url 'tracking:timer' %}" hx-trigger="load" hx-swap="outerHTML"></div>
       {% endif %}
 
-      <button type="button" class="btn btn-ghost btn-icon lg:hidden" data-nav-toggle aria-controls="sidebar-nav" aria-expanded="false" aria-label="{% trans 'Menü' %}">
-        <span class="group-data-open:hidden">{% icon "menu" size=20 %}</span>
-        <span class="hidden group-data-open:inline">{% icon "x" size=20 %}</span>
-      </button>
-
       <nav id="sidebar-nav" aria-label="{% trans 'Hauptnavigation' %}" class="sidebar-nav">
         {% with active=request.resolver_match.view_name %}
         {% if user.is_customer %}
@@ -67,8 +62,7 @@
         <a href="{% url 'customers:list' %}" class="nav-link{% if section == 'customers' %} nav-link-active{% endif %}"{% if section == 'customers' %} aria-current="page"{% endif %}>{% icon "users" %}{% trans "Kunden" %}</a>
         <a href="{% url 'reminders:list' %}" class="nav-link{% if section == 'reminders' %} nav-link-active{% endif %}"{% if section == 'reminders' %} aria-current="page"{% endif %}>{% icon "bell" %}{% trans "Erinnerungen" %}{% include "reminders/_nav_count.html" with count=request.nav_counts.reminders %}</a>
         {# The overdue count is a link of its own (links cannot be nested), laid over the right end of the Abrechnung link. #}
-        {# Both counts do not fit into half the menu width on a narrow phone, so the link takes both columns then. #}
-        <div class="relative{% if request.nav_counts.overdue_invoices %} max-sm:col-span-2{% endif %}">
+        <div class="relative">
           <a href="{% url 'billing:overview' %}" class="nav-link{% if request.nav_counts.overdue_invoices %} nav-link-flagged{% endif %}{% if section == 'billing' %} nav-link-active{% endif %}"{% if section == 'billing' %} aria-current="page"{% endif %}>{% icon "receipt" %}{% trans "Abrechnung" %}{% if request.nav_counts.billable_customers %}<span class="nav-count nav-count-primary" title="{% trans 'Kunden mit offenen, abrechenbaren Zeiten' %}">{{ request.nav_counts.billable_customers }}</span>{% endif %}</a>
           {% if request.nav_counts.overdue_invoices %}<a href="{% url 'billing:invoices' %}?status=overdue" class="nav-count nav-count-danger nav-count-link" title="{% trans 'Überfällige Rechnungen' %}">{{ request.nav_counts.overdue_invoices }}</a>{% endif %}
         </div>
@@ -93,7 +87,7 @@
     {# Chrome loads a page in the background as soon as a finger touches (or the mouse presses) one of its links, so most of the request is done by the time the tap is over. Other browsers ignore this. #}
     <script type="speculationrules">{"prefetch": [{"where": {"selector_matches": "#sidebar-nav a"}, "eagerness": "conservative"}]}</script>
 
-    <main class="mx-auto flex w-full max-w-6xl min-w-0 flex-col gap-6 px-4 py-6 sm:px-8 lg:py-8">
+    <main class="mx-auto flex w-full max-w-6xl min-w-0 flex-col gap-6 px-4 py-6 max-lg:pb-[calc(6rem+env(safe-area-inset-bottom))] sm:px-8 lg:py-8">
       {% with critical=request.nav_inbox.critical %}
       {% if critical %}
       <div role="alert" class="alert alert-error flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
@@ -112,6 +106,60 @@
       {% block content %}{% endblock %}
     </main>
   </div>
+
+  {# Phones: bottom navigation. Tracking has its timer button in the gap in the middle (tracking/_timer.html). #}
+  {% with active=request.resolver_match.view_name %}
+  <nav aria-label="{% trans 'Hauptnavigation' %}" class="bottom-bar">
+    {% if user.is_customer %}
+    <a href="{% url 'portal:overview' %}" class="bottom-tab{% if active == 'portal:overview' %} bottom-tab-active{% endif %}"{% if active == 'portal:overview' %} aria-current="page"{% endif %}>{% icon "dashboard" size=20 %}{% trans "Übersicht" %}</a>
+    {% if user.portal_entries %}<a href="{% url 'portal:entries' %}" class="bottom-tab{% if active == 'portal:entries' %} bottom-tab-active{% endif %}"{% if active == 'portal:entries' %} aria-current="page"{% endif %}>{% icon "tasks" size=20 %}{% trans "Aufgaben" %}</a>{% endif %}
+    {% if user.portal_invoices %}<a href="{% url 'portal:invoices' %}" class="bottom-tab{% if active == 'portal:invoices' or active == 'portal:invoice_entries' %} bottom-tab-active{% endif %}"{% if active == 'portal:invoices' or active == 'portal:invoice_entries' %} aria-current="page"{% endif %}>{% icon "receipt" size=20 %}{% trans "Rechnungen" %}</a>{% endif %}
+    {% if user.portal_contact %}<a href="{% url 'portal:contact' %}" class="bottom-tab{% if active == 'portal:contact' %} bottom-tab-active{% endif %}"{% if active == 'portal:contact' %} aria-current="page"{% endif %}>{% icon "building" size=20 %}{% trans "Kontaktdaten" %}</a>{% endif %}
+    {% else %}
+    <a href="{% url 'core:dashboard' %}" class="bottom-tab{% if section == 'core' %} bottom-tab-active{% endif %}"{% if section == 'core' %} aria-current="page"{% endif %}>{% icon "dashboard" size=20 %}{% trans "Übersicht" %}</a>
+    <a href="{% url 'tracking:list' %}" class="bottom-tab{% if section == 'tracking' %} bottom-tab-active{% endif %}"{% if section == 'tracking' %} aria-current="page"{% endif %}>{% icon "tasks" size=20 %}{% trans "Aufgaben" %}</a>
+    {# The gap for the timer button. #}
+    <span class="flex-1" aria-hidden="true"></span>
+    {% if user.is_admin %}
+    <a href="{% url 'billing:overview' %}" class="bottom-tab{% if section == 'billing' %} bottom-tab-active{% endif %}"{% if section == 'billing' %} aria-current="page"{% endif %}>
+      <span class="relative">{% icon "receipt" size=20 %}{% if request.nav_counts.overdue_invoices %}<span class="bottom-tab-badge bottom-tab-badge-danger" title="{% trans 'Überfällige Rechnungen' %}">{{ request.nav_counts.overdue_invoices }}</span>{% elif request.nav_counts.billable_customers %}<span class="bottom-tab-badge" title="{% trans 'Kunden mit offenen, abrechenbaren Zeiten' %}">{{ request.nav_counts.billable_customers }}</span>{% endif %}</span>
+      {% trans "Abrechnung" %}
+    </a>
+    {% else %}
+    <span class="flex-1" aria-hidden="true"></span>
+    {% endif %}
+    {% endif %}
+    <button type="button" class="bottom-tab" data-open-dialog="more-menu" aria-haspopup="dialog">
+      <span class="relative">{% icon "menu" size=20 %}{% if request.nav_counts.reminders %}<span class="bottom-tab-badge" title="{% trans 'Fällige Erinnerungen' %}">{{ request.nav_counts.reminders }}</span>{% endif %}</span>
+      {% trans "Menü" %}
+    </button>
+  </nav>
+
+  {# The menu behind the last tab. Esc, the X and a tap beside it close it. #}
+  <dialog id="more-menu" class="sheet" aria-label="{% trans 'Menü' %}">
+    <div class="flex items-center justify-between pr-1 pl-3">
+      <span class="font-semibold">{% trans "Menü" %}</span>
+      <form method="dialog"><button type="submit" class="btn btn-ghost btn-icon" aria-label="{% trans 'Schließen' %}">{% icon "x" size=18 %}</button></form>
+    </div>
+    {% if user.is_admin %}
+    <a href="{% url 'projects:list' %}" class="sheet-link{% if section == 'projects' %} sheet-link-active{% endif %}">{% icon "folder" size=20 %}{% trans "Projekte" %}{% if request.nav_counts.projects %}<span class="nav-count" title="{% trans 'Aktive Projekte' %}">{{ request.nav_counts.projects }}</span>{% endif %}</a>
+    <a href="{% url 'customers:list' %}" class="sheet-link{% if section == 'customers' %} sheet-link-active{% endif %}">{% icon "users" size=20 %}{% trans "Kunden" %}</a>
+    <a href="{% url 'reminders:list' %}" class="sheet-link{% if section == 'reminders' %} sheet-link-active{% endif %}">{% icon "bell" size=20 %}{% trans "Erinnerungen" %}{% if request.nav_counts.reminders %}<span class="nav-count nav-count-primary" title="{% trans 'Fällige Erinnerungen' %}">{{ request.nav_counts.reminders }}</span>{% endif %}</a>
+    <a href="{% url 'reports:overview' %}" class="sheet-link{% if section == 'reports' %} sheet-link-active{% endif %}">{% icon "chart" size=20 %}{% trans "Auswertungen" %}</a>
+    <a href="{% url 'users:list' %}" class="sheet-link{% if section == 'users' %} sheet-link-active{% endif %}">{% icon "user-cog" size=20 %}{% trans "Benutzer" %}</a>
+    <a href="{% url 'core:settings' %}" class="sheet-link{% if active == 'core:settings' %} sheet-link-active{% endif %}">{% icon "settings" size=20 %}{% trans "Einstellungen" %}</a>
+    {% endif %}
+    <div class="mt-1 flex items-center gap-2.5 border-t border-line px-2 pt-2">
+      <span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-line text-xs font-semibold uppercase">{{ user.get_username|first }}</span>
+      <a {% dialog_link "account:settings" %} class="min-w-0 flex-1 truncate font-medium text-ink no-underline hover:underline" title="{% trans 'Konto' %}">{{ user.get_full_name|default:user.get_username }}</a>
+      {% if user.is_staff %}<a href="{% url 'admin:index' %}" class="btn btn-ghost btn-icon" title="{% trans 'Verwaltung' %}" aria-label="{% trans 'Verwaltung' %}">{% icon "shield" %}</a>{% endif %}
+      <form method="post" action="{% url 'accounts:logout' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-ghost btn-icon" title="{% trans 'Abmelden' %}" aria-label="{% trans 'Abmelden' %}">{% icon "logout" %}</button>
+      </form>
+    </div>
+  </dialog>
+  {% endwith %}
   {% endwith %}
   {# Edit forms open in here, see core/dialogs.py. Esc, the X and a click beside it close it. #}
   <dialog id="dialog" class="dialog" aria-label="{% trans 'Bearbeiten' %}">

@@ -36,6 +36,7 @@ ICONS = {
     "check": '<path d="M20 6 9 17l-5-5"/>',
     "chevron-left": '<path d="m15 18-6-6 6-6"/>',
     "chevron-right": '<path d="m9 18 6-6-6-6"/>',
+    "chevron-down": '<path d="m6 9 6 6 6-6"/>',
     "download": '<path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/>',
     "upload": '<path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M5 21h14"/>',
     "external": '<path d="M14 4h6v6"/><path d="M20 4 10 14"/>'
