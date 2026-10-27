@@ -733,7 +733,9 @@ document.addEventListener("click", async (event) => {
     });
     window.location.reload();
   } catch (failure) {
-    error.textContent = failure.message || section.dataset.errorText;
+    // Brave switches the push service of the browser off, and the browser then refuses with this message.
+    const refused = /push service/i.test(failure.message);
+    error.textContent = refused ? section.dataset.serviceText : failure.message || section.dataset.errorText;
     error.hidden = false;
     button.disabled = false;
   }

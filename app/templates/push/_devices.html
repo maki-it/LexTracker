@@ -3,7 +3,8 @@
          data-key-url="{% url 'push:key' %}" data-subscribe-url="{% url 'push:subscribe' %}" data-script-url="{% url 'push:sw' %}"
          data-name-phone="{% trans 'Mein Handy' %}" data-name-computer="{% trans 'Dieser Rechner' %}"
          data-denied-text="{% trans 'Benachrichtigungen sind für diese Seite im Browser blockiert. Erlaube sie in den Einstellungen des Browsers und versuche es noch einmal.' %}"
-         data-error-text="{% trans 'Push konnte auf diesem Gerät nicht eingerichtet werden.' %}">
+         data-error-text="{% trans 'Push konnte auf diesem Gerät nicht eingerichtet werden.' %}"
+         data-service-text="{% trans 'Der Push-Dienst des Browsers hat die Anmeldung abgelehnt. In Brave ist er standardmäßig aus: Schalte unter brave://settings/privacy „Use Google services for push messaging“ (Google-Dienste für Push-Nachrichten) ein, starte Brave neu und versuche es noch einmal.' %}">
   <div>
     <h2>{% trans "Push-Benachrichtigungen" %}</h2>
     <p class="mt-1 text-sm text-muted">{% trans "Meldungen direkt aufs Handy oder den Rechner, auch wenn die App nicht offen ist. Jedes Gerät wählt für sich, was es bekommt." %}</p>
