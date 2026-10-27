@@ -29,7 +29,7 @@
     <span class="stat-value text-base">{{ project.start_date|date:date_format|default:"–" }} – {{ project.end_date|date:date_format|default:_("offen") }}</span>
   </div>
 </div>
-{% if project.description %}<div class="max-w-3xl text-muted">{{ project.description|markdown }}</div>{% endif %}
+{% if project.description %}<div class="max-w-3xl text-muted">{% markdown_field project "description" %}</div>{% endif %}
 
 {% include "projects/_tasks.html" %}
 {% include "reminders/_section.html" %}

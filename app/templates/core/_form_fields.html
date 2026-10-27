@@ -18,6 +18,13 @@
   <label for="{{ field.id_for_label }}">{{ field.label }}</label>
   {{ field }}
 </div>
+{% elif field.field.widget.is_markdown %}
+{# Not a <label> around the field: the editor has buttons of its own. #}
+<div class="field">
+  <label for="{{ field.id_for_label }}">{{ field.label }}{% if not field.field.required %} <span class="font-normal text-muted">{% trans "(optional)" %}</span>{% endif %}</label>
+  {{ field }}
+  {% if field.help_text %}<span class="font-normal text-muted">{{ field.help_text }}</span>{% endif %}
+</div>
 {% else %}
 <label class="field">
   <span>{{ field.label }}{% if not field.field.required %} <span class="font-normal text-muted">{% trans "(optional)" %}</span>{% endif %}</span>

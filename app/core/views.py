@@ -1,6 +1,7 @@
 import asyncio
 from datetime import datetime, time, timedelta
 from pathlib import Path
+from uuid import UUID
 
 from asgiref.sync import sync_to_async
 from django.conf import settings
@@ -13,6 +14,7 @@ from django.template.defaultfilters import filesizeformat
 from django.templatetags.static import static
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.html import escape
 from django.utils.http import content_disposition_header
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy
@@ -21,12 +23,17 @@ from django.views.generic import RedirectView
 
 from accounts.models import User
 from core import backup, jobs, jobs_overview, version
+from core import markdown as md
 from core.branding import Brand
 from core.dialogs import navigate
 from core.forms import AppSettingsForm
+from core.markdown_targets import TARGETS
 from core.models import AppSettings
+from customers.lexware import ReadOnlyContact, needs_push, push_to_lexware
+from customers.models import Customer
 from inbox import events as inbox_events
 from lexware import credentials, webhooks
+from lexware.client import LexwareError, client_from_settings
 from lexware.forms import ApiKeyForm
 from mailer.models import MailSettings, OutgoingMail
 from tracking.forms import recent_tasks, task_choices
@@ -392,3 +399,54 @@ class FaviconView(RedirectView):
 
     def get_redirect_url(self, *args, **kwargs) -> str:
         return static("img/favicon.ico")
+
+
+@require_POST
+async def markdown_preview(request: HttpRequest) -> HttpResponse:
+    """The Markdown of a text field as it will look, for the "Vorschau" tab of the editor."""
+    html = md.render(request.POST.get("text", "").strip())
+    return HttpResponse(html or f'<p class="text-muted">{escape(_("Nichts zur Vorschau."))}</p>')
+
+
+@require_POST
+async def markdown_toggle(request: HttpRequest, target: str, pk: UUID) -> HttpResponse:
+    """Tick or untick one checklist item of a text and answer with the text as HTML (htmx swaps it in)."""
+    if not request.user.is_admin:
+        raise PermissionDenied
+    kind = TARGETS.get(target)
+    if kind is None:
+        raise Http404
+    try:
+        obj = await kind.model.objects.aget(pk=pk, **({kind.owner: request.user} if kind.owner else {}))
+    except kind.model.DoesNotExist as exc:
+        raise Http404 from exc
+
+    try:
+        index = int(request.POST["index"])
+    except KeyError, ValueError:
+        return HttpResponse(status=400)
+    text = md.set_task(getattr(obj, kind.field), index, request.POST.get("checked") == "1")
+    if text is None:
+        error = _("Der Text hat sich geändert. Lade die Seite neu.")
+    else:
+        error = await _save_text(obj, kind.field, text)
+    toggle_url = reverse("core:markdown_toggle", args=[target, pk])
+    return HttpResponse(md.render(getattr(obj, kind.field), toggle_url, error))
+
+
+async def _save_text(obj, field: str, text: str) -> str:
+    """Save the new text; the error to show if that failed. A customer's note goes to Lexware Office as well."""
+    old = getattr(obj, field)
+    setattr(obj, field, text)
+    if isinstance(obj, Customer) and needs_push(obj, [field]):
+        try:
+            async with client_from_settings() as client:
+                await push_to_lexware(client, obj)
+        except ReadOnlyContact:
+            pass  # Like when editing the customer: the note stays in LexTracker only.
+        except LexwareError as exc:
+            setattr(obj, field, old)
+            return _("Die Änderung konnte nicht in Lexware gespeichert werden: %(error)s") % {"error": exc}
+    # A pushed customer also has a new Lexware version to keep.
+    await obj.asave(update_fields=None if isinstance(obj, Customer) else [field, "updated_at"])
+    return ""

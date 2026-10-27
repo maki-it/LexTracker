@@ -23,7 +23,7 @@
       </span>
       {% endif %}
     </div>
-    {% if reminder.notes %}<div class="max-w-2xl text-[13px] text-muted">{{ reminder.notes|markdown }}</div>{% endif %}
+    {% if reminder.notes %}<div class="max-w-2xl text-[13px] text-muted">{% markdown_field reminder "notes" %}</div>{% endif %}
   </div>
   <div class="flex items-center gap-1.5">
     {% if reminder.is_done %}

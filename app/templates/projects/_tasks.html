@@ -9,7 +9,7 @@
         <tr{% if task.status == 'done' %} class="text-muted"{% endif %}>
           <td class="w-full">
             <div class="font-medium">{{ task.name }}</div>
-            {% if task.description %}<div class="mt-0.5 max-w-2xl text-[13px] text-muted">{{ task.description|markdown }}</div>{% endif %}
+            {% if task.description %}<div class="mt-0.5 max-w-2xl text-[13px] text-muted">{% markdown_field task "description" %}</div>{% endif %}
             <div class="text-xs text-muted">
               {% if not task.is_billable %}{% trans "nicht abrechenbar ·" %} {% endif %}
               {% if task.hourly_rate is not None %}{{ task.hourly_rate }} €/h · {% endif %}

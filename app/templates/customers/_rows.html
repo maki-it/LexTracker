@@ -7,7 +7,7 @@
     <a class="hover:underline{% if customer.is_archived %} text-muted{% endif %}" {% dialog_link "customers:edit" customer.pk %}>{{ customer.name }}</a>
     {% if customer.lexware_deleted %}<span class="badge badge-danger ml-2">{% icon "archive" size=12 %}{% trans "in Lexware gelöscht" %}</span>{% elif customer.is_archived %}<span class="badge badge-warning ml-2">{% icon "archive" size=12 %}{% trans "Archiviert" %}</span>{% endif %}
     {% for c in customer.categories.all %}<span class="badge ml-1.5">{{ c.name }}</span>{% endfor %}
-    {% if customer.notes %}<div class="mt-0.5 line-clamp-2 max-w-xl text-xs font-normal text-muted">{{ customer.notes|markdown }}</div>{% endif %}
+    {% if customer.notes %}<div class="mt-0.5 line-clamp-2 max-w-xl text-xs font-normal text-muted">{% markdown_field customer "notes" %}</div>{% endif %}
   </td>
   {# Phones only: a quick call button next to the name, greyed out without a number. #}
   <td class="cell-aside hidden self-center max-sm:flex">

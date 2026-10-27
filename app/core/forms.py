@@ -1,13 +1,35 @@
 from django import forms
+from django.template.loader import render_to_string
 from django.utils import timezone
+from django.utils.safestring import mark_safe
 from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
 
 from core import branding
 from core.models import AppSettings
 
-# Help text for text fields that are shown with the |markdown template filter.
-MARKDOWN_HELP = _("Markdown möglich: **fett**, *kursiv*, [Linktext](https://example.com), Listen mit „- “.")
+# Help text for text fields that are shown as Markdown (see MarkdownTextarea).
+MARKDOWN_HELP = _("Markdown möglich. Eine eingefügte URL macht markierten Text zum Link.")
+
+
+class MarkdownTextarea(forms.Textarea):
+    """A text field for Markdown with formatting buttons and a preview tab (app.js, "Markdown editor")."""
+
+    template_name = "core/_markdown_editor.html"
+    # _form_fields.html: the label belongs to the field, not around it, because the editor has buttons of its own.
+    is_markdown = True
+
+    def get_context(self, name, value, attrs):
+        context = super().get_context(name, value, attrs)
+        # The plain <textarea> comes from Django's own template; the editor around it is in templates/.
+        context["widget"]["textarea"] = forms.Textarea().render(
+            name, value, attrs={**context["widget"]["attrs"], "data-md-input": ""}
+        )
+        return context
+
+    def _render(self, template_name, context, renderer=None):
+        # The template lives in templates/, which Django's default form renderer does not search.
+        return mark_safe(render_to_string(template_name, context))
 
 
 class StyledFormMixin:

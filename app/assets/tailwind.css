@@ -601,7 +601,7 @@
     @apply border-danger/25 bg-danger-soft text-danger;
   }
 
-  /* Text rendered from Markdown by the |markdown template filter. */
+  /* Text rendered from Markdown (core/markdown.py). */
   .markdown {
     @apply space-y-2 break-words;
   }
@@ -614,6 +614,15 @@
     @apply font-semibold text-ink;
   }
 
+  /* All levels look the same: a bold line, so a description does not shout. */
+  .markdown :is(h1, h2, h3, h4, h5, h6) {
+    @apply text-sm font-semibold text-ink;
+  }
+
+  .markdown blockquote {
+    @apply border-l-3 border-line pl-3 text-muted;
+  }
+
   .markdown ul {
     @apply list-disc pl-5;
   }
@@ -624,6 +633,65 @@
 
   .markdown code {
     @apply rounded bg-surface-muted px-1 py-0.5 font-mono text-[0.9em];
+  }
+
+  .markdown pre {
+    @apply overflow-x-auto rounded-lg bg-surface-muted px-3 py-2;
+  }
+
+  .markdown pre code {
+    @apply bg-transparent p-0;
+  }
+
+  /* A checklist item: the checkbox takes the place of the bullet. */
+  .markdown li.task {
+    @apply relative list-none;
+  }
+
+  .task-checkbox {
+    @apply absolute top-[0.15em] -left-5 size-4 cursor-pointer accent-primary disabled:cursor-default;
+  }
+
+  /* Markdown editor (templates/core/_markdown_editor.html): tabs and buttons above the text field. */
+  .md-editor {
+    @apply overflow-hidden rounded-lg border border-line bg-surface focus-within:border-primary focus-within:outline-2 focus-within:outline-primary/30;
+  }
+
+  .md-bar {
+    @apply flex flex-wrap items-center justify-between gap-x-2 border-b border-line bg-surface-muted pr-1.5;
+  }
+
+  .md-tabs {
+    @apply flex;
+  }
+
+  .md-tab {
+    @apply -mb-px cursor-pointer border-0 border-b-2 border-transparent bg-transparent px-3.5 py-2 text-[13px] font-medium text-muted hover:text-ink max-sm:py-3;
+  }
+
+  .md-tab-active {
+    @apply border-primary bg-surface text-ink;
+  }
+
+  .md-tools {
+    @apply flex items-center gap-0.5 overflow-x-auto py-1;
+  }
+
+  .md-tool {
+    @apply inline-grid size-8 shrink-0 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted hover:bg-surface hover:text-ink max-sm:size-9;
+  }
+
+  .md-sep {
+    @apply mx-1 h-4 w-px shrink-0 bg-line;
+  }
+
+  /* The bordered frame is the editor's, so the field inside has none. */
+  .md-editor textarea.input {
+    @apply block rounded-none border-0 bg-transparent focus:outline-none;
+  }
+
+  .md-preview {
+    @apply px-3 py-2;
   }
 
   .empty {
