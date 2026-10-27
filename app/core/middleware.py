@@ -59,3 +59,21 @@ def LoginRequiredMiddleware(get_response: Callable[[HttpRequest], Awaitable[Http
         return await get_response(request)
 
     return middleware
+
+
+@async_only_middleware
+def PrefetchCacheMiddleware(get_response: Callable[[HttpRequest], Awaitable[HttpResponse]]):
+    """Let the browser reuse a page it fetched in the background for a few seconds.
+
+    Pages carry no cache headers, so a prefetch link (see app.js) would be thrown away and the click would load the page
+    again. Only background fetches get this, a normal visit always asks the server.
+    """
+
+    async def middleware(request: HttpRequest) -> HttpResponse:
+        response = await get_response(request)
+        purpose = request.headers.get("Sec-Purpose") or request.headers.get("Purpose", "")
+        if request.method == "GET" and response.status_code == 200 and purpose.startswith("prefetch"):
+            response["Cache-Control"] = "private, max-age=10"
+        return response
+
+    return middleware

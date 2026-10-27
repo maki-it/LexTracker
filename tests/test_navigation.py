@@ -25,3 +25,20 @@ def test_pages_prefetch_the_navigation_links_on_hover_or_touch(client, user):
 
 def test_login_page_has_nothing_to_prefetch(client, user):
     assert not RULES.findall(client.get(reverse("accounts:login")).text)
+
+
+def test_background_fetches_may_be_reused_for_a_few_seconds(client, user):
+    client.force_login(user)
+
+    prefetch = client.get(reverse("core:dashboard"), headers={"Sec-Purpose": "prefetch"})
+    visit = client.get(reverse("core:dashboard"))
+
+    assert prefetch["Cache-Control"] == "private, max-age=10"
+    assert "Cache-Control" not in visit
+
+
+def test_failed_background_fetches_are_not_kept(client):
+    response = client.get(reverse("core:dashboard"), headers={"Sec-Purpose": "prefetch"})
+
+    assert response.status_code == 302
+    assert "Cache-Control" not in response
