@@ -89,11 +89,11 @@
   /* Layout */
   /* Phones: sticky top bar that wraps the opened menu below it. Desktop: fixed-height side column. */
   .sidebar {
-    @apply sticky top-0 z-30 flex flex-wrap items-center gap-2 border-b border-line bg-sidebar px-3 py-2 lg:h-dvh lg:w-60 lg:shrink-0 lg:flex-col lg:flex-nowrap lg:items-stretch lg:gap-5 lg:overflow-y-auto lg:border-r lg:border-b-0 lg:p-3;
+    @apply sticky top-0 z-30 flex max-h-dvh flex-wrap items-center gap-2 overflow-y-auto border-b border-line bg-sidebar px-3 py-2 lg:h-dvh lg:w-60 lg:shrink-0 lg:flex-col lg:flex-nowrap lg:items-stretch lg:gap-5 lg:border-r lg:border-b-0 lg:p-3;
   }
 
   .sidebar-nav {
-    @apply hidden w-full grid-cols-2 gap-0.5 pt-1 group-data-open:grid lg:flex lg:flex-col lg:pt-0;
+    @apply hidden w-full grid-flow-dense grid-cols-2 gap-0.5 pt-1 group-data-open:grid lg:flex lg:flex-col lg:pt-0;
   }
 
   .sidebar-user {
@@ -248,7 +248,7 @@
   }
 
   .input {
-    @apply h-9 w-full rounded-lg border border-line bg-surface px-3 text-sm font-normal text-ink placeholder:text-muted focus:border-primary focus:outline-2 focus:outline-offset-0 focus:outline-primary/30;
+    @apply h-9 w-full rounded-lg border border-line bg-surface px-3 text-sm font-normal text-ellipsis text-ink placeholder:text-muted focus:border-primary focus:outline-2 focus:outline-offset-0 focus:outline-primary/30;
   }
 
   textarea.input {
