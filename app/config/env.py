@@ -29,6 +29,9 @@ class Env(BaseSettings):
     data_dir: Path = ROOT_DIR / "data"
     # Send session and CSRF cookies only over HTTPS. Turn off only for plain-HTTP setups.
     secure_cookies: bool = True
+    # Seconds browsers must keep using HTTPS for this host (Strict-Transport-Security). 0 sends no header. Only
+    # sensible once the app is reachable over HTTPS for good, since browsers refuse plain HTTP for that long.
+    hsts_seconds: int = Field(default=0, ge=0)
     time_zone: str = "Europe/Berlin"
     log_level: Literal["debug", "info", "warning", "error"] = "info"
     # Lexware Office Public API, used from step 2 on.
