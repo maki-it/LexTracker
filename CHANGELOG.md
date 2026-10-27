@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.13.0](https://github.com/maki-it/LexTracker/compare/lextracker-v0.12.0...lextracker-v0.13.0) (2026-10-27)
+
+
+### Features
+
+* **push:** add web push notifications with per-device topics ([#206](https://github.com/maki-it/LexTracker/issues/206)) ([62ca329](https://github.com/maki-it/LexTracker/commit/62ca3298e31f11909b5ad61f20b0a220e6df1438))
+* **reminders:** add repeating reminders ([#208](https://github.com/maki-it/LexTracker/issues/208)) ([10525f3](https://github.com/maki-it/LexTracker/commit/10525f3915dceb809cbc83e85af2da1000f817ab))
+
 ## [0.12.0](https://github.com/maki-it/LexTracker/compare/lextracker-v0.11.0...lextracker-v0.12.0) (2026-10-27)
 
 
