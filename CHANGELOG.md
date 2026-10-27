@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.12.0](https://github.com/maki-it/LexTracker/compare/lextracker-v0.11.0...lextracker-v0.12.0) (2026-10-27)
+
+
+### Features
+
+* **ui:** add a Markdown editor with buttons, clickable URLs and tickable checklists ([#204](https://github.com/maki-it/LexTracker/issues/204)) ([4bcdea0](https://github.com/maki-it/LexTracker/commit/4bcdea07d89dac04c0cdbbea419836cbc41393f6))
+
+
+### Bug Fixes
+
+* **tracking:** keep the week picker and "Zeit erfassen" on one row on narrow phones ([#200](https://github.com/maki-it/LexTracker/issues/200)) ([5aec253](https://github.com/maki-it/LexTracker/commit/5aec25334082fb365f83b9480d1f68f62553a57f))
+
+
+### Performance
+
+* **ui:** prefetch navigation pages on hover and from the phone bottom bar ([#202](https://github.com/maki-it/LexTracker/issues/202)) ([64f341f](https://github.com/maki-it/LexTracker/commit/64f341fa242b50e66b216d0c7dd35e01afec1cb4))
+* **ui:** prefetch navigation pages on hover in browsers without Speculation Rules ([#203](https://github.com/maki-it/LexTracker/issues/203)) ([8763333](https://github.com/maki-it/LexTracker/commit/87633336d2cb60ffb4c273777b3f19e9f6942a06))
+
+
+### Dependencies
+
+* **project:** update dependency linkify-it-py to &gt;=2.2.0 ([#205](https://github.com/maki-it/LexTracker/issues/205)) ([25813a9](https://github.com/maki-it/LexTracker/commit/25813a9d625e1f49d13a4e32cec12f3dd65dd195))
+
 ## [0.11.0](https://github.com/maki-it/LexTracker/compare/lextracker-v0.10.0...lextracker-v0.11.0) (2026-10-27)
 
 
