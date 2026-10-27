@@ -255,6 +255,16 @@ def test_week_picker_needs_a_login(client):
     assert response.status_code == 302
 
 
+def test_week_list_reloads_itself_when_the_timer_changes(logged_in):
+    response = logged_in.get(reverse("tracking:list"), {"week": "2026-W43"})
+
+    assert 'id="week-entries"' in response.text
+    assert 'hx-get="/tasks/?week=2026-W43"' in response.text
+    assert 'hx-trigger="timer-changed from:body"' in response.text
+    assert 'hx-select-oob="#week-summary"' in response.text
+    assert 'id="week-summary"' in response.text
+
+
 def test_week_list_loads_the_picker_only_when_it_is_opened(logged_in, user, task):
     _entry(user, task, "2026-10-19T09:00")
 

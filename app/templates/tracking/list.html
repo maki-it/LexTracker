@@ -7,7 +7,7 @@
 <div class="page-header">
   <div>
     <h1>{% trans "Aufgaben" %}</h1>
-    <p class="page-subtitle">{% blocktrans trimmed with monday=monday|date:"W" monday2=monday|date:short_format sunday=sunday|date:date_format week_total=week_total|hours:duration_format %}KW {{ monday }} · {{ monday2 }} – {{ sunday }} · <strong class="font-semibold text-ink tabular-nums">{{ week_total }} h</strong> erfasst{% endblocktrans %}</p>
+    <p id="week-summary" class="page-subtitle">{% blocktrans trimmed with monday=monday|date:"W" monday2=monday|date:short_format sunday=sunday|date:date_format week_total=week_total|hours:duration_format %}KW {{ monday }} · {{ monday2 }} – {{ sunday }} · <strong class="font-semibold text-ink tabular-nums">{{ week_total }} h</strong> erfasst{% endblocktrans %}</p>
   </div>
   <div class="toolbar max-sm:w-full max-sm:flex-nowrap">
     <div class="relative max-sm:shrink-0">
@@ -33,6 +33,8 @@
 </div>
 
 {% include "tracking/_filter.html" %}
+{# Reloads the days when a timer starts or stops, so the new entry shows up (the week total in the header comes along out of band). #}
+<div id="week-entries" class="contents" hx-get="{{ request.get_full_path }}" hx-select="#week-entries" hx-select-oob="#week-summary" hx-swap="outerHTML" hx-trigger="timer-changed from:body">
 <div class="grid grid-cols-7 gap-1.5 sm:gap-2">
   {% for day in days %}
   <div class="flex flex-col gap-1.5 rounded-lg border p-2 sm:p-2.5 {% if day.is_today %}border-primary/40 bg-primary-soft{% else %}border-line bg-surface{% endif %}">
@@ -57,4 +59,5 @@
 {% endif %}
 {% endfor %}
 {% if not week_total %}<p class="empty">{% if filter_label %}{% trans "In dieser Woche ist dafür nichts erfasst." %}{% else %}{% trans "In dieser Woche ist noch nichts erfasst." %}{% endif %}</p>{% endif %}
+</div>
 {% endblock %}
