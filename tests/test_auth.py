@@ -1,5 +1,8 @@
 import pytest
 from django.urls import reverse
+from pydantic import ValidationError
+
+from config.env import Env
 
 pytestmark = pytest.mark.django_db
 
@@ -46,3 +49,13 @@ def test_logout(client, user):
     response = client.post(reverse("accounts:logout"))
     assert response.url == reverse("accounts:login")
     assert client.get(reverse("core:dashboard")).status_code == 302
+
+
+def test_hsts_is_off_by_default_and_read_from_the_environment(monkeypatch):
+    monkeypatch.delenv("APP_HSTS_SECONDS", raising=False)
+    assert Env(_env_file=None).hsts_seconds == 0
+    monkeypatch.setenv("APP_HSTS_SECONDS", "31536000")
+    assert Env(_env_file=None).hsts_seconds == 31536000
+    monkeypatch.setenv("APP_HSTS_SECONDS", "-1")
+    with pytest.raises(ValidationError):
+        Env(_env_file=None)
