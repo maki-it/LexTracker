@@ -1,11 +1,11 @@
-from datetime import timedelta
+from datetime import date, datetime, timedelta
 
 import pytest
 from django.urls import reverse
 from django.utils import timezone
 
 from accounts.models import User
-from projects.models import Task
+from projects.models import Project, Task
 from tracking.models import TimeEntry
 from tracking.services import start_timer, stop_timer
 
@@ -173,3 +173,98 @@ def test_recent_tasks_leave_out_what_the_user_cannot_book(client, user, task):
     client.force_login(user)
 
     assert "Zuletzt genutzt" not in client.get(reverse("core:dashboard")).text
+
+
+def _entry(user, task, started: str, minutes: int = 30) -> TimeEntry:
+    start = datetime.fromisoformat(started).replace(tzinfo=timezone.get_current_timezone())
+    return TimeEntry.objects.create(user=user, task=task, started_at=start, ended_at=start + timedelta(minutes=minutes))
+
+
+def _dots(response) -> dict[date, int]:
+    return {day["date"]: len(day["dots"]) for week in response.context["weeks"] for day in week["days"]}
+
+
+def test_week_picker_shows_six_weeks_and_marks_the_selected_one(logged_in):
+    response = logged_in.get(reverse("tracking:week_picker"), {"month": "2026-11", "week": "2026-W44"})
+
+    weeks = response.context["weeks"]
+    assert [w["param"] for w in weeks] == [f"2026-W{n}" for n in range(44, 50)]
+    assert [w["number"] for w in weeks if w["is_selected"]] == [44]
+    assert weeks[0]["days"][0]["date"] == date(2026, 10, 26)
+    assert weeks[0]["days"][0]["in_month"] is False
+    assert weeks[0]["days"][6]["in_month"] is True
+    assert (response.context["prev_month"], response.context["next_month"]) == ("2026-10", "2026-12")
+    # December 2026 needs five rows; the picker still shows six, so it keeps its height.
+    december = logged_in.get(reverse("tracking:week_picker"), {"month": "2026-12"})
+    assert len(december.context["weeks"]) == 6
+
+
+def test_week_picker_defaults_to_the_month_of_the_selected_week(logged_in):
+    # Thursday of 2026-W01 is 1 January, although the week starts on 29 December.
+    response = logged_in.get(reverse("tracking:week_picker"), {"week": "2026-W01"})
+    assert response.context["month"] == date(2026, 1, 1)
+    # Nonsense falls back to the current month instead of failing.
+    response = logged_in.get(reverse("tracking:week_picker"), {"month": "foo", "week": "bar"})
+    assert response.context["month"] == timezone.localdate().replace(day=1)
+
+
+def test_week_picker_dots_count_the_entries_of_a_day(logged_in, user, task):
+    _entry(user, task, "2026-10-05T09:00")
+    for hour in (8, 10):
+        _entry(user, task, f"2026-10-06T{hour:02d}:00")
+    for hour in (8, 9, 10, 11):
+        _entry(user, task, f"2026-10-10T{hour:02d}:00")  # Saturday counts as well
+
+    response = logged_in.get(reverse("tracking:week_picker"), {"month": "2026-10", "week": "2026-W41"})
+
+    dots = _dots(response)
+    assert dots[date(2026, 10, 5)] == 1
+    assert dots[date(2026, 10, 6)] == 2
+    assert dots[date(2026, 10, 10)] == 3
+    assert dots[date(2026, 10, 7)] == 0
+
+
+def test_week_picker_counts_entries_on_their_local_day(logged_in, user, task):
+    # 23:30 in Berlin is 21:30 UTC in summer, but the entry belongs to the local day.
+    _entry(user, task, "2026-10-07T23:30")
+
+    dots = _dots(logged_in.get(reverse("tracking:week_picker"), {"month": "2026-10"}))
+
+    assert dots[date(2026, 10, 7)] == 1
+    assert dots[date(2026, 10, 8)] == 0
+
+
+def test_week_picker_ignores_other_users_and_follows_the_filter(logged_in, user, task):
+    other = Task.objects.create(project=Project.objects.create(customer=task.project.customer, name="App"), name="Test")
+    _entry(user, task, "2026-10-05T09:00")
+    _entry(user, other, "2026-10-06T09:00")
+    _entry(User.objects.create_user(username="anna", password="geheim-123"), task, "2026-10-07T09:00")
+
+    everything = _dots(logged_in.get(reverse("tracking:week_picker"), {"month": "2026-10"}))
+    filtered = _dots(logged_in.get(reverse("tracking:week_picker"), {"month": "2026-10", "project": task.project.pk}))
+
+    assert (everything[date(2026, 10, 5)], everything[date(2026, 10, 6)], everything[date(2026, 10, 7)]) == (1, 1, 0)
+    assert (filtered[date(2026, 10, 5)], filtered[date(2026, 10, 6)]) == (1, 0)
+    # The week links keep the filter, like the arrows of the list.
+    response = logged_in.get(reverse("tracking:week_picker"), {"month": "2026-10", "project": task.project.pk})
+    assert f"?week=2026-W41&amp;project={task.project.pk}" in response.text
+
+
+def test_week_picker_needs_a_login(client):
+    response = client.get(reverse("tracking:week_picker"))
+    assert response.status_code == 302
+
+
+def test_week_list_loads_the_picker_only_when_it_is_opened(logged_in, user, task):
+    _entry(user, task, "2026-10-19T09:00")
+
+    response = logged_in.get(reverse("tracking:list"), {"week": "2026-W43"})
+
+    assert 'hx-get="/tasks/picker/?week=2026-W43"' in response.text
+    assert "KW 43" in response.text
+    assert "week-picker-day" not in response.text
+
+
+def test_week_picker_ignores_months_far_away(logged_in):
+    response = logged_in.get(reverse("tracking:week_picker"), {"month": "9999-12", "week": "2026-W43"})
+    assert response.context["month"] == date(2026, 10, 1)

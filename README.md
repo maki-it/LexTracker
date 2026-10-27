@@ -78,7 +78,7 @@ Das kann LexTracker:
 
 - **Fundament**: Projektgerüst, Login, Datenmodell für Kunden, Projekte, Aufgaben und Zeiteinträge, Docker, Tests, CI.
 - **Lexware-Anbindung**: Kunden aus Lexware Office importieren und abgleichen.
-- **Projekte und Zeiterfassung**: Projekte und Aufgaben anlegen, Zeiten per Timer oder manuell buchen, Wochenübersicht.
+- **Projekte und Zeiterfassung**: Projekte und Aufgaben anlegen, Zeiten per Timer oder manuell buchen, Wochenübersicht mit Kalender, um schnell zu einer Kalenderwoche zu springen.
 - **Abrechnung**: Abrechnung nach Stundensatz oder als Retainer (z. B. 20 Stunden pro Quartal zum Festpreis, Rest nach Stundensatz), Vorschau und Rechnungsentwürfe in Lexware.
 - **Auswertungen**: Stunden, Umsatz, Budgets und Retainer, CSV-Export.
 - **MCP-Server**: KI-Agenten erfassen Zeiten über das Model Context Protocol.

@@ -1,3 +1,4 @@
+from collections import Counter
 from datetime import date, datetime, time, timedelta
 from urllib.parse import urlencode
 from uuid import UUID
@@ -107,6 +108,22 @@ def _week_param(monday: date) -> str:
     return f"{year}-W{week:02d}"
 
 
+def _parse_month(value: str | None, fallback: date) -> date:
+    """First day of the month given as "2026-10", or of ``fallback``."""
+    try:
+        year, month = value.split("-")
+        if not 1900 <= int(year) <= 2100:
+            raise ValueError(year)
+        return date(int(year), int(month), 1)
+    except AttributeError, ValueError:
+        return fallback.replace(day=1)
+
+
+def _dots(entries: int) -> int:
+    """Dots under a day in the week picker: one entry, two or three, four or more."""
+    return 0 if entries == 0 else 1 if entries == 1 else 2 if entries < 4 else 3
+
+
 @require_GET
 async def entry_list(request: HttpRequest) -> HttpResponse:
     monday = _parse_week(request.GET.get("week"))
@@ -145,9 +162,70 @@ async def entry_list(request: HttpRequest) -> HttpResponse:
             "prev_week": _week_param(monday - timedelta(days=7)),
             "next_week": _week_param(monday + timedelta(days=7)),
             "this_week": _week_param(monday),
+            "is_this_week": monday == today - timedelta(days=today.weekday()),
             "filter_label": active_filter["label"],
             # Filter links keep the week; the week links keep the filter.
             "filter_base": f"week={_week_param(monday)}&",
+            "filter_query": _filter_query(request),
+        },
+    )
+
+
+@require_GET
+async def week_picker(request: HttpRequest) -> HttpResponse:
+    """The month calendar of the week picker (tracking/_week_picker.html), loaded when it is first opened.
+
+    ``?week=`` is the week shown in the list and ``?month=`` the month to show. A day carries dots for the
+    entries of the active customer or project filter, so the calendar matches the list.
+    """
+    selected = _parse_week(request.GET.get("week"))
+    month = _parse_month(request.GET.get("month"), selected + timedelta(days=3))
+    next_month = (month + timedelta(days=31)).replace(day=1)
+    # Always six whole weeks from the Monday of the first day, so the picker keeps its height from month to month.
+    first_monday = month - timedelta(days=month.weekday())
+    end = first_monday + timedelta(weeks=6)
+
+    tz = timezone.get_current_timezone()
+    active_filter = await entry_filter(request)
+    started = TimeEntry.objects.filter(
+        user=request.user,
+        started_at__gte=datetime.combine(first_monday, time.min, tzinfo=tz),
+        started_at__lt=datetime.combine(end, time.min, tzinfo=tz),
+        **active_filter["filters"],
+    ).values_list("started_at", flat=True)
+    per_day = Counter([timezone.localtime(s).date() async for s in started])
+
+    today = timezone.localdate()
+    weeks = []
+    for monday in (first_monday + timedelta(days=n) for n in range(0, (end - first_monday).days, 7)):
+        days = [monday + timedelta(days=n) for n in range(7)]
+        weeks.append(
+            {
+                "param": _week_param(monday),
+                "number": monday.isocalendar().week,
+                "monday": monday,
+                "sunday": monday + timedelta(days=6),
+                "is_selected": monday == selected,
+                "days": [
+                    {
+                        "date": d,
+                        "in_month": d.month == month.month,
+                        "is_today": d == today,
+                        "dots": range(_dots(per_day[d])),
+                    }
+                    for d in days
+                ],
+            }
+        )
+    return render(
+        request,
+        "tracking/_week_picker.html",
+        {
+            "month": month,
+            "prev_month": (month - timedelta(days=1)).strftime("%Y-%m"),
+            "next_month": next_month.strftime("%Y-%m"),
+            "selected": _week_param(selected),
+            "weeks": weeks,
             "filter_query": _filter_query(request),
         },
     )

@@ -4819,6 +4819,22 @@ msgstr "Stop"
 msgid "Kein Timer aktiv"
 msgstr "No timer active"
 
+msgid "Vorheriger Monat"
+msgstr "Previous month"
+
+msgid "Nächster Monat"
+msgstr "Next month"
+
+msgid "Diese Woche"
+msgstr "This week"
+
+msgid "KW"
+msgstr "Wk"
+
+#, python-format
+msgid "KW %(week)s: %(first)s – %(last)s"
+msgstr "Week %(week)s: %(first)s – %(last)s"
+
 msgid "Zeiteintrag bearbeiten"
 msgstr "Edit time entry"
 
@@ -4906,8 +4922,13 @@ msgstr ""
 msgid "Vorherige Woche"
 msgstr "Previous week"
 
-msgid "Diese Woche"
-msgstr "This week"
+msgid "Kalenderwoche wählen"
+msgstr "Choose calendar week"
+
+#, python-format
+msgctxt "short calendar week"
+msgid "KW %(week)s"
+msgstr "Wk %(week)s"
 
 msgid "Nächste Woche"
 msgstr "Next week"

@@ -10,10 +10,23 @@
     <p class="page-subtitle">{% blocktrans trimmed with monday=monday|date:"W" monday2=monday|date:short_format sunday=sunday|date:date_format week_total=week_total|hours:duration_format %}KW {{ monday }} · {{ monday2 }} – {{ sunday }} · <strong class="font-semibold text-ink tabular-nums">{{ week_total }} h</strong> erfasst{% endblocktrans %}</p>
   </div>
   <div class="toolbar">
-    <div class="btn-group">
-      <a href="?week={{ prev_week }}{{ filter_query }}" class="btn btn-icon" aria-label="{% trans 'Vorherige Woche' %}">{% icon "chevron-left" %}</a>
-      <a href="{% url 'tracking:list' %}{% if filter_query %}?{{ filter_query|slice:'1:' }}{% endif %}" class="btn">{% trans "Diese Woche" %}</a>
-      <a href="?week={{ next_week }}{{ filter_query }}" class="btn btn-icon" aria-label="{% trans 'Nächste Woche' %}">{% icon "chevron-right" %}</a>
+    <div class="relative">
+      <div class="btn-group">
+        <a href="?week={{ prev_week }}{{ filter_query }}" class="btn btn-icon" aria-label="{% trans 'Vorherige Woche' %}">{% icon "chevron-left" %}</a>
+        <button type="button" id="week-picker-toggle" class="btn w-24 gap-1.5 px-2" data-popover-toggle="week-picker" aria-expanded="false" aria-controls="week-picker" aria-label="{% trans 'Kalenderwoche wählen' %}">
+          {% if is_this_week %}<span class="size-1.5 rounded-full bg-primary" title="{% trans 'Diese Woche' %}"></span>{% endif %}
+          {% blocktrans trimmed with week=monday|date:"W" context "short calendar week" %}KW {{ week }}{% endblocktrans %}
+          {% icon "chevron-down" size=14 css_class="text-muted" %}
+        </button>
+        <a href="?week={{ next_week }}{{ filter_query }}" class="btn btn-icon" aria-label="{% trans 'Nächste Woche' %}">{% icon "chevron-right" %}</a>
+      </div>
+      {# The calendar is loaded when the picker is opened for the first time (tracking.views.week_picker). #}
+      <div id="week-picker" class="week-picker" hidden>
+        <div class="week-picker-sheet" role="dialog" aria-label="{% trans 'Kalenderwoche wählen' %}">
+          <div class="mx-auto mt-2 h-1 w-9 rounded-full bg-line sm:hidden"></div>
+          <div id="week-picker-body" class="min-h-75 max-sm:min-h-95" hx-get="{% url 'tracking:week_picker' %}?week={{ this_week }}{{ filter_query }}" hx-trigger="click from:#week-picker-toggle once"></div>
+        </div>
+      </div>
     </div>
     <a {% dialog_link "tracking:create" %} class="btn btn-primary">{% icon "plus" %}{% trans "Zeit erfassen" %}</a>
   </div>
