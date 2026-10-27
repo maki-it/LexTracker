@@ -1,5 +1,5 @@
 {% load i18n %}
-{% load icons dialogs markdown %}
+{% load icons dialogs markdown contact %}
 {% for customer in page.items %}
 <tr{% if customer.is_archived %} class="bg-surface-muted text-muted"{% endif %}>
   <td class="cell-sub text-muted tabular-nums{% if not customer.customer_number %} cell-hide{% endif %}" data-label="{% trans 'Nr.' %}"><span>{{ customer.customer_number|default:"–" }}</span></td>
@@ -8,6 +8,14 @@
     {% if customer.lexware_deleted %}<span class="badge badge-danger ml-2">{% icon "archive" size=12 %}{% trans "in Lexware gelöscht" %}</span>{% elif customer.is_archived %}<span class="badge badge-warning ml-2">{% icon "archive" size=12 %}{% trans "Archiviert" %}</span>{% endif %}
     {% for c in customer.categories.all %}<span class="badge ml-1.5">{{ c.name }}</span>{% endfor %}
     {% if customer.notes %}<div class="mt-0.5 line-clamp-2 max-w-xl text-xs font-normal text-muted">{{ customer.notes|markdown }}</div>{% endif %}
+  </td>
+  {# Phones only: a quick call button next to the name, greyed out without a number. #}
+  <td class="cell-aside hidden self-center max-sm:flex">
+    {% if customer.phone %}
+    <a class="btn btn-icon" href="tel:{{ customer.phone|tel }}" aria-label="{% blocktrans trimmed with name=customer.name %}{{ name }} anrufen{% endblocktrans %}">{% icon "phone" size=18 %}</a>
+    {% else %}
+    <button type="button" class="btn btn-icon" disabled aria-label="{% trans 'Anrufen (keine Telefonnummer hinterlegt)' %}">{% icon "phone" size=18 %}</button>
+    {% endif %}
   </td>
   <td class="min-w-0{% if not customer.email %} cell-hide{% endif %}" data-label="{% trans 'E-Mail' %}">{% if customer.email %}<a class="truncate hover:underline" href="mailto:{{ customer.email }}">{{ customer.email }}</a>{% else %}<span class="text-muted">–</span>{% endif %}</td>
   <td class="whitespace-nowrap{% if not customer.phone %} cell-hide{% endif %}" data-label="{% trans 'Telefon' %}"><span>{{ customer.phone|default:"–" }}</span></td>

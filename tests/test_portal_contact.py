@@ -138,6 +138,9 @@ def test_saving_writes_the_contact_back_to_lexware(client, customer_user, custom
     assert customer.name == "ACME Holding GmbH"
     assert customer.email == "buchhaltung@acme.de"
     assert customer.lexware_version == 4
+    # The address kept here follows the one sent to Lexware.
+    assert (customer.address_street, customer.address_zip, customer.address_city) == ("Neue Str. 9", "10115", "Berlin")
+    assert (customer.address_supplement, customer.address_country) == ("", "DE")
 
 
 def test_a_change_in_the_meantime_is_not_overwritten(client, customer_user, customer, lexware):

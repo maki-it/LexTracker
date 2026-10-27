@@ -219,3 +219,95 @@ async def test_one_contact_without_customer_role_is_not_imported():
 
     assert (result.created, result.removed) == (0, 0)
     assert not await Customer.objects.aexists()
+
+
+# Address and contact buttons
+
+
+async def test_the_billing_address_is_imported():
+    await run_sync(
+        contact(
+            "ACME GmbH",
+            addresses={
+                "billing": [{"supplement": "Etage 2", "street": "Hauptstr. 1", "zip": "10115", "city": "Berlin"}],
+                "shipping": [{"street": "Lager 5", "zip": "20095", "city": "Hamburg"}],
+            },
+        )
+    )
+
+    customer = await Customer.objects.aget()
+    assert customer.address_lines == ["Etage 2", "Hauptstr. 1", "10115 Berlin"]
+    assert customer.address_query == "Hauptstr. 1, 10115 Berlin"
+
+
+async def test_without_a_billing_address_the_shipping_address_is_used():
+    await run_sync(
+        contact("ACME GmbH", addresses={"shipping": [{"street": "Lager 5", "city": "Hamburg", "countryCode": "AT"}]})
+    )
+
+    customer = await Customer.objects.aget()
+    assert customer.address_lines == ["Lager 5", "Hamburg", "AT"]
+    assert customer.address_query == "Lager 5, Hamburg, AT"
+
+
+async def test_contact_without_address_has_none():
+    await run_sync(contact("ACME GmbH", addresses={"billing": [{"street": None, "city": None}]}))
+
+    customer = await Customer.objects.aget()
+    assert not customer.has_address
+    assert customer.address_lines == []
+
+
+async def test_a_changed_address_is_updated_with_the_new_version():
+    lexware_id = uuid.uuid4()
+    await Customer.objects.acreate(name="ACME", lexware_id=lexware_id, lexware_version=1, address_street="Alt 1")
+
+    await run_sync(contact("ACME", id=lexware_id, version=2, addresses={"billing": [{"street": "Neu 2"}]}))
+
+    assert (await Customer.objects.aget()).address_street == "Neu 2"
+
+
+@pytest.mark.django_db
+def test_customer_list_has_a_call_button_that_is_off_without_a_number(client, user):
+    Customer.objects.create(name="Mit Nummer", phone="+49 (0) 170 / 123 45-67")
+    Customer.objects.create(name="Ohne Nummer")
+    client.force_login(user)
+
+    page_text = client.get(reverse("customers:list")).text
+
+    assert 'href="tel:+491701234567"' in page_text
+    assert 'aria-label="Mit Nummer anrufen"' in page_text
+    assert page_text.count("Anrufen (keine Telefonnummer hinterlegt)") == 1
+
+
+@pytest.mark.django_db
+def test_customer_page_offers_call_mail_and_route(client, user):
+    customer = Customer.objects.create(
+        name="ACME",
+        phone="030 1234",
+        email="info@acme.de",
+        address_street="Hauptstr. 1",
+        address_zip="10115",
+        address_city="Berlin",
+    )
+    client.force_login(user)
+
+    page_text = client.get(reverse("customers:edit", args=[customer.pk])).text
+
+    assert 'href="tel:0301234"' in page_text
+    assert 'href="mailto:info@acme.de"' in page_text
+    assert "https://www.google.com/maps/dir/?api=1&amp;destination=Hauptstr.%201%2C%2010115%20Berlin" in page_text
+    assert "Adresse (aus Lexware Office)" in page_text
+    assert "disabled" not in page_text.split("Anrufen")[0].split("contact-action")[-1]
+
+
+@pytest.mark.django_db
+def test_customer_page_greys_out_what_is_missing(client, user):
+    customer = Customer.objects.create(name="ACME")
+    client.force_login(user)
+
+    page_text = client.get(reverse("customers:edit", args=[customer.pk])).text
+
+    for hint in ("Keine Telefonnummer hinterlegt", "Keine E-Mail-Adresse hinterlegt", "Keine Adresse hinterlegt"):
+        assert f'disabled title="{hint}"' in page_text
+    assert "Adresse (aus Lexware Office)" not in page_text

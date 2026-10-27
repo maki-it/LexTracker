@@ -19,6 +19,11 @@ SYNCED_FIELDS = [
     "customer_number",
     "email",
     "phone",
+    "address_supplement",
+    "address_street",
+    "address_zip",
+    "address_city",
+    "address_country",
     "is_archived",
     "lexware_deleted",
     "lexware_version",
@@ -55,11 +60,17 @@ class SyncResult:
 
 
 def _values(contact: Contact, now) -> dict:
+    address = contact.address
     return {
         "name": contact.name or "(ohne Namen)",
         "customer_number": contact.customer_number,
         "email": contact.email,
         "phone": contact.phone,
+        "address_supplement": address.supplement,
+        "address_street": address.street,
+        "address_zip": address.zip,
+        "address_city": address.city,
+        "address_country": address.country_code,
         "is_archived": contact.archived,
         "lexware_deleted": False,
         "lexware_version": contact.version,

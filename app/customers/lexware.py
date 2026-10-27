@@ -131,6 +131,23 @@ def needs_push(customer: Customer, changed: list[str]) -> bool:
 ADDRESS_FIELDS = ("supplement", "street", "zip", "city", "countryCode")
 
 
+# The fields of the customer that hold those parts.
+ADDRESS_ATTRS = {
+    "supplement": "address_supplement",
+    "street": "address_street",
+    "zip": "address_zip",
+    "city": "address_city",
+    "countryCode": "address_country",
+}
+
+
+def set_address(customer: Customer, address: dict) -> list[str]:
+    """Copy ``address`` (keys of ``ADDRESS_FIELDS``) to the customer; returns the names of the fields set."""
+    for key, attr in ADDRESS_ATTRS.items():
+        setattr(customer, attr, address.get(key) or "")
+    return list(ADDRESS_ATTRS.values())
+
+
 def billing_address(contact: dict) -> dict:
     """The contact's first billing address with every field of ``ADDRESS_FIELDS``, empty if it has none."""
     addresses = (contact.get("addresses") or {}).get("billing") or [{}]

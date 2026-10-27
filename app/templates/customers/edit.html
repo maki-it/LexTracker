@@ -1,10 +1,37 @@
 {% extends layout %}
 {% load i18n %}
+{% load icons contact %}
 {% block title %}{{ customer.name }} · {{ brand.name }}{% endblock %}
 {% block content %}
 <div>
   <p class="breadcrumb"><a href="{% url 'customers:list' %}">{% trans "Kunden" %}</a>{% if customer.customer_number %} {% blocktrans trimmed with customer_number=customer.customer_number %}/ Nr. {{ customer_number }}{% endblocktrans %}{% endif %}</p>
   <h1>{{ customer.name }}</h1>
+</div>
+{# The ways to reach the customer: a button is greyed out when the data for it is missing. #}
+<div class="flex max-w-2xl flex-col gap-3">
+  <div class="grid grid-cols-3 gap-2">
+    {% if customer.phone %}
+    <a class="contact-action" href="tel:{{ customer.phone|tel }}">{% icon "phone" size=20 %}{% trans "Anrufen" %}</a>
+    {% else %}
+    <button type="button" class="contact-action" disabled title="{% trans 'Keine Telefonnummer hinterlegt' %}">{% icon "phone" size=20 %}{% trans "Anrufen" %}</button>
+    {% endif %}
+    {% if customer.email %}
+    <a class="contact-action" href="mailto:{{ customer.email }}">{% icon "mail" size=20 %}{% trans "E-Mail" %}</a>
+    {% else %}
+    <button type="button" class="contact-action" disabled title="{% trans 'Keine E-Mail-Adresse hinterlegt' %}">{% icon "mail" size=20 %}{% trans "E-Mail" %}</button>
+    {% endif %}
+    {% if customer.has_address %}
+    <a class="contact-action" href="{{ customer.address_query|route_url }}" target="_blank" rel="noopener">{% icon "map-pin" size=20 %}{% trans "Route" %}</a>
+    {% else %}
+    <button type="button" class="contact-action" disabled title="{% trans 'Keine Adresse hinterlegt' %}">{% icon "map-pin" size=20 %}{% trans "Route" %}</button>
+    {% endif %}
+  </div>
+  {% if customer.has_address %}
+  <div class="rounded-xl border border-line bg-surface px-4 py-3">
+    <div class="text-xs text-muted">{% trans "Adresse (aus Lexware Office)" %}</div>
+    <div class="mt-0.5">{% for line in customer.address_lines %}{{ line }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</div>
+  </div>
+  {% endif %}
 </div>
 <form method="post" action="{{ request.get_full_path }}" class="card flex max-w-2xl flex-col gap-4">
   {% csrf_token %}

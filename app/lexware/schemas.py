@@ -6,7 +6,7 @@ See https://developers.lexware.io/docs/#contacts-endpoint
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class _Model(BaseModel):
@@ -54,6 +54,24 @@ class PhoneNumbers(_Model):
     other: list[str] = Field(default_factory=list)
 
 
+class Address(_Model):
+    supplement: str = ""
+    street: str = ""
+    zip: str = ""
+    city: str = ""
+    country_code: str = Field("", alias="countryCode")
+
+    @field_validator("*", mode="before")
+    @classmethod
+    def _none_is_empty(cls, value):
+        return "" if value is None else value
+
+
+class Addresses(_Model):
+    billing: list[Address] = Field(default_factory=list)
+    shipping: list[Address] = Field(default_factory=list)
+
+
 class Contact(_Model):
     id: UUID
     version: int
@@ -63,6 +81,7 @@ class Contact(_Model):
     person: Person | None = None
     email_addresses: EmailAddresses = Field(default_factory=EmailAddresses, alias="emailAddresses")
     phone_numbers: PhoneNumbers = Field(default_factory=PhoneNumbers, alias="phoneNumbers")
+    addresses: Addresses = Field(default_factory=Addresses)
     note: str = ""
 
     @property
@@ -89,6 +108,12 @@ class Contact(_Model):
             return address
         person = self._primary_contact_person()
         return person.email_address if person else ""
+
+    @property
+    def address(self) -> Address:
+        """The billing address, else the shipping address; empty if the contact has neither."""
+        a = self.addresses
+        return next(iter((*a.billing, *a.shipping)), Address())
 
     @property
     def phone(self) -> str:

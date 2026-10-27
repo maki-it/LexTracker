@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: LexTracker\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-27 09:06+0100\n"
+"POT-Creation-Date: 2026-10-27 09:13+0100\n"
 "PO-Revision-Date: 2026-10-25 12:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: English\n"
@@ -1221,6 +1221,21 @@ msgstr "Customer number"
 msgid "Telefon"
 msgstr "Phone"
 
+msgid "Adresszusatz"
+msgstr "Address line 2"
+
+msgid "Straße"
+msgstr "Street"
+
+msgid "PLZ"
+msgstr "Postcode"
+
+msgid "Ort"
+msgstr "City"
+
+msgid "Land"
+msgstr "Country"
+
 msgid "Notizen"
 msgstr "Notes"
 
@@ -1789,20 +1804,8 @@ msgstr "Ms"
 msgid "Firmenname oder Vor- und Nachname."
 msgstr "Company name or first and last name."
 
-msgid "Adresszusatz"
-msgstr "Address line 2"
-
 msgid "Straße und Hausnummer"
 msgstr "Street and house number"
-
-msgid "PLZ"
-msgstr "Postcode"
-
-msgid "Ort"
-msgstr "City"
-
-msgid "Land"
-msgstr "Country"
 
 msgid "Anrede"
 msgstr "Salutation"
@@ -3482,6 +3485,13 @@ msgstr "No."
 msgid "Archiviert"
 msgstr "Archived"
 
+#, python-format
+msgid "%(name)s anrufen"
+msgstr "Call %(name)s"
+
+msgid "Anrufen (keine Telefonnummer hinterlegt)"
+msgstr "Call (no phone number on file)"
+
 msgid "Stundensatz"
 msgstr "Hourly rate"
 
@@ -3510,6 +3520,24 @@ msgstr "· automatically %(get_lexware_sync_interval_display)s"
 #, python-format
 msgid "/ Nr. %(customer_number)s"
 msgstr "/ No. %(customer_number)s"
+
+msgid "Anrufen"
+msgstr "Call"
+
+msgid "Keine Telefonnummer hinterlegt"
+msgstr "No phone number on file"
+
+msgid "Keine E-Mail-Adresse hinterlegt"
+msgstr "No e-mail address on file"
+
+msgid "Route"
+msgstr "Directions"
+
+msgid "Keine Adresse hinterlegt"
+msgstr "No address on file"
+
+msgid "Adresse (aus Lexware Office)"
+msgstr "Address (from Lexware Office)"
 
 msgid ""
 "Name, E-Mail, Telefon und Notizen gehören zum Kontakt in Lexware Office. "
