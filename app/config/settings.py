@@ -193,6 +193,8 @@ SESSION_COOKIE_SAMESITE = "Lax"
 if IS_PRODUCTION:
     SESSION_COOKIE_SECURE = CSRF_COOKIE_SECURE = env.secure_cookies
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    # Off unless asked for, see Env.hsts_seconds. Subdomains and preloading stay out of it on purpose.
+    SECURE_HSTS_SECONDS = env.hsts_seconds
 
 LOGGING = {
     "version": 1,

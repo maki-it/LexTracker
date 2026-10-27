@@ -44,5 +44,10 @@ async def record_failure(request: HttpRequest, username: str = "") -> None:
     await LoginFailure.objects.filter(at__lt=timezone.now() - keep).adelete()
 
 
-async def clear_failures(request: HttpRequest) -> None:
-    await LoginFailure.objects.filter(ip_address=client_ip(request)).adelete()
+async def clear_failures(request: HttpRequest, username: str) -> None:
+    """Forget the failures of one account after it signed in.
+
+    Only that account's, not all from this address: anyone with a login of their own (an employee, a customer)
+    could otherwise sign in between guesses at another account's password and start counting from zero.
+    """
+    await LoginFailure.objects.filter(ip_address=client_ip(request), username__iexact=username).adelete()

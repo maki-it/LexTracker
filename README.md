@@ -305,6 +305,7 @@ Alle Einstellungen der App kommen aus der Datei `.env` neben der `compose.yaml` 
 | `APP_ALLOWED_HOSTS` | Host-Namen, unter denen die App erreichbar ist (kommagetrennt) | `localhost,127.0.0.1` |
 | `APP_CSRF_TRUSTED_ORIGINS` | Ursprünge mit Schema, z. B. `https://zeit.example.de` (nötig hinter einem Reverse Proxy mit HTTPS) | leer |
 | `APP_SECURE_COOKIES` | `false` nur, wenn du die App ohne HTTPS öffnest | `true` |
+| `APP_HSTS_SECONDS` | Sekunden, die Browser für diesen Host nur HTTPS nutzen sollen (Header `Strict-Transport-Security`). `0` sendet keinen Header. Erst setzen (z. B. `31536000`, ein Jahr), wenn die App dauerhaft per HTTPS erreichbar ist: Browser verweigern danach so lange HTTP | `0` |
 | `FORWARDED_ALLOW_IPS` | IP des Reverse Proxys, damit uvicorn dessen `X-Forwarded-*`-Header vertraut | `127.0.0.1` |
 | `UVICORN_WORKERS` | Anzahl der uvicorn-Prozesse | `1` |
 | `LEXTRACKER_VERSION` | Docker: Version des Images (`0.4.0`, `0.4` oder `latest`) | `latest` |
@@ -346,6 +347,10 @@ FORWARDED_ALLOW_IPS=<IP des Proxys>
 ```
 
 Ohne HTTPS funktioniert der Login nur mit `APP_SECURE_COOKIES=false`.
+
+Wenn die App dauerhaft per HTTPS erreichbar ist, setze außerdem `APP_HSTS_SECONDS` (z. B. `31536000`), damit Browser nie auf HTTP zurückfallen. Und wenn nur der Proxy auf demselben Server die App erreichen soll, veröffentliche den Port mit `APP_PORT=127.0.0.1:8000`; sonst ist sie zusätzlich ohne Proxy und ohne TLS erreichbar.
+
+`DJANGO_SUPERUSER_PASSWORD` bleibt als Umgebungsvariable im Container sichtbar (`docker inspect`). Entferne es nach dem ersten Start aus der `.env`; das Konto bleibt bestehen. Schalte danach unter Konto die Zwei-Faktor-Anmeldung ein, denn dieser Weg legt das Konto ohne sie an.
 
 Die App liefert unter `/robots.txt` selbst eine Datei aus, die Suchmaschinen alles untersagt (`Disallow: /`). Der Reverse Proxy muss dafür nichts tun.
 

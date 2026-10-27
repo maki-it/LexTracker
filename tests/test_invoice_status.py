@@ -373,6 +373,7 @@ def test_sidebar_links_overdue_invoices_to_their_filter(logged_in, billed):
     dashboard = reverse("core:dashboard")
     assert logged_in.get(dashboard).wsgi_request.nav_counts["overdue_invoices"] == 0
     assert "Überfällige Rechnungen" not in logged_in.get(dashboard).text
+    assert "max-sm:col-span-2" not in logged_in.get(dashboard).text
 
     others = {
         "RE0001": Invoice.Status.OVERDUE,
@@ -394,6 +395,8 @@ def test_sidebar_links_overdue_invoices_to_their_filter(logged_in, billed):
     assert response.wsgi_request.nav_counts["overdue_invoices"] == 2
     assert f'href="{reverse("billing:invoices")}?status=overdue"' in response.text
     assert 'nav-count-link" title="Überfällige Rechnungen">2</a>' in response.text
+    # Two counts need the full width of the phone menu.
+    assert "max-sm:col-span-2" in response.text
 
     # The same number as the "Überfällig" filter on the invoice list, which the link leads to.
     invoices = logged_in.get(reverse("billing:invoices"), {"status": "overdue"})
