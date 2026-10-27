@@ -83,7 +83,7 @@ async def login_view(request: HttpRequest) -> HttpResponse:
         "links": await links.available(),
         "sso": oidc.enabled(),
         "sso_name": settings.OIDC_NAME,
-        "passkeys": passkeys.enabled(),
+        "passkeys": passkeys.available(request),
     }
     return render(request, "accounts/login.html", context)
 
@@ -338,7 +338,7 @@ async def _account_page(request: HttpRequest, form, tab: str, token_form=None, n
             "tab": tab,
             "tabs": account_tabs(request.user),
             "has_mfa": await sync_to_async(mfa.has_mfa)(request.user),
-            "passkeys_enabled": passkeys.enabled(),
+            "passkeys_enabled": passkeys.available(request),
             "passkeys": [p async for p in request.user.passkeys.all()],
             "tokens": [t async for t in request.user.api_tokens.all()],
             "token_form": token_form or ApiTokenForm(),

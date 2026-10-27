@@ -48,9 +48,9 @@ def _redirect_after_login(request: HttpRequest, next_url: object) -> str:
 @require_POST
 async def passkey_options(request: HttpRequest) -> HttpResponse:
     """Start a sign-in: the challenge the browser has to have signed."""
-    if not passkeys.enabled():
+    if (site := passkeys.site(request)) is None:
         raise Http404
-    begun = passkeys.begin_authentication()
+    begun = passkeys.begin_authentication(site)
     await request.session.aset(LOGIN_KEY, begun.state)
     return JsonResponse(begun.options)
 
@@ -58,7 +58,7 @@ async def passkey_options(request: HttpRequest) -> HttpResponse:
 @require_POST
 async def passkey_login(request: HttpRequest) -> HttpResponse:
     """Sign in with the signed challenge. Like SSO, it does not ask for the code of an authenticator app."""
-    if not passkeys.enabled():
+    if (site := passkeys.site(request)) is None:
         raise Http404
     if (await request.auser()).is_authenticated:
         return JsonResponse({"redirect": resolve_url(settings.LOGIN_REDIRECT_URL)})
@@ -67,7 +67,7 @@ async def passkey_login(request: HttpRequest) -> HttpResponse:
     body = _body(request)
     state = await request.session.apop(LOGIN_KEY, None)
     try:
-        user = await sync_to_async(passkeys.finish_authentication)(body.get("credential") or {}, state)
+        user = await sync_to_async(passkeys.finish_authentication)(site, body.get("credential") or {}, state)
     except passkeys.PasskeyError as error:
         logger.warning("Passkey sign-in failed: %s", error)
         await ratelimit.record_failure(request)
@@ -80,9 +80,9 @@ async def passkey_login(request: HttpRequest) -> HttpResponse:
 @require_POST
 async def passkey_register_options(request: HttpRequest) -> HttpResponse:
     """Start adding a passkey to the signed-in account."""
-    if not passkeys.enabled():
+    if (site := passkeys.site(request)) is None:
         raise Http404
-    begun = await sync_to_async(passkeys.begin_registration)(request.user, request.brand.name)
+    begun = await sync_to_async(passkeys.begin_registration)(site, request.user, request.brand.name)
     await request.session.aset(REGISTER_KEY, begun.state)
     return JsonResponse(begun.options)
 
@@ -90,13 +90,13 @@ async def passkey_register_options(request: HttpRequest) -> HttpResponse:
 @require_POST
 async def passkey_add(request: HttpRequest) -> HttpResponse:
     """Save the passkey the browser has made."""
-    if not passkeys.enabled():
+    if (site := passkeys.site(request)) is None:
         raise Http404
     body = _body(request)
     state = await request.session.apop(REGISTER_KEY, None)
     try:
         passkey = await sync_to_async(passkeys.finish_registration)(
-            request.user, body.get("credential") or {}, state, str(body.get("name") or "")
+            site, request.user, body.get("credential") or {}, state, str(body.get("name") or "")
         )
     except passkeys.PasskeyError as error:
         logger.warning("Passkey registration failed: %s", error)
