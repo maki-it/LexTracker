@@ -34,6 +34,17 @@ class Env(BaseSettings):
     # Lexware Office Public API, used from step 2 on.
     lexware_api_key: SecretStr = SecretStr("")
     lexware_base_url: str = "https://api.lexware.io/v1/"
+    # Single sign-on with OpenID Connect, next to the local login. Active once issuer, client ID and secret are set.
+    oidc_issuer: str = ""
+    oidc_client_id: str = ""
+    oidc_client_secret: SecretStr = SecretStr("")
+    # Name on the login button.
+    oidc_name: str = "SSO"
+    oidc_scopes: str = "openid email profile"
+    # Create an employee account for someone who signs in with SSO and has none. Off: only existing users.
+    oidc_create_users: bool = False
+    # Only with oidc_create_users: the e-mail domains (comma-separated) that may get an account. Empty: all.
+    oidc_allowed_email_domains: CommaList = Field(default_factory=list)
     # Folder for the daily database copies (data_dir/backups if unset). When and how many is set on the settings page.
     backup_dir: Path | None = None
     # Largest file accepted when uploading a backup on the backups page, in MB.

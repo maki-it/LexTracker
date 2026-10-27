@@ -21,5 +21,6 @@
     <button type="submit" class="btn btn-primary mt-1">{% trans "Anmelden" %}</button>
     <a href="{% url 'accounts:login' %}" class="text-center text-sm text-muted hover:underline">{% trans "Zurück" %}</a>
   </form>
+  {% include "accounts/_language_switch.html" %}
 </div>
 {% endblock %}

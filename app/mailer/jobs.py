@@ -137,7 +137,7 @@ async def queue_weekly_reports(slot: datetime) -> int:
         if await OutgoingMail.objects.filter(dedupe_key=key).aexists():
             continue
         # Day names and dates are written in the language of whoever gets the report.
-        with translation.override(user.language):
+        with translation.override(user.ui_language):
             user_range = report_range(sent_on)
             report = await sync_to_async(build_weekly_report)(user, user_range)
         if report.is_empty:

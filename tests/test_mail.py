@@ -251,6 +251,7 @@ def test_password_reset(client, kim, smtp):
 def test_password_reset_answers_the_same_for_unknown_accounts(client, kim, smtp):
     def answer(identifier: str) -> str:
         page = client.post(reverse("accounts:password_forgot"), {"identifier": identifier}).text
+        page = re.sub(r'name="csrfmiddlewaretoken" value="[^"]*"', "", page)
         return re.sub(r"csrfToken.*", "", page.replace(identifier, "X"), flags=re.IGNORECASE)
 
     assert answer("kim") == answer("niemand")
