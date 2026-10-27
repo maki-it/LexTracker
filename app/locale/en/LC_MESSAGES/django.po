@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: LexTracker\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-27 10:03+0100\n"
+"POT-Creation-Date: 2026-10-27 13:26+0100\n"
 "PO-Revision-Date: 2026-10-25 12:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: English\n"
@@ -1174,6 +1174,13 @@ msgid ""
 msgstr ""
 "Backup %(name)s restored. The previous state is in the folder as %(before)s."
 
+msgid "Der Text hat sich geändert. Lade die Seite neu."
+msgstr "The text has changed. Reload the page."
+
+#, python-format
+msgid "Die Änderung konnte nicht in Lexware gespeichert werden: %(error)s"
+msgstr "The change could not be saved in Lexware: %(error)s"
+
 msgid "Neue Kategorien"
 msgstr "New categories"
 
@@ -1295,10 +1302,6 @@ msgstr "%(count)d no longer in Lexware (archived)"
 #, python-format
 msgid "%(error)s Name, E-Mail und Telefon ändere bitte in Lexware."
 msgstr "%(error)s Please change name, e-mail and phone in Lexware."
-
-#, python-format
-msgid "Die Änderung konnte nicht in Lexware gespeichert werden: %(error)s"
-msgstr "The change could not be saved in Lexware: %(error)s"
 
 #, python-format
 msgid "Die Notiz bleibt nur in LexTracker. %(error)s"
@@ -3012,6 +3015,57 @@ msgstr "Everything billed: no customer has open time."
 
 msgid "(optional)"
 msgstr "(optional)"
+
+msgid "Schreiben"
+msgstr "Write"
+
+msgid "Formatierung"
+msgstr "Formatting"
+
+msgid "Überschrift"
+msgstr "Heading"
+
+msgid "fett"
+msgstr "bold"
+
+msgid "Fett (Strg+B)"
+msgstr "Bold (Ctrl+B)"
+
+msgid "Fett"
+msgstr "Bold"
+
+msgid "kursiv"
+msgstr "italic"
+
+msgid "Kursiv (Strg+I)"
+msgstr "Italic (Ctrl+I)"
+
+msgid "Kursiv"
+msgstr "Italic"
+
+msgid "Zitat"
+msgstr "Quote"
+
+msgid "code"
+msgstr "code"
+
+msgid "Linktext"
+msgstr "link text"
+
+msgid "Link (Strg+K)"
+msgstr "Link (Ctrl+K)"
+
+msgid "Link"
+msgstr "Link"
+
+msgid "Aufzählung"
+msgstr "Bulleted list"
+
+msgid "Nummerierte Liste"
+msgstr "Numbered list"
+
+msgid "Checkliste"
+msgstr "Checklist"
 
 msgid "Weitere laden"
 msgstr "Load more"
@@ -4949,60 +5003,3 @@ msgstr "Time entry saved."
 
 msgid "Zeiteintrag gelöscht."
 msgstr "Time entry deleted."
-
-msgid "Schreiben"
-msgstr "Write"
-
-msgid "Formatierung"
-msgstr "Formatting"
-
-msgid "Überschrift"
-msgstr "Heading"
-
-msgid "Fett (Strg+B)"
-msgstr "Bold (Ctrl+B)"
-
-msgid "Fett"
-msgstr "Bold"
-
-msgid "Kursiv (Strg+I)"
-msgstr "Italic (Ctrl+I)"
-
-msgid "Kursiv"
-msgstr "Italic"
-
-msgid "Zitat"
-msgstr "Quote"
-
-msgid "Link (Strg+K)"
-msgstr "Link (Ctrl+K)"
-
-msgid "Link"
-msgstr "Link"
-
-msgid "Aufzählung"
-msgstr "Bulleted list"
-
-msgid "Nummerierte Liste"
-msgstr "Numbered list"
-
-msgid "Checkliste"
-msgstr "Checklist"
-
-msgid "fett"
-msgstr "bold"
-
-msgid "kursiv"
-msgstr "italic"
-
-msgid "code"
-msgstr "code"
-
-msgid "Linktext"
-msgstr "link text"
-
-msgid "Nichts zur Vorschau."
-msgstr "Nothing to preview."
-
-msgid "Der Text hat sich geändert. Lade die Seite neu."
-msgstr "The text has changed. Reload the page."
