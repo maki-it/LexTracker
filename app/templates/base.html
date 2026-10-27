@@ -15,7 +15,8 @@
   <link rel="icon" href="{% static 'img/favicon.svg' %}" type="image/svg+xml">
   <link rel="apple-touch-icon" href="{% static 'img/apple-touch-icon.png' %}">
   {% endif %}
-  <link rel="manifest" href="{% static 'img/site.webmanifest' %}">
+  {# With credentials, so the manifest comes in the language of the account. #}
+  <link rel="manifest" href="{% url 'core:manifest' %}" crossorigin="use-credentials">
   <meta name="theme-color" content="#4f46e5">
   {% tailwind_css %}
   <script src="{% static 'js/htmx.min.js' %}" defer></script>

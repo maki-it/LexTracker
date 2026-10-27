@@ -21,6 +21,7 @@ from django.views.generic import RedirectView
 
 from accounts.models import User
 from core import backup, jobs, jobs_overview, version
+from core.branding import Brand
 from core.dialogs import navigate
 from core.forms import AppSettingsForm
 from core.models import AppSettings
@@ -86,6 +87,54 @@ async def health(request: HttpRequest) -> JsonResponse:
 async def robots(request: HttpRequest) -> HttpResponse:
     """Ask crawlers to stay away: the app is private, so a search engine has no business here."""
     return HttpResponse("User-agent: *\nDisallow: /\n", content_type="text/plain")
+
+
+# The background of the splash screen while the installed app starts. Dark, so it does not flash white at night.
+MANIFEST_BACKGROUND = "#0f0f12"
+MANIFEST_THEME = "#4f46e5"
+
+
+@require_GET
+async def manifest(request: HttpRequest) -> HttpResponse:
+    """The web app manifest: what a phone needs to put the app on the home screen and open it like an app.
+
+    Public, because browsers fetch it before anything is signed in. Name and icon follow the branding, the texts
+    the language of the visitor.
+    """
+    brand = getattr(request, "brand", None) or Brand()
+    if brand.logo_url:
+        icons = [{"src": brand.logo_url, "sizes": "any", "type": brand.logo_type}]
+    else:
+        icons = [
+            {"src": static("img/icon-192.png"), "sizes": "192x192", "type": "image/png"},
+            {"src": static("img/icon-512.png"), "sizes": "512x512", "type": "image/png"},
+            # Full-bleed art for the shapes (circle, squircle) that Android cuts icons into.
+            {
+                "src": static("img/icon-maskable-512.png"),
+                "sizes": "512x512",
+                "type": "image/png",
+                "purpose": "maskable",
+            },
+        ]
+    data = {
+        "id": "/",
+        "name": brand.name,
+        "short_name": brand.name,
+        "description": _("%(app)s: Zeiterfassung und Projektsteuerung") % {"app": brand.name},
+        "lang": request.LANGUAGE_CODE,
+        "start_url": "/",
+        "scope": "/",
+        "display": "standalone",
+        "background_color": MANIFEST_BACKGROUND,
+        "theme_color": MANIFEST_THEME,
+        "icons": icons,
+        # Held down on the app icon: start a timer, or enter time that was not tracked.
+        "shortcuts": [
+            {"name": _("Timer starten"), "url": reverse("tracking:timer_start")},
+            {"name": _("Zeit nachtragen"), "url": reverse("tracking:create")},
+        ],
+    }
+    return JsonResponse(data, content_type="application/manifest+json", json_dumps_params={"ensure_ascii": False})
 
 
 @require_GET

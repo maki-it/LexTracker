@@ -9,7 +9,16 @@ from django.utils.decorators import async_only_middleware
 from accounts.models import User
 
 # Never redirected, not even to the setup. /mcp/ checks its own API token, /webhooks/ the secret in its address.
-ALWAYS_PUBLIC_PREFIXES = ("/health/", "/static/", "/mcp/", "/webhooks/", "/favicon.ico", "/robots.txt", "/branding/")
+ALWAYS_PUBLIC_PREFIXES = (
+    "/health/",
+    "/static/",
+    "/mcp/",
+    "/webhooks/",
+    "/favicon.ico",
+    "/robots.txt",
+    "/manifest.webmanifest",
+    "/branding/",
+)
 PUBLIC_PREFIXES = (
     *ALWAYS_PUBLIC_PREFIXES,
     "/accounts/login/",
