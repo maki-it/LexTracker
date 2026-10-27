@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import date, datetime, timedelta
 
 import pytest
 from asgiref.sync import async_to_sync
@@ -359,3 +359,194 @@ def test_bell_has_no_reminder_count_for_employees(client, task):
     client.force_login(employee)
 
     assert "nav-reminders-count" not in client.get(reverse("inbox:bell")).text
+
+
+# Repeating reminders
+
+
+def local(year, month, day, hour=9, minute=0):
+    return timezone.make_aware(datetime(year, month, day, hour, minute))
+
+
+def series(repeat, start, **values) -> Reminder:
+    return Reminder(title="Wiederkehrend", due_at=start, repeat=repeat, **values)
+
+
+def test_a_daily_and_a_weekly_series_count_in_steps():
+    start = local(2026, 10, 27)
+
+    assert series("daily", start).next_due(start) == local(2026, 10, 28)
+    assert series("daily", start, repeat_every=3).next_due(start) == local(2026, 10, 30)
+    assert series("weekly", start).next_due(start) == local(2026, 11, 3)
+    assert series("weekly", start, repeat_every=2).next_due(start) == local(2026, 11, 10)
+
+
+def test_a_monthly_series_returns_to_the_day_after_a_short_month():
+    reminder = series("monthly", local(2026, 1, 31), repeat_from=local(2026, 1, 31))
+
+    reminder.due_at = reminder.next_due(reminder.due_at)
+    assert reminder.due_at == local(2026, 2, 28)
+    reminder.due_at = reminder.next_due(reminder.due_at)
+    assert reminder.due_at == local(2026, 3, 31)
+
+
+def test_a_yearly_series_survives_a_leap_day():
+    reminder = series("yearly", local(2028, 2, 29), repeat_from=local(2028, 2, 29))
+
+    assert reminder.next_due(reminder.due_at) == local(2029, 2, 28)
+    reminder.due_at = local(2031, 2, 28)
+    assert reminder.next_due(reminder.due_at) == local(2032, 2, 29)
+
+
+def test_the_time_of_day_stays_across_the_change_to_summer_time():
+    start = local(2026, 3, 27, 9, 30)
+
+    assert series("weekly", start).next_due(start) == local(2026, 4, 3, 9, 30)
+    assert series("daily", local(2026, 3, 28, 9, 30), repeat_every=2).next_due(start) == local(2026, 3, 30, 9, 30)
+
+
+def test_missed_dates_are_skipped():
+    start = local(2026, 10, 1)
+
+    assert series("weekly", start).next_due(local(2026, 10, 27, 12)) == local(2026, 10, 29)
+
+
+def test_a_series_ends_after_its_last_date():
+    start = local(2026, 10, 27)
+
+    assert series("weekly", start, repeat_until=date(2026, 11, 3)).next_due(start) == local(2026, 11, 3)
+    assert series("weekly", start, repeat_until=date(2026, 11, 2)).next_due(start) is None
+    assert series("", start).next_due(start) is None
+    assert Reminder(title="x", repeat="weekly").next_due(start) is None
+
+
+def test_the_series_is_described_in_words():
+    assert series("weekly", None).repeat_text == "wöchentlich"
+    assert series("monthly", None, repeat_every=3).repeat_text == "alle 3 Monate"
+    assert series("", None).repeat_text == ""
+
+
+def test_a_repeating_reminder_moves_on_when_it_was_announced(admin, task, smtp):
+    due = (timezone.now() - timedelta(minutes=5)).replace(second=0, microsecond=0)
+    reminder = make(admin, task, due_at=due, repeat="weekly", repeat_from=due)
+
+    assert notify_due(timezone.now()) == 1
+
+    reminder.refresh_from_db()
+    assert reminder.due_at == series("weekly", due).next_due(due)
+    assert reminder.notified_at is None and reminder.done_at is None
+    assert Message.objects.filter(kind="reminder.due").count() == 1
+    assert OutgoingMail.objects.count() == 1
+    # Nothing more until the next date.
+    assert notify_due(timezone.now()) == 0
+
+
+def test_each_time_a_new_message_replaces_the_one_before(admin, task):
+    due = (timezone.now() - timedelta(minutes=5)).replace(second=0, microsecond=0)
+    reminder = make(admin, task, due_at=due, repeat="daily", repeat_from=due, notify_email=False)
+    notify_due(timezone.now())
+    Reminder.objects.filter(pk=reminder.pk).update(due_at=timezone.now() - timedelta(minutes=1))
+
+    assert notify_due(timezone.now()) == 1
+
+    first, second = Message.objects.order_by("created_at")
+    assert first.read_at is not None and second.read_at is None
+    assert (first.count, second.count) == (1, 1)
+
+
+def test_the_last_date_of_a_series_ends_it_like_a_single_reminder(admin, task):
+    due = (timezone.now() - timedelta(minutes=5)).replace(second=0, microsecond=0)
+    reminder = make(
+        admin,
+        task,
+        due_at=due,
+        repeat="daily",
+        repeat_from=due,
+        repeat_until=timezone.localdate(due),
+        notify_email=False,
+    )
+
+    assert notify_due(timezone.now()) == 1
+
+    reminder.refresh_from_db()
+    assert reminder.due_at == due and reminder.notified_at is not None
+    assert notify_due(timezone.now()) == 0
+
+
+def post_reminder(client, reminder, **values):
+    due = timezone.localtime(reminder.due_at).strftime("%Y-%m-%dT%H:%M")
+    return client.post(
+        reverse("reminders:edit", args=[reminder.pk]), {"title": reminder.title, "due_at": due, **values}
+    )
+
+
+def test_a_repeating_reminder_is_created_with_its_first_date_as_the_start(logged_in, admin, task):
+    logged_in.post(
+        reverse("reminders:create") + f"?customer={task.project.customer.pk}",
+        {"title": "Wartung", "due_at": "2026-12-31T09:30", "repeat": "monthly", "repeat_every": "2"},
+    )
+
+    reminder = Reminder.objects.get()
+    assert (reminder.repeat, reminder.repeat_every) == ("monthly", 2)
+    assert reminder.repeat_from == reminder.due_at == local(2026, 12, 31, 9, 30)
+    assert reminder.repeat_text == "alle 2 Monate"
+
+
+def test_a_repetition_needs_a_date(logged_in, task):
+    response = logged_in.post(
+        reverse("reminders:create") + f"?customer={task.project.customer.pk}",
+        {"title": "Wartung", "repeat": "weekly"},
+    )
+
+    assert response.status_code == 200
+    assert "Eine Wiederholung braucht ein Datum." in response.text
+    assert not Reminder.objects.exists()
+
+
+def test_the_end_may_not_lie_before_the_start(logged_in, task):
+    response = logged_in.post(
+        reverse("reminders:create") + f"?customer={task.project.customer.pk}",
+        {"title": "Wartung", "due_at": "2026-12-31T09:30", "repeat": "weekly", "repeat_until": "2026-12-30"},
+    )
+
+    assert "Das Ende liegt vor dem ersten Datum." in response.text
+    assert not Reminder.objects.exists()
+
+
+def test_editing_something_else_keeps_the_start_of_the_series(logged_in, admin, task):
+    start = local(2026, 1, 31)
+    reminder = make(admin, task, due_at=local(2026, 2, 28), repeat="monthly", repeat_from=start)
+
+    post_reminder(logged_in, reminder, title="Anders", repeat="monthly", repeat_every="1")
+
+    reminder.refresh_from_db()
+    assert (reminder.title, reminder.repeat_from) == ("Anders", start)
+
+
+def test_a_new_date_or_a_new_interval_starts_the_series_afresh(logged_in, admin, task):
+    reminder = make(admin, task, due_at=local(2026, 2, 28), repeat="monthly", repeat_from=local(2026, 1, 31))
+
+    post_reminder(logged_in, reminder, repeat="monthly", repeat_every="2")
+
+    reminder.refresh_from_db()
+    assert reminder.repeat_from == local(2026, 2, 28)
+
+
+def test_switching_the_repetition_off_forgets_it(logged_in, admin, task):
+    reminder = make(
+        admin, task, repeat="weekly", repeat_every=2, repeat_from=timezone.now(), repeat_until=date(2030, 1, 1)
+    )
+
+    post_reminder(logged_in, reminder, repeat="")
+
+    reminder.refresh_from_db()
+    assert (reminder.repeat, reminder.repeat_every, reminder.repeat_until, reminder.repeat_from) == ("", 1, None, None)
+
+
+def test_the_list_says_how_a_reminder_repeats(logged_in, admin, task):
+    make(admin, task, due_at=timezone.now() + timedelta(days=1), repeat="weekly", repeat_until=date(2030, 1, 1))
+
+    page = logged_in.get(reverse("reminders:list")).text
+
+    assert "↻ wöchentlich" in page and "bis 01.01.2030" in page
+    assert "Beendet auch die Wiederholung" in page
