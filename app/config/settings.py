@@ -178,6 +178,13 @@ LEXWARE_BASE_URL = env.lexware_base_url
 # when sending. Tests swap in Django's in-memory backend.
 MAILERS = {"default": {"BACKEND": "django.core.mail.backends.smtp.EmailBackend"}}
 
+OIDC_ISSUER = env.oidc_issuer.strip()
+OIDC_CLIENT_ID = env.oidc_client_id.strip()
+OIDC_CLIENT_SECRET = env.oidc_client_secret.get_secret_value()
+OIDC_NAME = env.oidc_name.strip() or "SSO"
+OIDC_SCOPES = env.oidc_scopes
+OIDC_CREATE_USERS = env.oidc_create_users
+OIDC_ALLOWED_EMAIL_DOMAINS = [domain.lower().lstrip("@") for domain in env.oidc_allowed_email_domains]
 BACKUP_DIR = env.backup_dir or DATA_DIR / "backups"
 BACKUP_UPLOAD_MAX_SIZE = env.backup_upload_max_mb * 1024 * 1024
 

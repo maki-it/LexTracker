@@ -1,4 +1,5 @@
 from django import forms
+from django.conf import settings
 from django.contrib.auth.forms import PasswordChangeForm, SetPasswordForm
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
@@ -39,6 +40,9 @@ class LanguageFieldMixin:
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["language"].required = False
+        if self.instance.language:
+            # Someone who has a language keeps one; "automatic" is for accounts that have not signed in yet.
+            self.fields["language"].choices = settings.LANGUAGES
 
     def clean_language(self):
         return self.cleaned_data.get("language") or self.instance.language

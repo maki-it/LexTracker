@@ -19,9 +19,13 @@
       <input type="password" name="password" class="input" autocomplete="current-password" required>
     </label>
     <button type="submit" class="btn btn-primary mt-1">{% trans "Anmelden" %}</button>
+    {% if sso %}
+    <a href="{% url 'accounts:sso_start' %}{% if next %}?next={{ next|urlencode }}{% endif %}" class="btn">{% blocktrans trimmed with name=sso_name %}Mit {{ name }} anmelden{% endblocktrans %}</a>
+    {% endif %}
     {% if links.login_link %}
     <a href="{% url 'accounts:login_link_request' %}" class="btn">{% trans "Anmeldelink per E-Mail" %}</a>
     {% endif %}
   </form>
+  {% include "accounts/_language_switch.html" %}
 </div>
 {% endblock %}

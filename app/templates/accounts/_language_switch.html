@@ -1,0 +1,10 @@
+{% load i18n %}
+<form method="post" action="{% url 'accounts:set_language' %}" class="flex justify-center gap-3 text-sm">
+  {% csrf_token %}
+  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+  {% get_current_language as current %}
+  {% get_available_languages as languages %}
+  {% for code, name in languages %}
+  <button type="submit" name="language" value="{{ code }}" lang="{{ code }}"{% if code == current %} aria-current="true" class="font-semibold"{% else %} class="text-muted hover:underline"{% endif %}>{{ name }}</button>
+  {% endfor %}
+</form>

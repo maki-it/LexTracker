@@ -23,5 +23,6 @@
     <a href="{% url 'accounts:login' %}" class="text-center text-sm">{% trans "Mit Passwort anmelden" %}</a>
   </form>
   {% endif %}
+  {% include "accounts/_language_switch.html" %}
 </div>
 {% endblock %}
