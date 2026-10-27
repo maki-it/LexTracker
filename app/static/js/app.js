@@ -668,3 +668,25 @@ document.addEventListener("submit", async (event) => {
 document.addEventListener("change", (event) => {
   if (event.target.matches?.("[data-autosubmit]")) event.target.form.requestSubmit();
 });
+
+// A button with data-popover-toggle="<id>" shows or hides the element with that id, e.g. the week picker.
+// A click outside of it (or on its backdrop, the element itself), a click on another toggle, or Escape closes it.
+function setPopover(button, open) {
+  button.setAttribute("aria-expanded", open);
+  document.getElementById(button.dataset.popoverToggle).hidden = !open;
+}
+document.addEventListener("click", (event) => {
+  const toggle = event.target.closest("[data-popover-toggle]");
+  for (const button of document.querySelectorAll("[data-popover-toggle][aria-expanded=true]")) {
+    const popover = document.getElementById(button.dataset.popoverToggle);
+    if (button !== toggle && (event.target === popover || !popover.contains(event.target))) setPopover(button, false);
+  }
+  if (toggle) setPopover(toggle, toggle.getAttribute("aria-expanded") !== "true");
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape") return;
+  for (const button of document.querySelectorAll("[data-popover-toggle][aria-expanded=true]")) {
+    setPopover(button, false);
+    button.focus();
+  }
+});

@@ -363,6 +363,54 @@
     }
   }
 
+  /* The week picker of the time entry list: a month calendar with a column for the week numbers.
+     A popover under its button, and a sheet from the bottom edge on the phone. */
+  .week-picker {
+    @apply absolute top-full left-0 z-30 mt-1.5 max-sm:fixed max-sm:inset-0 max-sm:z-50 max-sm:mt-0 max-sm:flex max-sm:items-end max-sm:bg-black/55;
+  }
+
+  .week-picker-sheet {
+    @apply w-84 overflow-hidden rounded-xl border border-line bg-surface text-ink shadow-xl max-sm:max-h-[85dvh] max-sm:w-full max-sm:overflow-y-auto max-sm:rounded-t-2xl max-sm:rounded-b-none max-sm:border-b-0;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .week-picker-grid {
+    @apply grid grid-cols-[2.25rem_repeat(7,1fr)] items-center text-center;
+  }
+
+  .week-picker-week {
+    @apply rounded-lg border border-transparent text-ink no-underline hover:bg-surface-muted;
+  }
+
+  .week-picker-week-selected {
+    @apply border-primary/40 bg-primary-soft hover:bg-primary-soft;
+  }
+
+  .week-picker-cell {
+    @apply relative flex h-8 items-center justify-center rounded-md text-[13px] tabular-nums max-sm:h-11 max-sm:text-[15px];
+  }
+
+  .week-picker-day {
+    @apply hover:bg-primary hover:text-on-primary hover:[&_.week-picker-dot]:bg-on-primary;
+  }
+
+  .week-picker-day-out {
+    @apply text-muted/60;
+  }
+
+  .week-picker-day-today {
+    @apply font-bold ring-[1.5px] ring-primary ring-inset;
+  }
+
+  .week-picker-dots {
+    @apply absolute bottom-0.5 flex gap-0.5 max-sm:bottom-1 max-sm:gap-[3px];
+  }
+
+  /* One to three dots under a day: few to many time entries. */
+  .week-picker-dot {
+    @apply size-1 rounded-full bg-primary max-sm:size-[5px];
+  }
+
   /* Forms */
   .field {
     @apply flex flex-col gap-1.5 text-[13px] font-medium;

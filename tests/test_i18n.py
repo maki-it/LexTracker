@@ -492,3 +492,18 @@ def test_customer_names_and_other_data_are_never_translated(client, user, englis
     user.save()
     client.force_login(user)
     assert "Offene Rechnungen GmbH" in client.get(reverse("customers:list")).text
+
+
+def test_week_picker_in_english(client, user, english):
+    user.language = "en"
+    user.save()
+    client.force_login(user)
+
+    page = client.get(reverse("tracking:list"), {"week": "2026-W43"})
+    picker = client.get(reverse("tracking:week_picker"), {"month": "2026-10", "week": "2026-W43"})
+
+    assert "Wk 43" in page.text
+    assert "October 2026" in picker.text
+    assert 'aria-label="Week 43: ' in picker.text
+    assert "Previous month" in picker.text
+    assert not GERMAN.search(visible_text(picker.text))

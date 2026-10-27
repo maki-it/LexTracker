@@ -1,0 +1,27 @@
+{% load i18n icons %}
+{# The month calendar of the week picker (tracking.views.week_picker). A whole row is a link to its week. #}
+{% trans "d.m." context "date format" as short_format %}
+<div class="flex items-center gap-1 px-2.5 pt-2.5 pb-1.5 max-sm:px-3 max-sm:pt-2">
+  <button type="button" class="btn btn-ghost btn-icon btn-sm" hx-get="{% url 'tracking:week_picker' %}?month={{ prev_month }}&week={{ selected }}{{ filter_query }}" hx-target="#week-picker-body" aria-label="{% trans 'Vorheriger Monat' %}">{% icon "chevron-left" %}</button>
+  <span class="min-w-28 text-center font-semibold">{{ month|date:"F Y" }}</span>
+  <button type="button" class="btn btn-ghost btn-icon btn-sm" hx-get="{% url 'tracking:week_picker' %}?month={{ next_month }}&week={{ selected }}{{ filter_query }}" hx-target="#week-picker-body" aria-label="{% trans 'Nächster Monat' %}">{% icon "chevron-right" %}</button>
+  <a href="{% url 'tracking:list' %}{% if filter_query %}?{{ filter_query|slice:'1:' }}{% endif %}" class="btn btn-sm ml-auto">{% trans "Diese Woche" %}</a>
+</div>
+<div class="week-picker-grid mx-2.5 h-7 text-xs font-semibold text-muted max-sm:mx-3">
+  <span class="week-picker-cell">{% trans "KW" %}</span>
+  {% for day in weeks.0.days %}<span class="week-picker-cell">{{ day.date|date:"D"|slice:":2" }}</span>{% endfor %}
+</div>
+<div class="flex flex-col gap-0.5 px-2.5 pb-2.5 max-sm:px-3 max-sm:pb-3">
+  {% for week in weeks %}
+  <a href="?week={{ week.param }}{{ filter_query }}" class="week-picker-grid week-picker-week{% if week.is_selected %} week-picker-week-selected{% endif %}"{% if week.is_selected %} aria-current="true"{% endif %}
+     aria-label="{% blocktrans trimmed with week=week.number first=week.monday|date:short_format last=week.sunday|date:date_format %}KW {{ week }}: {{ first }} – {{ last }}{% endblocktrans %}">
+    <span class="week-picker-cell text-xs font-semibold {% if week.is_selected %}text-primary-ink{% else %}text-muted{% endif %}">{{ week.number }}</span>
+    {% for day in week.days %}
+    <span class="week-picker-cell week-picker-day{% if not day.in_month %} week-picker-day-out{% endif %}{% if day.is_today %} week-picker-day-today{% endif %}{% if day.dots %} font-semibold{% endif %}">
+      {{ day.date.day }}
+      {% if day.dots %}<span class="week-picker-dots" aria-hidden="true">{% for dot in day.dots %}<span class="week-picker-dot"></span>{% endfor %}</span>{% endif %}
+    </span>
+    {% endfor %}
+  </a>
+  {% endfor %}
+</div>

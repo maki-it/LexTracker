@@ -12,5 +12,6 @@ urlpatterns = [
     path("timer/", views.timer, name="timer"),
     path("timer/start/", views.timer_start, name="timer_start"),
     path("timer/stop/", views.timer_stop, name="timer_stop"),
+    path("picker/", views.week_picker, name="week_picker"),
     path("search/", views.task_search, name="task_search"),
 ]
