@@ -193,12 +193,22 @@ document.addEventListener("htmx:load", (event) => {
 });
 document.addEventListener("DOMContentLoaded", () => document.querySelectorAll("select[data-searchable]").forEach(makeSearchable));
 
-// Menu button of the top bar on phones: shows or hides the navigation.
+// A button with data-open-dialog="<id>" opens that <dialog>, e.g. the menu behind the last tab of the bottom bar
+// on phones. A tap beside the sheet closes it, and so does a link that opens the dialog of base.html.
 document.addEventListener("click", (event) => {
-  const toggle = event.target.closest("[data-nav-toggle]");
-  if (!toggle) return;
-  const open = document.getElementById("sidebar").toggleAttribute("data-open");
-  toggle.setAttribute("aria-expanded", open);
+  const opener = event.target.closest("[data-open-dialog]");
+  if (opener) {
+    document.getElementById(opener.dataset.openDialog).showModal();
+    return;
+  }
+  const sheet = event.target.closest("dialog.sheet");
+  if (!sheet) return;
+  if (event.target === sheet) {
+    const box = sheet.getBoundingClientRect();
+    if (event.clientY < box.top || event.clientY > box.bottom) sheet.close();
+  } else if (event.target.closest("a[hx-get]")) {
+    sheet.close();
+  }
 });
 
 // Tabs inside a page: a container with data-tabs holds buttons with data-tab="<name>" and panels with
@@ -270,6 +280,10 @@ function pickTask(search, option) {
   const { input, picked } = taskParts(search);
   picked.value = option.dataset.value;
   input.value = option.dataset.label;
+  search.querySelector("[data-task-name]").textContent = option.dataset.name;
+  search.querySelector("[data-task-sub]").textContent = option.dataset.sub;
+  search.dataset.picked = "";
+  delete search.dataset.editing;
   syncTaskValidity(search);
   showTaskResults(search, false);
 }
@@ -287,7 +301,17 @@ document.addEventListener("input", (event) => {
   const search = taskSearchOf(event.target);
   if (!search || event.target.type !== "search") return;
   taskParts(search).picked.value = "";
+  delete search.dataset.picked;
   syncTaskValidity(search);
+});
+
+// On phones a picked task shows as two lines (see .task-summary); a tap on it brings back the field to search again.
+document.addEventListener("click", (event) => {
+  const summary = event.target.closest("[data-task-summary]");
+  const search = taskSearchOf(summary);
+  if (!search) return;
+  search.dataset.editing = "";
+  taskParts(search).input.focus();
 });
 
 // While a picked task is shown, the field holds its full name; the suggestions are then the recently used tasks.
@@ -314,7 +338,9 @@ document.addEventListener("click", (event) => {
 
 document.addEventListener("focusout", (event) => {
   const search = taskSearchOf(event.target);
-  if (search && !search.contains(event.relatedTarget)) showTaskResults(search, false);
+  if (!search || search.contains(event.relatedTarget)) return;
+  showTaskResults(search, false);
+  delete search.dataset.editing;
 });
 
 document.addEventListener("keydown", (event) => {

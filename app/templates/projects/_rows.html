@@ -2,11 +2,11 @@
 {% load timefmt %}
 {% for project in page.items %}
 <tr>
-  <td class="font-medium"><a class="text-ink hover:text-primary-ink hover:underline" href="{% url 'projects:detail' project.pk %}">{{ project.name }}</a></td>
-  <td class="text-muted">{{ project.customer.name }}</td>
-  <td><span class="badge{% if project.status == 'active' %} badge-primary{% elif project.status == 'done' %} badge-success{% endif %}">{{ project.get_status_display }}</span></td>
-  <td class="text-right tabular-nums">{{ project.booked|hours:duration_format }} h</td>
-  <td class="text-right text-muted tabular-nums">{% if project.budget_hours is not None %}{{ project.budget_hours }} h{% else %}–{% endif %}</td>
+  <td class="cell-title font-medium"><a class="text-ink hover:text-primary-ink hover:underline" href="{% url 'projects:detail' project.pk %}">{{ project.name }}</a></td>
+  <td class="cell-sub text-muted">{{ project.customer.name }}</td>
+  <td class="cell-aside"><span class="badge{% if project.status == 'active' %} badge-primary{% elif project.status == 'done' %} badge-success{% endif %}">{{ project.get_status_display }}</span></td>
+  <td class="text-right tabular-nums" data-label="{% trans 'Gebucht' %}"><span>{{ project.booked|hours:duration_format }} h</span></td>
+  <td class="text-right text-muted tabular-nums{% if project.budget_hours is None %} cell-hide{% endif %}" data-label="{% trans 'Budget' %}"><span>{% if project.budget_hours is not None %}{{ project.budget_hours }} h{% else %}–{% endif %}</span></td>
 </tr>
 {% empty %}
 {% if page.is_first %}<tr><td colspan="5" class="py-10 text-center text-muted">{% if query %}{% trans "Keine Projekte gefunden." %}{% else %}{% trans "Keine Projekte in dieser Ansicht." %}{% endif %}</td></tr>{% endif %}

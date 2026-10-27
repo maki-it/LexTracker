@@ -21,8 +21,8 @@
   </nav>
   <noscript><button type="submit" class="btn">{% trans "Anzeigen" %}</button></noscript>
 </form>
-<div class="table-wrap" id="billing-customers">
-  <table class="table">
+<div class="table-wrap table-wrap-cards" id="billing-customers">
+  <table class="table table-cards">
     <thead>
       <tr>
         <th>{% trans "Kunde" %}</th>
@@ -33,9 +33,9 @@
     <tbody>
       {% for customer in customers %}
       <tr>
-        <td class="w-full font-medium">{% if customer.unbilled %}<a {% dialog_link "billing:customer_entries" customer.pk %} class="text-ink no-underline hover:underline" title="{% trans 'Offene Zeiteinträge anzeigen' %}">{{ customer.name }}</a>{% else %}{{ customer.name }}{% endif %}</td>
-        <td class="text-right whitespace-nowrap tabular-nums{% if customer.unbilled %} font-semibold{% else %} text-muted{% endif %}">{% if customer.unbilled %}{{ customer.unbilled|hours:duration_format }} h{% else %}–{% endif %}</td>
-        <td class="text-right"><a class="btn btn-sm{% if customer.unbilled %} btn-primary{% endif %}" href="{% url 'billing:customer' customer.pk %}">{% trans "Abrechnen" %}</a></td>
+        <td class="cell-title w-full font-medium">{% if customer.unbilled %}<a {% dialog_link "billing:customer_entries" customer.pk %} class="text-ink no-underline hover:underline" title="{% trans 'Offene Zeiteinträge anzeigen' %}">{{ customer.name }}</a>{% else %}{{ customer.name }}{% endif %}</td>
+        <td class="cell-aside text-right whitespace-nowrap tabular-nums{% if customer.unbilled %} font-semibold{% else %} text-muted{% endif %}">{% if customer.unbilled %}{{ customer.unbilled|hours:duration_format }} h{% else %}–{% endif %}</td>
+        <td class="cell-action text-right"><a class="btn btn-sm max-sm:h-11{% if customer.unbilled %} btn-primary{% endif %}" href="{% url 'billing:customer' customer.pk %}">{% trans "Abrechnen" %}</a></td>
       </tr>
       {% empty %}
       <tr><td colspan="3" class="py-10 text-center text-muted">{% if query %}{% trans "Kein Kunde passt zur Suche." %}{% elif show_all %}{% trans "Noch keine Kunden." %}{% else %}{% trans "Alles abgerechnet: Kein Kunde hat offene Zeiten." %}{% endif %}</td></tr>

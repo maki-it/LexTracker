@@ -1,7 +1,16 @@
 {% load i18n %}
 {# Search field for a task: suggestions come from tracking:task_search, the picked task goes into the hidden field `name`. #}
 {# Optional: `task` (preselected), `id`, `label` (for a field without a visible label), `autofocus`. See app.js "Task search". #}
-<div class="relative w-full" data-task-search data-invalid-message="{% trans 'Bitte eine Aufgabe aus den Vorschlägen auswählen.' %}">
+{# On phones a picked task shows as two lines (task, then customer and project) instead of the long one-line text, until the field is tapped. #}
+{% load icons %}
+<div class="relative w-full" data-task-search data-invalid-message="{% trans 'Bitte eine Aufgabe aus den Vorschlägen auswählen.' %}"{% if task %} data-picked{% endif %}>
+  <button type="button" class="task-summary" data-task-summary aria-label="{% trans 'Aufgabe ändern' %}">
+    <span class="min-w-0 flex-1">
+      <span class="block font-semibold" data-task-name>{{ task.name }}</span>
+      <span class="block truncate text-[13px] font-normal text-muted" data-task-sub>{% if task %}{{ task.project.customer.name }} · {{ task.project.name }}{% endif %}</span>
+    </span>
+    {% icon "chevron-down" size=16 css_class="text-muted" %}
+  </button>
   <input type="search" name="q" class="input" role="combobox" aria-autocomplete="list" aria-expanded="false" autocomplete="off"
          {% if id %}id="{{ id }}"{% endif %} {% if label %}aria-label="{{ label }}"{% endif %} {% if autofocus %}autofocus{% endif %}
          placeholder="{% trans 'Aufgabe, Projekt oder Kunde suchen' %}"

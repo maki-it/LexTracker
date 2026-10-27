@@ -14,8 +14,8 @@
     {% if app_settings.lexware_sync_interval %}{% blocktrans trimmed with get_lexware_sync_interval_display=app_settings.get_lexware_sync_interval_display %}· automatisch {{ get_lexware_sync_interval_display }}{% endblocktrans %}{% endif %}
   </p>
   {% endif %}
-  <div class="table-wrap">
-    <table class="table">
+  <div class="table-wrap table-wrap-cards">
+    <table class="table table-cards">
       <thead>
         <tr>
           <th>{% trans "Nr." %}</th>

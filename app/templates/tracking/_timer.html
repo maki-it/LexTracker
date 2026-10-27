@@ -1,24 +1,33 @@
 {% load i18n %}
-{# Timer card in the sidebar, a compact pill in the top bar on phones. Reloads itself every minute and whenever a timer starts or stops. #}
+{# The timer in the navigation: a card in the sidebar, on phones a button in the middle of the bottom bar and the running time in the top bar. Reloads itself every minute and whenever a timer starts or stops. #}
 {% load timefmt icons dialogs %}
-<div id="nav-timer" hx-get="{% url 'tracking:timer' %}" hx-trigger="every 60s, timer-changed from:body" hx-swap="outerHTML"
-     class="flex items-center gap-2 lg:flex-col lg:items-stretch lg:gap-2 lg:rounded-xl lg:border lg:border-line lg:bg-surface lg:p-3">
+<div id="nav-timer" hx-get="{% url 'tracking:timer' %}" hx-trigger="every 60s, timer-changed from:body" hx-swap="outerHTML" class="contents">
   {% if running_entry %}
-  <div class="min-w-0 flex-1">
-    <div class="flex items-center gap-2 text-xs text-muted max-lg:hidden"><span class="dot animate-pulse bg-success"></span>{% blocktrans trimmed with started_at=running_entry.started_at|time:"H:i" %}Läuft seit {{ started_at }}{% endblocktrans %}</div>
-    <div class="flex items-center gap-2 font-semibold tracking-tight tabular-nums lg:text-[22px]" title="{{ running_entry.task.name }}"><span class="dot animate-pulse bg-success lg:hidden"></span>{{ running_entry.duration|hours:duration_format }} h</div>
-    <div class="truncate font-medium max-lg:hidden" title="{{ running_entry.task.name }}">{{ running_entry.task.name }}</div>
-    <div class="truncate text-xs text-muted max-lg:hidden" title="{{ running_entry.task.project.customer.name }} · {{ running_entry.task.project.name }}">{{ running_entry.task.project.customer.name }} · {{ running_entry.task.project.name }}</div>
+  <div class="flex flex-col gap-2 rounded-xl border border-line bg-surface p-3 max-lg:hidden">
+    <div class="min-w-0">
+      <div class="flex items-center gap-2 text-xs text-muted"><span class="dot animate-pulse bg-success"></span>{% blocktrans trimmed with started_at=running_entry.started_at|time:"H:i" %}Läuft seit {{ started_at }}{% endblocktrans %}</div>
+      <div class="text-[22px] font-semibold tracking-tight tabular-nums" title="{{ running_entry.task.name }}">{{ running_entry.duration|hours:duration_format }} h</div>
+      <div class="truncate font-medium" title="{{ running_entry.task.name }}">{{ running_entry.task.name }}</div>
+      <div class="truncate text-xs text-muted" title="{{ running_entry.task.project.customer.name }} · {{ running_entry.task.project.name }}">{{ running_entry.task.project.customer.name }} · {{ running_entry.task.project.name }}</div>
+    </div>
+    <form hx-post="{% url 'tracking:timer_stop' %}" hx-target="#nav-timer" hx-swap="outerHTML" method="post" action="{% url 'tracking:timer_stop' %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger w-full" aria-label="{% trans 'Timer stoppen' %}">{% icon "stop" size=14 %}{% trans "Stoppen" %}</button>
+    </form>
   </div>
-  <form hx-post="{% url 'tracking:timer_stop' %}" hx-target="#nav-timer" hx-swap="outerHTML" method="post" action="{% url 'tracking:timer_stop' %}">
+  <a href="{% url 'core:dashboard' %}" class="flex items-center gap-1.5 rounded-lg px-2 py-1 font-semibold tracking-tight text-ink no-underline tabular-nums lg:hidden" title="{{ running_entry.task.name }}"><span class="dot animate-pulse bg-success"></span>{{ running_entry.duration|hours:duration_format }} h</a>
+  <form hx-post="{% url 'tracking:timer_stop' %}" hx-target="#nav-timer" hx-swap="outerHTML" method="post" action="{% url 'tracking:timer_stop' %}" class="contents">
     {% csrf_token %}
-    <button type="submit" class="btn btn-danger w-9 px-0 lg:w-full lg:px-3.5" aria-label="{% trans 'Timer stoppen' %}">{% icon "stop" size=14 %}<span class="max-lg:hidden">{% trans "Stoppen" %}</span></button>
+    <button type="submit" class="timer-knob timer-knob-stop" aria-label="{% trans 'Timer stoppen' %}" title="{% trans 'Timer stoppen' %}">{% icon "stop" size=20 %}</button>
   </form>
   {% else %}
-  <div class="min-w-0 flex-1 max-lg:hidden">
-    <div class="text-xs text-muted">{% trans "Kein Timer aktiv" %}</div>
-    <div class="text-[22px] font-semibold tracking-tight text-muted tabular-nums">0:00 h</div>
+  <div class="flex flex-col gap-2 rounded-xl border border-line bg-surface p-3 max-lg:hidden">
+    <div class="min-w-0">
+      <div class="text-xs text-muted">{% trans "Kein Timer aktiv" %}</div>
+      <div class="text-[22px] font-semibold tracking-tight text-muted tabular-nums">0:00 h</div>
+    </div>
+    <a {% dialog_link "tracking:timer_start" %} class="btn w-full" aria-label="{% trans 'Timer starten' %}">{% icon "play" size=14 %}{% trans "Timer starten" %}</a>
   </div>
-  <a {% dialog_link "tracking:timer_start" %} class="btn w-9 px-0 lg:w-full lg:px-3.5" aria-label="{% trans 'Timer starten' %}">{% icon "play" size=14 %}<span class="max-lg:hidden">{% trans "Timer starten" %}</span></a>
+  <a {% dialog_link "tracking:timer_start" %} class="timer-knob" aria-label="{% trans 'Timer starten' %}" title="{% trans 'Timer starten' %}">{% icon "play" size=20 %}</a>
   {% endif %}
 </div>
