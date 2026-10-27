@@ -16,6 +16,7 @@
       {% elif show_project and reminder.project %}
       <a href="{% url 'projects:detail' reminder.project.pk %}">{{ reminder.project.name }}</a>
       {% endif %}
+      {% if reminder.repeat %}<span title="{% trans 'Wiederholung' %}">↻ {{ reminder.repeat_text }}{% if reminder.repeat_until %} {% blocktrans trimmed with until=reminder.repeat_until|date:date_format %}bis {{ until }}{% endblocktrans %}{% endif %}</span>{% endif %}
       {% if reminder.due_at %}
       <span class="inline-flex items-center gap-1.5">
         {% if reminder.notify_bell %}<span title="{% trans 'Benachrichtigung per Glocke' %}">{% icon "bell" size=14 %}</span>{% endif %}
@@ -34,7 +35,7 @@
     {% else %}
     <form method="post" action="{% url 'reminders:done' reminder.pk %}">
       {% csrf_token %}<input type="hidden" name="next" value="{{ next_url }}">
-      <button type="submit" class="btn btn-sm">{% icon "check" size=14 %}{% trans "Erledigt" %}</button>
+      <button type="submit" class="btn btn-sm"{% if reminder.repeat %} title="{% trans 'Beendet auch die Wiederholung' %}"{% endif %}>{% icon "check" size=14 %}{% trans "Erledigt" %}</button>
     </form>
     {% endif %}
     <a {% dialog_link "reminders:edit" reminder.pk %} class="btn btn-ghost btn-sm btn-icon size-8" title="{% trans 'Bearbeiten' %}" aria-label="{% blocktrans trimmed with title=reminder.title %}Erinnerung {{ title }} bearbeiten{% endblocktrans %}">{% icon "pencil" %}</a>

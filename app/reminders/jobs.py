@@ -1,4 +1,6 @@
-"""Tell users about reminders that have become due: in the bell and by e-mail, as set on each reminder."""
+"""Tell users about reminders that have become due: in the bell and by e-mail, as set on each reminder.
+
+A reminder that repeats moves on to its next date as soon as it was announced."""
 
 import logging
 from datetime import datetime
@@ -9,7 +11,7 @@ from django.utils.translation import gettext_lazy as _
 from core.i18n import datetime_format, fmt
 from core.models import AppSettings
 from inbox.levels import Level
-from inbox.service import anotify
+from inbox.service import anotify, aresolve
 from mailer import outbox
 from mailer.models import MailSettings, OutgoingMail
 from reminders.models import Reminder
@@ -62,6 +64,9 @@ async def notify_due(now: datetime) -> int:
             continue
         try:
             if reminder.notify_bell:
+                if reminder.repeat:
+                    # The message of the last time is obsolete, and a new one is announced like the first.
+                    await aresolve(f"reminder:{reminder.pk}")
                 await anotify(
                     Level.INFO,
                     KIND,
@@ -75,6 +80,9 @@ async def notify_due(now: datetime) -> int:
                 )
             if reminder.notify_email and config.is_configured and reminder.user.email:
                 await _queue_mail(reminder, base_url)
+            if next_due := reminder.next_due(now):
+                # The series goes on: the next date is announced when it comes.
+                await Reminder.objects.filter(pk=reminder.pk).aupdate(due_at=next_due, notified_at=None)
         except Exception:
             # Try again with the next run instead of losing the reminder.
             logger.exception("Could not announce reminder %s", reminder.pk)

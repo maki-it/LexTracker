@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: LexTracker\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-27 16:35+0000\n"
+"POT-Creation-Date: 2026-10-27 17:00+0000\n"
 "PO-Revision-Date: 2026-10-25 12:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: English\n"
@@ -2097,12 +2097,36 @@ msgid ""
 "Einstellungen."
 msgstr "E-mail sending is not set up yet. You can do that in the settings."
 
+msgid "Eine Wiederholung braucht ein Datum."
+msgstr "A repetition needs a date."
+
+msgid "Das Ende liegt vor dem ersten Datum."
+msgstr "The end is before the first date."
+
 #, python-format
 msgid "Erinnerung: %(title)s"
 msgstr "Reminder: %(title)s"
 
+msgid "nie"
+msgstr "never"
+
 msgid "Fällig am"
 msgstr "Due on"
+
+msgid "Wiederholung"
+msgstr "Repeat"
+
+msgid "Abstand"
+msgstr "Interval"
+
+msgid "Zum Beispiel 2 bei „wöchentlich“ für alle zwei Wochen."
+msgstr "For example 2 with “weekly” for every two weeks."
+
+msgid "Wiederholen bis"
+msgstr "Repeat until"
+
+msgid "Leer lassen für ohne Ende."
+msgstr "Leave empty for no end."
 
 msgid "Per Glocke erinnern"
 msgstr "Remind me in the bell"
@@ -2112,6 +2136,18 @@ msgstr "Remind me by e-mail"
 
 msgid "benachrichtigt"
 msgstr "notified"
+
+#, python-format
+msgid "alle %(count)d Wochen"
+msgstr "every %(count)d weeks"
+
+#, python-format
+msgid "alle %(count)d Monate"
+msgstr "every %(count)d months"
+
+#, python-format
+msgid "alle %(count)d Jahre"
+msgstr "every %(count)d years"
 
 msgid "Erledigt"
 msgstr "Done"
@@ -4677,6 +4713,10 @@ msgstr "%(due_at)s"
 msgid "ohne Datum"
 msgstr "no date"
 
+#, python-format
+msgid "bis %(until)s"
+msgstr "until %(until)s"
+
 msgid "Benachrichtigung per Glocke"
 msgstr "Notification in the bell"
 
@@ -4685,6 +4725,9 @@ msgstr "Notification by e-mail"
 
 msgid "Wieder öffnen"
 msgstr "Reopen"
+
+msgid "Beendet auch die Wiederholung"
+msgstr "Also ends the repetition"
 
 #, python-format
 msgid "Erinnerung %(title)s bearbeiten"
