@@ -404,6 +404,7 @@ dependencies = [
     { name = "django-otp" },
     { name = "django-tailwind-cli" },
     { name = "httpx" },
+    { name = "linkify-it-py" },
     { name = "markdown-it-py" },
     { name = "pydantic-settings" },
     { name = "segno" },
@@ -429,6 +430,7 @@ requires-dist = [
     { name = "django-otp", specifier = ">=1.7.5" },
     { name = "django-tailwind-cli", specifier = ">=4.8.1" },
     { name = "httpx", specifier = ">=0.28.1" },
+    { name = "linkify-it-py", specifier = ">=2.1.0" },
     { name = "markdown-it-py", specifier = ">=4.2.0" },
     { name = "pydantic-settings", specifier = ">=2.16.1" },
     { name = "segno", specifier = ">=1.6.6" },
@@ -443,6 +445,15 @@ dev = [
     { name = "pytest-asyncio", specifier = ">=1.4" },
     { name = "pytest-django", specifier = ">=4.14" },
     { name = "ruff", specifier = ">=0.17.2" },
+]
+
+[[package]]
+name = "linkify-it-py"
+version = "2.2.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/45/98/7a1a5f31fd5c7ba93e963b168e244b8e3dd705b3d2a718e3c3307583bf57/linkify_it_py-2.2.0.tar.gz", hash = "sha256:907acd2d17ac1fbb9ddb62c8957ccbd6158cac602231a15c3b0cd1e215f03cee", size = 32939, upload-time = "2026-08-29T07:07:08.305Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/13/d4/1152d1c7ab42d8b908be64fd200ddc870dc9d4925e951198702084aa1a7d/linkify_it_py-2.2.0-py3-none-any.whl", hash = "sha256:3adc40eb5af300b2605fcfdb968c24e1d780a90f1f2221af7c15e5111e94d443", size = 21971, upload-time = "2026-08-29T07:07:07.164Z" },
 ]
 
 [[package]]

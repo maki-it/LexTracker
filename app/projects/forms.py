@@ -2,7 +2,7 @@ from django import forms
 from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 
-from core.forms import MARKDOWN_HELP, StyledFormMixin
+from core.forms import MARKDOWN_HELP, MarkdownTextarea, StyledFormMixin
 from customers.models import Customer
 from projects.models import Project, Task, TaskTemplate
 
@@ -12,7 +12,7 @@ class ProjectForm(StyledFormMixin, forms.ModelForm):
         model = Project
         fields = ["customer", "name", "status", "description", "hourly_rate", "budget_hours", "start_date", "end_date"]
         widgets = {
-            "description": forms.Textarea(attrs={"rows": 3}),
+            "description": MarkdownTextarea(attrs={"rows": 3}),
             "start_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
             "end_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
         }
@@ -57,7 +57,7 @@ class TaskEditForm(StyledFormMixin, forms.ModelForm):
     class Meta:
         model = Task
         fields = ["name", "status", "description", "hourly_rate", "estimated_hours", "is_billable"]
-        widgets = {"description": forms.Textarea(attrs={"rows": 3})}
+        widgets = {"description": MarkdownTextarea(attrs={"rows": 3})}
         help_texts = {"description": MARKDOWN_HELP}
 
 
@@ -65,5 +65,5 @@ class TaskTemplateForm(StyledFormMixin, forms.ModelForm):
     class Meta:
         model = TaskTemplate
         fields = ["name", "description", "hourly_rate", "estimated_hours", "is_billable"]
-        widgets = {"description": forms.Textarea(attrs={"rows": 3})}
+        widgets = {"description": MarkdownTextarea(attrs={"rows": 3})}
         help_texts = {"description": MARKDOWN_HELP}

@@ -723,3 +723,163 @@ if (!(window.HTMLScriptElement && HTMLScriptElement.supports && HTMLScriptElemen
     { passive: true },
   );
 }
+
+// Markdown editor (core/forms.py MarkdownTextarea, templates/core/_markdown_editor.html): buttons above the text
+// field, a tab with the preview (rendered by the server, so it looks like the saved text) and a few shortcuts.
+// Edits go through insertText where the browser allows it, so Strg+Z undoes them.
+const MD_URL = /^(https?:\/\/|www\.)\S+$/i;
+// What a list item starts with: "- ", "- [ ] " or "1. ".
+const MD_LIST_PREFIX = /^(?:[-*] (?:\[[ xX]\] )?|\d+\. )/;
+
+function mdReplace(input, start, end, text, selectStart = start + text.length, selectEnd = selectStart) {
+  input.focus();
+  input.setSelectionRange(start, end);
+  const done = text ? document.execCommand("insertText", false, text) : document.execCommand("delete");
+  if (!done) {
+    input.setRangeText(text, start, end, "end");
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+  input.setSelectionRange(selectStart, selectEnd);
+}
+
+// **bold**, *italic*, `code`: wraps the selection, or takes the marks away when they are already there.
+function mdWrap(input, before, after, placeholder) {
+  const { selectionStart: start, selectionEnd: end, value } = input;
+  const selected = value.slice(start, end);
+  if (value.slice(start - before.length, start) === before && value.slice(end, end + after.length) === after) {
+    mdReplace(input, start - before.length, end + after.length, selected, start - before.length, start - before.length + selected.length);
+  } else if (selected.length >= before.length + after.length && selected.startsWith(before) && selected.endsWith(after)) {
+    const inner = selected.slice(before.length, selected.length - after.length);
+    mdReplace(input, start, end, inner, start, start + inner.length);
+  } else {
+    const text = selected || placeholder;
+    mdReplace(input, start, end, before + text + after, start + before.length, start + before.length + text.length);
+  }
+}
+
+// A prefix in front of every selected line (heading, quote, lists). It is taken away again when all of them have
+// it (`own`). Otherwise another prefix of the same kind (`strip`) is replaced, e.g. "- " by "1. ".
+function mdLines(input, prefixOf, own, strip) {
+  const { value } = input;
+  const start = value.lastIndexOf("\n", input.selectionStart - 1) + 1;
+  const found = value.indexOf("\n", input.selectionEnd);
+  const end = found === -1 ? value.length : found;
+  const lines = value.slice(start, end).split("\n");
+  const remove = lines.every((line) => own.test(line));
+  const text = lines.map((line, i) => (remove ? line.replace(own, "") : prefixOf(i) + line.replace(strip, ""))).join("\n");
+  if (input.selectionStart === input.selectionEnd) {
+    // Nothing selected: the cursor stays where it was in the line.
+    const caret = Math.max(start, input.selectionStart + text.length - (end - start));
+    mdReplace(input, start, end, text, caret);
+  } else {
+    mdReplace(input, start, end, text, start, start + text.length);
+  }
+}
+
+function mdLink(input, placeholder) {
+  const { selectionStart: start, selectionEnd: end, value } = input;
+  const selected = value.slice(start, end);
+  if (MD_URL.test(selected)) {
+    // A URL is selected: it becomes the address, the cursor waits for the text.
+    mdReplace(input, start, end, `[](${selected})`, start + 1);
+  } else {
+    const text = selected || placeholder;
+    const urlStart = start + text.length + 3;
+    mdReplace(input, start, end, `[${text}](url)`, urlStart, urlStart + 3);
+  }
+}
+
+const MD_TOOLS = {
+  heading: (input) => mdLines(input, () => "### ", /^#{1,6} /, /^#{1,6} /),
+  bold: (input, placeholder) => mdWrap(input, "**", "**", placeholder),
+  italic: (input, placeholder) => mdWrap(input, "*", "*", placeholder),
+  quote: (input) => mdLines(input, () => "> ", /^> ?/, /^> ?/),
+  code: (input, placeholder) => {
+    const multiline = input.value.slice(input.selectionStart, input.selectionEnd).includes("\n");
+    if (multiline) mdWrap(input, "```\n", "\n```", placeholder);
+    else mdWrap(input, "`", "`", placeholder);
+  },
+  link: mdLink,
+  list: (input) => mdLines(input, () => "- ", /^[-*] (?!\[[ xX]\] )/, MD_LIST_PREFIX),
+  ordered: (input) => mdLines(input, (i) => `${i + 1}. `, /^\d+\. /, MD_LIST_PREFIX),
+  task: (input) => mdLines(input, () => "- [ ] ", /^[-*] \[[ xX]\] /, MD_LIST_PREFIX),
+};
+
+// The text a tool puts in when nothing is selected comes with its button (data-md-placeholder), in the user's language.
+function mdRun(input, name) {
+  const button = input.closest("[data-md-editor]").querySelector(`[data-md-tool="${name}"]`);
+  MD_TOOLS[name](input, button.dataset.mdPlaceholder);
+}
+
+// The buttons keep the focus (and so the selection) in the text field.
+document.addEventListener("mousedown", (event) => {
+  if (event.target.closest("[data-md-tool]")) event.preventDefault();
+});
+
+document.addEventListener("click", (event) => {
+  const tool = event.target.closest("[data-md-tool]");
+  if (tool) {
+    mdRun(tool.closest("[data-md-editor]").querySelector("[data-md-input]"), tool.dataset.mdTool);
+    return;
+  }
+  const tab = event.target.closest("[data-md-tab]");
+  if (!tab) return;
+  const editor = tab.closest("[data-md-editor]");
+  const input = editor.querySelector("[data-md-input]");
+  const preview = editor.querySelector(".md-preview");
+  const showPreview = tab.dataset.mdTab === "preview";
+  for (const other of editor.querySelectorAll("[data-md-tab]")) {
+    other.classList.toggle("md-tab-active", other === tab);
+    other.setAttribute("aria-selected", other === tab);
+  }
+  editor.querySelector(".md-tools").hidden = showPreview;
+  if (showPreview) {
+    // As high as the field was, so the dialog does not jump.
+    preview.style.minHeight = `${input.offsetHeight}px`;
+    preview.textContent = "";
+    htmx.ajax("POST", tab.dataset.mdPreviewUrl, { target: preview, swap: "innerHTML", values: { text: input.value } });
+  }
+  input.hidden = showPreview;
+  preview.hidden = !showPreview;
+  if (!showPreview) input.focus();
+});
+
+document.addEventListener("keydown", (event) => {
+  const input = event.target.closest?.("[data-md-input]");
+  if (!input || event.isComposing) return;
+  const key = event.key.toLowerCase();
+  if ((event.ctrlKey || event.metaKey) && !event.shiftKey && !event.altKey) {
+    const tool = { b: "bold", i: "italic", k: "link" }[key];
+    if (tool) {
+      event.preventDefault();
+      mdRun(input, tool);
+    }
+    return;
+  }
+  // Enter at the end of a list item starts the next item. On an empty item it ends the list instead.
+  if (key !== "enter" || event.shiftKey || event.ctrlKey || event.metaKey || input.selectionStart !== input.selectionEnd) return;
+  const caret = input.selectionStart;
+  const lineStart = input.value.lastIndexOf("\n", caret - 1) + 1;
+  const atEnd = input.value.slice(caret).split("\n", 1)[0] === "";
+  const item = input.value.slice(lineStart, caret).match(/^(\s*)(?:([-*]) (\[[ xX]\] )?|(\d+)\. )(.*)$/);
+  if (!item || !atEnd) return;
+  event.preventDefault();
+  if (item[5] === "") {
+    mdReplace(input, lineStart, caret, "", lineStart);
+    return;
+  }
+  const marker = item[4] ? `${Number(item[4]) + 1}. ` : `${item[2]} ${item[3] ? "[ ] " : ""}`;
+  mdReplace(input, caret, caret, `\n${item[1]}${marker}`);
+});
+
+// A URL pasted over selected text turns the text into a link: [text](url).
+document.addEventListener("paste", (event) => {
+  const input = event.target.closest?.("[data-md-input]");
+  const url = event.clipboardData?.getData("text/plain").trim();
+  if (!input || !url || !MD_URL.test(url)) return;
+  const { selectionStart: start, selectionEnd: end, value } = input;
+  const selected = value.slice(start, end);
+  if (start === end || selected.includes("\n") || MD_URL.test(selected)) return;
+  event.preventDefault();
+  mdReplace(input, start, end, `[${selected}](${url.startsWith("www.") ? `https://${url}` : url})`);
+});

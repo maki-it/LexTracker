@@ -27,7 +27,7 @@
         <td class="w-full">
           <div class="font-medium">{{ template.name }}</div>
           {% if not template.is_billable %}<div class="text-xs text-muted">{% trans "nicht abrechenbar" %}</div>{% endif %}
-          {% if template.description %}<div class="line-clamp-2 text-xs text-muted">{{ template.description|markdown }}</div>{% endif %}
+          {% if template.description %}<div class="line-clamp-2 text-xs text-muted">{% markdown_field template "description" %}</div>{% endif %}
         </td>
         <td class="whitespace-nowrap text-right text-muted tabular-nums">{% if template.hourly_rate is not None %}{{ template.hourly_rate }} €/h{% else %}{% trans "vom Projekt" %}{% endif %}</td>
         <td class="whitespace-nowrap text-right text-muted tabular-nums">{% if template.estimated_hours is not None %}{{ template.estimated_hours }} h{% else %}–{% endif %}</td>

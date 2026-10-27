@@ -1,7 +1,7 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
-from core.forms import MARKDOWN_HELP, StyledFormMixin
+from core.forms import MARKDOWN_HELP, MarkdownTextarea, StyledFormMixin
 from customers.lexware import NOTE_MAX_LENGTH
 from customers.models import Category, Customer
 
@@ -17,7 +17,7 @@ class CustomerForm(StyledFormMixin, forms.ModelForm):
     class Meta:
         model = Customer
         fields = ["name", "email", "phone", "default_hourly_rate", "categories", "new_categories", "notes"]
-        widgets = {"notes": forms.Textarea(attrs={"rows": 4}), "categories": forms.CheckboxSelectMultiple}
+        widgets = {"notes": MarkdownTextarea(attrs={"rows": 4}), "categories": forms.CheckboxSelectMultiple}
         help_texts = {"notes": MARKDOWN_HELP}
 
     def __init__(self, *args, **kwargs):

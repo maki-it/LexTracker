@@ -1,31 +1,25 @@
 """Render the Markdown that users write in descriptions and notes."""
 
 from django import template
-from django.utils.safestring import mark_safe
-from markdown_it import MarkdownIt
+from django.urls import reverse
+
+from core import markdown as md
+from core.markdown_targets import TARGETS
 
 register = template.Library()
-
-# Only the small part of Markdown that descriptions need: paragraphs, lists, line breaks,
-# **bold**, *italic*, ~~struck~~, `code` and links. Raw HTML stays text ("html": False), and
-# markdown-it drops links to javascript:, vbscript:, file: and data: URLs.
-_md = MarkdownIt("zero", {"html": False, "breaks": True}).enable(
-    ["list", "newline", "escape", "backticks", "emphasis", "strikethrough", "link", "autolink", "entity"]
-)
-
-
-def _render_link_open(renderer, tokens, idx, options, env):
-    tokens[idx].attrSet("target", "_blank")
-    tokens[idx].attrSet("rel", "noopener noreferrer")
-    return renderer.renderToken(tokens, idx, options, env)
-
-
-_md.add_render_rule("link_open", _render_link_open)
 
 
 @register.filter
 def markdown(value: str | None) -> str:
-    """``{{ project.description|markdown }}``: the text as HTML, wrapped in ``<div class="markdown">``."""
-    if not value:
-        return ""
-    return mark_safe(f'<div class="markdown">{_md.render(value)}</div>')  # markdown-it escapes the text
+    """``{{ text|markdown }}``: the text as HTML, wrapped in ``<div class="markdown">``. Checklists are read-only."""
+    return md.render(value)
+
+
+@register.simple_tag
+def markdown_field(obj, field: str) -> str:
+    """``{% markdown_field project "description" %}``: like the filter, but its checklists can be ticked on the page.
+
+    Ticking saves the text of ``field``, see ``core.views.markdown_toggle``.
+    """
+    target = next(name for name, t in TARGETS.items() if isinstance(obj, t.model) and t.field == field)
+    return md.render(getattr(obj, field), reverse("core:markdown_toggle", args=[target, obj.pk]))

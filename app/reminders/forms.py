@@ -1,7 +1,7 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
-from core.forms import MARKDOWN_HELP, StyledFormMixin
+from core.forms import MARKDOWN_HELP, MarkdownTextarea, StyledFormMixin
 from customers.models import Customer
 from projects.models import Project
 from reminders.models import Reminder
@@ -20,7 +20,7 @@ class ReminderForm(StyledFormMixin, forms.ModelForm):
         fields = ["target", "title", "due_at", "notes", "notify_bell", "notify_email"]
         widgets = {
             "due_at": forms.DateTimeInput(attrs={"type": "datetime-local"}, format="%Y-%m-%dT%H:%M"),
-            "notes": forms.Textarea(attrs={"rows": 3}),
+            "notes": MarkdownTextarea(attrs={"rows": 3}),
         }
         help_texts = {
             "due_at": _("Ohne Datum gibt es keine Benachrichtigung."),

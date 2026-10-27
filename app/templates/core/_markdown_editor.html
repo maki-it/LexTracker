@@ -1,0 +1,24 @@
+{% load i18n icons %}
+{# A text field for Markdown with buttons and a preview. Behaviour: app.js, "Markdown editor". #}
+<div class="md-editor" data-md-editor>
+  <div class="md-bar">
+    <div class="md-tabs" role="tablist">
+      <button type="button" role="tab" class="md-tab md-tab-active" aria-selected="true" data-md-tab="write">{% trans "Schreiben" %}</button>
+      <button type="button" role="tab" class="md-tab" aria-selected="false" data-md-tab="preview" data-md-preview-url="{% url 'core:markdown_preview' %}">{% trans "Vorschau" %}</button>
+    </div>
+    <div class="md-tools" role="toolbar" aria-label="{% trans 'Formatierung' %}">
+      <button type="button" class="md-tool" data-md-tool="heading" title="{% trans 'Überschrift' %}" aria-label="{% trans 'Überschrift' %}">{% icon "heading" %}</button>
+      <button type="button" class="md-tool" data-md-tool="bold" data-md-placeholder="{% trans 'fett' %}" title="{% trans 'Fett (Strg+B)' %}" aria-label="{% trans 'Fett' %}">{% icon "bold" %}</button>
+      <button type="button" class="md-tool" data-md-tool="italic" data-md-placeholder="{% trans 'kursiv' %}" title="{% trans 'Kursiv (Strg+I)' %}" aria-label="{% trans 'Kursiv' %}">{% icon "italic" %}</button>
+      <button type="button" class="md-tool" data-md-tool="quote" title="{% trans 'Zitat' %}" aria-label="{% trans 'Zitat' %}">{% icon "quote" %}</button>
+      <button type="button" class="md-tool" data-md-tool="code" data-md-placeholder="{% trans 'code' %}" title="{% trans 'Code' %}" aria-label="{% trans 'Code' %}">{% icon "code" %}</button>
+      <button type="button" class="md-tool" data-md-tool="link" data-md-placeholder="{% trans 'Linktext' %}" title="{% trans 'Link (Strg+K)' %}" aria-label="{% trans 'Link' %}">{% icon "link" %}</button>
+      <span class="md-sep" aria-hidden="true"></span>
+      <button type="button" class="md-tool" data-md-tool="list" title="{% trans 'Aufzählung' %}" aria-label="{% trans 'Aufzählung' %}">{% icon "list" %}</button>
+      <button type="button" class="md-tool" data-md-tool="ordered" title="{% trans 'Nummerierte Liste' %}" aria-label="{% trans 'Nummerierte Liste' %}">{% icon "list-ordered" %}</button>
+      <button type="button" class="md-tool" data-md-tool="task" title="{% trans 'Checkliste' %}" aria-label="{% trans 'Checkliste' %}">{% icon "list-checks" %}</button>
+    </div>
+  </div>
+  {{ widget.textarea }}
+  <div class="md-preview markdown" role="tabpanel" hidden></div>
+</div>
