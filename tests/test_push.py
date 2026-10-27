@@ -559,6 +559,22 @@ def test_the_choices_of_a_device_are_saved(logged_in, admin):
     assert (sub.topics, sub.name) == ([Topic.WARNING, Topic.TIMER_LIVE], "Pixel")
 
 
+def test_in_the_dialog_the_actions_answer_with_the_dialog_instead_of_a_redirect(logged_in, admin, push):
+    _, sub = subscribe(admin)
+    dialog = {"HX-Request": "true", "HX-Target": "dialog-body"}
+
+    saved = logged_in.post(reverse("push:topics", args=[sub.pk]), {"topics": [Topic.WARNING]}, headers=dialog)
+    tested = logged_in.post(reverse("push:test", args=[sub.pk]), headers=dialog)
+    removed = logged_in.post(reverse("push:remove", args=[sub.pk]), headers=dialog)
+
+    for response, message in ((saved, "Einstellungen gespeichert."), (tested, "unterwegs"), (removed, "keine Push")):
+        assert response.status_code == 200
+        assert message in response.text
+        # The notifications tab, as the content of the dialog (no sidebar).
+        assert 'id="push"' in response.text and "<aside" not in response.text
+    assert not PushSubscription.objects.exists()
+
+
 def test_employees_cannot_pick_what_is_for_administrators(client, employee):
     _, sub = subscribe(employee)
     client.force_login(employee)

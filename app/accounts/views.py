@@ -329,6 +329,11 @@ async def account(request: HttpRequest) -> HttpResponse:
     return await _account_page(request, form, tab)
 
 
+async def notifications_page(request: HttpRequest) -> HttpResponse:
+    """The notifications tab as a page of its own, for actions that answer in the dialog instead of reloading."""
+    return await _account_page(request, PreferencesForm(instance=request.user), "notifications")
+
+
 async def _account_page(request: HttpRequest, form, tab: str, token_form=None, new_key: str = "") -> HttpResponse:
     mcp_url = request.build_absolute_uri(reverse("mcp:endpoint"))
     return render(
