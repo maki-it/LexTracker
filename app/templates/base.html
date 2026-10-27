@@ -5,6 +5,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}{{ brand.name }}{% endblock %}</title>
+  {% blocktrans trimmed with app=brand.name asvar description %}{{ app }}: Zeiterfassung und Projektsteuerung{% endblocktrans %}
+  <meta name="description" content="{% block meta_description %}{{ description }}{% endblock %}">
   {% if brand.logo_url %}
   <link rel="icon" href="{{ brand.logo_url }}" type="{{ brand.logo_type }}">
   {% if brand.logo_type != "image/svg+xml" %}<link rel="apple-touch-icon" href="{{ brand.logo_url }}">{% endif %}

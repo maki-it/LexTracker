@@ -326,6 +326,8 @@ FORWARDED_ALLOW_IPS=<IP des Proxys>
 
 Ohne HTTPS funktioniert der Login nur mit `APP_SECURE_COOKIES=false`.
 
+Die App liefert unter `/robots.txt` selbst eine Datei aus, die Suchmaschinen alles untersagt (`Disallow: /`). Der Reverse Proxy muss dafür nichts tun.
+
 ### Datensicherung
 
 **Backup:** Der Scheduler kopiert die Datenbank täglich nach `/backups`. Ob, ab welcher Uhrzeit (Standard 03:00) und wie viele Kopien er behält (Standard 14), stellst du unter Einstellungen → Datensicherung ein; dort steht auch, wann die letzte Sicherung lief. Nur der Zielordner kommt aus der Umgebung (`APP_BACKUP_DIR`, in Docker fest `/backups`, ohne Docker `data/backups`). Der Scheduler nutzt dafür die Backup-Funktion von SQLite, die auch im laufenden Betrieb eine stimmige Kopie liefert; die Datei einfach zu kopieren reicht im WAL-Modus nicht.

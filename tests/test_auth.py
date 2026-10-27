@@ -22,6 +22,19 @@ def test_favicon_is_public(client):
     assert response.url.endswith("img/favicon.ico")
 
 
+def test_robots_txt_is_public_and_blocks_crawlers(client, user):
+    response = client.get("/robots.txt")
+    assert response.status_code == 200
+    assert response["Content-Type"].startswith("text/plain")
+    assert response.text == "User-agent: *\nDisallow: /\n"
+
+
+def test_robots_txt_does_not_lock_out_login_or_mcp(client, user):
+    # Crawlers are only asked to stay away; the login page and the MCP endpoint still answer.
+    assert client.get(reverse("accounts:login")).status_code == 200
+    assert client.get("/mcp/").status_code != 302
+
+
 def test_login_with_valid_credentials(client, user):
     response = client.post(reverse("accounts:login"), {"username": "kim", "password": "geheim-123", "next": "/"})
     assert response.status_code == 302

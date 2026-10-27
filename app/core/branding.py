@@ -22,7 +22,7 @@ DEFAULT_NAME = "LexTracker"
 NAME_MAX_LENGTH = 40
 LOGO_MAX_SIZE = 256 * 1024
 # Not loaded for requests that never render a page.
-SKIPPED = ("/static/", "/mcp/", "/health/")
+SKIPPED = ("/static/", "/mcp/", "/health/", "/robots.txt")
 
 _RASTER_SIGNATURES = {
     b"\x89PNG\r\n\x1a\n": "image/png",

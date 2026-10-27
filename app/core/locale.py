@@ -14,7 +14,7 @@ from django.utils.cache import patch_vary_headers
 from django.utils.decorators import async_only_middleware
 
 COOKIE_MAX_AGE = 365 * 24 * 60 * 60
-SKIPPED = ("/static/", "/health/")
+SKIPPED = ("/static/", "/health/", "/robots.txt")
 
 
 def language_for(request: HttpRequest) -> str:

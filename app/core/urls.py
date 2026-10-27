@@ -7,6 +7,7 @@ app_name = "core"
 urlpatterns = [
     path("", views.dashboard, name="dashboard"),
     path("health/", views.health, name="health"),
+    path("robots.txt", views.robots, name="robots"),
     path("branding/logo/", views.logo, name="logo"),
     path("settings/", views.app_settings, name="settings"),
     path("settings/jobs/", views.job_list, name="jobs"),

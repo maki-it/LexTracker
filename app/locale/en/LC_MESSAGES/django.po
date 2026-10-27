@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: LexTracker\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-26 17:52+0100\n"
+"POT-Creation-Date: 2026-10-27 03:04+0000\n"
 "PO-Revision-Date: 2026-10-25 12:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: English\n"
@@ -2535,6 +2535,10 @@ msgstr "Edit"
 
 msgid "Benutzer bearbeiten"
 msgstr "Edit user"
+
+#, python-format
+msgid "%(app)s: Zeiterfassung und Projektsteuerung"
+msgstr "%(app)s: time tracking and project management"
 
 msgid "Menü"
 msgstr "Menu"
