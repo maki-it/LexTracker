@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.11.0](https://github.com/maki-it/LexTracker/compare/lextracker-v0.10.0...lextracker-v0.11.0) (2026-10-27)
+
+
+### Features
+
+* **auth:** always offer passkeys where the browser allows them ([#198](https://github.com/maki-it/LexTracker/issues/198)) ([e48648e](https://github.com/maki-it/LexTracker/commit/e48648e0a53357d7b88b423ed27f54b78c4845b3))
+* **auth:** sign in with passkeys and switch the login language with a drop-down ([#197](https://github.com/maki-it/LexTracker/issues/197)) ([0cf65b2](https://github.com/maki-it/LexTracker/commit/0cf65b2af685483372a8332b522e32ddccbbcad3))
+* **customers:** call, e-mail and route buttons and the address from Lexware Office ([#195](https://github.com/maki-it/LexTracker/issues/195)) ([2336b20](https://github.com/maki-it/LexTracker/commit/2336b208ae11f4ecd0e6f5dc1fabefe009c8666b))
+* **pwa:** serve a branded web app manifest with a dark splash screen and shortcuts ([#196](https://github.com/maki-it/LexTracker/issues/196)) ([8ff3029](https://github.com/maki-it/LexTracker/commit/8ff3029b1033045e37278cda7af04542ccccb8ce))
+* **tracking:** fold-out recent tasks and enter time as a duration or from–to ([#194](https://github.com/maki-it/LexTracker/issues/194)) ([09ba5fd](https://github.com/maki-it/LexTracker/commit/09ba5fd1f7d38de5586a4884a8f57ebb5a5e1dc3))
+* **tracking:** jump to any calendar week with a week picker ([#199](https://github.com/maki-it/LexTracker/issues/199)) ([2dcdfee](https://github.com/maki-it/LexTracker/commit/2dcdfee6ebb4c207e731fd8c9e7e3d6446b2bbcc))
+* **ui:** bottom navigation, card lists and larger touch targets on phones ([#192](https://github.com/maki-it/LexTracker/issues/192)) ([d7621bc](https://github.com/maki-it/LexTracker/commit/d7621bc2da267570086c6ff910eac3b2426f5fdf))
+
 ## [0.10.0](https://github.com/maki-it/LexTracker/compare/lextracker-v0.9.0...lextracker-v0.10.0) (2026-10-27)
 
 
