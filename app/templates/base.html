@@ -87,6 +87,8 @@
         </form>
       </div>
     </aside>
+    {# Chrome loads a page in the background as soon as a finger touches (or the mouse presses) one of its links, so most of the request is done by the time the tap is over. Other browsers ignore this. #}
+    <script type="speculationrules">{"prefetch": [{"where": {"selector_matches": "#sidebar-nav a"}, "eagerness": "conservative"}]}</script>
 
     <main class="mx-auto flex w-full max-w-6xl min-w-0 flex-col gap-6 px-4 py-6 sm:px-8 lg:py-8">
       {% with critical=request.nav_inbox.critical %}
