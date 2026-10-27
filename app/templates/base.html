@@ -85,8 +85,8 @@
         </form>
       </div>
     </aside>
-    {# Chrome loads a page in the background as soon as a finger touches (or the mouse presses) one of its links, so most of the request is done by the time the tap is over. Other browsers ignore this. #}
-    <script type="speculationrules">{"prefetch": [{"where": {"selector_matches": "#sidebar-nav a"}, "eagerness": "conservative"}]}</script>
+    {# Chrome loads a page in the background once the mouse rests on one of its links for a moment, or as soon as a finger touches it, so most of the request is done by the time of the click. Other browsers ignore this. #}
+    <script type="speculationrules">{"prefetch": [{"where": {"selector_matches": "#sidebar-nav a, .bottom-bar a"}, "eagerness": "moderate"}]}</script>
 
     <main class="mx-auto flex w-full max-w-6xl min-w-0 flex-col gap-6 px-4 py-6 max-lg:pb-[calc(6rem+env(safe-area-inset-bottom))] sm:px-8 lg:py-8">
       {% with critical=request.nav_inbox.critical %}
