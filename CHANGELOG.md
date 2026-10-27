@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.10.0](https://github.com/maki-it/LexTracker/compare/lextracker-v0.9.0...lextracker-v0.10.0) (2026-10-27)
+
+
+### Features
+
+* **accounts:** language switch and SSO on the login page ([7ae85bf](https://github.com/maki-it/LexTracker/commit/7ae85bfe83d88f7c9641f4f35fbd89bf4ea0b6db))
+* **accounts:** let visitors switch the language on the login page ([09e5338](https://github.com/maki-it/LexTracker/commit/09e533879c8d21f27fa0960d9db048840b2453ed))
+* **accounts:** sign in with OpenID Connect next to the password login ([20de1e5](https://github.com/maki-it/LexTracker/commit/20de1e507ed4f13ae6bb1c2fdd03c6c5e48e06e7))
+* **seo:** add robots.txt and a meta description ([#186](https://github.com/maki-it/LexTracker/issues/186)) ([8553e2a](https://github.com/maki-it/LexTracker/commit/8553e2a4a1b399b64ba34981a52a677addc4621e))
+
+
+### Bug Fixes
+
+* **auth:** keep login failures when another account signs in, add optional HSTS ([#188](https://github.com/maki-it/LexTracker/issues/188)) ([320578c](https://github.com/maki-it/LexTracker/commit/320578cc171bef5e2a2f3d3519112fcf445532f8))
+* **ui:** keep the sidebar counts apart on narrow phones and make the phone menu scrollable ([#187](https://github.com/maki-it/LexTracker/issues/187)) ([e6871aa](https://github.com/maki-it/LexTracker/commit/e6871aab336890d823045b7c0ac70995e0306702))
+
+
+### Performance
+
+* **ui:** prefetch sidebar pages as soon as a link is touched ([a2dc05a](https://github.com/maki-it/LexTracker/commit/a2dc05a790b45b0795db59f5c275686b3153dc39))
+* **ui:** prefetch sidebar pages as soon as a link is touched ([c5a3b48](https://github.com/maki-it/LexTracker/commit/c5a3b4847db2b324dee48807a9ced57c3e8c5950))
+
 ## [0.9.0](https://github.com/maki-it/LexTracker/compare/lextracker-v0.8.0...lextracker-v0.9.0) (2026-10-26)
 
 
