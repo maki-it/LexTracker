@@ -179,8 +179,8 @@ async def sync_invoices(client: LexwareClient) -> InvoiceSyncResult:
 
 async def _forget(invoice: Invoice, now) -> None:
     """The invoice is gone from Lexware."""
-    if invoice.origin == Invoice.Origin.LEXWARE:
-        await invoice.adelete()  # Never ours and gone: nothing to keep.
+    if invoice.origin == Invoice.Origin.LEXWARE and not await invoice.time_entries.aexists():
+        await invoice.adelete()  # Never ours, no time assigned to it and gone: nothing to keep.
     else:
         await sync_to_async(mark_deleted)(invoice, now)
 
@@ -270,6 +270,7 @@ async def _create_from_lexware(
     return await Invoice.objects.acreate(
         customer_id=customer_id,
         origin=Invoice.Origin.LEXWARE,
+        quotation_number=_quotation_number(data),
         lexware_id=lexware_id,
         voucher_date=voucher_date,
         period_start=start,
@@ -281,6 +282,12 @@ async def _create_from_lexware(
         open_amount=open_amount,
         status_synced_at=now,
     )
+
+
+def _quotation_number(data: dict) -> str:
+    """The number of the quotation the invoice follows up on, from its related vouchers."""
+    related = data.get("relatedVouchers") or []
+    return next((v.get("voucherNumber") or "" for v in related if v.get("voucherType") == "quotation"), "")
 
 
 def _amount(value: float | None) -> Decimal | None:

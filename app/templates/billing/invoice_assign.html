@@ -1,0 +1,52 @@
+{% extends layout %}
+{% load i18n %}
+{% load timefmt %}
+{% block title %}{% blocktrans trimmed with name=customer.name %}Rechnung zuordnen {{ name }}{% endblocktrans %} · {{ brand.name }}{% endblock %}
+{% block content %}
+<div class="flex flex-col gap-4">
+  <div>
+    <p class="breadcrumb"><a href="{% url 'billing:overview' %}">{% trans "Abrechnung" %}</a> / <a href="{% url 'billing:customer' customer.pk %}">{{ customer.name }}</a></p>
+    <h1>{% blocktrans trimmed with name=customer.name %}Rechnung zuordnen · {{ name }}{% endblocktrans %}</h1>
+    <p class="mt-1 text-[13px] text-muted">
+      {% if draft.entries %}
+      {% blocktrans trimmed count counter=draft.entries|length with start=start|date:date_format end=end|date:date_format hours=draft.duration|hours:duration_format %}Der Zeiteintrag vom {{ start }} bis {{ end }} ({{ hours }} h) gilt danach als abgerechnet. In Lexware wird nichts geändert.{% plural %}Die {{ counter }} Zeiteinträge vom {{ start }} bis {{ end }} ({{ hours }} h) gelten danach als abgerechnet. In Lexware wird nichts geändert.{% endblocktrans %}
+      {% else %}
+      {% trans "Für diesen Zeitraum gibt es keine offenen, abrechenbaren Zeiten." %}
+      {% endif %}
+    </p>
+  </div>
+
+  {% if invoices %}
+  <div class="table-wrap">
+    <table class="table">
+      <tbody>
+        {% for invoice in invoices %}
+        <tr>
+          <td>
+            <div class="font-medium tabular-nums">{{ invoice.voucher_number|default:_("Entwurf") }}</div>
+            <div class="text-[13px] text-muted">{{ invoice.voucher_date|default:invoice.created_at|date:date_format }}{% if invoice.quotation_number %} · {% blocktrans trimmed with number=invoice.quotation_number %}Angebot {{ number }}{% endblocktrans %}{% endif %}{% if invoice.entry_count %} · {% blocktrans trimmed count counter=invoice.entry_count %}{{ counter }} Zeiteintrag zugeordnet{% plural %}{{ counter }} Zeiteinträge zugeordnet{% endblocktrans %}{% endif %}</div>
+          </td>
+          <td class="whitespace-nowrap">{% include "billing/_invoice_status.html" %}</td>
+          <td class="text-right whitespace-nowrap font-semibold tabular-nums">{{ invoice.total_net }} €</td>
+          <td class="text-right">
+            {% if draft.entries %}
+            <form method="post" action="{% url 'billing:invoice_assign' customer.pk %}">
+              {% csrf_token %}
+              <input type="hidden" name="start" value="{{ start|date:'Y-m-d' }}">
+              <input type="hidden" name="end" value="{{ end|date:'Y-m-d' }}">
+              <input type="hidden" name="invoice" value="{{ invoice.pk }}">
+              <button type="submit" class="btn btn-sm">{% trans "Zuordnen" %}</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="empty py-6">{% trans "Zu diesem Kunden gibt es keine Rechnung aus Lexware, der Zeiten zugeordnet werden können." %}</p>
+  {% endif %}
+  <p class="text-[13px] text-muted">{% blocktrans trimmed %}Fehlt eine Rechnung? Neue Rechnungen aus Lexware kommen automatisch hinzu, oder du startest den Abgleich auf der Rechnungsseite.{% endblocktrans %}</p>
+</div>
+{% endblock %}

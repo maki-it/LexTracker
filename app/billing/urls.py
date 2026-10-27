@@ -12,6 +12,8 @@ urlpatterns = [
     path("customer/<uuid:pk>/", views.customer_billing, name="customer"),
     path("customer/<uuid:pk>/time/", views.customer_entries, name="customer_entries"),
     path("customer/<uuid:pk>/invoice/", views.invoice_create, name="invoice_create"),
+    path("customer/<uuid:pk>/quotations/", views.quotation_options, name="quotation_options"),
+    path("customer/<uuid:pk>/assign/", views.invoice_assign, name="invoice_assign"),
     path("customer/<uuid:pk>/agreement/", views.agreement_form, name="agreement_create"),
     path("customer/<uuid:pk>/agreement/<uuid:agreement_pk>/", views.agreement_form, name="agreement_edit"),
 ]

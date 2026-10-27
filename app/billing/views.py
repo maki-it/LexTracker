@@ -21,7 +21,7 @@ from billing.forms import BillingAgreementForm, PeriodForm
 from billing.models import BillingAgreement, Invoice
 from billing.periods import Period, period_containing, recent_periods
 from billing.queries import OVERDUE_STATUSES
-from billing.services import create_invoice
+from billing.services import assign_to_invoice, assignable_invoices, create_invoice
 from billing.sync import sync_and_record
 from core.filters import filter_pills, query_with, selected_filters
 from core.ids import parse_uuid
@@ -317,9 +317,10 @@ async def invoice_create(request: HttpRequest, pk: UUID) -> HttpResponse:
         messages.error(request, _("Bitte einen gültigen Zeitraum wählen."))
         return redirect("billing:customer", pk=pk)
     start, end = period_form.cleaned_data["start"], period_form.cleaned_data["end"]
+    quotation_id = parse_uuid(request.POST.get("quotation", ""))
     try:
         async with client_from_settings() as client:
-            invoice = await create_invoice(client, customer, start, end)
+            invoice = await create_invoice(client, customer, start, end, quotation_id)
     except LexwareError as exc:
         messages.error(request, str(exc))
     else:
@@ -327,6 +328,71 @@ async def invoice_create(request: HttpRequest, pk: UUID) -> HttpResponse:
             request, _("Rechnungsentwurf über %(amount)s € netto in Lexware angelegt.") % {"amount": invoice.total_net}
         )
     return redirect(f"{reverse('billing:customer', args=[pk])}?start={start}&end={end}")
+
+
+QUOTATION_STATUS = {"open": gettext_lazy("Offen"), "accepted": gettext_lazy("Angenommen")}
+
+
+@require_GET
+async def quotation_options(request: HttpRequest, pk: UUID) -> HttpResponse:
+    """The field for referencing a quotation of the customer, loaded by the preview once it is shown.
+
+    The quotations come live from Lexware. If they cannot be had, the invoice can still be created without one.
+    """
+    customer = await _get_customer(pk)
+    quotations, error = [], ""
+    if customer.lexware_id:
+        try:
+            async with client_from_settings() as client:
+                quotations = await client.list_quotations(customer.lexware_id)
+        except LexwareError as exc:
+            error = str(exc)
+    options = [(q, QUOTATION_STATUS.get(q.voucher_status, q.voucher_status)) for q in quotations]
+    return render(request, "billing/_quotation_field.html", {"options": options, "error": error})
+
+
+@require_http_methods(["GET", "POST"])
+async def invoice_assign(request: HttpRequest, pk: UUID) -> HttpResponse:
+    """Assign the open time of a period to an invoice or draft that was written in Lexware.
+
+    Nothing is created or changed in Lexware: the time only counts as billed here from then on.
+    """
+    customer = await _get_customer(pk)
+    data = request.POST if request.method == "POST" else request.GET
+    period_form = PeriodForm(data)
+    if not period_form.is_valid():
+        messages.error(request, _("Bitte einen gültigen Zeitraum wählen."))
+        return redirect("billing:customer", pk=pk)
+    start, end = period_form.cleaned_data["start"], period_form.cleaned_data["end"]
+    back = f"{reverse('billing:customer', args=[pk])}?start={start}&end={end}"
+    if request.method == "POST":
+        invoice = await assignable_invoices(customer).filter(pk=parse_uuid(request.POST.get("invoice", ""))).afirst()
+        try:
+            if invoice is None:
+                raise LexwareError(_("Diese Rechnung gibt es nicht (mehr)."))
+            count = await sync_to_async(assign_to_invoice)(customer, invoice, start, end)
+        except LexwareError as exc:
+            messages.error(request, str(exc))
+        else:
+            messages.success(
+                request,
+                ngettext(
+                    "%(count)d Zeiteintrag der Rechnung %(number)s zugeordnet.",
+                    "%(count)d Zeiteinträge der Rechnung %(number)s zugeordnet.",
+                    count,
+                )
+                % {"count": count, "number": invoice.voucher_number or _("(Entwurf)")},
+            )
+        return redirect(back)
+    draft = await sync_to_async(build_draft)(customer, start, end)
+    context = {
+        "customer": customer,
+        "draft": draft,
+        "invoices": [i async for i in assignable_invoices(customer)],
+        "start": start,
+        "end": end,
+    }
+    return await arender(request, "billing/invoice_assign.html", context)
 
 
 @require_http_methods(["GET", "POST"])

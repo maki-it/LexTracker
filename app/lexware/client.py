@@ -139,10 +139,37 @@ class LexwareClient:
     async def get_profile(self) -> Profile:
         return Profile.model_validate(await self._request("GET", "profile"))
 
-    async def create_invoice(self, payload: dict) -> UUID:
-        """Create an invoice draft (not finalized) and return its ID."""
-        data = await self._request("POST", "invoices", json=payload)
+    async def create_invoice(self, payload: dict, *, quotation_id: UUID | None = None) -> UUID:
+        """Create an invoice draft (not finalized) and return its ID.
+
+        With ``quotation_id`` the invoice is created as a follow-up of that quotation, which Lexware shows
+        as the invoice's reference. The line items come from ``payload`` either way.
+        """
+        params = {"precedingSalesVoucherId": str(quotation_id)} if quotation_id else None
+        data = await self._request("POST", "invoices", params=params, json=payload)
         return UUID(data["id"])
+
+    async def get_quotation(self, quotation_id: UUID) -> dict:
+        """The quotation as Lexware returns it. Raises LexwareNotFound if it does not exist."""
+        return await self._request("GET", f"quotations/{quotation_id}")
+
+    async def list_quotations(self, contact_id: UUID) -> list[Voucher]:
+        """The quotations of a contact that an invoice can follow up on (open or accepted), newest first."""
+        found: list[Voucher] = []
+        page = 0
+        while True:
+            params = {
+                "voucherType": "quotation",
+                "voucherStatus": "open,accepted",
+                "contactId": str(contact_id),
+                "page": page,
+                "size": VOUCHERS_PAGE_SIZE,
+            }
+            result = VoucherPage.model_validate(await self._request("GET", "voucherlist", params))
+            found.extend(result.content)
+            if result.last or page + 1 >= result.total_pages:
+                return sorted(found, key=lambda v: v.voucher_date.timestamp() if v.voucher_date else 0, reverse=True)
+            page += 1
 
     async def get_invoice(self, invoice_id: UUID) -> dict:
         """The invoice as Lexware returns it. Raises LexwareNotFound if it was deleted."""

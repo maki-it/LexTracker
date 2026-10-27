@@ -96,6 +96,8 @@ class Invoice(TimeStampedModel):
     # Gross, as Lexware's voucher list reports it; None until the first sync.
     open_amount = models.DecimalField(_("offener Betrag"), max_digits=12, decimal_places=2, null=True, blank=True)
     status_synced_at = models.DateTimeField(_("Status abgeglichen"), null=True, blank=True, editable=False)
+    # The quotation (Angebot) the invoice follows up on, as Lexware shows it under "Referenz".
+    quotation_number = models.CharField(_("Angebot"), max_length=50, blank=True)
 
     class Meta:
         verbose_name = _("Rechnung")
