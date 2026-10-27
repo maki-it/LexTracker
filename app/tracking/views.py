@@ -16,7 +16,7 @@ from core.ids import parse_uuid
 from core.models import AppSettings
 from core.shortcuts import arender
 from projects.models import Task
-from tracking.forms import TimeEntryForm, open_tasks, search_tasks, task_choices
+from tracking.forms import TimeEntryForm, open_tasks, recent_tasks, search_tasks, task_choices
 from tracking.models import TimeEntry
 from tracking.queries import entry_filter
 from tracking.services import start_timer, stop_timer
@@ -50,7 +50,11 @@ async def timer_start(request: HttpRequest) -> HttpResponse:
     """GET: the start form (opened in the dialog from the sidebar). POST: start the timer."""
     if request.method == "GET":
         # The most recently used task is preselected, so starting it again is one click.
-        return render(request, "tracking/timer_start.html", {"last_task": await task_choices(request.user).afirst()})
+        context = {
+            "last_task": await task_choices(request.user).afirst(),
+            "recent_tasks": [t async for t in recent_tasks(request.user)],
+        }
+        return render(request, "tracking/timer_start.html", context)
     try:
         task = await open_tasks(request.user).aget(pk=parse_uuid(request.POST.get("task", "")))
     except Task.DoesNotExist:
@@ -173,7 +177,9 @@ async def entry_form(request: HttpRequest, pk: UUID | None = None) -> HttpRespon
         entry = await sync_to_async(form.save)()
         messages.success(request, _("Zeiteintrag gespeichert."))
         return redirect(_back_to_week(entry))
-    return await arender(request, "tracking/form.html", {"form": form, "entry": entry if pk else None})
+    # A new entry starts as a duration ending now; an existing one, or one that did not validate, shows its times.
+    mode = "duration" if request.method == "GET" and not pk else "range"
+    return await arender(request, "tracking/form.html", {"form": form, "entry": entry if pk else None, "mode": mode})
 
 
 @require_POST

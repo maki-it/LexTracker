@@ -21,6 +21,7 @@
     <a href="{% url 'core:dashboard' %}" class="btn btn-ghost" data-close-dialog>{% trans "Abbrechen" %}</a>
   </div>
 </form>
+{% include "tracking/_recent_tasks.html" with open=True %}
 {% else %}
 <p class="text-muted">{% if user.is_admin %}{% url 'projects:list' as list_url %}{% blocktrans trimmed with url=list_url %}Noch keine offenen Aufgaben. <a class="hover:underline" href="{{ url }}">Lege ein Projekt an</a> und füge Aufgaben hinzu.{% endblocktrans %}{% else %}{% trans "Noch keine offenen Aufgaben." %} {% trans "Sobald ein Projekt mit Aufgaben angelegt ist, kannst du hier Zeit buchen." %}{% endif %}</p>
 {% endif %}

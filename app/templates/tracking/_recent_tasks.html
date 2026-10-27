@@ -1,0 +1,24 @@
+{% load i18n %}
+{# Recently used tasks, folded away: a tap on one starts its timer. Expects `recent_tasks`; `open` unfolds the list. #}
+{% load icons %}
+{% if recent_tasks %}
+<details class="recent-tasks group"{% if open %} open{% endif %}>
+  <summary>
+    <span>{% trans "Zuletzt genutzt" %}</span>
+    {% icon "chevron-down" size=16 css_class="text-muted transition-transform group-open:rotate-180" %}
+  </summary>
+  <div class="recent-tasks-list">
+    {% for task in recent_tasks %}
+    <form method="post" action="{% url 'tracking:timer_start' %}" hx-post="{% url 'tracking:timer_start' %}" hx-swap="none" class="contents">
+      {% csrf_token %}
+      <input type="hidden" name="task" value="{{ task.pk }}">
+      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+      <button type="submit" class="recent-task" title="{% blocktrans trimmed with name=task.name %}Timer für {{ name }} starten{% endblocktrans %}">
+        <span class="truncate font-semibold">{{ task.name }}</span>
+        <span class="truncate text-xs font-normal text-muted">{{ task.project.customer.name }} · {{ task.project.name }}</span>
+      </button>
+    </form>
+    {% endfor %}
+  </div>
+</details>
+{% endif %}

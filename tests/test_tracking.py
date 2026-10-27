@@ -5,6 +5,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from accounts.models import User
+from projects.models import Task
 from tracking.models import TimeEntry
 from tracking.services import start_timer, stop_timer
 
@@ -65,6 +66,34 @@ def test_create_entry_manually(logged_in, user, task):
     assert entry.user == user
 
 
+def test_new_entry_starts_as_a_duration_and_an_existing_one_shows_its_times(logged_in, user, task):
+    page_text = logged_in.get(reverse("tracking:create")).text
+
+    assert 'data-mode="duration"' in page_text
+    assert 'name="started_at"' in page_text and 'name="ended_at"' in page_text
+    assert 'data-mode-button="range"' in page_text
+    for chip in ("15 min", "30 min", "1 h", "2 h"):
+        assert chip in page_text
+
+    entry = TimeEntry.objects.create(
+        user=user,
+        task=task,
+        started_at=timezone.now() - timedelta(hours=2),
+        ended_at=timezone.now() - timedelta(hours=1),
+    )
+    assert 'data-mode="range"' in logged_in.get(reverse("tracking:edit", args=[entry.pk])).text
+
+
+def test_entry_that_does_not_validate_shows_its_times(logged_in, task):
+    response = logged_in.post(
+        reverse("tracking:create"),
+        {"task": task.pk, "started_at": "2026-10-20T11:00", "ended_at": "2026-10-20T10:00"},
+    )
+
+    assert 'data-mode="range"' in response.text
+    assert 'value="2026-10-20T11:00"' in response.text
+
+
 def test_entry_must_end_after_start(logged_in, task):
     response = logged_in.post(
         reverse("tracking:create"),
@@ -101,3 +130,46 @@ def test_cannot_edit_other_users_entries(logged_in, task):
 
     assert logged_in.get(reverse("tracking:edit", args=[entry.pk])).status_code == 404
     assert logged_in.post(reverse("tracking:delete", args=[entry.pk])).status_code == 404
+
+
+def test_recent_tasks_are_offered_on_the_dashboard_and_in_the_timer_dialog(logged_in, user, task):
+    assert "Zuletzt genutzt" not in logged_in.get(reverse("core:dashboard")).text
+
+    TimeEntry.objects.create(user=user, task=task, started_at=timezone.now() - timedelta(hours=2))
+    dashboard = logged_in.get(reverse("core:dashboard")).text
+    dialog = logged_in.get(reverse("tracking:timer_start"), headers={"HX-Request": "true", "HX-Target": "dialog-body"})
+
+    assert "Zuletzt genutzt" in dashboard
+    assert f'name="task" value="{task.pk}"' in dashboard
+    # Folded on the dashboard, unfolded in the dialog.
+    assert '<details class="recent-tasks group">' in dashboard
+    assert '<details class="recent-tasks group" open>' in dialog.text
+
+
+def test_recent_tasks_are_the_last_four_used_and_start_a_timer(logged_in, user, task):
+    customer = task.project.customer
+    project = task.project
+    tasks = [Task.objects.create(project=project, name=f"Aufgabe {i}") for i in range(5)]
+    for i, other in enumerate(tasks):
+        TimeEntry.objects.create(
+            user=user,
+            task=other,
+            started_at=timezone.now() - timedelta(days=10 - i),
+            ended_at=timezone.now() - timedelta(days=10 - i) + timedelta(hours=1),
+        )
+
+    page_text = logged_in.get(reverse("core:dashboard")).text
+
+    assert page_text.count('class="recent-task"') == 4
+    assert "Aufgabe 4" in page_text and "Aufgabe 1" in page_text
+    assert f'class="truncate text-xs font-normal text-muted">{customer.name} · {project.name}' in page_text
+    # The task of the oldest entry is left out.
+    assert f'name="task" value="{tasks[0].pk}"' not in page_text
+
+
+def test_recent_tasks_leave_out_what_the_user_cannot_book(client, user, task):
+    other = User.objects.create_user(username="other", password="geheim-123")
+    TimeEntry.objects.create(user=other, task=task, started_at=timezone.now() - timedelta(hours=2))
+    client.force_login(user)
+
+    assert "Zuletzt genutzt" not in client.get(reverse("core:dashboard")).text
