@@ -28,6 +28,7 @@ from accounts.forms import (
     StyledPasswordChangeForm,
 )
 from accounts.models import ApiToken, User
+from core.locale import COOKIE_MAX_AGE
 
 # Password checked, code from the authenticator app still missing.
 MFA_PENDING_KEY = "mfa_pending"
@@ -176,6 +177,24 @@ async def login_link(request: HttpRequest, key: str) -> HttpResponse:
 
 
 @require_POST
+async def set_language(request: HttpRequest) -> HttpResponse:
+    """Switch the language of the login pages, for visitors who are not signed in.
+
+    It only sets the cookie ``core.locale`` reads. The account adopts it on its first request after signing in
+    if it has no language yet; whoever has one changes it on the account page.
+    """
+    next_url = request.POST.get("next", "")
+    allowed = url_has_allowed_host_and_scheme(
+        next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    )
+    response = redirect(next_url if allowed else settings.LOGIN_URL)
+    language = request.POST.get("language", "")
+    if language in dict(settings.LANGUAGES):
+        response.set_cookie(settings.LANGUAGE_COOKIE_NAME, language, max_age=COOKIE_MAX_AGE, samesite="Lax")
+    return response
+
+
+@require_POST
 async def logout_view(request: HttpRequest) -> HttpResponse:
     await alogout(request)
     return redirect(settings.LOGOUT_REDIRECT_URL)
@@ -223,7 +242,7 @@ async def account(request: HttpRequest) -> HttpResponse:
     if request.method == "POST" and await sync_to_async(form.is_valid)():
         await sync_to_async(form.save)()
         # The confirmation and the page it leads to are already in the new language.
-        translation.activate(request.user.language)
+        translation.activate(request.user.ui_language)
         messages.success(request, _("Einstellungen gespeichert."))
         return redirect(account_url(tab))
     if form.errors:

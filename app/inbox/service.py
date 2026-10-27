@@ -100,7 +100,7 @@ async def _deliver(
     user: User, level: int, kind: str, title: Text, body: Text, url: str, dedupe_key: str, escalate_after: int
 ) -> tuple[Message, bool]:
     """Store the message for the user. The second value tells whether it is new or has become more important."""
-    with translation.override(user.language):
+    with translation.override(user.ui_language):
         fields = {"title": _text(title)[:200], "body": _text(body), "url": url}
     for _ in range(2):
         if dedupe_key:
@@ -145,7 +145,7 @@ async def _mail(user: User, message: Message) -> None:
     if not config.is_configured:
         return
     base_url = await AppSettings.aurl()
-    with translation.override(user.language):
+    with translation.override(user.ui_language):
         subject = f"{message.get_level_display()}: {message.title}"
     await outbox.aqueue(
         OutgoingMail.Kind.NOTIFICATION,

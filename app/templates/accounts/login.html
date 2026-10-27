@@ -23,5 +23,6 @@
     <a href="{% url 'accounts:login_link_request' %}" class="btn">{% trans "Anmeldelink per E-Mail" %}</a>
     {% endif %}
   </form>
+  {% include "accounts/_language_switch.html" %}
 </div>
 {% endblock %}

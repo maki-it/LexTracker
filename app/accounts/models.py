@@ -38,11 +38,13 @@ class User(UUIDModel, AbstractUser):
         LARGE = 100, "100"
         XLARGE = 200, "200"
 
+    # Empty until the first request after signing in: then the language of the login page is adopted.
     language = models.CharField(
         _("Sprache"),
         max_length=10,
-        choices=settings.LANGUAGES,
-        default=settings.LANGUAGE_CODE,
+        choices=[("", _("Automatisch")), *settings.LANGUAGES],
+        blank=True,
+        default="",
         help_text=_("Gilt für die Oberfläche und die E-Mails an dich."),
     )
     role = models.CharField(_("Rolle"), max_length=20, choices=Role, default=Role.ADMIN)
@@ -122,6 +124,11 @@ class User(UUIDModel, AbstractUser):
     @property
     def is_customer(self) -> bool:
         return self.role == self.Role.CUSTOMER
+
+    @property
+    def ui_language(self) -> str:
+        """The language for this user's interface and e-mails, the default one until they have signed in."""
+        return self.language or settings.LANGUAGE_CODE
 
     class Meta:
         verbose_name = _("Benutzer")

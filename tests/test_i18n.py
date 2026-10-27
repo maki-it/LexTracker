@@ -93,9 +93,81 @@ def test_language_of_the_account_beats_the_browser(client, user, english):
 
 
 def test_account_without_a_choice_is_german(client, user):
-    assert user.language == "de"
+    assert user.language == ""
     client.force_login(user)
     assert "Abmelden" in client.get(reverse("core:dashboard")).text
+    user.refresh_from_db()
+    assert user.language == "de"
+
+
+def test_account_without_a_choice_adopts_the_browser_language(client, user, english):
+    client.force_login(user)
+    response = client.get(reverse("core:dashboard"), headers={"Accept-Language": "en"})
+    assert "Sign out" in response.text
+    user.refresh_from_db()
+    assert user.language == "en"
+    assert response.cookies[settings.LANGUAGE_COOKIE_NAME].value == "en"
+
+
+def test_account_with_a_choice_keeps_it(client, user, english):
+    user.language = "de"
+    user.save()
+    client.cookies[settings.LANGUAGE_COOKIE_NAME] = "en"
+    client.force_login(user)
+    assert "Abmelden" in client.get(reverse("core:dashboard")).text
+    user.refresh_from_db()
+    assert user.language == "de"
+
+
+# The language switch on the login page
+
+
+def test_login_page_offers_both_languages(client, user):
+    page = client.get(reverse("accounts:login")).text
+    assert reverse("accounts:set_language") in page
+    assert 'value="de"' in page and 'value="en"' in page
+
+
+def test_switching_the_language_on_the_login_page(client, user, english):
+    response = client.post(reverse("accounts:set_language"), {"language": "en", "next": reverse("accounts:login")})
+    assert response.status_code == 302
+    assert response["Location"] == reverse("accounts:login")
+    assert response.cookies[settings.LANGUAGE_COOKIE_NAME].value == "en"
+    page = client.get(response["Location"], headers={"Accept-Language": "de"}).text
+    assert "Sign in" in page and "Anmelden" not in page
+
+
+def test_unknown_language_on_the_login_page_is_ignored(client, user):
+    response = client.post(reverse("accounts:set_language"), {"language": "fr"})
+    assert settings.LANGUAGE_COOKIE_NAME not in response.cookies
+
+
+def test_language_switch_does_not_redirect_to_other_sites(client, user):
+    response = client.post(reverse("accounts:set_language"), {"language": "en", "next": "https://evil.example/"})
+    assert response["Location"] == reverse("accounts:login")
+
+
+def test_language_switch_needs_post(client, user):
+    assert client.get(reverse("accounts:set_language")).status_code == 405
+
+
+def test_language_chosen_on_the_login_page_becomes_the_default_of_the_account(client, user, english):
+    client.post(reverse("accounts:set_language"), {"language": "en"})
+    response = client.post(reverse("accounts:login"), {"username": "kim", "password": "geheim-123"})
+    assert response.status_code == 302
+    assert "Sign out" in client.get(reverse("core:dashboard"), headers={"Accept-Language": "de"}).text
+    user.refresh_from_db()
+    assert user.language == "en"
+
+
+def test_language_chosen_on_the_login_page_does_not_replace_the_one_of_the_account(client, user, english):
+    user.language = "de"
+    user.save()
+    client.post(reverse("accounts:set_language"), {"language": "en"})
+    client.post(reverse("accounts:login"), {"username": "kim", "password": "geheim-123"})
+    assert "Abmelden" in client.get(reverse("core:dashboard")).text
+    user.refresh_from_db()
+    assert user.language == "de"
 
 
 # Choosing the language

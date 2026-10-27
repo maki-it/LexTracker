@@ -13,6 +13,7 @@ ALWAYS_PUBLIC_PREFIXES = ("/health/", "/static/", "/mcp/", "/webhooks/", "/favic
 PUBLIC_PREFIXES = (
     *ALWAYS_PUBLIC_PREFIXES,
     "/accounts/login/",
+    "/accounts/language/",
     "/accounts/invite/",
     "/accounts/password/",
     "/admin/",

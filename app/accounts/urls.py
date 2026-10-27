@@ -11,6 +11,7 @@ urlpatterns = [
     path("login/link/<str:key>/", views.login_link, name="login_link"),
     path("password/forgot/", views.password_forgot, name="password_forgot"),
     path("password/reset/<uidb64>/<token>/", views.password_reset, name="password_reset"),
+    path("language/", views.set_language, name="set_language"),
     path("logout/", views.logout_view, name="logout"),
     path("invite/<uidb64>/<token>/", views.invite, name="invite"),
 ]

@@ -194,7 +194,7 @@ Was ein Kundenzugang sieht, stellst du pro Zugang beim Benutzer ein. Welche Seit
 
 ### Sprachen
 
-Die Oberfläche gibt es auf Deutsch (Standard) und Englisch. Jeder Benutzer wählt seine Sprache unter **Konto → Darstellung**; E-Mails und Nachrichten der App kommen in der Sprache des Empfängers. Auf der Anmeldeseite gilt die Sprache, die der Browser verlangt, und nach dem Abmelden die zuletzt gewählte. Datumsformat und Dezimaltrenner richten sich nach Sprache und Kontoeinstellung.
+Die Oberfläche gibt es auf Deutsch (Standard) und Englisch. Jeder Benutzer wählt seine Sprache unter **Konto → Darstellung**; E-Mails und Nachrichten der App kommen in der Sprache des Empfängers. Auf der Anmeldeseite gilt die Sprache, die der Browser verlangt, und nach dem Abmelden die zuletzt gewählte; mit dem Umschalter unter dem Anmeldeformular (Deutsch / English) stellst du sie auch ohne Anmeldung um. Ein Konto, das noch keine eigene Sprache hat (neu angelegt, noch nie angemeldet), übernimmt beim ersten Anmelden die der Anmeldeseite. Datumsformat und Dezimaltrenner richten sich nach Sprache und Kontoeinstellung.
 
 Die Quelltexte sind deutsch, `app/locale/en/LC_MESSAGES/django.po` enthält die englische Übersetzung. Nach Änderungen an Texten (`_("…")` im Code, `{% trans %}` und `{% blocktrans %}` in Templates):
 

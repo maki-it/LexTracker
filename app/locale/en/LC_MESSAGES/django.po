@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: LexTracker\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-26 17:52+0100\n"
+"POT-Creation-Date: 2026-10-27 04:06+0100\n"
 "PO-Revision-Date: 2026-10-25 12:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: English\n"
@@ -235,6 +235,9 @@ msgstr "Decimal hours (2.75)"
 
 msgid "Sprache"
 msgstr "Language"
+
+msgid "Automatisch"
+msgstr "Automatic"
 
 msgid "Gilt für die Oberfläche und die E-Mails an dich."
 msgstr "Applies to the interface and to e-mails sent to you."
