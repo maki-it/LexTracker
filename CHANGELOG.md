@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.13.1](https://github.com/maki-it/LexTracker/compare/lextracker-v0.13.0...lextracker-v0.13.1) (2026-10-27)
+
+
+### Bug Fixes
+
+* **push:** explain the Brave push error and keep the dialog open ([#209](https://github.com/maki-it/LexTracker/issues/209)) ([535ad73](https://github.com/maki-it/LexTracker/commit/535ad73d5e9b5f6343b4d5ba717d734ec648cd14))
+* **tracking:** reload the task week list when the timer starts or stops ([#211](https://github.com/maki-it/LexTracker/issues/211)) ([4a3ad5b](https://github.com/maki-it/LexTracker/commit/4a3ad5b3f6c593524a8467cff4b8ec3b46a55197))
+
 ## [0.13.0](https://github.com/maki-it/LexTracker/compare/lextracker-v0.12.0...lextracker-v0.13.0) (2026-10-27)
 
 
