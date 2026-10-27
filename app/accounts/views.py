@@ -80,7 +80,7 @@ async def _sign_in(request: HttpRequest, user: User, backend: str) -> HttpRespon
         await request.session.aset(MFA_PENDING_KEY, pending)
         return redirect(f"{reverse('accounts:login_code')}?next={_safe_next(request)}")
     await alogin(request, user, backend=backend)
-    await ratelimit.clear_failures(request)
+    await ratelimit.clear_failures(request, user.get_username())
     return redirect(_safe_next(request))
 
 
@@ -101,7 +101,7 @@ async def login_code(request: HttpRequest) -> HttpResponse:
         if await sync_to_async(mfa.verify)(user, form.cleaned_data["code"]):
             await request.session.apop(MFA_PENDING_KEY, None)
             await alogin(request, user, backend=pending["backend"])
-            await ratelimit.clear_failures(request)
+            await ratelimit.clear_failures(request, user.get_username())
             return redirect(_safe_next(request))
         await ratelimit.record_failure(request, user.get_username())
         error = _("Der Code ist ungültig oder abgelaufen.")

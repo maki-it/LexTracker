@@ -261,6 +261,22 @@ def test_login_is_locked_after_too_many_failures(client, user):
     assert not LoginFailure.objects.exists()
 
 
+def test_signing_in_to_another_account_does_not_reset_the_failures(client, user, django_user_model):
+    """Someone with a login of their own cannot wipe the count between guesses at another account."""
+    django_user_model.objects.create_user("mia", password="mias-passwort-1", role="employee")
+    AppSettings.objects.update_or_create(pk=1, defaults={"login_max_attempts": 3, "login_lockout_minutes": 10})
+    for _ in range(2):
+        _login(client, "falsch")
+
+    other = client.post(reverse("accounts:login"), {"username": "mia", "password": "mias-passwort-1"})
+    assert other.status_code == 302
+    client.post(reverse("accounts:logout"))
+
+    assert LoginFailure.objects.filter(username="kim").count() == 2
+    _login(client, "falsch")
+    assert _login(client, "geheim-123").status_code == 429
+
+
 def test_login_rate_limit_can_be_turned_off(client, user):
     AppSettings.objects.update_or_create(pk=1, defaults={"login_max_attempts": 0})
     for _ in range(10):
