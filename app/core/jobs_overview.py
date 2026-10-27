@@ -129,7 +129,12 @@ async def overview(now: datetime, app_settings: AppSettings) -> list[JobRow]:
             _("jede Minute geprüft: %(weekly)s, %(reminder)s, Hinweis zu überfälligen Rechnungen")
             % {"weekly": weekly, "reminder": reminder},
         ),
-        row("timer-messages", _("Nachricht zu lange laufender Timer"), _("jede Minute geprüft")),
+        row(
+            "timer-messages",
+            _("Nachrichten zu lange laufenden Timern und überfälligen Rechnungen"),
+            _("jede Minute geprüft"),
+        ),
+        row("push-timer", _("Laufender Timer als Push-Benachrichtigung"), _("alle 5 Sekunden")),
         row("reminders", _("Erinnerungen"), _("jede Minute geprüft")),
         row("prune", _("Alte Nachrichten löschen"), _("stündlich")),
     ]

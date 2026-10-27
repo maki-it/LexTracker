@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: LexTracker\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-27 13:26+0100\n"
+"POT-Creation-Date: 2026-10-27 16:35+0000\n"
 "PO-Revision-Date: 2026-10-25 12:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: English\n"
@@ -793,11 +793,14 @@ msgid ""
 msgstr ""
 "checked every minute: %(weekly)s, %(reminder)s, notice about overdue invoices"
 
-msgid "Nachricht zu lange laufender Timer"
-msgstr "Message about timers that run too long"
+msgid "Nachrichten zu lange laufenden Timern und überfälligen Rechnungen"
+msgstr "Messages about long-running timers and overdue invoices"
 
 msgid "jede Minute geprüft"
 msgstr "checked every minute"
+
+msgid "Laufender Timer als Push-Benachrichtigung"
+msgstr "Running timer as push notification"
 
 msgid "Erinnerungen"
 msgstr "Reminders"
@@ -1357,6 +1360,21 @@ msgstr[1] "%(count)d hours"
 msgid "Dein Timer läuft schon seit %(duration)s"
 msgstr "Your timer has been running for %(duration)s"
 
+#, python-format
+msgid "Fällig am %(date)s"
+msgstr "Due on %(date)s"
+
+#, python-format
+msgid "%(due)s, offen: %(amount)s €"
+msgstr "%(due)s, open: %(amount)s €"
+
+msgid "ohne Nummer"
+msgstr "without number"
+
+#, python-format
+msgid "Rechnung %(number)s von %(customer)s ist überfällig"
+msgstr "Invoice %(number)s from %(customer)s is overdue"
+
 msgid "Debug"
 msgstr "Debug"
 
@@ -1584,16 +1602,9 @@ msgstr "Your weekly report %(range)s"
 msgid "Dein Timer läuft noch"
 msgstr "Your timer is still running"
 
-msgid "ohne Nummer"
-msgstr "without number"
-
 #, python-format
 msgid "Zahlungserinnerung zur Rechnung %(number)s"
 msgstr "Payment reminder for invoice %(number)s"
-
-#, python-format
-msgid "Rechnung %(number)s von %(customer)s ist überfällig"
-msgstr "Invoice %(number)s from %(customer)s is overdue"
 
 msgid "STARTTLS (meist Port 587)"
 msgstr "STARTTLS (usually port 587)"
@@ -1986,6 +1997,94 @@ msgstr "Template “%(name)s” saved."
 #, python-format
 msgid "Vorlage „%(name)s“ gelöscht."
 msgstr "Template “%(name)s” deleted."
+
+msgid "Timer läuft"
+msgstr "Timer running"
+
+msgid "Timer gestoppt"
+msgstr "Timer stopped"
+
+msgid "Push-Schlüssel"
+msgstr "Push key"
+
+msgid "Themen"
+msgstr "Topics"
+
+msgid "zuletzt zugestellt"
+msgstr "last delivered"
+
+msgid "Push-Gerät"
+msgstr "Push device"
+
+msgid "Push-Geräte"
+msgstr "Push devices"
+
+msgid "Fällige Erinnerungen"
+msgstr "Due reminders"
+
+msgid "Kritische Meldungen"
+msgstr "Critical messages"
+
+msgid "Warnungen"
+msgstr "Warnings"
+
+msgid "Überfällige Rechnungen"
+msgstr "Overdue invoices"
+
+msgid "Timer läuft schon lange"
+msgstr "Timer running for a long time"
+
+msgid "Laufenden Timer anzeigen"
+msgstr "Show the running timer"
+
+msgid "Wenn eine deiner Erinnerungen fällig wird."
+msgstr "When one of your reminders is due."
+
+msgid ""
+"Fehler, die dringend Aufmerksamkeit brauchen, z. B. eine fehlgeschlagene "
+"Datensicherung."
+msgstr "Errors that need attention right away, e.g. a failed backup."
+
+msgid ""
+"Weniger dringende Probleme, z. B. ein fehlgeschlagener Abgleich mit Lexware."
+msgstr "Less urgent problems, e.g. a failed sync with Lexware."
+
+msgid "Sobald eine Rechnung überfällig wird."
+msgstr "As soon as an invoice becomes overdue."
+
+msgid "Wenn dein Timer länger läuft als in den Einstellungen festgelegt."
+msgstr "When your timer runs longer than set in the settings."
+
+msgid ""
+"Zeigt den laufenden Timer als Benachrichtigung, solange er läuft, und nach "
+"dem Stoppen kurz die Dauer."
+msgstr ""
+"Shows the running timer as a notification while it runs, and the duration "
+"for a moment after it stops."
+
+msgid "Das Gerät hat keine gültige Anmeldung geschickt."
+msgstr "The device did not send a valid subscription."
+
+msgid "Unbenanntes Gerät"
+msgstr "Unnamed device"
+
+msgid "Test"
+msgstr "Test"
+
+msgid "So sehen Benachrichtigungen auf diesem Gerät aus."
+msgstr "This is what notifications look like on this device."
+
+msgid "Die Testnachricht ist unterwegs."
+msgstr "The test message is on its way."
+
+msgid ""
+"Die Testnachricht konnte nicht zugestellt werden. Aktiviere Push auf dem "
+"Gerät neu."
+msgstr ""
+"The test message could not be delivered. Enable push on the device again."
+
+msgid "Das Gerät bekommt keine Push-Benachrichtigungen mehr."
+msgstr "The device no longer receives push notifications."
 
 msgid "Bezug"
 msgstr "Related to"
@@ -2670,9 +2769,6 @@ msgstr "Billing"
 msgid "Kunden mit offenen, abrechenbaren Zeiten"
 msgstr "Customers with open, billable time"
 
-msgid "Überfällige Rechnungen"
-msgstr "Overdue invoices"
-
 msgid "Auswertungen"
 msgstr "Reports"
 
@@ -2688,9 +2784,6 @@ msgstr "And %(critical_count)s more critical messages."
 
 msgid "Ansehen"
 msgstr "View"
-
-msgid "Fällige Erinnerungen"
-msgstr "Due reminders"
 
 msgid "Menü"
 msgstr "Menu"
@@ -4511,6 +4604,68 @@ msgid ""
 "Aufgabe als Vorlage."
 msgstr ""
 "No templates yet. Create a new one or save an existing task as a template."
+
+msgid ""
+"Benachrichtigungen sind für diese Seite im Browser blockiert. Erlaube sie in "
+"den Einstellungen des Browsers und versuche es noch einmal."
+msgstr ""
+"Notifications are blocked for this site in the browser. Allow them in the "
+"browser settings and try again."
+
+msgid "Push konnte auf diesem Gerät nicht eingerichtet werden."
+msgstr "Push could not be set up on this device."
+
+msgid "Push-Benachrichtigungen"
+msgstr "Push notifications"
+
+msgid ""
+"Meldungen direkt aufs Handy oder den Rechner, auch wenn die App nicht offen "
+"ist. Jedes Gerät wählt für sich, was es bekommt."
+msgstr ""
+"Messages straight to your phone or computer, even when the app is not open. "
+"Each device chooses what it gets."
+
+msgid "Dieses Gerät"
+msgstr "This device"
+
+#, python-format
+msgid "zuletzt zugestellt %(used)s Uhr"
+msgstr "last delivered %(used)s"
+
+msgid "noch nichts zugestellt"
+msgstr "nothing delivered yet"
+
+msgid "Test senden"
+msgstr "Send test"
+
+#, python-format
+msgid "„%(name)s“ wirklich entfernen?"
+msgstr "Really remove “%(name)s”?"
+
+msgid "Auf diesem Gerät aktivieren"
+msgstr "Enable on this device"
+
+msgid "Dieses Gerät ist angemeldet."
+msgstr "This device is subscribed."
+
+msgid "Dieser Browser unterstützt keine Push-Benachrichtigungen."
+msgstr "This browser does not support push notifications."
+
+msgid ""
+"Auf dem iPhone und iPad geht Push nur für die installierte App: Tippe in "
+"Safari auf „Teilen“, dann „Zum Home-Bildschirm“, öffne die App von dort und "
+"aktiviere Push hier."
+msgstr ""
+"On iPhone and iPad, push only works for the installed app: in Safari tap "
+"“Share”, then “Add to Home Screen”, open the app from there and enable push "
+"here."
+
+msgid ""
+"Auf Android installierst du die App über das Browsermenü („App "
+"installieren“), nicht als bloße Verknüpfung. Am Rechner reicht der Browser."
+msgstr ""
+"On Android, install the app from the browser menu (“Install app”), not as a "
+"mere shortcut. On a computer the browser is enough."
 
 msgid "fällig"
 msgstr "due"

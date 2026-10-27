@@ -1,0 +1,56 @@
+{% load i18n icons %}
+<section class="card flex flex-col gap-4" id="push"{% if tab != "notifications" %} hidden{% endif %} data-push
+         data-key-url="{% url 'push:key' %}" data-subscribe-url="{% url 'push:subscribe' %}" data-script-url="{% url 'push:sw' %}"
+         data-name-phone="{% trans 'Mein Handy' %}" data-name-computer="{% trans 'Dieser Rechner' %}"
+         data-denied-text="{% trans 'Benachrichtigungen sind für diese Seite im Browser blockiert. Erlaube sie in den Einstellungen des Browsers und versuche es noch einmal.' %}"
+         data-error-text="{% trans 'Push konnte auf diesem Gerät nicht eingerichtet werden.' %}">
+  <div>
+    <h2>{% trans "Push-Benachrichtigungen" %}</h2>
+    <p class="mt-1 text-sm text-muted">{% trans "Meldungen direkt aufs Handy oder den Rechner, auch wenn die App nicht offen ist. Jedes Gerät wählt für sich, was es bekommt." %}</p>
+  </div>
+
+  {% if push_devices %}
+  <ul class="flex flex-col gap-3">
+    {% for device in push_devices %}
+    <li class="rounded-lg border border-line" data-push-device data-endpoint-hash="{{ device.endpoint_hash }}">
+      <form method="post" action="{% url 'push:topics' device.pk %}" class="flex flex-col gap-3 px-3 py-2.5">
+        {% csrf_token %}
+        <div class="flex items-center gap-3">
+          <div class="min-w-0 flex-1">
+            <input type="text" name="name" value="{{ device.name }}" maxlength="100" class="input" aria-label="{% trans 'Name' %}">
+            <div class="mt-1 text-xs text-muted">
+              <span class="font-medium text-success" data-push-this hidden>{% trans "Dieses Gerät" %} ·</span>
+              {% blocktrans trimmed with added=device.created_at|date:date_format %}Hinzugefügt {{ added }}{% endblocktrans %}
+              · {% if device.last_used_at %}{% blocktrans trimmed with used=device.last_used_at|date:datetime_format %}zuletzt zugestellt {{ used }} Uhr{% endblocktrans %}{% else %}{% trans "noch nichts zugestellt" %}{% endif %}
+            </div>
+          </div>
+        </div>
+        <div class="flex flex-col gap-2">
+          {% for topic, label, help in push_topics %}
+          <label class="flex items-start gap-2 text-sm">
+            <input type="checkbox" name="topics" value="{{ topic.value }}" class="mt-0.5"{% if topic.value in device.topics %} checked{% endif %}>
+            <span><span class="font-medium">{{ label }}</span><br><span class="text-xs text-muted">{{ help }}</span></span>
+          </label>
+          {% endfor %}
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button type="submit" class="btn btn-sm btn-primary">{% trans "Speichern" %}</button>
+          <button type="submit" formaction="{% url 'push:test' device.pk %}" class="btn btn-sm">{% trans "Test senden" %}</button>
+          <button type="submit" formaction="{% url 'push:remove' device.pk %}" class="btn btn-sm btn-ghost btn-danger ml-auto" data-push-remove
+                  onclick="return confirm('{% filter escapejs %}{% blocktrans trimmed with name=device.name %}„{{ name }}“ wirklich entfernen?{% endblocktrans %}{% endfilter %}')">{% trans "Entfernen" %}</button>
+        </div>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  <div class="flex flex-col gap-3">
+    <div role="alert" class="alert alert-error" data-push-error hidden></div>
+    <div><button type="button" class="btn btn-primary" data-push-enable hidden>{% icon "bell" size=14 %}{% trans "Auf diesem Gerät aktivieren" %}</button></div>
+    <p class="text-sm text-muted" data-push-active hidden>{% trans "Dieses Gerät ist angemeldet." %}</p>
+    <p class="text-sm text-muted" data-push-unsupported hidden>{% trans "Dieser Browser unterstützt keine Push-Benachrichtigungen." %}</p>
+    <p class="text-sm text-muted" data-push-ios hidden>{% trans "Auf dem iPhone und iPad geht Push nur für die installierte App: Tippe in Safari auf „Teilen“, dann „Zum Home-Bildschirm“, öffne die App von dort und aktiviere Push hier." %}</p>
+    <p class="text-sm text-muted">{% trans "Auf Android installierst du die App über das Browsermenü („App installieren“), nicht als bloße Verknüpfung. Am Rechner reicht der Browser." %}</p>
+  </div>
+</section>

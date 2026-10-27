@@ -28,6 +28,7 @@ from lexware import credentials, webhooks
 from lexware.client import LexwareError, client_from_settings
 from mailer import jobs as mail_jobs
 from mailer import outbox
+from push import jobs as push_jobs
 from reminders import jobs as reminder_jobs
 
 logger = logging.getLogger(__name__)
@@ -46,6 +47,9 @@ WEBHOOK_MAX_SINGLE = 10
 
 # After a failed sync that a webhook asked for, wait this long before trying again.
 WEBHOOK_RETRY_AFTER = 60
+
+# How often the running timer on the devices that show it is compared with the real one.
+PUSH_TIMER_INTERVAL = 5
 
 # How often old messages are deleted.
 PRUNE_INTERVAL = timedelta(hours=1)
@@ -255,10 +259,25 @@ async def send_mail(stop: asyncio.Event) -> None:
             await asyncio.wait_for(stop.wait(), MAIL_INTERVAL)
 
 
+async def show_timers(stop: asyncio.Event) -> None:
+    """Keep the running timer on the devices that show it as a notification, every few seconds."""
+    while not stop.is_set():
+        try:
+            async with jobs.tracked("push-timer") as tracking:
+                told = await push_jobs.sync_timers(timezone.now())
+                tracking.result = f"{told} benachrichtigt"
+                tracking.idle = not told
+        except Exception:
+            logger.exception("Updating the timer notifications failed")
+        with suppress(TimeoutError):
+            await asyncio.wait_for(stop.wait(), PUSH_TIMER_INTERVAL)
+
+
 async def run(stop: asyncio.Event) -> None:
     logger.info("Scheduler started")
     mailer = asyncio.create_task(send_mail(stop))
     hooks = asyncio.create_task(process_webhooks(stop))
+    timers = asyncio.create_task(show_timers(stop))
     last_prune = None
     first = True
     while not stop.is_set():
@@ -320,4 +339,5 @@ async def run(stop: asyncio.Event) -> None:
             await asyncio.wait_for(stop.wait(), CHECK_INTERVAL)
     await mailer
     await hooks
+    await timers
     logger.info("Scheduler stopped")

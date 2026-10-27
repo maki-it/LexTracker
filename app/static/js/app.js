@@ -664,6 +664,99 @@ document.addEventListener("submit", async (event) => {
   }
 });
 
+// Push notifications: this browser subscribes through the service worker (push/sw.js) and the server keeps the
+// subscription (push/views.py). The server renders the list of devices; the script finds out which one is this
+// browser and sets up the button that adds it.
+const pushSupported = () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+
+async function pushSubscription() {
+  const registration = await navigator.serviceWorker.getRegistration("/");
+  return registration ? registration.pushManager.getSubscription() : null;
+}
+
+async function sha256Hex(text) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+async function showPushState(root) {
+  const section = root.querySelector?.("[data-push]");
+  if (!section) return;
+  const show = (name, visible = true) => section.querySelectorAll(`[data-push-${name}]`).forEach((el) => (el.hidden = !visible));
+  if (!pushSupported()) {
+    // iOS only has push for an app on the home screen, and then everything above exists.
+    const ios = /iPhone|iPad/.test(navigator.userAgent) && !navigator.standalone;
+    show(ios ? "ios" : "unsupported");
+    return;
+  }
+  const subscription = await pushSubscription();
+  const known = subscription ? await sha256Hex(subscription.endpoint) : "";
+  let listed = false;
+  for (const device of section.querySelectorAll("[data-push-device]")) {
+    const here = known !== "" && device.dataset.endpointHash === known;
+    listed ||= here;
+    device.querySelector("[data-push-this]").hidden = !here;
+  }
+  show("active", listed);
+  show("enable", !listed);
+}
+document.addEventListener("htmx:load", (event) => showPushState(event.target));
+document.addEventListener("DOMContentLoaded", () => showPushState(document));
+
+document.addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-push-enable]");
+  if (!button) return;
+  const section = button.closest("[data-push]");
+  const error = section.querySelector("[data-push-error]");
+  error.hidden = true;
+  button.disabled = true;
+  try {
+    // The permission has to be asked for in reaction to a tap, or iOS and Firefox refuse.
+    if ((await Notification.requestPermission()) !== "granted") throw new Error(section.dataset.deniedText);
+    const { key } = await (await fetch(section.dataset.keyUrl)).json();
+    const serverKey = b64urlToBytes(key);
+    await navigator.serviceWorker.register(section.dataset.scriptUrl, { scope: "/" });
+    const registration = await navigator.serviceWorker.ready;
+    let subscription = await registration.pushManager.getSubscription();
+    // A subscription for another key (the server made a new one) cannot be used anymore.
+    if (subscription && bytesToB64url(subscription.options.applicationServerKey) !== key) {
+      await subscription.unsubscribe();
+      subscription = null;
+    }
+    subscription ||= await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: serverKey });
+    const phone = window.matchMedia("(pointer: coarse)").matches;
+    const { endpoint, keys } = subscription.toJSON();
+    await postJson(section.dataset.subscribeUrl, {
+      endpoint,
+      keys,
+      name: phone ? section.dataset.namePhone : section.dataset.nameComputer,
+    });
+    window.location.reload();
+  } catch (failure) {
+    error.textContent = failure.message || section.dataset.errorText;
+    error.hidden = false;
+    button.disabled = false;
+  }
+});
+
+// Removing the device that this browser is: the browser's subscription goes with it.
+document.addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-push-remove]");
+  // A "no" in the confirmation has cancelled the click already.
+  if (!button || event.defaultPrevented || button.dataset.done) return;
+  event.preventDefault();
+  try {
+    const subscription = pushSupported() ? await pushSubscription() : null;
+    const device = button.closest("[data-push-device]");
+    if (subscription && device.dataset.endpointHash === (await sha256Hex(subscription.endpoint))) {
+      await subscription.unsubscribe();
+    }
+  } finally {
+    button.dataset.done = "1";
+    button.form.requestSubmit(button);
+  }
+});
+
 // A <select data-autosubmit> sends its form as soon as another entry is picked, e.g. the language on the login page.
 document.addEventListener("change", (event) => {
   if (event.target.matches?.("[data-autosubmit]")) event.target.form.requestSubmit();

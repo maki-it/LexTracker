@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "setup",
     "mailer",
     "inbox",
+    "push",
     "reminders",
 ]
 
