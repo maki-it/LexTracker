@@ -31,6 +31,7 @@ from accounts.forms import (
 )
 from accounts.models import ApiToken, User
 from core.locale import COOKIE_MAX_AGE
+from push import topics as push_topics
 
 # Password checked, code from the authenticator app still missing.
 MFA_PENDING_KEY = "mfa_pending"
@@ -340,6 +341,8 @@ async def _account_page(request: HttpRequest, form, tab: str, token_form=None, n
             "has_mfa": await sync_to_async(mfa.has_mfa)(request.user),
             "passkeys_enabled": passkeys.available(request),
             "passkeys": [p async for p in request.user.passkeys.all()],
+            "push_devices": [d async for d in request.user.push_subscriptions.all()],
+            "push_topics": push_topics.choices(request.user),
             "tokens": [t async for t in request.user.api_tokens.all()],
             "token_form": token_form or ApiTokenForm(),
             "new_key": new_key,

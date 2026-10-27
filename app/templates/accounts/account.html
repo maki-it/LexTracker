@@ -47,6 +47,8 @@
     <div><button type="submit" class="btn btn-primary">{% trans "Speichern" %}</button></div>
   </form>
 
+  {% if push_topics %}{% include "push/_devices.html" %}{% endif %}
+
   <section class="card flex flex-col gap-3"{% if tab != "security" %} hidden{% endif %}>
     <h2>{% trans "Passwort" %}</h2>
     <p class="text-sm text-muted">{% trans "Nach dem Ändern bleibst du hier angemeldet, andere Geräte werden abgemeldet." %}</p>

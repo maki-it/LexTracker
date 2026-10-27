@@ -21,6 +21,7 @@ from inbox.levels import PERSONAL_KINDS, Level
 from inbox.models import Message
 from mailer import outbox
 from mailer.models import MailSettings, OutgoingMail
+from push import service as push
 
 logger = logging.getLogger(__name__)
 
@@ -82,8 +83,9 @@ async def anotify(
     ``title`` and ``body`` can be lazy translations or functions, so every recipient gets them in their language.
     ``url`` is a path in the app. Whoever has an unread message with the same ``dedupe_key`` gets it updated
     (counted up) instead of another one. With ``escalate_after`` the message becomes critical once it has repeated that
-    often. A message that is new, or has become more important, is also e-mailed to those who asked for that,
-    unless ``mail`` is False because the caller sends its own e-mail.
+    often. A message that is new, or has become more important, is also pushed to the devices that subscribed to
+    its topic (see ``push.topics``) and e-mailed to those who asked for that, unless ``mail`` is False because the
+    caller sends its own e-mail.
     """
     if url and not (url.startswith("/") and not url.startswith("//")):
         raise ValueError(f"A message links to a path in the app, not to {url!r}")
@@ -91,8 +93,10 @@ async def anotify(
     async for user in recipients(to):
         message, notable = await _deliver(user, level, kind, title, body, url, dedupe_key, escalate_after)
         result.append(message)
-        if notable and mail:
-            await _mail(user, message)
+        if notable:
+            await push.apush_message(user, message)
+            if mail:
+                await _mail(user, message)
     return result
 
 

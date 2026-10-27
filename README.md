@@ -271,12 +271,32 @@ Was die App meldet, und an wen (Administratoren, außer wo es dich selbst betrif
 | Kundenimport oder Rechnungsabgleich fehlgeschlagen | Warnung, ab dem dritten Fehlschlag in Folge Kritisch |
 | E-Mail endgültig nicht zugestellt | Warnung |
 | Dein Timer läuft länger als eingestellt (an den Mitarbeiter selbst) | Warnung |
+| Eine Rechnung ist überfällig geworden (einmal pro Rechnung und Fälligkeitsdatum, wie der Hinweis per E-Mail nur bis eine Woche nach der Frist und mit frischem Status; sie gilt als gelesen, sobald die Rechnung bezahlt ist) | Warnung |
 | Kundenimport oder Rechnungsabgleich mit Änderungen, Sicherung hochgeladen oder wiederhergestellt | Info |
 | Sicherung erstellt, Import oder Abgleich ohne Änderungen | Debug |
 
 Gleiche Meldungen werden zusammengefasst: Scheitert der stündliche Abgleich einen Tag lang, steht dort eine Nachricht mit „24×“, und es geht nur eine E-Mail raus. Sobald der Job wieder läuft, gilt sie als gelesen. Andere Programmteile melden über `inbox.service.anotify(level, kind, title, body, url=…, to=…, dedupe_key=…)`; der Scheduler läuft in einem eigenen Prozess, deshalb geht jede Nachricht über die Datenbank, und die Glocke fragt alle 15 Sekunden nach (auch sofort, wenn du zum Tab zurückkehrst), ebenso das geöffnete Nachrichtenfenster und der Zähler der fälligen Erinnerungen in der Seitenleiste.
 
 Aufgeräumt wird stündlich im Scheduler: Gelesene Nachrichten bleiben bei Debug 3 Tage, Info 30, Warnung 90 und Kritisch 365 Tage; ungelesene Debug- und Info-Nachrichten gehen nach der doppelten Zeit, ungelesene Warnungen und kritische bleiben, bis du sie liest. Mehr als 1000 Nachrichten pro Benutzer werden nicht aufbewahrt. Kunden haben (noch) kein Postfach.
+
+### Push-Benachrichtigungen
+
+Unter **Konto → Benachrichtigungen → Push-Benachrichtigungen** aktivierst du Push für das Gerät, auf dem du gerade bist: Der Browser fragt nach der Erlaubnis, danach kommen Meldungen auch an, wenn die App nicht offen ist. Jedes Gerät wählt für sich, was es bekommt (so zeigt das Handy den laufenden Timer, der Rechner nur Erinnerungen), und hat einen Knopf **Test senden**:
+
+| Thema | Wann | Standard |
+| --- | --- | --- |
+| Fällige Erinnerungen | eine deiner Erinnerungen wird fällig | an |
+| Kritische Meldungen | jede kritische Nachricht aus der Glocke | an |
+| Warnungen | jede Nachricht der Priorität Warnung | aus |
+| Überfällige Rechnungen | eine Rechnung wird überfällig (nur Administratoren) | aus |
+| Timer läuft schon lange | die Warnung zu einem lange laufenden Timer | aus |
+| Laufenden Timer anzeigen | solange ein Timer läuft, steht er als Benachrichtigung in der Statusleiste und zeigt, seit wann; nach dem Stoppen erscheint kurz die Dauer | aus |
+
+Push hängt am Nachrichtensystem: Jede neue (oder wichtiger gewordene) Nachricht, die zu einem Thema gehört, geht an die Geräte, die es abonniert haben. Info- und Debug-Nachrichten gibt es nie als Push. Der Wochenbericht bleibt eine E-Mail, und das Kundenportal hat kein Push.
+
+Die Meldungen sind nach dem Standard für Web Push (RFC 8291) Ende-zu-Ende verschlüsselt und laufen über den Push-Dienst des Browsers (Google, Mozilla oder Apple); dort liegt nur der verschlüsselte Inhalt. Das Schlüsselpaar der App (VAPID) entsteht beim ersten Mal und liegt wie der Lexware-Schlüssel verschlüsselt in der Datenbank. Ändert sich `APP_SECRET_KEY` ohne `APP_SECRET_KEY_FALLBACKS`, entsteht ein neues Paar, und alle Geräte müssen Push neu aktivieren. Das Anzeigen des Timers prüft der Scheduler alle fünf Sekunden (Verzögerung also bis zu fünf Sekunden), egal ob der Timer im Browser, per MCP oder nachträglich geändert wird.
+
+Voraussetzungen: HTTPS (oder `localhost`) und der Scheduler. **Android**: Chrome und Edge brauchen die installierte App („App installieren“ im Menü); eine bloße Verknüpfung, wie Brave sie anlegt, hat keine Push-Funktion. **iPhone und iPad**: nur für die App auf dem Home-Bildschirm (Safari → Teilen → Zum Home-Bildschirm, ab iOS 16.4), und dort zeigt iOS keine dauerhafte Timer-Benachrichtigung. **Rechner**: der Browser genügt, auch ohne offenen Tab. Chrome bietet im privaten Fenster kein Push an.
 
 ### E-Mail
 

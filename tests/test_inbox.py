@@ -610,5 +610,5 @@ def test_timer_warning_can_be_turned_off(admin, running):
 
     AppSettings.load()
     AppSettings.objects.filter(pk=1).update(timer_reminder_hours=0)
-    assert async_to_sync(jobs.run_due)(timezone.now()) == {}
+    assert async_to_sync(jobs.run_due)(timezone.now()) == {"overdue invoice": 0}
     assert not Message.objects.exists()
