@@ -15,6 +15,8 @@ from django.urls import reverse
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_GET, require_POST
 
+from accounts.views import notifications_page
+from core.dialogs import in_dialog
 from push import service, topics
 from push.models import PushSubscription
 from push.topics import Topic
@@ -90,7 +92,10 @@ async def _device(request: HttpRequest, pk: UUID) -> PushSubscription:
         raise Http404 from None
 
 
-def _back() -> HttpResponse:
+async def _back(request: HttpRequest) -> HttpResponse:
+    """Back to the notifications. In the dialog it stays open (a redirect would reload the page behind it)."""
+    if in_dialog(request):
+        return await notifications_page(request)
     return redirect(f"{reverse('account:settings')}?tab=notifications")
 
 
@@ -103,7 +108,7 @@ async def device_topics(request: HttpRequest, pk: UUID) -> HttpResponse:
         sub.name = name
     await sub.asave(update_fields=["topics", "name"])
     messages.success(request, _("Einstellungen gespeichert."))
-    return _back()
+    return await _back(request)
 
 
 @require_POST
@@ -126,7 +131,7 @@ async def device_test(request: HttpRequest, pk: UUID) -> HttpResponse:
         messages.error(
             request, _("Die Testnachricht konnte nicht zugestellt werden. Aktiviere Push auf dem Gerät neu.")
         )
-    return _back()
+    return await _back(request)
 
 
 @require_POST
@@ -134,4 +139,4 @@ async def device_remove(request: HttpRequest, pk: UUID) -> HttpResponse:
     sub = await _device(request, pk)
     await sub.adelete()
     messages.success(request, _("Das Gerät bekommt keine Push-Benachrichtigungen mehr."))
-    return _back()
+    return await _back(request)

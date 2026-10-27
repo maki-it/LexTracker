@@ -731,7 +731,12 @@ document.addEventListener("click", async (event) => {
       keys,
       name: phone ? section.dataset.namePhone : section.dataset.nameComputer,
     });
-    window.location.reload();
+    // In the dialog only its content is loaded again, a reload of the page behind it would close it.
+    if (section.closest("#dialog-body")) {
+      htmx.ajax("GET", section.dataset.returnUrl, { target: "#dialog-body", swap: "innerHTML" });
+    } else {
+      window.location.reload();
+    }
   } catch (failure) {
     // Brave switches the push service of the browser off, and the browser then refuses with this message.
     const refused = /push service/i.test(failure.message);

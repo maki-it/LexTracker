@@ -1,6 +1,6 @@
 {% load i18n icons %}
 <section class="card flex flex-col gap-4" id="push"{% if tab != "notifications" %} hidden{% endif %} data-push
-         data-key-url="{% url 'push:key' %}" data-subscribe-url="{% url 'push:subscribe' %}" data-script-url="{% url 'push:sw' %}"
+         data-return-url="{% url 'account:settings' %}?tab=notifications" data-key-url="{% url 'push:key' %}" data-subscribe-url="{% url 'push:subscribe' %}" data-script-url="{% url 'push:sw' %}"
          data-name-phone="{% trans 'Mein Handy' %}" data-name-computer="{% trans 'Dieser Rechner' %}"
          data-denied-text="{% trans 'Benachrichtigungen sind für diese Seite im Browser blockiert. Erlaube sie in den Einstellungen des Browsers und versuche es noch einmal.' %}"
          data-error-text="{% trans 'Push konnte auf diesem Gerät nicht eingerichtet werden.' %}"
