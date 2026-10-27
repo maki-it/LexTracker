@@ -48,6 +48,13 @@ class Env(BaseSettings):
     oidc_create_users: bool = False
     # Only with oidc_create_users: the e-mail domains (comma-separated) that may get an account. Empty: all.
     oidc_allowed_email_domains: CommaList = Field(default_factory=list)
+    # Sign in with passkeys (WebAuthn). Active once the domain is set: a passkey belongs to it for good, so it must not
+    # change. Just the host name, e.g. zeit.example.de (no scheme, no port). It has to be the host the app is opened
+    # under, or a domain above it.
+    passkey_rp_id: str = ""
+    # The addresses the app is opened under, with scheme (and port, if it is not the standard one). Empty: https://
+    # plus the domain above. Needed for a trial over plain HTTP, e.g. http://localhost:8000.
+    passkey_origins: CommaList = Field(default_factory=list)
     # Folder for the daily database copies (data_dir/backups if unset). When and how many is set on the settings page.
     backup_dir: Path | None = None
     # Largest file accepted when uploading a backup on the backups page, in MB.

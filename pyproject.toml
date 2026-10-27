@@ -17,6 +17,7 @@ dependencies = [
     "brotli>=1.2.1",
     "cryptography>=50.0.2",
     "markdown-it-py>=4.2.0",
+    "webauthn>=3.0.1",
 ]
 
 [dependency-groups]

@@ -194,6 +194,30 @@ class SsoIdentity(UUIDModel):
         return f"{self.user} @ {self.issuer}"
 
 
+class Passkey(UUIDModel):
+    """A passkey (WebAuthn credential) of a user: the public key that checks the signature on login (see
+    ``accounts.passkeys``). The private key never leaves the user's device or password manager."""
+
+    user = models.ForeignKey(User, verbose_name=_("Benutzer"), on_delete=models.CASCADE, related_name="passkeys")
+    name = models.CharField(_("Name"), max_length=100)
+    # The ID the authenticator gave the credential, base64url encoded.
+    credential_id = models.CharField(max_length=1024, unique=True, editable=False)
+    public_key = models.BinaryField(editable=False)
+    sign_count = models.PositiveBigIntegerField(default=0, editable=False)
+    # Whether the passkey is synced between the user's devices (a password manager, iCloud, Google) or bound to one.
+    synced = models.BooleanField(default=False, editable=False)
+    created_at = models.DateTimeField(_("hinzugefügt"), auto_now_add=True)
+    last_used_at = models.DateTimeField(_("zuletzt benutzt"), null=True, blank=True, editable=False)
+
+    class Meta:
+        verbose_name = _("Passkey")
+        verbose_name_plural = _("Passkeys")
+        ordering = ["created_at"]
+
+    def __str__(self) -> str:
+        return self.name
+
+
 class LoginFailure(UUIDModel):
     """A wrong password or code, for the login rate limit (see accounts.ratelimit)."""
 
