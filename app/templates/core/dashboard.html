@@ -31,6 +31,7 @@
     <input type="text" name="description" class="input" placeholder="{% trans 'Was machst du gerade? (optional)' %}" aria-label="{% trans 'Beschreibung' %}">
     <button type="submit" class="btn btn-primary">{% icon "play" size=14 %}{% trans "Starten" %}</button>
   </form>
+  {% include "tracking/_recent_tasks.html" %}
   {% else %}
   <p class="text-muted">{% if user.is_admin %}{% url 'projects:create' as create_url %}{% blocktrans trimmed with url=create_url %}Noch keine offenen Aufgaben. <a class="hover:underline" href="{{ url }}">Lege ein Projekt an</a> und füge Aufgaben hinzu.{% endblocktrans %}{% else %}{% trans "Noch keine offenen Aufgaben." %} {% trans "Sobald ein Projekt mit Aufgaben angelegt ist, kannst du hier Zeit buchen." %}{% endif %}</p>
   {% endif %}

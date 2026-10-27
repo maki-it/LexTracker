@@ -25,6 +25,14 @@ def task_choices(user, include_pk: UUID | None = None):
 # Suggestions shown at once in the task search; enough to find a task without a long list.
 SEARCH_LIMIT = 8
 
+# Tasks offered for a one-tap timer start, below the task search.
+RECENT_LIMIT = 4
+
+
+def recent_tasks(user):
+    """The tasks the user booked time on last, the latest first, for starting a timer with one tap."""
+    return task_choices(user).filter(last_used__isnull=False)[:RECENT_LIMIT]
+
 
 def search_tasks(user, query: str):
     """Tasks for the task search: every word of ``query`` in the task, project or customer name.
@@ -49,22 +57,6 @@ class TaskSearchInput(forms.Widget):
         task_id = parse_uuid(value)
         task = Task.objects.select_related("project__customer").filter(pk=task_id).first() if task_id else None
         context["widget"]["task"] = task
-        return context
-
-    def _render(self, template_name, context, renderer=None):
-        # The template lives in templates/, which Django's default form renderer does not search.
-        return mark_safe(render_to_string(template_name, context))
-
-
-class NowDateTimeInput(forms.DateTimeInput):
-    """A date-time field with a "Jetzt" button next to it that app.js wires up (data-now-for)."""
-
-    template_name = "tracking/_datetime_now_widget.html"
-    with_now_button = True
-
-    def get_context(self, name, value, attrs):
-        context = super().get_context(name, value, attrs)
-        context["widget"]["now_label"] = getattr(self, "now_label", "")
         return context
 
     def _render(self, template_name, context, renderer=None):
@@ -106,8 +98,9 @@ class TimeEntryForm(StyledFormMixin, forms.ModelForm):
         model = TimeEntry
         fields = ["task", "started_at", "ended_at", "description", "is_billable"]
         widgets = {
-            "started_at": NowDateTimeInput(attrs={"type": "datetime-local"}, format="%Y-%m-%dT%H:%M"),
-            "ended_at": NowDateTimeInput(attrs={"type": "datetime-local"}, format="%Y-%m-%dT%H:%M"),
+            # Set by the day, duration and time controls of tracking/form.html (app.js "Entry form").
+            "started_at": forms.DateTimeInput(attrs={"type": "hidden"}, format="%Y-%m-%dT%H:%M"),
+            "ended_at": forms.DateTimeInput(attrs={"type": "hidden"}, format="%Y-%m-%dT%H:%M"),
             "description": forms.Textarea(attrs={"rows": 2}),
         }
 
@@ -118,14 +111,16 @@ class TimeEntryForm(StyledFormMixin, forms.ModelForm):
         self.fields["task"].queryset = task_choices(user, include_pk=include)
         self.fields["ended_at"].required = True
         self.rounding = rounding
-        for name in ("started_at", "ended_at"):
-            self.fields[name].widget.now_label = _("%(field)s auf jetzt setzen") % {"field": self.fields[name].label}
         if rounding:
-            # The arrows move in rounding steps, app.js snaps a picked time to a step, and the shown times sit on one.
+            # The shown times sit on a step, like the saved ones.
             for name in ("started_at", "ended_at"):
-                self.fields[name].widget.attrs.update({"step": rounding * 60, "data-snap-minutes": rounding})
                 if self.initial.get(name):
                     self.initial[name] = round_to_step(self.initial[name], rounding)
+
+    @property
+    def step(self) -> int:
+        """Minutes the +/- buttons of the time controls move by: the rounding interval, or a quarter hour."""
+        return self.rounding or 15
 
     def clean(self):
         cleaned = super().clean()

@@ -72,35 +72,25 @@ def test_manual_entry_is_rounded(logged_in, user, task):
     assert entry.duration == timedelta(hours=2, minutes=15)
 
 
-def test_time_fields_step_and_snap_by_the_rounding(logged_in, user, task):
-    AppSettings.objects.create(pk=1, time_rounding=15)
+def test_time_controls_step_and_snap_by_the_rounding(logged_in, user, task):
+    AppSettings.objects.create(pk=1, time_rounding=30)
     start = datetime(2026, 10, 20, 8, 31, tzinfo=TZ)
     entry = TimeEntry.objects.create(user=user, task=task, started_at=start, ended_at=start + timedelta(minutes=58))
 
     page_text = logged_in.get(reverse("tracking:edit", args=[entry.pk])).text
 
-    assert 'type="datetime-local"' in page_text
-    assert 'step="900"' in page_text
-    assert page_text.count('data-snap-minutes="15"') == 2
-    assert 'value="2026-10-20T08:30"' in page_text
-    assert 'value="2026-10-20T09:30"' in page_text
+    assert 'data-step="30"' in page_text
+    assert 'data-rounding="30"' in page_text
+    assert "Dauer um 30 Minuten verkürzen" in page_text
+    assert '<input type="hidden" name="started_at" value="2026-10-20T08:30"' in page_text
+    assert '<input type="hidden" name="ended_at" value="2026-10-20T09:30"' in page_text
 
 
-def test_time_fields_are_free_without_rounding(logged_in, user, task):
+def test_time_controls_move_by_a_quarter_hour_without_rounding(logged_in, user, task):
     page_text = logged_in.get(reverse("tracking:create")).text
 
-    assert "data-snap-minutes" not in page_text
-
-
-def test_time_fields_have_a_now_button_that_does_not_submit(logged_in, user, task):
-    page_text = logged_in.get(reverse("tracking:create")).text
-
-    for name in ("started_at", "ended_at"):
-        assert f'data-now-for="id_{name}"' in page_text
-        assert f'<input type="datetime-local" name="{name}"' in page_text
-    assert page_text.count('type="button" class="btn" data-now-for') == 2
-    assert 'aria-label="Beginn auf jetzt setzen"' in page_text
-    assert 'aria-label="Ende auf jetzt setzen"' in page_text
+    assert 'data-step="15"' in page_text
+    assert 'data-rounding="0"' in page_text
 
 
 def test_hours_filter_formats():

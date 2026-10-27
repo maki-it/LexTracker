@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: LexTracker\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-27 08:56+0100\n"
+"POT-Creation-Date: 2026-10-27 09:06+0100\n"
 "PO-Revision-Date: 2026-10-25 12:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: English\n"
@@ -4658,9 +4658,6 @@ msgstr ""
 "The part after <code>?code=</code> in the link. If you open the link "
 "directly, this step is skipped."
 
-msgid "Jetzt"
-msgstr "Now"
-
 msgid "Nur Einträge dieses Kunden"
 msgstr "Only entries of this customer"
 
@@ -4675,6 +4672,13 @@ msgstr "Filtered by"
 
 msgid "Filter entfernen"
 msgstr "Remove filter"
+
+msgid "Zuletzt genutzt"
+msgstr "Recently used"
+
+#, python-format
+msgid "Timer für %(name)s starten"
+msgstr "Start timer for %(name)s"
 
 msgid "Keine passende Aufgabe."
 msgstr "No matching task."
@@ -4709,6 +4713,66 @@ msgstr "Edit time entry"
 
 msgid "Zeit erfassen"
 msgstr "Record time"
+
+msgid "Gestern"
+msgstr "Yesterday"
+
+msgid "Anderer Tag …"
+msgstr "Other day …"
+
+msgid "Anderer Tag"
+msgstr "Other day"
+
+msgid "Zeit angeben als"
+msgstr "Enter time as"
+
+msgid "Von – Bis"
+msgstr "From – to"
+
+#, python-format
+msgid "Dauer um %(minutes)s Minuten verkürzen"
+msgstr "Shorten duration by %(minutes)s minutes"
+
+#, python-format
+msgid "Dauer um %(minutes)s Minuten verlängern"
+msgstr "Extend duration by %(minutes)s minutes"
+
+msgid "15 min"
+msgstr "15 min"
+
+msgid "30 min"
+msgstr "30 min"
+
+msgid "1 h"
+msgstr "1 h"
+
+msgid "2 h"
+msgstr "2 h"
+
+msgid ""
+"Das Ende bleibt, der Beginn wird daraus berechnet. Für andere Uhrzeiten: Von "
+"– Bis."
+msgstr ""
+"The end stays, the start is calculated from it. For other times: From – to."
+
+#, python-format
+msgid "Beginn %(minutes)s Minuten früher"
+msgstr "Start %(minutes)s minutes earlier"
+
+#, python-format
+msgid "Beginn %(minutes)s Minuten später"
+msgstr "Start %(minutes)s minutes later"
+
+#, python-format
+msgid "Ende %(minutes)s Minuten früher"
+msgstr "End %(minutes)s minutes earlier"
+
+#, python-format
+msgid "Ende %(minutes)s Minuten später"
+msgstr "End %(minutes)s minutes later"
+
+msgid "Ende am Folgetag"
+msgstr "Ends the next day"
 
 msgid "Diesen Zeiteintrag wirklich löschen?"
 msgstr "Really delete this time entry?"
@@ -4745,10 +4809,6 @@ msgstr "Nothing recorded this week yet."
 
 msgid "Was machst du gerade?"
 msgstr "What are you working on?"
-
-#, python-format
-msgid "%(field)s auf jetzt setzen"
-msgstr "Set %(field)s to now"
 
 msgid "Das Ende muss nach dem Beginn liegen."
 msgstr "The end must be after the start."

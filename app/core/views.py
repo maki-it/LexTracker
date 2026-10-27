@@ -28,7 +28,7 @@ from inbox import events as inbox_events
 from lexware import credentials, webhooks
 from lexware.forms import ApiKeyForm
 from mailer.models import MailSettings, OutgoingMail
-from tracking.forms import task_choices
+from tracking.forms import recent_tasks, task_choices
 from tracking.models import TimeEntry
 from tracking.queries import entry_filter
 
@@ -51,6 +51,7 @@ async def dashboard(request: HttpRequest) -> HttpResponse:
         {
             # Preselected in the timer's task search, so starting it again is one click.
             "last_task": await task_choices(request.user).afirst(),
+            "recent_tasks": [t async for t in recent_tasks(request.user)],
             "today_entries": today_entries,
             "today_total": sum((e.duration for e in today_entries), timedelta()),
             "filter_label": active_filter["label"],

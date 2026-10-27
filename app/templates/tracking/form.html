@@ -7,9 +7,87 @@
   <p class="breadcrumb"><a href="{% url 'tracking:list' %}">{% trans "Aufgaben" %}</a></p>
   <h1>{% if entry %}{% trans "Zeiteintrag bearbeiten" %}{% else %}{% trans "Zeit erfassen" %}{% endif %}</h1>
 </div>
-<form method="post" action="{{ request.get_full_path }}" class="card flex max-w-2xl flex-col gap-4">
+{# Start and end are two hidden fields. The day, duration and time controls below read and write them (app.js "Entry form"). #}
+<form method="post" action="{{ request.get_full_path }}" class="card flex max-w-2xl flex-col gap-4" data-entry-form data-mode="{{ mode }}" data-step="{{ form.step }}" data-rounding="{{ form.rounding }}"
+      data-today-label="{% trans 'Heute' %}" data-yesterday-label="{% trans 'Gestern' %}" data-other-label="{% trans 'Anderer Tag …' %}">
   {% csrf_token %}
-  {% include "core/_form_fields.html" %}
+  {% for error in form.non_field_errors %}<div role="alert" class="alert alert-error">{{ error }}</div>{% endfor %}
+  {{ form.started_at }}{{ form.ended_at }}
+
+  <label class="field">
+    <span>{{ form.task.label }}</span>
+    {{ form.task }}
+  </label>
+  {% for error in form.task.errors %}<p class="-mt-3 text-sm text-danger">{{ error }}</p>{% endfor %}
+
+  <div class="field" role="group" aria-labelledby="entry-day-label">
+    <span id="entry-day-label">{% trans "Tag" %}</span>
+    <div class="flex flex-wrap gap-2">
+      <button type="button" class="pill max-sm:h-11" data-day="today">{% trans "Heute" %}</button>
+      <button type="button" class="pill max-sm:h-11" data-day="yesterday">{% trans "Gestern" %}</button>
+      {# The date field lies invisibly over the pill, so a tap opens the date picker of the device. #}
+      <span class="relative inline-flex">
+        <span class="pill max-sm:h-11" data-day-other>{% trans "Anderer Tag …" %}</span>
+        <input type="date" class="absolute inset-0 size-full cursor-pointer opacity-0" data-day-input aria-label="{% trans 'Anderer Tag' %}">
+      </span>
+    </div>
+  </div>
+
+  <div class="segmented" role="group" aria-label="{% trans 'Zeit angeben als' %}">
+    <button type="button" class="segmented-item" data-mode-button="duration" aria-pressed="{% if mode == 'duration' %}true{% else %}false{% endif %}">{% trans "Dauer" %}</button>
+    <button type="button" class="segmented-item" data-mode-button="range" aria-pressed="{% if mode == 'range' %}true{% else %}false{% endif %}">{% trans "Von – Bis" %}</button>
+  </div>
+
+  <div class="flex flex-col gap-2" data-panel="duration"{% if mode != "duration" %} hidden{% endif %}>
+    <div class="stepper">
+      <button type="button" class="stepper-btn size-14" data-duration-step="-1" aria-label="{% blocktrans trimmed with minutes=form.step %}Dauer um {{ minutes }} Minuten verkürzen{% endblocktrans %}">−</button>
+      <div class="text-center">
+        <div class="text-[30px] font-semibold tracking-tight tabular-nums"><span data-out="duration"></span> h</div>
+        <div class="mt-0.5 text-[13px] text-muted tabular-nums" data-out="period"></div>
+      </div>
+      <button type="button" class="stepper-btn size-14" data-duration-step="1" aria-label="{% blocktrans trimmed with minutes=form.step %}Dauer um {{ minutes }} Minuten verlängern{% endblocktrans %}">+</button>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <button type="button" class="pill max-sm:h-11" data-duration-set="15">{% trans "15 min" %}</button>
+      <button type="button" class="pill max-sm:h-11" data-duration-set="30">{% trans "30 min" %}</button>
+      <button type="button" class="pill max-sm:h-11" data-duration-set="60">{% trans "1 h" %}</button>
+      <button type="button" class="pill max-sm:h-11" data-duration-set="120">{% trans "2 h" %}</button>
+    </div>
+    <p class="text-xs text-muted">{% trans "Das Ende bleibt, der Beginn wird daraus berechnet. Für andere Uhrzeiten: Von – Bis." %}</p>
+  </div>
+
+  <div class="flex flex-col gap-2" data-panel="range"{% if mode != "range" %} hidden{% endif %}>
+    <div class="grid grid-cols-2 gap-2">
+      <div class="time-card">
+        <label for="entry-start-time" class="text-xs text-muted">{{ form.started_at.label }}</label>
+        <input type="time" id="entry-start-time" class="time-input" data-time="start">
+        <div class="flex gap-1.5">
+          <button type="button" class="stepper-btn h-11 w-12" data-shift="start" data-dir="-1" aria-label="{% blocktrans trimmed with minutes=form.step %}Beginn {{ minutes }} Minuten früher{% endblocktrans %}">−</button>
+          <button type="button" class="stepper-btn h-11 w-12" data-shift="start" data-dir="1" aria-label="{% blocktrans trimmed with minutes=form.step %}Beginn {{ minutes }} Minuten später{% endblocktrans %}">+</button>
+        </div>
+      </div>
+      <div class="time-card">
+        <label for="entry-end-time" class="text-xs text-muted">{{ form.ended_at.label }}</label>
+        <input type="time" id="entry-end-time" class="time-input" data-time="end">
+        <div class="flex gap-1.5">
+          <button type="button" class="stepper-btn h-11 w-12" data-shift="end" data-dir="-1" aria-label="{% blocktrans trimmed with minutes=form.step %}Ende {{ minutes }} Minuten früher{% endblocktrans %}">−</button>
+          <button type="button" class="stepper-btn h-11 w-12" data-shift="end" data-dir="1" aria-label="{% blocktrans trimmed with minutes=form.step %}Ende {{ minutes }} Minuten später{% endblocktrans %}">+</button>
+        </div>
+      </div>
+    </div>
+    <p class="text-center text-[13px] text-muted tabular-nums"><span data-out="day"></span> · {% trans "Dauer" %} <span data-out="duration"></span> h<span data-out="next-day" hidden> · {% trans "Ende am Folgetag" %}</span></p>
+  </div>
+  {% for error in form.started_at.errors %}<p class="text-sm text-danger">{{ error }}</p>{% endfor %}
+  {% for error in form.ended_at.errors %}<p class="text-sm text-danger">{{ error }}</p>{% endfor %}
+
+  <label class="field">
+    <span>{{ form.description.label }} <span class="font-normal text-muted">{% trans "(optional)" %}</span></span>
+    {{ form.description }}
+  </label>
+  {% for error in form.description.errors %}<p class="-mt-3 text-sm text-danger">{{ error }}</p>{% endfor %}
+  <label class="flex items-center gap-2 text-sm font-medium">{{ form.is_billable }} {{ form.is_billable.label }}</label>
+  {% for error in form.is_billable.errors %}<p class="-mt-3 text-sm text-danger">{{ error }}</p>{% endfor %}
+
   <div class="flex gap-2 border-t border-line pt-4">
     <button type="submit" class="btn btn-primary">{% trans "Speichern" %}</button>
     <a href="{% url 'tracking:list' %}" class="btn btn-ghost" data-close-dialog>{% trans "Abbrechen" %}</a>

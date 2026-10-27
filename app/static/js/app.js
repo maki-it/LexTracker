@@ -369,48 +369,166 @@ document.addEventListener("htmx:load", (event) => {
 });
 document.addEventListener("DOMContentLoaded", () => document.querySelectorAll("[data-task-search]").forEach(syncTaskValidity));
 
-// A date-time field with data-snap-minutes="<n>" (time rounding): the browser's picker offers every minute,
-// so a picked time snaps to the nearest step. The server rounds as well, see tracking/services.py.
-// While typing, the browser fires "change" after every digit; snapping then would overwrite the first digit
-// ("1" -> "00"), so a field with typed digits waits until it loses focus or its form is submitted.
-// Also runs for the "Jetzt" buttons below, which fire this event after setting the field.
-function snapToStep(field) {
-  delete field.dataset.typing;
-  const step = Number(field.dataset?.snapMinutes);
-  if (!step || !field.value) return;
-  const [date, time] = field.value.split("T");
-  const [hours, minutes] = time.split(":").map(Number);
-  const snapped = Math.round((hours * 60 + minutes) / step) * step;
-  // Rounding up past midnight moves to the next day, like the server does.
-  const day = new Date(`${date}T00:00`);
-  day.setMinutes(snapped);
-  const pad = (n) => String(n).padStart(2, "0");
-  field.value = `${day.getFullYear()}-${pad(day.getMonth() + 1)}-${pad(day.getDate())}T${pad(day.getHours())}:${pad(day.getMinutes())}`;
+// The entry form (tracking/form.html) keeps start and end in two hidden fields. The day pills, the duration
+// buttons and the two clocks all read and write them, so the controls never disagree. Times are local to the
+// browser, like the old date-time fields were. The server rounds to the time-rounding interval on saving.
+const pad2 = (n) => String(n).padStart(2, "0");
+const toFieldValue = (d) =>
+  `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+const clock = (d) => `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+const dateValue = (d) => toFieldValue(d).slice(0, 10);
+const hoursMinutes = (minutes) => `${Math.floor(minutes / 60)}:${pad2(minutes % 60)}`;
+const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+const plusMinutes = (d, minutes) => {
+  const moved = new Date(d);
+  moved.setMinutes(moved.getMinutes() + minutes);
+  return moved;
+};
+// The next multiple of `step` in direction `dir`, e.g. 58 -> 60 (+1) or 45 (-1) for a step of 15.
+const stepValue = (value, dir, step) =>
+  (dir > 0 ? Math.floor(value / step) + 1 : Math.ceil(value / step) - 1) * step;
+const roundValue = (value, step) => Math.round(value / step) * step;
+
+function entryTimes(form) {
+  let end = new Date(form.elements.ended_at.value);
+  if (Number.isNaN(end.getTime())) end = new Date();
+  let start = new Date(form.elements.started_at.value);
+  if (Number.isNaN(start.getTime())) start = plusMinutes(end, -60);
+  return { start, end };
 }
 
-document.addEventListener("keydown", (event) => {
-  if (event.target.dataset?.snapMinutes && /^\d$/.test(event.key)) event.target.dataset.typing = "1";
-});
-document.addEventListener("change", (event) => {
-  if (!event.target.dataset?.typing) snapToStep(event.target);
-});
-document.addEventListener("focusout", (event) => {
-  if (event.target.dataset?.snapMinutes) snapToStep(event.target);
-});
-document.addEventListener(
-  "submit",
-  (event) => event.target.querySelectorAll("[data-snap-minutes]").forEach(snapToStep),
-  true,
-);
+function setEntryTimes(form, start, end) {
+  form.elements.started_at.value = toFieldValue(start);
+  form.elements.ended_at.value = toFieldValue(end);
+  renderEntryForm(form);
+}
 
-// A button with data-now-for="<id>" sets that date-time field to the current local time. It fires "change",
-// so the snapping above rounds it to the step like a typed time.
+function dayLabel(form, day) {
+  const today = startOfDay(new Date());
+  const days = Math.round((startOfDay(day) - today) / 86400000);
+  if (days === 0) return form.dataset.todayLabel;
+  if (days === -1) return form.dataset.yesterdayLabel;
+  const format = new Intl.DateTimeFormat(document.documentElement.lang, { weekday: "short", day: "numeric", month: "numeric" });
+  return format.format(day);
+}
+
+function renderEntryForm(form) {
+  const { start, end } = entryTimes(form);
+  const minutes = Math.max(0, Math.round((end - start) / 60000));
+  const label = dayLabel(form, start);
+  const days = Math.round((startOfDay(start) - startOfDay(new Date())) / 86400000);
+  const out = (name, text) => form.querySelectorAll(`[data-out="${name}"]`).forEach((el) => (el.textContent = text));
+  out("duration", hoursMinutes(minutes));
+  out("period", `${label}, ${clock(start)} – ${clock(end)}`);
+  out("day", label);
+  form.querySelectorAll('[data-out="next-day"]').forEach((el) => (el.hidden = dateValue(start) === dateValue(end)));
+
+  form.querySelector('[data-day="today"]').classList.toggle("pill-active", days === 0);
+  form.querySelector('[data-day="yesterday"]').classList.toggle("pill-active", days === -1);
+  const other = form.querySelector("[data-day-other]");
+  other.classList.toggle("pill-active", days !== 0 && days !== -1);
+  other.textContent = days === 0 || days === -1 ? form.dataset.otherLabel : label;
+  form.querySelector("[data-day-input]").value = dateValue(start);
+
+  form.querySelectorAll("[data-mode-button]").forEach((button) =>
+    button.setAttribute("aria-pressed", String(button.dataset.modeButton === form.dataset.mode)),
+  );
+  form.querySelectorAll("[data-panel]").forEach((panel) => (panel.hidden = panel.dataset.panel !== form.dataset.mode));
+  // The clock being typed into keeps its text, otherwise the cursor would jump while typing.
+  for (const [name, value] of [["start", start], ["end", end]]) {
+    const input = form.querySelector(`[data-time="${name}"]`);
+    if (input !== document.activeElement) input.value = clock(value);
+  }
+}
+
+function renderEntryForms(root) {
+  root.querySelectorAll?.("[data-entry-form]").forEach(renderEntryForm);
+}
+document.addEventListener("htmx:load", (event) => renderEntryForms(event.detail.elt));
+document.addEventListener("DOMContentLoaded", () => renderEntryForms(document));
+
 document.addEventListener("click", (event) => {
-  const button = event.target.closest("[data-now-for]");
-  const field = button && document.getElementById(button.dataset.nowFor);
-  if (!field) return;
-  const now = new Date();
-  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-  field.value = now.toISOString().slice(0, 16);
-  field.dispatchEvent(new Event("change", { bubbles: true }));
+  const form = event.target.closest("[data-entry-form]");
+  if (!form) return;
+  const step = Number(form.dataset.step) || 15;
+  const { start, end } = entryTimes(form);
+  const duration = Math.round((end - start) / 60000);
+  const pill = event.target.closest("[data-day]");
+  const mode = event.target.closest("[data-mode-button]");
+  const stepButton = event.target.closest("[data-duration-step]");
+  const quick = event.target.closest("[data-duration-set]");
+  const shift = event.target.closest("[data-shift]");
+  const dayInput = event.target.closest("[data-day-input]");
+
+  if (pill) {
+    const day = startOfDay(new Date());
+    if (pill.dataset.day === "yesterday") day.setDate(day.getDate() - 1);
+    setEntryDay(form, day);
+  } else if (mode) {
+    form.dataset.mode = mode.dataset.modeButton;
+    renderEntryForm(form);
+  } else if (stepButton) {
+    // The end stays, the start moves.
+    const minutes = Math.min(1440, Math.max(step, stepValue(duration, Number(stepButton.dataset.durationStep), step)));
+    setEntryTimes(form, plusMinutes(end, -minutes), end);
+  } else if (quick) {
+    setEntryTimes(form, plusMinutes(end, -Number(quick.dataset.durationSet)), end);
+  } else if (shift) {
+    const dir = Number(shift.dataset.dir);
+    if (shift.dataset.shift === "start") {
+      const minutes = stepValue(start.getHours() * 60 + start.getMinutes(), dir, step);
+      const moved = new Date(start.getFullYear(), start.getMonth(), start.getDate(), 0, minutes);
+      // The start stays at least a step before the end.
+      setEntryTimes(form, moved <= plusMinutes(end, -step) ? moved : plusMinutes(end, -step), end);
+    } else {
+      const minutes = stepValue(end.getHours() * 60 + end.getMinutes(), dir, step);
+      const moved = new Date(end.getFullYear(), end.getMonth(), end.getDate(), 0, minutes);
+      setEntryTimes(form, start, moved >= plusMinutes(start, step) ? moved : plusMinutes(start, step));
+    }
+  } else if (dayInput) {
+    // A tap on the invisible date field opens the picker; desktop browsers only do so on a click on its icon.
+    try {
+      dayInput.showPicker();
+    } catch {
+      // Not supported or not allowed here: the field still takes typed dates.
+    }
+  }
+});
+
+// Moves start and end to another day and keeps the clock times (and the length) as they are.
+function setEntryDay(form, day) {
+  const { start, end } = entryTimes(form);
+  const days = Math.round((startOfDay(day) - startOfDay(start)) / 86400000);
+  const movedStart = new Date(start);
+  const movedEnd = new Date(end);
+  movedStart.setDate(movedStart.getDate() + days);
+  movedEnd.setDate(movedEnd.getDate() + days);
+  setEntryTimes(form, movedStart, movedEnd);
+}
+
+document.addEventListener("change", (event) => {
+  const form = event.target.closest?.("[data-entry-form]");
+  if (!form) return;
+  if (event.target.matches("[data-day-input]") && event.target.value) {
+    const [year, month, day] = event.target.value.split("-").map(Number);
+    setEntryDay(form, new Date(year, month - 1, day));
+  } else if (event.target.matches("[data-time]") && event.target.value) {
+    const { start, end } = entryTimes(form);
+    const [hours, minutes] = event.target.value.split(":").map(Number);
+    const isStart = event.target.dataset.time === "start";
+    const moved = new Date((isStart ? start : end).getFullYear(), (isStart ? start : end).getMonth(), (isStart ? start : end).getDate(), hours, minutes);
+    setEntryTimes(form, isStart ? moved : start, isStart ? end : moved);
+  }
+});
+
+// A typed time snaps to the rounding step when the field loses focus (the server rounds as well, see
+// tracking/services.py). Snapping while typing would overwrite the first digits.
+document.addEventListener("focusout", (event) => {
+  const form = event.target.closest?.("[data-entry-form]");
+  const rounding = Number(form?.dataset.rounding);
+  if (!rounding || !event.target.matches("[data-time]") || !event.target.value) return;
+  const [hours, minutes] = event.target.value.split(":").map(Number);
+  const snapped = roundValue(hours * 60 + minutes, rounding);
+  event.target.value = `${pad2(Math.floor(snapped / 60) % 24)}:${pad2(snapped % 60)}`;
+  event.target.dispatchEvent(new Event("change", { bubbles: true }));
 });

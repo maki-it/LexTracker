@@ -417,6 +417,50 @@
     @apply -mr-1.5 ml-1.5 rounded-full bg-primary-soft px-1.5 text-xs leading-5 text-primary-ink tabular-nums;
   }
 
+  /* Recently used tasks, folded away: a tap on one starts its timer. */
+  .recent-tasks {
+    & summary {
+      @apply flex min-h-10 cursor-pointer list-none items-center justify-between gap-2 rounded-lg px-1 text-sm font-medium text-primary-ink max-sm:min-h-11;
+
+      &::-webkit-details-marker {
+        display: none;
+      }
+    }
+  }
+
+  .recent-tasks-list {
+    @apply grid grid-cols-2 gap-2 pt-1 sm:grid-cols-4;
+  }
+
+  .recent-task {
+    @apply flex min-h-16 min-w-0 cursor-pointer flex-col justify-center gap-0.5 rounded-lg border border-line bg-surface-muted px-3 py-2 text-left text-sm text-ink hover:border-primary;
+  }
+
+  /* The time entry form: switch between two ways to enter the time, and the controls for each. */
+  .segmented {
+    @apply grid grid-cols-2 gap-1 rounded-xl border border-line bg-surface-muted p-1;
+  }
+
+  .segmented-item {
+    @apply h-9 cursor-pointer rounded-lg border-0 bg-transparent text-sm font-medium text-muted aria-pressed:bg-surface aria-pressed:text-ink aria-pressed:ring-1 aria-pressed:ring-line max-sm:h-11;
+  }
+
+  .stepper {
+    @apply flex items-center justify-between gap-2 rounded-xl border border-line bg-surface-muted p-2;
+  }
+
+  .stepper-btn {
+    @apply inline-flex shrink-0 cursor-pointer items-center justify-center rounded-lg border border-line bg-surface text-xl text-ink hover:bg-canvas;
+  }
+
+  .time-card {
+    @apply flex flex-col items-center gap-1.5 rounded-xl border border-line bg-surface-muted p-2;
+  }
+
+  .time-input {
+    @apply w-full rounded-lg border-0 bg-transparent p-0 text-center text-xl font-semibold sm:text-2xl text-ink tabular-nums focus:outline-2 focus:outline-primary/30;
+  }
+
   /* Progress bar: <div class="progress"><div class="progress-bar" style="width: 40%"></div></div> */
   .progress {
     @apply h-1.5 overflow-hidden rounded-full bg-line-soft;
