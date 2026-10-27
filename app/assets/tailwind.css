@@ -350,6 +350,11 @@
     @apply w-9 px-0 max-sm:w-11;
   }
 
+  /* A big button with an icon above its label, e.g. call, e-mail and route to a customer. */
+  .contact-action {
+    @apply flex h-16 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-line bg-surface text-xs font-medium text-primary-ink no-underline transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:text-muted disabled:opacity-40 disabled:hover:bg-surface;
+  }
+
   .btn-group {
     @apply inline-flex overflow-hidden rounded-lg border border-line;
 

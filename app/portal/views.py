@@ -28,6 +28,7 @@ from customers.lexware import (
     apply_to_contact,
     billing_address,
     contact_person,
+    set_address,
 )
 from customers.models import Customer
 from lexware.client import LexwareError, client_from_settings
@@ -264,10 +265,19 @@ async def contact(request: HttpRequest) -> HttpResponse:
                     apply_billing_address(raw, form.address)
                     if with_person:
                         apply_contact_person(raw, form.person)
+                    address_fields = set_address(customer, form.address)
                     customer.lexware_version = await client.update_contact(customer.lexware_id, raw)
                     customer.lexware_synced_at = timezone.now()
                     await customer.asave(
-                        update_fields=["name", "email", "phone", "lexware_version", "lexware_synced_at", "updated_at"]
+                        update_fields=[
+                            "name",
+                            "email",
+                            "phone",
+                            *address_fields,
+                            "lexware_version",
+                            "lexware_synced_at",
+                            "updated_at",
+                        ]
                     )
                     logger.info("Customer login %s changed the Lexware contact of customer %s", user.pk, customer.pk)
                     messages.success(request, _("Deine Kontaktdaten sind gespeichert."))

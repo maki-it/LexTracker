@@ -23,6 +23,14 @@ class Customer(TimeStampedModel):
     customer_number = models.CharField(_("Kundennummer"), max_length=50, blank=True)
     email = models.EmailField(_("E-Mail"), blank=True)
     phone = models.CharField(_("Telefon"), max_length=50, blank=True)
+    # The billing address of the Lexware contact (else its first shipping address), as imported.
+    # It is kept in line with Lexware, not edited here.
+    address_supplement = models.CharField(_("Adresszusatz"), max_length=255, blank=True, editable=False)
+    address_street = models.CharField(_("Straße"), max_length=255, blank=True, editable=False)
+    address_zip = models.CharField(_("PLZ"), max_length=20, blank=True, editable=False)
+    address_city = models.CharField(_("Ort"), max_length=255, blank=True, editable=False)
+    # ISO 3166-1 alpha-2, as Lexware has it. Empty counts as Germany.
+    address_country = models.CharField(_("Land"), max_length=2, blank=True, editable=False)
     default_hourly_rate = models.DecimalField(
         _("Standard-Stundensatz (netto)"), max_digits=8, decimal_places=2, null=True, blank=True
     )
@@ -49,3 +57,21 @@ class Customer(TimeStampedModel):
 
     def __str__(self) -> str:
         return self.name
+
+    @property
+    def address_lines(self) -> list[str]:
+        """The address as it is written on a letter: supplement, street, "zip city", and the country unless it is DE."""
+        place = f"{self.address_zip} {self.address_city}".strip()
+        country = "" if self.address_country in ("", "DE") else self.address_country
+        return [line for line in (self.address_supplement, self.address_street, place, country) if line]
+
+    @property
+    def has_address(self) -> bool:
+        """Whether there is enough of an address to find the place: a street or a city."""
+        return bool(self.address_street or self.address_city)
+
+    @property
+    def address_query(self) -> str:
+        """The address on one line, for a maps search. Leaves out the supplement, which is not part of the place."""
+        place = f"{self.address_zip} {self.address_city}".strip()
+        return ", ".join(part for part in (self.address_street, place, self.address_country) if part)
