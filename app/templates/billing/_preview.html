@@ -1,5 +1,5 @@
 {% load i18n %}
-{% load timefmt icons %}
+{% load timefmt icons dialogs %}
 <section id="preview" class="flex flex-col gap-3">
   {% if draft %}
   <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -73,18 +73,28 @@
     {% else %}
     <p class="px-4 py-8 text-center text-muted">{% trans "Für diesen Zeitraum gibt es keine offenen, abrechenbaren Zeiten." %}</p>
     {% endif %}
-    {% if draft.can_be_invoiced %}
     {% if customer.lexware_id %}
-    <form method="post" action="{% url 'billing:invoice_create' customer.pk %}" class="flex flex-wrap items-center justify-between gap-4 border-t border-line px-4 py-3">
+    {% if draft.can_be_invoiced %}
+    <form method="post" action="{% url 'billing:invoice_create' customer.pk %}" class="flex flex-col gap-4 border-t border-line px-4 py-4">
       {% csrf_token %}
       <input type="hidden" name="start" value="{{ draft.start|date:'Y-m-d' }}">
       <input type="hidden" name="end" value="{{ draft.end|date:'Y-m-d' }}">
-      <p class="text-muted">{% trans "Legt einen Entwurf in Lexware an. Die Zeiteinträge werden danach als abgerechnet markiert." %}</p>
-      <button type="submit" class="btn btn-primary" onclick="this.disabled=true; this.form.submit();">{% trans "Rechnungsentwurf in Lexware anlegen" %}</button>
+      <div hx-get="{% url 'billing:quotation_options' customer.pk %}" hx-trigger="load" hx-swap="outerHTML" hx-select="unset" hx-push-url="false"></div>
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <p class="text-muted">{% trans "Legt einen Entwurf in Lexware an. Die Zeiteinträge werden danach als abgerechnet markiert." %}</p>
+        <div class="flex flex-wrap items-center gap-2">
+          <a {% dialog_link "billing:invoice_assign" customer.pk start=draft.start|date:'Y-m-d' end=draft.end|date:'Y-m-d' %} class="btn">{% trans "Bestehende Rechnung zuordnen …" %}</a>
+          <button type="submit" class="btn btn-primary" onclick="this.disabled=true; this.form.submit();">{% trans "Rechnungsentwurf in Lexware anlegen" %}</button>
+        </div>
+      </div>
     </form>
-    {% else %}
-    <div role="alert" class="alert alert-warning m-4">{% trans "Dieser Kunde ist nicht mit Lexware verknüpft. Importiere ihn auf der Kundenseite aus Lexware, um eine Rechnung zu erstellen." %}</div>
+    {% elif draft.entries %}
+    <div class="flex justify-end border-t border-line px-4 py-3">
+      <a {% dialog_link "billing:invoice_assign" customer.pk start=draft.start|date:'Y-m-d' end=draft.end|date:'Y-m-d' %} class="btn">{% trans "Bestehende Rechnung zuordnen …" %}</a>
+    </div>
     {% endif %}
+    {% elif draft.can_be_invoiced %}
+    <div role="alert" class="alert alert-warning m-4">{% trans "Dieser Kunde ist nicht mit Lexware verknüpft. Importiere ihn auf der Kundenseite aus Lexware, um eine Rechnung zu erstellen." %}</div>
     {% endif %}
     {% else %}
     <p class="px-4 py-8 text-center text-muted">{% trans "Bitte einen gültigen Zeitraum wählen." %}</p>

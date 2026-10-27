@@ -1,0 +1,18 @@
+{% load i18n %}
+{% comment %}The quotation field of the invoice form, loaded from Lexware (see billing.views.quotation_options).{% endcomment %}
+{% if options %}
+<label class="field max-w-xl">
+  <span>{% trans "Angebot referenzieren (optional)" %}</span>
+  <select name="quotation" class="input">
+    <option value="">{% trans "Kein Angebot" %}</option>
+    {% for quotation, status in options %}
+    <option value="{{ quotation.id }}">{{ quotation.voucher_number|default:"–" }}{% if quotation.voucher_date %} · {{ quotation.voucher_date|date:date_format }}{% endif %}{% if quotation.total_amount is not None %} · {{ quotation.total_amount|floatformat:2 }} € {% trans "brutto" %}{% endif %} · {{ status }}</option>
+    {% endfor %}
+  </select>
+  <span class="text-xs text-muted">{% trans "Lexware zeigt das Angebot beim Rechnungsentwurf unter „Referenz“." %}</span>
+</label>
+{% elif error %}
+<p class="text-[13px] text-muted">{% blocktrans trimmed %}Die Angebote aus Lexware konnten nicht geladen werden. Der Entwurf lässt sich trotzdem ohne Angebot anlegen.{% endblocktrans %}</p>
+{% else %}
+<div hidden></div>
+{% endif %}

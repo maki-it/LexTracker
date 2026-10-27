@@ -151,6 +151,8 @@ class Voucher(_Model):
     due_date: datetime | None = Field(None, alias="dueDate")
     contact_id: UUID | None = Field(None, alias="contactId")
     open_amount: float | None = Field(None, alias="openAmount")
+    # Gross, as the voucher list reports it.
+    total_amount: float | None = Field(None, alias="totalAmount")
 
 
 class VoucherPage(_Model):

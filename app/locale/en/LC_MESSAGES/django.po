@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: LexTracker\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-27 17:29+0000\n"
+"POT-Creation-Date: 2026-10-28 00:01+0100\n"
 "PO-Revision-Date: 2026-10-25 12:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: English\n"
@@ -603,6 +603,9 @@ msgstr "open amount"
 msgid "Status abgeglichen"
 msgstr "Status synced"
 
+msgid "Angebot"
+msgstr "Quotation"
+
 msgid "Rechnung"
 msgstr "Invoice"
 
@@ -612,12 +615,21 @@ msgstr "Invoices"
 msgid "Entwurf gelöscht"
 msgstr "Draft deleted"
 
+msgid "Das Angebot gibt es in Lexware nicht (mehr)."
+msgstr "Lexware does not have this quotation (any more)."
+
+msgid "Das Angebot gehört in Lexware nicht zu diesem Kunden."
+msgstr "In Lexware, this quotation does not belong to this customer."
+
 msgid ""
 "Der Kunde ist nicht mit Lexware verknüpft. Importiere ihn zuerst aus Lexware."
 msgstr "The customer is not linked to Lexware. Import them from Lexware first."
 
 msgid "Für diesen Zeitraum gibt es nichts abzurechnen."
 msgstr "There is nothing to bill for this period."
+
+msgid "Dieser Rechnung können keine Zeiten zugeordnet werden."
+msgstr "No time can be assigned to this invoice."
 
 #, python-format
 msgid "%(count)d geändert"
@@ -657,6 +669,21 @@ msgstr "Please choose a valid period."
 #, python-format
 msgid "Rechnungsentwurf über %(amount)s € netto in Lexware angelegt."
 msgstr "Invoice draft for %(amount)s € net created in Lexware."
+
+msgid "Angenommen"
+msgstr "Accepted"
+
+msgid "Diese Rechnung gibt es nicht (mehr)."
+msgstr "This invoice does not exist (any more)."
+
+#, python-format
+msgid "%(count)d Zeiteintrag der Rechnung %(number)s zugeordnet."
+msgid_plural "%(count)d Zeiteinträge der Rechnung %(number)s zugeordnet."
+msgstr[0] "%(count)d time entry assigned to invoice %(number)s."
+msgstr[1] "%(count)d time entries assigned to invoice %(number)s."
+
+msgid "(Entwurf)"
+msgstr "(draft)"
 
 msgid "Abrechnungsvereinbarung gespeichert."
 msgstr "Billing agreement saved."
@@ -2846,6 +2873,16 @@ msgstr[1] "Show %(counter)s more time entries"
 msgid "Entwurf öffnen"
 msgstr "Open draft"
 
+#, python-format
+msgid "Angebot %(number)s"
+msgstr "Quotation %(number)s"
+
+#, python-format
+msgid "%(counter)s Zeiteintrag zugeordnet"
+msgid_plural "%(counter)s Zeiteinträge zugeordnet"
+msgstr[0] "%(counter)s time entry assigned"
+msgstr[1] "%(counter)s time entries assigned"
+
 msgid "Leistungszeitraum"
 msgstr "Service period"
 
@@ -2865,8 +2902,8 @@ msgstr "No invoices created yet."
 msgid "In Lexware Office gelöscht"
 msgstr "Deleted in Lexware Office"
 
-msgid "In Lexware Office erstellt, ohne Zeiteinträge"
-msgstr "Created in Lexware Office, without time entries"
+msgid "In Lexware Office erstellt"
+msgstr "Created in Lexware Office"
 
 #, python-format
 msgid "Fällig %(due_date)s"
@@ -2930,6 +2967,9 @@ msgid ""
 msgstr ""
 "Creates a draft in Lexware. The time entries are then marked as billed."
 
+msgid "Bestehende Rechnung zuordnen …"
+msgstr "Assign an existing invoice …"
+
 msgid "Rechnungsentwurf in Lexware anlegen"
 msgstr "Create invoice draft in Lexware"
 
@@ -2939,6 +2979,25 @@ msgid ""
 msgstr ""
 "This customer is not linked to Lexware. Import them from Lexware on the "
 "customer page to create an invoice."
+
+msgid "Angebot referenzieren (optional)"
+msgstr "Reference a quotation (optional)"
+
+msgid "Kein Angebot"
+msgstr "No quotation"
+
+msgid "brutto"
+msgstr "gross"
+
+msgid "Lexware zeigt das Angebot beim Rechnungsentwurf unter „Referenz“."
+msgstr "Lexware shows the quotation under \"Reference\" on the invoice draft."
+
+msgid ""
+"Die Angebote aus Lexware konnten nicht geladen werden. Der Entwurf lässt "
+"sich trotzdem ohne Angebot anlegen."
+msgstr ""
+"The quotations could not be loaded from Lexware. You can still create the "
+"draft without one."
 
 msgid "Zeiten abrechnen und Rechnungen aus Lexware Office im Blick behalten"
 msgstr "Bill time and keep an eye on invoices from Lexware Office"
@@ -3083,6 +3142,44 @@ msgstr "To billing"
 
 msgid "Keine offenen Zeiten: Alles ist abgerechnet."
 msgstr "No open time: everything is billed."
+
+#, python-format
+msgid "Rechnung zuordnen %(name)s"
+msgstr "Assign invoice %(name)s"
+
+#, python-format
+msgid "Rechnung zuordnen · %(name)s"
+msgstr "Assign invoice · %(name)s"
+
+#, python-format
+msgid ""
+"Der Zeiteintrag vom %(start)s bis %(end)s (%(hours)s h) gilt danach als "
+"abgerechnet. In Lexware wird nichts geändert."
+msgid_plural ""
+"Die %(counter)s Zeiteinträge vom %(start)s bis %(end)s (%(hours)s h) gelten "
+"danach als abgerechnet. In Lexware wird nichts geändert."
+msgstr[0] ""
+"The time entry from %(start)s to %(end)s (%(hours)s h) counts as billed "
+"afterwards. Nothing is changed in Lexware."
+msgstr[1] ""
+"The %(counter)s time entries from %(start)s to %(end)s (%(hours)s h) count "
+"as billed afterwards. Nothing is changed in Lexware."
+
+msgid "Zuordnen"
+msgstr "Assign"
+
+msgid ""
+"Zu diesem Kunden gibt es keine Rechnung aus Lexware, der Zeiten zugeordnet "
+"werden können."
+msgstr ""
+"This customer has no invoice from Lexware that time can be assigned to."
+
+msgid ""
+"Fehlt eine Rechnung? Neue Rechnungen aus Lexware kommen automatisch hinzu, "
+"oder du startest den Abgleich auf der Rechnungsseite."
+msgstr ""
+"Is an invoice missing? New invoices from Lexware are added automatically, or "
+"you start the sync on the invoices page."
 
 msgid "Kunde oder Rechnungsnummer suchen"
 msgstr "Search customer or invoice number"

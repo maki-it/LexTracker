@@ -3,6 +3,8 @@
 <tr>
   <td class="cell-title whitespace-nowrap tabular-nums{% if not invoice.voucher_number and not invoice.lexware_url %} text-muted{% endif %}">
     {% if invoice.lexware_url %}<a class="hover:underline" href="{{ invoice.lexware_url }}" target="_blank" rel="noopener">{{ invoice.voucher_number|default:_("Entwurf öffnen") }}</a>{% else %}{{ invoice.voucher_number|default:"–" }}{% endif %}
+    {% if invoice.quotation_number %}<span class="block text-[13px] font-normal text-muted">{% blocktrans trimmed with number=invoice.quotation_number %}Angebot {{ number }}{% endblocktrans %}</span>{% endif %}
+    {% if invoice.origin == "lexware" and invoice.entry_count %}<span class="block text-[13px] font-normal text-muted">{% blocktrans trimmed count counter=invoice.entry_count %}{{ counter }} Zeiteintrag zugeordnet{% plural %}{{ counter }} Zeiteinträge zugeordnet{% endblocktrans %}</span>{% endif %}
   </td>
   {% if show_customer %}<td class="cell-sub font-medium"><a href="{% url 'billing:customer' invoice.customer_id %}" class="text-ink no-underline hover:underline">{{ invoice.customer.name }}</a></td>{% endif %}
   <td class="whitespace-nowrap tabular-nums" data-label="{% trans 'Datum' %}"><span>{{ invoice.voucher_date|default:invoice.created_at|date:date_format }}</span></td>

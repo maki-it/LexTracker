@@ -7,7 +7,7 @@ Pass show_origin=True to mark invoices that were written directly in Lexware.
 <div class="flex flex-col items-start gap-0.5">
   <span class="inline-flex items-center gap-1.5">
     <span class="badge {{ invoice.status_badge }}"{% if invoice.status == "deleted" %} title="{% trans 'In Lexware Office gelöscht' %}"{% endif %}>{{ invoice.status_label }}</span>
-    {% if show_origin and invoice.origin == "lexware" %}<span class="badge badge-outline" title="{% trans 'In Lexware Office erstellt, ohne Zeiteinträge' %}">Lexware</span>{% endif %}
+    {% if show_origin and invoice.origin == "lexware" %}<span class="badge badge-outline" title="{% trans 'In Lexware Office erstellt' %}">Lexware</span>{% endif %}
   </span>
   {% if invoice.shows_due_date %}
   <span class="text-[13px] tabular-nums {% if invoice.days_overdue %}text-danger{% else %}text-muted{% endif %}">{% blocktrans trimmed with due_date=invoice.due_date|date:date_format %}Fällig {{ due_date }}{% endblocktrans %}{% if invoice.days_overdue %} · {% blocktrans trimmed count counter=invoice.days_overdue %}seit {{ counter }} Tag{% plural %}seit {{ counter }} Tagen{% endblocktrans %}{% endif %}</span>
