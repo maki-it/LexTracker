@@ -244,7 +244,7 @@ async def sso_callback(request: HttpRequest) -> HttpResponse:
         return redirect(settings.LOGIN_URL)
     # The provider has asked for the second factor itself, so there is no code from the authenticator app here.
     await alogin(request, user, backend="django.contrib.auth.backends.ModelBackend")
-    await ratelimit.clear_failures(request)
+    await ratelimit.clear_failures(request, user.get_username())
     return redirect(login["next"])
 
 

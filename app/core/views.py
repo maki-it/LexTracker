@@ -82,6 +82,12 @@ async def health(request: HttpRequest) -> JsonResponse:
 
 
 @require_GET
+async def robots(request: HttpRequest) -> HttpResponse:
+    """Ask crawlers to stay away: the app is private, so a search engine has no business here."""
+    return HttpResponse("User-agent: *\nDisallow: /\n", content_type="text/plain")
+
+
+@require_GET
 async def logo(request: HttpRequest) -> HttpResponse:
     """The uploaded logo. Public, since the login page shows it, too."""
     row = await AppSettings.objects.filter(pk=1).values("logo_data", "logo_type").afirst()

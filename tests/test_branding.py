@@ -74,6 +74,24 @@ def test_the_name_replaces_lextracker_in_pages(admin, client):
     assert "LexTracker" not in anonymous
 
 
+def test_pages_have_a_description_with_the_name(admin, client):
+    assert '<meta name="description" content="LexTracker: Zeiterfassung und Projektsteuerung">' in (
+        admin.get(reverse("core:dashboard")).text
+    )
+
+    save(admin, app_name="Acme Zeit")
+    assert 'content="Acme Zeit: Zeiterfassung und Projektsteuerung"' in admin.get(reverse("core:dashboard")).text
+
+    anonymous = client.__class__().get(reverse("accounts:login")).text
+    assert 'content="Acme Zeit: Zeiterfassung und Projektsteuerung"' in anonymous
+
+
+def test_the_description_follows_the_language(admin, user, english):
+    user.language = "en"
+    user.save()
+    assert 'content="LexTracker: time tracking and project management"' in admin.get(reverse("core:dashboard")).text
+
+
 def test_the_name_is_escaped(admin):
     save(admin, app_name="<b>Zeit</b>")
     assert "<b>Zeit</b>" not in admin.get(reverse("core:dashboard")).text

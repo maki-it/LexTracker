@@ -352,6 +352,8 @@ Wenn die App dauerhaft per HTTPS erreichbar ist, setze außerdem `APP_HSTS_SECON
 
 `DJANGO_SUPERUSER_PASSWORD` bleibt als Umgebungsvariable im Container sichtbar (`docker inspect`). Entferne es nach dem ersten Start aus der `.env`; das Konto bleibt bestehen. Schalte danach unter Konto die Zwei-Faktor-Anmeldung ein, denn dieser Weg legt das Konto ohne sie an.
 
+Die App liefert unter `/robots.txt` selbst eine Datei aus, die Suchmaschinen alles untersagt (`Disallow: /`). Der Reverse Proxy muss dafür nichts tun.
+
 ### Datensicherung
 
 **Backup:** Der Scheduler kopiert die Datenbank täglich nach `/backups`. Ob, ab welcher Uhrzeit (Standard 03:00) und wie viele Kopien er behält (Standard 14), stellst du unter Einstellungen → Datensicherung ein; dort steht auch, wann die letzte Sicherung lief. Nur der Zielordner kommt aus der Umgebung (`APP_BACKUP_DIR`, in Docker fest `/backups`, ohne Docker `data/backups`). Der Scheduler nutzt dafür die Backup-Funktion von SQLite, die auch im laufenden Betrieb eine stimmige Kopie liefert; die Datei einfach zu kopieren reicht im WAL-Modus nicht.
