@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: LexTracker\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-27 09:17+0100\n"
+"POT-Creation-Date: 2026-10-27 09:25+0100\n"
 "PO-Revision-Date: 2026-10-25 12:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: English\n"
@@ -337,6 +337,15 @@ msgstr "API token"
 msgid "API-Tokens"
 msgstr "API tokens"
 
+msgid "hinzugefügt"
+msgstr "added"
+
+msgid "Passkey"
+msgstr "Passkey"
+
+msgid "Passkeys"
+msgstr "Passkeys"
+
 msgid "IP-Adresse"
 msgstr "IP address"
 
@@ -360,6 +369,20 @@ msgstr "Sign-in link"
 
 msgid "Anmeldelinks"
 msgstr "Sign-in links"
+
+msgid "Die Anmeldung mit Passkey hat nicht geklappt."
+msgstr "Signing in with a passkey did not work."
+
+msgid "Der Passkey konnte nicht hinzugefügt werden."
+msgstr "The passkey could not be added."
+
+#, python-format
+msgid "Passkey „%(name)s“ hinzugefügt."
+msgstr "Passkey “%(name)s” added."
+
+#, python-format
+msgid "Passkey „%(name)s“ entfernt."
+msgstr "Passkey “%(name)s” removed."
 
 #, python-format
 msgid "Einladung an %(email)s ist unterwegs."
@@ -2095,6 +2118,9 @@ msgstr "This page is not available to your account."
 msgid "Zur Übersicht"
 msgstr "Back to overview"
 
+msgid "Ändern"
+msgstr "Change"
+
 msgid "Agent verbinden"
 msgstr "Connect an agent"
 
@@ -2152,6 +2178,64 @@ msgstr ""
 
 msgid "Einrichten"
 msgstr "Set up"
+
+msgid ""
+"Mit einem Passkey meldest du dich mit Fingerabdruck, Gesicht oder PIN an, am "
+"Handy und am Rechner. Er ersetzt Passwort und Code. Passwort und Anmeldelink "
+"bleiben als Rückfall bestehen."
+msgstr ""
+"With a passkey you sign in with your fingerprint, face or PIN, on your phone "
+"and on your computer. It replaces password and code. Password and sign-in "
+"link stay as a fallback."
+
+#, python-format
+msgid "Hinzugefügt %(added)s"
+msgstr "Added %(added)s"
+
+#, python-format
+msgid "zuletzt benutzt %(used)s Uhr"
+msgstr "last used %(used)s"
+
+msgid "noch nicht benutzt"
+msgstr "not used yet"
+
+msgid "synchronisiert"
+msgstr "synced"
+
+#, python-format
+msgid "Passkey „%(name)s“ wirklich entfernen?"
+msgstr "Really remove the passkey “%(name)s”?"
+
+msgid "Entfernen"
+msgstr "Remove"
+
+msgid "Dieses Gerät hat schon einen Passkey für dein Konto."
+msgstr "This device already has a passkey for your account."
+
+msgid "Mein Handy"
+msgstr "My phone"
+
+msgid "Dieser Rechner"
+msgstr "This computer"
+
+msgid "Damit erkennst du den Passkey später in der Liste."
+msgstr "This is how you recognise the passkey in the list later."
+
+msgid "Passkey hinzufügen"
+msgstr "Add passkey"
+
+msgid "Dieser Browser unterstützt keine Passkeys."
+msgstr "This browser does not support passkeys."
+
+msgid ""
+"Passkeys sind nicht eingerichtet. Trage die Domain, unter der die App "
+"erreichbar ist, als <code>APP_PASSKEY_RP_ID</code> in die <code>.env</code> "
+"ein, z. B. <code>zeit.example.de</code>. Danach können alle Benutzer "
+"Passkeys anlegen."
+msgstr ""
+"Passkeys are not set up. Enter the domain the app is reachable under as "
+"<code>APP_PASSKEY_RP_ID</code> in the <code>.env</code> file, e.g. "
+"<code>zeit.example.de</code>. Then all users can add passkeys."
 
 msgid "KI-Agenten und API-Tokens"
 msgstr "AI agents and API tokens"
@@ -2233,9 +2317,6 @@ msgstr "created %(created_at)s"
 msgid "zuletzt benutzt %(last_used_at)s Uhr"
 msgstr "last used %(last_used_at)s"
 
-msgid "noch nicht benutzt"
-msgstr "not used yet"
-
 msgid "Diesen Token widerrufen?"
 msgstr "Revoke this token?"
 
@@ -2276,6 +2357,12 @@ msgstr "Sign in"
 
 msgid "Vergessen?"
 msgstr "Forgot?"
+
+msgid "oder"
+msgstr "or"
+
+msgid "Mit Passkey anmelden"
+msgstr "Sign in with passkey"
 
 #, python-format
 msgid "Mit %(name)s anmelden"
@@ -3629,9 +3716,6 @@ msgstr "No unread messages."
 #, python-format
 msgid "Angezeigt ab Priorität „%(get_message_level_display)s“."
 msgstr "Shown from priority “%(get_message_level_display)s”."
-
-msgid "Ändern"
-msgstr "Change"
 
 msgid "Weitere Nachrichten anzeigen"
 msgstr "Show more messages"

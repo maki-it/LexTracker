@@ -218,6 +218,20 @@ Fest bleiben technische Namen, auf die sich Clients und Docker verlassen (MCP-Se
 Unter deinem Namen oben rechts stellst du Sprache (Deutsch oder Englisch), Darstellung (hell, dunkel oder wie das System) und Datumsformat ein und änderst dein Passwort.
 Dort schaltest du auch die **Zwei-Faktor-Anmeldung** mit einer Authenticator-App ein (TOTP, über [django-otp](https://django-otp-official.readthedocs.io/)). Dabei entstehen zehn Wiederherstellungscodes, die je einmal statt des App-Codes funktionieren.
 
+#### Passkeys
+
+Mit einem Passkey meldest du dich mit Fingerabdruck, Gesicht oder PIN an, am Handy und am Rechner (WebAuthn, über [py_webauthn](https://github.com/duo-labs/py_webauthn)). Passkeys sind aus, bis in der `.env` die Domain steht:
+
+```env
+APP_PASSKEY_RP_ID=zeit.example.de
+```
+
+Das ist nur der Host-Name, unter dem du die App aufrufst (oder eine Domain darüber), ohne `https://`. Ein Passkey gehört für immer zu dieser Domain: ändert sie sich, funktionieren die Passkeys nicht mehr, Passwort und Anmeldelink bleiben dann der Weg hinein. Danach legt jeder Benutzer unter **Konto → Sicherheit → Passkeys** seine Passkeys an und entfernt sie wieder, und die Anmeldeseite zeigt unter dem Passwort den Button **Mit Passkey anmelden**.
+
+- **Zwei-Faktor:** Ein Passkey wird immer mit Fingerabdruck, Gesicht oder PIN bestätigt und ersetzt deshalb Passwort und Code der Authenticator-App.
+- **Ursprung:** Standardmäßig erwartet die App `https://<APP_PASSKEY_RP_ID>`. Für einen Test über HTTP setzt du zusätzlich `APP_PASSKEY_ORIGINS=http://localhost:8000` (mit Port, kommagetrennt für mehrere).
+- **Gesperrte Benutzer** können sich auch mit Passkey nicht anmelden. Fehlgeschlagene Passkey-Anmeldungen zählen zur Sperre nach Fehlversuchen.
+
 #### Single Sign-on (OpenID Connect)
 
 Neben Benutzername und Passwort kannst du die Anmeldung über einen OpenID-Connect-Anbieter anbieten (Keycloak, Authentik, Entra ID, Google und andere). Sie ist aus, bis in der `.env` drei Werte stehen:
@@ -313,6 +327,7 @@ Alle Einstellungen der App kommen aus der Datei `.env` neben der `compose.yaml` 
 | `APP_TIME_ZONE` | Zeitzone | `Europe/Berlin` |
 | `APP_LOG_LEVEL` | Log-Stufe | `info` |
 | `APP_LEXWARE_API_KEY` | Ersatz für den Lexware-Schlüssel, solange in der App keiner hinterlegt ist ([Lexware Office](#lexware-office)) | leer |
+| `APP_PASSKEY_RP_ID`, `APP_PASSKEY_ORIGINS` | Schalten die Anmeldung mit Passkeys ein: die Domain der App, optional die Adressen mit Schema ([Passkeys](#passkeys)) | leer |
 | `APP_OIDC_ISSUER`, `APP_OIDC_CLIENT_ID`, `APP_OIDC_CLIENT_SECRET` | Schalten die Anmeldung per OpenID Connect ein ([Single Sign-on](#single-sign-on-openid-connect)) | leer |
 | `APP_OIDC_NAME`, `APP_OIDC_SCOPES` | Name im Login-Button und angeforderte Scopes | `SSO`, `openid email profile` |
 | `APP_OIDC_CREATE_USERS`, `APP_OIDC_ALLOWED_EMAIL_DOMAINS` | Legt Mitarbeiter für unbekannte SSO-Nutzer an, optional nur für bestimmte E-Mail-Domains (kommagetrennt) | `false`, leer |

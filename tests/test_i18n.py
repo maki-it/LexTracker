@@ -128,6 +128,19 @@ def test_login_page_offers_both_languages(client, user):
     assert 'value="de"' in page and 'value="en"' in page
 
 
+def test_login_page_switches_the_language_with_a_drop_down(client, user, english):
+    page = client.get(reverse("accounts:login")).text
+
+    # One select, sent as soon as it changes; the current language is the selected entry.
+    assert '<select id="language-switch" name="language"' in page
+    assert "data-autosubmit" in page
+    assert '<option value="de" lang="de" selected>Deutsch</option>' in page
+    assert '<option value="en" lang="en">English</option>' in page
+
+    english_page = client.get(reverse("accounts:login"), headers={"Accept-Language": "en"}).text
+    assert '<option value="en" lang="en" selected>English</option>' in english_page
+
+
 def test_switching_the_language_on_the_login_page(client, user, english):
     response = client.post(reverse("accounts:set_language"), {"language": "en", "next": reverse("accounts:login")})
     assert response.status_code == 302

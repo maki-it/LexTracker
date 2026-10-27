@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load i18n %}
+{% load icons %}
 {% block title %}{% trans "Anmelden" %} · {{ brand.name }}{% endblock %}
 {% block public_content %}
 <div class="flex w-full max-w-sm flex-col gap-6">
@@ -19,6 +20,18 @@
       <input type="password" name="password" class="input" autocomplete="current-password" required>
     </label>
     <button type="submit" class="btn btn-primary mt-1">{% trans "Anmelden" %}</button>
+    {% if passkeys or sso or links.login_link %}
+    {# With passkeys alone, the line stays hidden until the browser says it can do them (app.js "Passkeys"). #}
+    <div class="flex items-center gap-3 text-xs text-muted" role="separator"{% if not sso and not links.login_link %} data-passkey-supported hidden{% endif %}>
+      <span class="h-px flex-1 bg-line"></span>{% trans "oder" %}<span class="h-px flex-1 bg-line"></span>
+    </div>
+    {% endif %}
+    {% if passkeys %}
+    <button type="button" class="btn" data-passkey-supported data-passkey-login hidden
+            data-options-url="{% url 'accounts:passkey_options' %}" data-login-url="{% url 'accounts:passkey_login' %}" data-next="{{ next }}"
+            data-error-text="{% trans 'Die Anmeldung mit Passkey hat nicht geklappt.' %}">{% icon "key" size=16 %}{% trans "Mit Passkey anmelden" %}</button>
+    <div role="alert" class="alert alert-error" data-passkey-error hidden></div>
+    {% endif %}
     {% if sso %}
     <a href="{% url 'accounts:sso_start' %}{% if next %}?next={{ next|urlencode }}{% endif %}" class="btn">{% blocktrans trimmed with name=sso_name %}Mit {{ name }} anmelden{% endblocktrans %}</a>
     {% endif %}

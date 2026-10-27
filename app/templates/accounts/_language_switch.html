@@ -1,10 +1,16 @@
 {% load i18n %}
-<form method="post" action="{% url 'accounts:set_language' %}" class="flex justify-center gap-3 text-sm">
+{# A drop-down: picking a language sends the form at once (app.js, data-autosubmit); without JavaScript the button does. #}
+<form method="post" action="{% url 'accounts:set_language' %}" class="flex items-center justify-center gap-2">
   {% csrf_token %}
   <input type="hidden" name="next" value="{{ request.get_full_path }}">
   {% get_current_language as current %}
   {% get_available_languages as languages %}
-  {% for code, name in languages %}
-  <button type="submit" name="language" value="{{ code }}" lang="{{ code }}"{% if code == current %} aria-current="true" class="font-semibold"{% else %} class="text-muted hover:underline"{% endif %}>{{ name }}</button>
-  {% endfor %}
+  <label for="language-switch" class="sr-only">{% trans "Sprache" %}</label>
+  <select id="language-switch" name="language" class="input w-auto text-sm" data-autosubmit>
+    {% for code, name in languages %}
+    {% get_language_info for code as info %}
+    <option value="{{ code }}" lang="{{ code }}"{% if code == current %} selected{% endif %}>{{ info.name_local|capfirst }}</option>
+    {% endfor %}
+  </select>
+  <noscript><button type="submit" class="btn btn-sm">{% trans "Ändern" %}</button></noscript>
 </form>

@@ -185,6 +185,10 @@ OIDC_NAME = env.oidc_name.strip() or "SSO"
 OIDC_SCOPES = env.oidc_scopes
 OIDC_CREATE_USERS = env.oidc_create_users
 OIDC_ALLOWED_EMAIL_DOMAINS = [domain.lower().lstrip("@") for domain in env.oidc_allowed_email_domains]
+PASSKEY_RP_ID = env.passkey_rp_id.strip().lower()
+PASSKEY_ORIGINS = [origin.rstrip("/") for origin in env.passkey_origins] or (
+    [f"https://{PASSKEY_RP_ID}"] if PASSKEY_RP_ID else []
+)
 BACKUP_DIR = env.backup_dir or DATA_DIR / "backups"
 BACKUP_UPLOAD_MAX_SIZE = env.backup_upload_max_mb * 1024 * 1024
 

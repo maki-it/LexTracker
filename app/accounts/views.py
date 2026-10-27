@@ -18,7 +18,7 @@ from django.utils.translation import gettext_lazy, ngettext
 from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.http import require_http_methods, require_POST
 
-from accounts import links, mcp_clients, mfa, oidc, ratelimit
+from accounts import links, mcp_clients, mfa, oidc, passkeys, ratelimit
 from accounts.forms import (
     ApiTokenForm,
     CodeForm,
@@ -44,12 +44,16 @@ def _safe_next(request: HttpRequest) -> str:
     return settings.LOGIN_REDIRECT_URL
 
 
-def _locked(request: HttpRequest, template: str, form, minutes: int) -> HttpResponse:
-    error = ngettext(
+def locked_message(minutes: int) -> str:
+    return ngettext(
         "Zu viele Fehlversuche. Versuche es in %(minutes)d Minute wieder.",
         "Zu viele Fehlversuche. Versuche es in %(minutes)d Minuten wieder.",
         minutes,
     ) % {"minutes": minutes}
+
+
+def _locked(request: HttpRequest, template: str, form, minutes: int) -> HttpResponse:
+    error = locked_message(minutes)
     context = {"form": form, "error": error, "next": _safe_next(request)}
     return render(request, template, context, status=429)
 
@@ -79,6 +83,7 @@ async def login_view(request: HttpRequest) -> HttpResponse:
         "links": await links.available(),
         "sso": oidc.enabled(),
         "sso_name": settings.OIDC_NAME,
+        "passkeys": passkeys.enabled(),
     }
     return render(request, "accounts/login.html", context)
 
@@ -333,6 +338,8 @@ async def _account_page(request: HttpRequest, form, tab: str, token_form=None, n
             "tab": tab,
             "tabs": account_tabs(request.user),
             "has_mfa": await sync_to_async(mfa.has_mfa)(request.user),
+            "passkeys_enabled": passkeys.enabled(),
+            "passkeys": [p async for p in request.user.passkeys.all()],
             "tokens": [t async for t in request.user.api_tokens.all()],
             "token_form": token_form or ApiTokenForm(),
             "new_key": new_key,

@@ -1,5 +1,6 @@
 {% extends layout %}
 {% load i18n %}
+{% load icons %}
 {% block title %}{% trans "Konto" %} · {{ brand.name }}{% endblock %}
 {% block content %}
 <h1>{% trans "Konto" %}</h1>
@@ -62,6 +63,54 @@
     <div><a href="{% url 'account:mfa_setup' %}" class="btn btn-primary">{% trans "Einrichten" %}</a></div>
     {% endif %}
   </section>
+
+  {% if passkeys_enabled %}
+  <section class="card flex flex-col gap-3" id="passkeys"{% if tab != "security" %} hidden{% endif %}>
+    <div>
+      <h2>{% trans "Passkeys" %}</h2>
+      <p class="mt-1 text-sm text-muted">{% trans "Mit einem Passkey meldest du dich mit Fingerabdruck, Gesicht oder PIN an, am Handy und am Rechner. Er ersetzt Passwort und Code. Passwort und Anmeldelink bleiben als Rückfall bestehen." %}</p>
+    </div>
+    {% if passkeys %}
+    <ul class="flex flex-col gap-2">
+      {% for passkey in passkeys %}
+      <li class="flex items-center gap-3 rounded-lg border border-line px-3 py-2.5">
+        <span class="text-success">{% icon "check" size=16 %}</span>
+        <div class="min-w-0 flex-1">
+          <div class="truncate font-medium">{{ passkey.name }}</div>
+          <div class="text-xs text-muted">
+            {% blocktrans trimmed with added=passkey.created_at|date:date_format %}Hinzugefügt {{ added }}{% endblocktrans %}
+            · {% if passkey.last_used_at %}{% blocktrans trimmed with used=passkey.last_used_at|date:datetime_format %}zuletzt benutzt {{ used }} Uhr{% endblocktrans %}{% else %}{% trans "noch nicht benutzt" %}{% endif %}
+            {% if passkey.synced %}· {% trans "synchronisiert" %}{% endif %}
+          </div>
+        </div>
+        <form method="post" action="{% url 'account:passkey_remove' passkey.pk %}" onsubmit="return confirm('{% filter escapejs %}{% blocktrans trimmed with name=passkey.name %}Passkey „{{ name }}“ wirklich entfernen?{% endblocktrans %}{% endfilter %}')">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-sm btn-ghost btn-danger">{% trans "Entfernen" %}</button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    <form method="post" action="{% url 'account:passkey_add' %}" class="flex flex-col gap-3" data-passkey-register data-options-url="{% url 'account:passkey_options' %}"
+          data-error-text="{% trans 'Der Passkey konnte nicht hinzugefügt werden.' %}" data-already-text="{% trans 'Dieses Gerät hat schon einen Passkey für dein Konto.' %}">
+      {% csrf_token %}
+      <label class="field" data-passkey-supported hidden>
+        <span>{% trans "Name" %}</span>
+        <input type="text" name="name" class="input" maxlength="100" required data-passkey-name
+               data-name-phone="{% trans 'Mein Handy' %}" data-name-computer="{% trans 'Dieser Rechner' %}">
+        <span class="font-normal text-muted">{% trans "Damit erkennst du den Passkey später in der Liste." %}</span>
+      </label>
+      <div role="alert" class="alert alert-error" data-passkey-error hidden></div>
+      <div><button type="submit" class="btn btn-primary" data-passkey-supported hidden>{% icon "plus" size=14 %}{% trans "Passkey hinzufügen" %}</button></div>
+      <p class="text-sm text-muted" data-passkey-unsupported>{% trans "Dieser Browser unterstützt keine Passkeys." %}</p>
+    </form>
+  </section>
+  {% elif user.is_admin %}
+  <section class="card flex flex-col gap-2" id="passkeys"{% if tab != "security" %} hidden{% endif %}>
+    <h2>{% trans "Passkeys" %}</h2>
+    <p class="text-sm text-muted">{% blocktrans trimmed %}Passkeys sind nicht eingerichtet. Trage die Domain, unter der die App erreichbar ist, als <code>APP_PASSKEY_RP_ID</code> in die <code>.env</code> ein, z. B. <code>zeit.example.de</code>. Danach können alle Benutzer Passkeys anlegen.{% endblocktrans %}</p>
+  </section>
+  {% endif %}
 
   {% if not user.is_customer %}
   <section class="card flex flex-col gap-4" id="api-tokens"{% if tab != "agents" %} hidden{% endif %}>

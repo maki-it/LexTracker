@@ -532,3 +532,139 @@ document.addEventListener("focusout", (event) => {
   event.target.value = `${pad2(Math.floor(snapped / 60) % 24)}:${pad2(snapped % 60)}`;
   event.target.dispatchEvent(new Event("change", { bubbles: true }));
 });
+
+// Passkeys (WebAuthn): sign in on the login page and add passkeys in the account settings, see
+// accounts/passkey_views.py. The server sends its options with base64url text where the browser wants binary data,
+// and the answer goes back the same way.
+function b64urlToBytes(text) {
+  const base64 = text.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(text.length / 4) * 4, "=");
+  return Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
+}
+
+function bytesToB64url(buffer) {
+  let binary = "";
+  for (const byte of new Uint8Array(buffer)) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+const withBinaryIds = (list) => (list ?? []).map((item) => ({ ...item, id: b64urlToBytes(item.id) }));
+
+async function postJson(url, body) {
+  const token = document.querySelector("[name=csrfmiddlewaretoken]")?.value ?? "";
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-CSRFToken": token },
+    body: JSON.stringify(body),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error ?? "");
+  return data;
+}
+
+// The prompt of the browser or the device was closed or timed out: nothing to report.
+const passkeyCancelled = (error) => error.name === "NotAllowedError" || error.name === "AbortError";
+
+// What only works with passkeys is hidden until the browser says it can do them.
+function showPasskeyControls(root) {
+  const supported = Boolean(window.PublicKeyCredential && navigator.credentials);
+  root.querySelectorAll?.("[data-passkey-supported]").forEach((el) => (el.hidden = !supported));
+  root.querySelectorAll?.("[data-passkey-unsupported]").forEach((el) => (el.hidden = supported));
+  // A suggested name for the passkey that is added: this phone or this computer.
+  const phone = window.matchMedia("(pointer: coarse)").matches;
+  root.querySelectorAll?.("[data-passkey-name]").forEach((input) => {
+    if (!input.value) input.value = phone ? input.dataset.namePhone : input.dataset.nameComputer;
+  });
+}
+document.addEventListener("htmx:load", (event) => showPasskeyControls(event.detail.elt));
+document.addEventListener("DOMContentLoaded", () => showPasskeyControls(document));
+
+document.addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-passkey-login]");
+  if (!button) return;
+  const error = document.querySelector("[data-passkey-error]");
+  error.hidden = true;
+  button.disabled = true;
+  try {
+    const options = await postJson(button.dataset.optionsUrl, {});
+    const credential = await navigator.credentials.get({
+      publicKey: { ...options, challenge: b64urlToBytes(options.challenge), allowCredentials: withBinaryIds(options.allowCredentials) },
+    });
+    const response = credential.response;
+    const result = await postJson(button.dataset.loginUrl, {
+      next: button.dataset.next,
+      credential: {
+        id: credential.id,
+        rawId: bytesToB64url(credential.rawId),
+        type: credential.type,
+        authenticatorAttachment: credential.authenticatorAttachment,
+        clientExtensionResults: credential.getClientExtensionResults(),
+        response: {
+          clientDataJSON: bytesToB64url(response.clientDataJSON),
+          authenticatorData: bytesToB64url(response.authenticatorData),
+          signature: bytesToB64url(response.signature),
+          userHandle: response.userHandle ? bytesToB64url(response.userHandle) : null,
+        },
+      },
+    });
+    window.location.assign(result.redirect);
+  } catch (failure) {
+    if (!passkeyCancelled(failure)) {
+      error.textContent = failure.message || button.dataset.errorText;
+      error.hidden = false;
+    }
+    button.disabled = false;
+  }
+});
+
+document.addEventListener("submit", async (event) => {
+  const form = event.target.closest("[data-passkey-register]");
+  if (!form) return;
+  event.preventDefault();
+  const error = form.querySelector("[data-passkey-error]");
+  const button = form.querySelector("button[type=submit]");
+  error.hidden = true;
+  button.disabled = true;
+  try {
+    const options = await postJson(form.dataset.optionsUrl, {});
+    const credential = await navigator.credentials.create({
+      publicKey: {
+        ...options,
+        challenge: b64urlToBytes(options.challenge),
+        user: { ...options.user, id: b64urlToBytes(options.user.id) },
+        excludeCredentials: withBinaryIds(options.excludeCredentials),
+      },
+    });
+    const response = credential.response;
+    const result = await postJson(form.action, {
+      name: form.elements.name.value,
+      credential: {
+        id: credential.id,
+        rawId: bytesToB64url(credential.rawId),
+        type: credential.type,
+        authenticatorAttachment: credential.authenticatorAttachment,
+        clientExtensionResults: credential.getClientExtensionResults(),
+        response: {
+          clientDataJSON: bytesToB64url(response.clientDataJSON),
+          attestationObject: bytesToB64url(response.attestationObject),
+          transports: response.getTransports?.() ?? [],
+        },
+      },
+    });
+    window.location.assign(result.redirect);
+  } catch (failure) {
+    if (failure.name === "InvalidStateError") {
+      // The device already has a passkey for this account (see excludeCredentials on the server).
+      error.textContent = form.dataset.alreadyText;
+      error.hidden = false;
+    } else if (!passkeyCancelled(failure)) {
+      error.textContent = failure.message || form.dataset.errorText;
+      error.hidden = false;
+    }
+    button.disabled = false;
+  }
+});
+
+// A <select data-autosubmit> sends its form as soon as another entry is picked, e.g. the language on the login page.
+document.addEventListener("change", (event) => {
+  if (event.target.matches?.("[data-autosubmit]")) event.target.form.requestSubmit();
+});
