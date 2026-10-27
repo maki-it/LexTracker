@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.14.0](https://github.com/maki-it/LexTracker/compare/lextracker-v0.13.1...lextracker-v0.14.0) (2026-10-27)
+
+
+### Features
+
+* **billing:** reference Lexware quotations and assign time to existing invoices ([#212](https://github.com/maki-it/LexTracker/issues/212)) ([65d151b](https://github.com/maki-it/LexTracker/commit/65d151b5c55b636544310cb0319d3b72712ed2ea))
+
 ## [0.13.1](https://github.com/maki-it/LexTracker/compare/lextracker-v0.13.0...lextracker-v0.13.1) (2026-10-27)
 
 
