@@ -9,16 +9,16 @@
     <h1>{% trans "Aufgaben" %}</h1>
     <p class="page-subtitle">{% blocktrans trimmed with monday=monday|date:"W" monday2=monday|date:short_format sunday=sunday|date:date_format week_total=week_total|hours:duration_format %}KW {{ monday }} · {{ monday2 }} – {{ sunday }} · <strong class="font-semibold text-ink tabular-nums">{{ week_total }} h</strong> erfasst{% endblocktrans %}</p>
   </div>
-  <div class="toolbar">
-    <div class="relative">
+  <div class="toolbar max-sm:w-full max-sm:flex-nowrap">
+    <div class="relative max-sm:shrink-0">
       <div class="btn-group">
-        <a href="?week={{ prev_week }}{{ filter_query }}" class="btn btn-icon" aria-label="{% trans 'Vorherige Woche' %}">{% icon "chevron-left" %}</a>
-        <button type="button" id="week-picker-toggle" class="btn w-24 gap-1.5 px-2" data-popover-toggle="week-picker" aria-expanded="false" aria-controls="week-picker" aria-label="{% trans 'Kalenderwoche wählen' %}">
-          {% if is_this_week %}<span class="size-1.5 rounded-full bg-primary" title="{% trans 'Diese Woche' %}"></span>{% endif %}
+        <a href="?week={{ prev_week }}{{ filter_query }}" class="btn btn-icon max-[400px]:w-10" aria-label="{% trans 'Vorherige Woche' %}">{% icon "chevron-left" %}</a>
+        <button type="button" id="week-picker-toggle" class="btn w-24 gap-1.5 px-2 max-[400px]:w-20" data-popover-toggle="week-picker" aria-expanded="false" aria-controls="week-picker" aria-label="{% trans 'Kalenderwoche wählen' %}">
+          {% if is_this_week %}<span class="size-1.5 shrink-0 rounded-full bg-primary" title="{% trans 'Diese Woche' %}"></span>{% endif %}
           {% blocktrans trimmed with week=monday|date:"W" context "short calendar week" %}KW {{ week }}{% endblocktrans %}
           {% icon "chevron-down" size=14 css_class="text-muted" %}
         </button>
-        <a href="?week={{ next_week }}{{ filter_query }}" class="btn btn-icon" aria-label="{% trans 'Nächste Woche' %}">{% icon "chevron-right" %}</a>
+        <a href="?week={{ next_week }}{{ filter_query }}" class="btn btn-icon max-[400px]:w-10" aria-label="{% trans 'Nächste Woche' %}">{% icon "chevron-right" %}</a>
       </div>
       {# The calendar is loaded when the picker is opened for the first time (tracking.views.week_picker). #}
       <div id="week-picker" class="week-picker" hidden>
@@ -28,7 +28,7 @@
         </div>
       </div>
     </div>
-    <a {% dialog_link "tracking:create" %} class="btn btn-primary">{% icon "plus" %}{% trans "Zeit erfassen" %}</a>
+    <a {% dialog_link "tracking:create" %} class="btn btn-primary max-sm:min-w-0 max-sm:flex-1">{% icon "plus" %}<span class="truncate">{% trans "Zeit erfassen" %}</span></a>
   </div>
 </div>
 
