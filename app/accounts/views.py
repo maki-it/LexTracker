@@ -1,3 +1,5 @@
+import logging
+import secrets
 import time
 from uuid import UUID
 
@@ -16,7 +18,7 @@ from django.utils.translation import gettext_lazy, ngettext
 from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.http import require_http_methods, require_POST
 
-from accounts import links, mcp_clients, mfa, ratelimit
+from accounts import links, mcp_clients, mfa, oidc, ratelimit
 from accounts.forms import (
     ApiTokenForm,
     CodeForm,
@@ -70,7 +72,14 @@ async def login_view(request: HttpRequest) -> HttpResponse:
         await ratelimit.record_failure(request, form.cleaned_data["username"])
         error = _("Benutzername oder Passwort ist falsch.")
 
-    context = {"form": form, "error": error, "next": _safe_next(request), "links": await links.available()}
+    context = {
+        "form": form,
+        "error": error,
+        "next": _safe_next(request),
+        "links": await links.available(),
+        "sso": oidc.enabled(),
+        "sso_name": settings.OIDC_NAME,
+    }
     return render(request, "accounts/login.html", context)
 
 
@@ -174,6 +183,69 @@ async def login_link(request: HttpRequest, key: str) -> HttpResponse:
         await ratelimit.record_failure(request)
         return render(request, "accounts/login_link.html", {"invalid": True}, status=400)
     return await _sign_in(request, user, "django.contrib.auth.backends.ModelBackend")
+
+
+SSO_KEY = "sso_login"
+SSO_SECONDS = 600
+logger = logging.getLogger(__name__)
+
+
+def _sso_redirect_uri(request: HttpRequest) -> str:
+    return request.build_absolute_uri(reverse("accounts:sso_callback"))
+
+
+@require_http_methods(["GET"])
+async def sso_start(request: HttpRequest) -> HttpResponse:
+    """Send the browser to the SSO provider."""
+    if not oidc.enabled():
+        return redirect(settings.LOGIN_URL)
+    if (await request.auser()).is_authenticated:
+        return redirect(_safe_next(request))
+    login = oidc.new_login() | {"next": _safe_next(request), "at": time.time()}
+    try:
+        url = await oidc.authorization_url(_sso_redirect_uri(request), login)
+    except oidc.SsoError as error:
+        logger.warning("SSO is not reachable: %s", error)
+        messages.error(
+            request, _("Die Anmeldung mit %(name)s ist gerade nicht erreichbar.") % {"name": settings.OIDC_NAME}
+        )
+        return redirect(settings.LOGIN_URL)
+    await request.session.aset(SSO_KEY, login)
+    return redirect(url)
+
+
+@require_http_methods(["GET"])
+async def sso_callback(request: HttpRequest) -> HttpResponse:
+    """Where the SSO provider sends the browser back: check the answer and sign in."""
+    if not oidc.enabled():
+        return redirect(settings.LOGIN_URL)
+    if minutes := await ratelimit.locked_minutes(request):
+        return _locked(request, "accounts/login.html", LoginForm(), minutes)
+    login = await request.session.apop(SSO_KEY, None)
+    code, state = request.GET.get("code", ""), request.GET.get("state", "")
+    try:
+        if not login or time.time() - login["at"] > SSO_SECONDS or not secrets.compare_digest(state, login["state"]):
+            raise oidc.SsoError("Unknown or expired sign-in attempt")
+        if error := request.GET.get("error"):
+            raise oidc.SsoError(f"The provider reported {error}: {request.GET.get('error_description', '')}")
+        if not code:
+            raise oidc.SsoError("The provider sent no code")
+        id_token = await oidc.exchange_code(code, _sso_redirect_uri(request), login["verifier"])
+        claims = await oidc.verify_id_token(id_token, login["nonce"])
+        user = await oidc.find_or_create_user(oidc.Profile.from_claims(claims))
+    except oidc.NoAccount as error:
+        logger.warning("SSO sign-in without an account: %s", error)
+        messages.error(request, _("Für dieses Konto gibt es hier keinen Benutzer. Frag den Administrator."))
+        return redirect(settings.LOGIN_URL)
+    except oidc.SsoError as error:
+        logger.warning("SSO sign-in failed: %s", error)
+        await ratelimit.record_failure(request)
+        messages.error(request, _("Die Anmeldung mit %(name)s hat nicht geklappt.") % {"name": settings.OIDC_NAME})
+        return redirect(settings.LOGIN_URL)
+    # The provider has asked for the second factor itself, so there is no code from the authenticator app here.
+    await alogin(request, user, backend="django.contrib.auth.backends.ModelBackend")
+    await ratelimit.clear_failures(request)
+    return redirect(login["next"])
 
 
 @require_POST

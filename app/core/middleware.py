@@ -14,6 +14,7 @@ PUBLIC_PREFIXES = (
     *ALWAYS_PUBLIC_PREFIXES,
     "/accounts/login/",
     "/accounts/language/",
+    "/accounts/sso/",
     "/accounts/invite/",
     "/accounts/password/",
     "/admin/",

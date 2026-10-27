@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: LexTracker\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-27 04:06+0100\n"
+"POT-Creation-Date: 2026-10-27 04:11+0100\n"
 "PO-Revision-Date: 2026-10-25 12:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: English\n"
@@ -402,6 +402,17 @@ msgstr "The code is invalid or has expired."
 
 msgid "Neues Passwort gesetzt. Melde dich jetzt damit an."
 msgstr "New password set. Sign in with it now."
+
+#, python-format
+msgid "Die Anmeldung mit %(name)s ist gerade nicht erreichbar."
+msgstr "Signing in with %(name)s is not available right now."
+
+msgid "Für dieses Konto gibt es hier keinen Benutzer. Frag den Administrator."
+msgstr "There is no user for this account here. Ask the administrator."
+
+#, python-format
+msgid "Die Anmeldung mit %(name)s hat nicht geklappt."
+msgstr "Signing in with %(name)s did not work."
 
 msgid "Profil"
 msgstr "Profile"
@@ -2252,6 +2263,10 @@ msgstr "Sign in"
 
 msgid "Vergessen?"
 msgstr "Forgot?"
+
+#, python-format
+msgid "Mit %(name)s anmelden"
+msgstr "Sign in with %(name)s"
 
 msgid "Anmeldelink per E-Mail"
 msgstr "Sign-in link by e-mail"

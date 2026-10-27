@@ -179,6 +179,21 @@ class ApiToken(UUIDModel):
         return token, key
 
 
+class SsoIdentity(UUIDModel):
+    """The account at the SSO provider (issuer and ``sub``) that belongs to a user."""
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sso_identities")
+    issuer = models.CharField(max_length=500)
+    subject = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["issuer", "subject"], name="unique_sso_identity")]
+
+    def __str__(self) -> str:
+        return f"{self.user} @ {self.issuer}"
+
+
 class LoginFailure(UUIDModel):
     """A wrong password or code, for the login rate limit (see accounts.ratelimit)."""
 

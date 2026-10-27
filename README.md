@@ -217,6 +217,24 @@ Fest bleiben technische Namen, auf die sich Clients und Docker verlassen (MCP-Se
 
 Unter deinem Namen oben rechts stellst du Sprache (Deutsch oder Englisch), Darstellung (hell, dunkel oder wie das System) und Datumsformat ein und änderst dein Passwort.
 Dort schaltest du auch die **Zwei-Faktor-Anmeldung** mit einer Authenticator-App ein (TOTP, über [django-otp](https://django-otp-official.readthedocs.io/)). Dabei entstehen zehn Wiederherstellungscodes, die je einmal statt des App-Codes funktionieren.
+
+#### Single Sign-on (OpenID Connect)
+
+Neben Benutzername und Passwort kannst du die Anmeldung über einen OpenID-Connect-Anbieter anbieten (Keycloak, Authentik, Entra ID, Google und andere). Sie ist aus, bis in der `.env` drei Werte stehen:
+
+```env
+APP_OIDC_ISSUER=https://sso.example.de/realms/main
+APP_OIDC_CLIENT_ID=lextracker
+APP_OIDC_CLIENT_SECRET=<Secret des Clients>
+```
+
+Beim Anbieter legst du einen Client mit Authorization-Code-Flow an und trägst als Redirect-URI `https://<deine Adresse>/accounts/sso/callback/` ein. Danach zeigt die Anmeldeseite zusätzlich den Button **Mit SSO anmelden**; den Namen im Button legt `APP_OIDC_NAME` fest.
+
+- **Wer sich anmelden darf:** Beim ersten SSO-Login ordnet die App das Konto einem vorhandenen Benutzer zu, und zwar über die E-Mail-Adresse, wenn der Anbieter sie als geprüft meldet (`email_verified`). Hinterlegt also die E-Mail-Adresse in der Benutzerverwaltung. Danach erkennt die App den Benutzer an der Kennung des Anbieters (`sub`), nicht mehr an der Adresse. Gibt es keinen passenden Benutzer, bleibt die Anmeldung aus.
+- **Konten automatisch anlegen:** Nur mit `APP_OIDC_CREATE_USERS=true` legt die App für unbekannte Personen einen Mitarbeiter-Zugang ohne Passwort an (nie einen Administrator). `APP_OIDC_ALLOWED_EMAIL_DOMAINS=example.de` beschränkt das auf bestimmte E-Mail-Domains. Schalte es nur ein, wenn der Anbieter nur Personen anmeldet, die Zugang haben sollen.
+- **Zwei-Faktor:** Eine Anmeldung über SSO fragt nicht nach dem Code der Authenticator-App; den zweiten Faktor verlangt der Anbieter. Die Anmeldung mit Passwort bleibt daneben bestehen (inklusive Code).
+- **Gesperrte Benutzer** können sich auch über SSO nicht anmelden. Fehlgeschlagene SSO-Anmeldungen zählen zur Sperre nach Fehlversuchen.
+
 Auch die Verwaltung unter `/admin/` meldet über diese Anmeldung an, damit der zweite Faktor dort nicht umgangen wird.
 Nach zu vielen falschen Passwörtern oder Codes von einer IP-Adresse ist die Anmeldung von dort eine Weile gesperrt. Wie viele Fehlversuche und wie lange, legst du unter **Einstellungen** fest (Standard: 5 Versuche, 15 Minuten; 0 Versuche schaltet die Sperre aus). Hinter einem Reverse Proxy muss `FORWARDED_ALLOW_IPS` stimmen, sonst sehen alle Anfragen wie die IP des Proxys aus.
 
@@ -294,6 +312,9 @@ Alle Einstellungen der App kommen aus der Datei `.env` neben der `compose.yaml` 
 | `APP_TIME_ZONE` | Zeitzone | `Europe/Berlin` |
 | `APP_LOG_LEVEL` | Log-Stufe | `info` |
 | `APP_LEXWARE_API_KEY` | Ersatz für den Lexware-Schlüssel, solange in der App keiner hinterlegt ist ([Lexware Office](#lexware-office)) | leer |
+| `APP_OIDC_ISSUER`, `APP_OIDC_CLIENT_ID`, `APP_OIDC_CLIENT_SECRET` | Schalten die Anmeldung per OpenID Connect ein ([Single Sign-on](#single-sign-on-openid-connect)) | leer |
+| `APP_OIDC_NAME`, `APP_OIDC_SCOPES` | Name im Login-Button und angeforderte Scopes | `SSO`, `openid email profile` |
+| `APP_OIDC_CREATE_USERS`, `APP_OIDC_ALLOWED_EMAIL_DOMAINS` | Legt Mitarbeiter für unbekannte SSO-Nutzer an, optional nur für bestimmte E-Mail-Domains (kommagetrennt) | `false`, leer |
 | `DJANGO_SUPERUSER_USERNAME`, `DJANGO_SUPERUSER_PASSWORD`, `DJANGO_SUPERUSER_EMAIL` | Legt beim Start das Admin-Konto an, falls es noch nicht existiert. Ohne sie legt die Einrichtung im Browser das Konto an | leer |
 
 Das Backup-Ziel `APP_BACKUP_DIR` ist in Docker fest `/backups` (siehe [Datensicherung](#datensicherung)).
