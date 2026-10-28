@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.16.0](https://github.com/maki-it/LexTracker/compare/lextracker-v0.15.0...lextracker-v0.16.0) (2026-10-28)
+
+
+### Features
+
+* **push:** fold the settings of each push device away ([#216](https://github.com/maki-it/LexTracker/issues/216)) ([0317efa](https://github.com/maki-it/LexTracker/commit/0317efa0e59c3ad004dbe69ba26c7ccad5a653ca))
+
 ## [0.15.0](https://github.com/maki-it/LexTracker/compare/lextracker-v0.14.0...lextracker-v0.15.0) (2026-10-28)
 
 
