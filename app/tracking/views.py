@@ -26,7 +26,9 @@ TIMER_CHANGED = "timer-changed"
 
 
 def _entries(user):
-    return TimeEntry.objects.filter(user=user).select_related("task", "task__project", "task__project__customer")
+    return TimeEntry.objects.filter(user=user).select_related(
+        "task", "task__project", "task__project__customer", "invoice"
+    )
 
 
 async def _running_entry(user) -> TimeEntry | None:
@@ -245,6 +247,8 @@ def _back_to_week(entry: TimeEntry) -> str:
 @require_http_methods(["GET", "POST"])
 async def entry_form(request: HttpRequest, pk: UUID | None = None) -> HttpResponse:
     entry = await _get_entry(request, pk) if pk else TimeEntry(user=request.user)
+    if entry.is_locked:
+        return await _locked_entry(request, entry)
     initial = None
     if not pk:
         now = timezone.localtime().replace(second=0, microsecond=0)
@@ -260,10 +264,21 @@ async def entry_form(request: HttpRequest, pk: UUID | None = None) -> HttpRespon
     return await arender(request, "tracking/form.html", {"form": form, "entry": entry if pk else None, "mode": mode})
 
 
+async def _locked_entry(request: HttpRequest, entry: TimeEntry) -> HttpResponse:
+    """A billed entry is not edited: a page says why and where it is billed, a change is refused."""
+    if request.method == "POST":
+        messages.error(request, _("Der Zeiteintrag ist abgerechnet und kann nicht mehr geändert werden."))
+        return redirect(_back_to_week(entry))
+    return await arender(request, "tracking/entry_locked.html", {"entry": entry, "invoice": entry.invoice})
+
+
 @require_POST
 async def entry_delete(request: HttpRequest, pk: UUID) -> HttpResponse:
     entry = await _get_entry(request, pk)
     back = _back_to_week(entry)
+    if entry.is_locked:
+        messages.error(request, _("Der Zeiteintrag ist abgerechnet und kann nicht gelöscht werden."))
+        return redirect(back)
     await entry.adelete()
     messages.success(request, _("Zeiteintrag gelöscht."))
     return redirect(back)

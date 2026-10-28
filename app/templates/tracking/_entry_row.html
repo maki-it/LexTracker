@@ -17,6 +17,8 @@
     <span class="w-12 text-right font-semibold tabular-nums">{{ entry.duration|hours:duration_format }}</span>
     {% if entry.is_running %}
     <span class="w-8"></span>
+    {% elif entry.is_locked %}
+    <a {% dialog_link "tracking:edit" entry.pk %} class="btn btn-ghost btn-sm btn-icon size-8 text-muted" title="{% trans 'Abgerechnet, nicht mehr änderbar' %}" aria-label="{% trans 'Abgerechneten Eintrag ansehen' %}">{% icon "lock" %}</a>
     {% else %}
     <a {% dialog_link "tracking:edit" entry.pk %} class="btn btn-ghost btn-sm btn-icon size-8" title="{% trans 'Bearbeiten' %}" aria-label="{% trans 'Eintrag bearbeiten' %}">{% icon "pencil" %}</a>
     {% endif %}

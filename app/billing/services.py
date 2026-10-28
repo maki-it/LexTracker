@@ -10,6 +10,7 @@ from django.utils.translation import gettext as _
 from billing.calculation import Draft, build_draft
 from billing.lexware import invoice_payload
 from billing.models import Invoice
+from billing.queries import newest_first
 from core.ids import parse_uuid
 from core.models import AppSettings
 from customers.models import Customer
@@ -73,12 +74,8 @@ ASSIGNABLE_EXCLUDED = [Invoice.Status.DELETED, Invoice.Status.VOIDED]
 
 def assignable_invoices(customer: Customer):
     """The customer's invoices written in Lexware, newest first, that time can be assigned to."""
-    return (
-        customer.invoices.filter(origin=Invoice.Origin.LEXWARE)
-        .exclude(status__in=ASSIGNABLE_EXCLUDED)
-        .annotate(entry_count=Count("time_entries"))
-        .order_by("-voucher_date", "-created_at")
-    )
+    invoices = customer.invoices.filter(origin=Invoice.Origin.LEXWARE).exclude(status__in=ASSIGNABLE_EXCLUDED)
+    return newest_first(invoices.annotate(entry_count=Count("time_entries")))
 
 
 @transaction.atomic
@@ -94,3 +91,18 @@ def assign_to_invoice(customer: Customer, invoice: Invoice, start: date, end: da
     if not draft.entries:
         raise LexwareError(_("Für diesen Zeitraum gibt es nichts abzurechnen."))
     return TimeEntry.objects.filter(pk__in=[e.pk for e in draft.entries], invoice__isnull=True).update(invoice=invoice)
+
+
+@transaction.atomic
+def unassign_entries(invoice: Invoice, entry_pk: UUID | None = None) -> int:
+    """Take time back from an invoice that was written in Lexware, so it is open and can be changed again.
+
+    All of the invoice's time, or only the entry ``entry_pk``. Invoices created here are not touched: their draft
+    exists in Lexware with this time on it, which only a deletion there (or a voiding) releases.
+    """
+    if invoice.origin != Invoice.Origin.LEXWARE:
+        raise LexwareError(_("Die Zeiten dieser Rechnung gehen nur frei, wenn der Entwurf in Lexware gelöscht wird."))
+    entries = TimeEntry.objects.filter(invoice=invoice)
+    if entry_pk:
+        entries = entries.filter(pk=entry_pk)
+    return entries.update(invoice=None)

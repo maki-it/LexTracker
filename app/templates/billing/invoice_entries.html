@@ -1,0 +1,61 @@
+{% extends layout %}
+{% load i18n %}
+{% load timefmt %}
+{% block title %}{% blocktrans trimmed with name=invoice.customer.name %}Zeiten der Rechnung {{ name }}{% endblocktrans %} · {{ brand.name }}{% endblock %}
+{% block content %}
+<div class="dialog-wide flex flex-col gap-4">
+  <div>
+    <p class="breadcrumb"><a href="{% url 'billing:overview' %}">{% trans "Abrechnung" %}</a> / <a href="{% url 'billing:customer' invoice.customer_id %}">{{ invoice.customer.name }}</a></p>
+    <div class="flex flex-wrap items-center gap-3">
+      <h1>{% blocktrans trimmed with number=invoice.voucher_number|default:_("Entwurf") %}Zeiten der Rechnung {{ number }}{% endblocktrans %}</h1>
+      {% include "billing/_invoice_status.html" with show_origin=True %}
+    </div>
+    <p class="mt-1 text-[13px] text-muted">
+      {{ invoice.customer.name }} · {{ invoice.period_start|date:date_format }}{% if invoice.period_end != invoice.period_start %} – {{ invoice.period_end|date:date_format }}{% endif %}
+      {% if invoice.quotation_number %} · {% blocktrans trimmed with number=invoice.quotation_number %}Angebot {{ number }}{% endblocktrans %}{% endif %}
+      {% if invoice.origin == "lexware" %} · {% trans "Die Zeiten wurden dieser Rechnung aus Lexware zugeordnet." %}{% endif %}
+    </p>
+  </div>
+
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>{% trans "Datum" %}</th>
+          <th>{% trans "Mitarbeiter" %}</th>
+          <th>{% trans "Projekt · Aufgabe" %}</th>
+          <th class="text-right">{% trans "Dauer" %}</th>
+          <th>{% trans "Beschreibung" %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for entry in entries %}
+        <tr>
+          <td class="whitespace-nowrap tabular-nums">
+            {{ entry.started_at|date:date_format }}
+            <span class="block text-xs text-muted">{{ entry.started_at|time:"H:i" }}–{{ entry.ended_at|time:"H:i" }}</span>
+          </td>
+          <td class="whitespace-nowrap">{{ entry.user.get_full_name|default:entry.user.get_username }}</td>
+          <td>{{ entry.task.project.name }} · {{ entry.task.name }}</td>
+          <td class="text-right whitespace-nowrap tabular-nums">{{ entry.duration|hours:duration_format }} h</td>
+          <td class="min-w-48 text-muted whitespace-pre-line break-words">{{ entry.description|default:"–" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="py-8 text-center text-muted">{% trans "Dieser Rechnung sind keine Zeiteinträge zugeordnet." %}</td></tr>
+        {% endfor %}
+      </tbody>
+      {% if entries %}
+      <tfoot>
+        <tr><td colspan="3" class="text-right">{% blocktrans trimmed count counter=entries|length %}{{ counter }} Zeiteintrag, Summe{% plural %}{{ counter }} Zeiteinträge, Summe{% endblocktrans %}</td><td class="text-right whitespace-nowrap tabular-nums">{{ total|hours:duration_format }} h</td><td></td></tr>
+      </tfoot>
+      {% endif %}
+    </table>
+  </div>
+  {% if invoice.origin == "lexware" and entries %}
+  <form method="post" action="{% url 'billing:invoice_unassign' invoice.pk %}" onsubmit="return confirm('{% filter escapejs %}{% trans "Die Zuordnung wirklich zurücksetzen? Die Zeiten sind danach wieder offen." %}{% endfilter %}')">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-sm">{% trans "Zuordnung zurücksetzen" %}</button>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}
