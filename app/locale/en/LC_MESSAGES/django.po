@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: LexTracker\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-28 00:01+0100\n"
+"POT-Creation-Date: 2026-10-28 07:58+0100\n"
 "PO-Revision-Date: 2026-10-25 12:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: English\n"
@@ -2883,6 +2883,12 @@ msgid_plural "%(counter)s Zeiteinträge zugeordnet"
 msgstr[0] "%(counter)s time entry assigned"
 msgstr[1] "%(counter)s time entries assigned"
 
+#, python-format
+msgid "%(counter)s Zeiteintrag"
+msgid_plural "%(counter)s Zeiteinträge"
+msgstr[0] "%(counter)s time entry"
+msgstr[1] "%(counter)s time entries"
+
 msgid "Leistungszeitraum"
 msgstr "Service period"
 
@@ -2936,12 +2942,6 @@ msgstr "Period"
 
 msgid "Offene Zeiten"
 msgstr "Open time"
-
-#, python-format
-msgid "%(counter)s Zeiteintrag"
-msgid_plural "%(counter)s Zeiteinträge"
-msgstr[0] "%(counter)s time entry"
-msgstr[1] "%(counter)s time entries"
 
 msgid "Vorschau"
 msgstr "Preview"
@@ -3180,6 +3180,29 @@ msgid ""
 msgstr ""
 "Is an invoice missing? New invoices from Lexware are added automatically, or "
 "you start the sync on the invoices page."
+
+#, python-format
+msgid "Zeiten der Rechnung %(name)s"
+msgstr "Time of invoice %(name)s"
+
+#, python-format
+msgid "Zeiten der Rechnung %(number)s"
+msgstr "Time of invoice %(number)s"
+
+msgid "Die Zeiten wurden dieser Rechnung aus Lexware zugeordnet."
+msgstr "The time was assigned to this invoice from Lexware."
+
+msgid "Projekt · Aufgabe"
+msgstr "Project · Task"
+
+msgid "Dieser Rechnung sind keine Zeiteinträge zugeordnet."
+msgstr "No time entries are assigned to this invoice."
+
+#, python-format
+msgid "%(counter)s Zeiteintrag, Summe"
+msgid_plural "%(counter)s Zeiteinträge, Summe"
+msgstr[0] "%(counter)s time entry, total"
+msgstr[1] "%(counter)s time entries, total"
 
 msgid "Kunde oder Rechnungsnummer suchen"
 msgstr "Search customer or invoice number"
@@ -4490,9 +4513,6 @@ msgstr "Billing address"
 
 msgid "Alle Projekte"
 msgstr "All projects"
-
-msgid "Projekt · Aufgabe"
-msgstr "Project · Task"
 
 msgid "nicht berechnet"
 msgstr "not charged"

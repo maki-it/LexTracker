@@ -7,7 +7,6 @@ from uuid import UUID
 from asgiref.sync import sync_to_async
 from django.contrib import messages
 from django.db.models import Count, Q
-from django.db.models.functions import Coalesce, TruncDate
 from django.http import Http404, HttpRequest, HttpResponse, QueryDict
 from django.shortcuts import redirect, render
 from django.urls import reverse
@@ -20,7 +19,7 @@ from billing.calculation import ProjectRows, active_agreement, build_draft, entr
 from billing.forms import BillingAgreementForm, PeriodForm
 from billing.models import BillingAgreement, Invoice
 from billing.periods import Period, period_containing, recent_periods
-from billing.queries import OVERDUE_STATUSES
+from billing.queries import OVERDUE_STATUSES, newest_first
 from billing.services import assign_to_invoice, assignable_invoices, create_invoice
 from billing.sync import sync_and_record
 from core.filters import filter_pills, query_with, selected_filters
@@ -106,12 +105,7 @@ async def invoice_list(request: HttpRequest) -> HttpResponse:
     query = request.GET.get("q", "").strip()
     selected = selected_filters(request, STATUS_FILTERS)
     customer_id = parse_uuid(request.GET.get("customer", ""))
-    # Newest first: by invoice date (the creation date until Lexware has one), then by number.
-    invoices = (
-        Invoice.objects.select_related("customer")
-        .annotate(entry_count=Count("time_entries"), date=Coalesce("voucher_date", TruncDate("created_at")))
-        .order_by("-date", "-voucher_number", "-pk")
-    )
+    invoices = newest_first(Invoice.objects.select_related("customer").annotate(entry_count=Count("time_entries")))
     if selected:
         invoices = invoices.filter(_status_q(selected))
     if customer_id:
@@ -149,6 +143,27 @@ async def invoice_sync(request: HttpRequest) -> HttpResponse:
     else:
         messages.success(request, _("Rechnungsstatus abgeglichen: %(summary)s") % {"summary": result.summary})
     return redirect(_invoice_list_url(request))
+
+
+@require_GET
+async def invoice_entries(request: HttpRequest, invoice_pk: UUID) -> HttpResponse:
+    """The time entries that are billed with an invoice, also those assigned to one written in Lexware."""
+    try:
+        invoice = await Invoice.objects.select_related("customer").aget(pk=invoice_pk)
+    except Invoice.DoesNotExist as exc:
+        raise Http404 from exc
+    entries = [
+        e
+        async for e in TimeEntry.objects.filter(invoice=invoice)
+        .select_related("user", "task", "task__project")
+        .order_by("started_at")
+    ]
+    context = {
+        "invoice": invoice,
+        "entries": entries,
+        "total": sum((e.duration for e in entries), timedelta()),
+    }
+    return render(request, "billing/invoice_entries.html", context)
 
 
 @require_POST
@@ -255,7 +270,7 @@ async def customer_billing(request: HttpRequest, pk: UUID) -> HttpResponse:
         "period_form": period_form,
         "selected_period": f"{start}/{end}",
         "draft": draft,
-        "invoices": [i async for i in customer.invoices.annotate(entry_count=Count("time_entries"))[:10]],
+        "invoices": [i async for i in newest_first(customer.invoices.annotate(entry_count=Count("time_entries")))[:10]],
     }
     if request.htmx and request.htmx.target == "preview":
         # The pills are swapped too, so the one matching the chosen dates is marked.

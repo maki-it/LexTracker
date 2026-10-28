@@ -8,6 +8,7 @@ urlpatterns = [
     path("", views.overview, name="overview"),
     path("invoices/", views.invoice_list, name="invoices"),
     path("invoices/sync/", views.invoice_sync, name="invoice_sync"),
+    path("invoices/<uuid:invoice_pk>/time/", views.invoice_entries, name="invoice_entries"),
     path("invoices/<uuid:invoice_pk>/release/", views.invoice_release, name="invoice_release"),
     path("customer/<uuid:pk>/", views.customer_billing, name="customer"),
     path("customer/<uuid:pk>/time/", views.customer_entries, name="customer_entries"),

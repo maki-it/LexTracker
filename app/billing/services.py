@@ -10,6 +10,7 @@ from django.utils.translation import gettext as _
 from billing.calculation import Draft, build_draft
 from billing.lexware import invoice_payload
 from billing.models import Invoice
+from billing.queries import newest_first
 from core.ids import parse_uuid
 from core.models import AppSettings
 from customers.models import Customer
@@ -73,12 +74,8 @@ ASSIGNABLE_EXCLUDED = [Invoice.Status.DELETED, Invoice.Status.VOIDED]
 
 def assignable_invoices(customer: Customer):
     """The customer's invoices written in Lexware, newest first, that time can be assigned to."""
-    return (
-        customer.invoices.filter(origin=Invoice.Origin.LEXWARE)
-        .exclude(status__in=ASSIGNABLE_EXCLUDED)
-        .annotate(entry_count=Count("time_entries"))
-        .order_by("-voucher_date", "-created_at")
-    )
+    invoices = customer.invoices.filter(origin=Invoice.Origin.LEXWARE).exclude(status__in=ASSIGNABLE_EXCLUDED)
+    return newest_first(invoices.annotate(entry_count=Count("time_entries")))
 
 
 @transaction.atomic
