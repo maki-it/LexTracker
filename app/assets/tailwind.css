@@ -481,6 +481,17 @@
     }
   }
 
+  /* A push device on the account page: name and last delivery stay visible, the settings fold away. */
+  .push-device {
+    & summary {
+      @apply flex min-h-12 cursor-pointer list-none items-center gap-3 rounded-lg px-3 py-2;
+
+      &::-webkit-details-marker {
+        display: none;
+      }
+    }
+  }
+
   .recent-tasks-list {
     @apply grid grid-cols-2 gap-2 pt-1 sm:grid-cols-4;
   }

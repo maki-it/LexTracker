@@ -92,11 +92,13 @@ async def _device(request: HttpRequest, pk: UUID) -> PushSubscription:
         raise Http404 from None
 
 
-async def _back(request: HttpRequest) -> HttpResponse:
-    """Back to the notifications. In the dialog it stays open (a redirect would reload the page behind it)."""
+async def _back(request: HttpRequest, open_device: UUID | None = None) -> HttpResponse:
+    """Back to the notifications, with the settings of ``open_device`` still unfolded. In the dialog it stays open
+    (a redirect would reload the page behind it)."""
     if in_dialog(request):
-        return await notifications_page(request)
-    return redirect(f"{reverse('account:settings')}?tab=notifications")
+        return await notifications_page(request, str(open_device or ""))
+    device = f"&device={open_device}" if open_device else ""
+    return redirect(f"{reverse('account:settings')}?tab=notifications{device}")
 
 
 @require_POST
@@ -108,7 +110,7 @@ async def device_topics(request: HttpRequest, pk: UUID) -> HttpResponse:
         sub.name = name
     await sub.asave(update_fields=["topics", "name"])
     messages.success(request, _("Einstellungen gespeichert."))
-    return await _back(request)
+    return await _back(request, pk)
 
 
 @require_POST
@@ -131,7 +133,7 @@ async def device_test(request: HttpRequest, pk: UUID) -> HttpResponse:
         messages.error(
             request, _("Die Testnachricht konnte nicht zugestellt werden. Aktiviere Push auf dem Gerät neu.")
         )
-    return await _back(request)
+    return await _back(request, pk)
 
 
 @require_POST

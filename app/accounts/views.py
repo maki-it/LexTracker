@@ -329,12 +329,16 @@ async def account(request: HttpRequest) -> HttpResponse:
     return await _account_page(request, form, tab)
 
 
-async def notifications_page(request: HttpRequest) -> HttpResponse:
-    """The notifications tab as a page of its own, for actions that answer in the dialog instead of reloading."""
-    return await _account_page(request, PreferencesForm(instance=request.user), "notifications")
+async def notifications_page(request: HttpRequest, open_device: str = "") -> HttpResponse:
+    """The notifications tab as a page of its own, for actions that answer in the dialog instead of reloading.
+    ``open_device`` is the id of the push device that stays unfolded."""
+    form = PreferencesForm(instance=request.user)
+    return await _account_page(request, form, "notifications", open_device=open_device)
 
 
-async def _account_page(request: HttpRequest, form, tab: str, token_form=None, new_key: str = "") -> HttpResponse:
+async def _account_page(
+    request: HttpRequest, form, tab: str, token_form=None, new_key: str = "", open_device: str = ""
+) -> HttpResponse:
     mcp_url = request.build_absolute_uri(reverse("mcp:endpoint"))
     return render(
         request,
@@ -348,6 +352,7 @@ async def _account_page(request: HttpRequest, form, tab: str, token_form=None, n
             "passkeys": [p async for p in request.user.passkeys.all()],
             "push_devices": [d async for d in request.user.push_subscriptions.all()],
             "push_topics": push_topics.choices(request.user),
+            "open_device": open_device or request.GET.get("device", ""),
             "tokens": [t async for t in request.user.api_tokens.all()],
             "token_form": token_form or ApiTokenForm(),
             "new_key": new_key,
