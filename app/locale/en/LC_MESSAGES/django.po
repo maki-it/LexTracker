@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: LexTracker\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-28 07:58+0100\n"
+"POT-Creation-Date: 2026-10-28 08:02+0100\n"
 "PO-Revision-Date: 2026-10-25 12:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: English\n"
@@ -631,6 +631,13 @@ msgstr "There is nothing to bill for this period."
 msgid "Dieser Rechnung können keine Zeiten zugeordnet werden."
 msgstr "No time can be assigned to this invoice."
 
+msgid ""
+"Die Zeiten dieser Rechnung gehen nur frei, wenn der Entwurf in Lexware "
+"gelöscht wird."
+msgstr ""
+"The time of this invoice is only released when the draft is deleted in "
+"Lexware."
+
 #, python-format
 msgid "%(count)d geändert"
 msgstr "%(count)d changed"
@@ -653,6 +660,12 @@ msgstr "Drafts"
 #, python-format
 msgid "Rechnungsstatus abgeglichen: %(summary)s"
 msgstr "Invoice status synced: %(summary)s"
+
+#, python-format
+msgid "%(count)d Zeiteintrag wieder offen."
+msgid_plural "%(count)d Zeiteinträge wieder offen."
+msgstr[0] "%(count)d time entry is open again."
+msgstr[1] "%(count)d time entries are open again."
 
 #, python-format
 msgid "%(count)d Zeiteintrag wieder zur Abrechnung freigegeben."
@@ -3204,6 +3217,13 @@ msgid_plural "%(counter)s Zeiteinträge, Summe"
 msgstr[0] "%(counter)s time entry, total"
 msgstr[1] "%(counter)s time entries, total"
 
+msgid ""
+"Die Zuordnung wirklich zurücksetzen? Die Zeiten sind danach wieder offen."
+msgstr "Really reset the assignment? The time is open again afterwards."
+
+msgid "Zuordnung zurücksetzen"
+msgstr "Reset assignment"
+
 msgid "Kunde oder Rechnungsnummer suchen"
 msgstr "Search customer or invoice number"
 
@@ -5150,6 +5170,12 @@ msgstr "Only entries of this customer"
 msgid "Nur Einträge dieses Projekts"
 msgstr "Only entries of this project"
 
+msgid "Abgerechnet, nicht mehr änderbar"
+msgstr "Billed, can no longer be changed"
+
+msgid "Abgerechneten Eintrag ansehen"
+msgstr "View billed entry"
+
 msgid "Eintrag bearbeiten"
 msgstr "Edit entry"
 
@@ -5209,6 +5235,32 @@ msgstr "Wk"
 #, python-format
 msgid "KW %(week)s: %(first)s – %(last)s"
 msgstr "Week %(week)s: %(first)s – %(last)s"
+
+msgid "Zeiteintrag abgerechnet"
+msgstr "Time entry billed"
+
+#, python-format
+msgid ""
+"Der Eintrag ist mit der Rechnung %(number)s abgerechnet und kann nicht mehr "
+"geändert oder gelöscht werden."
+msgstr ""
+"The entry is billed with invoice %(number)s and can no longer be changed or "
+"deleted."
+
+msgid ""
+"Setze die Zuordnung zurück, dann ist er wieder offen und lässt sich "
+"bearbeiten."
+msgstr "Reset the assignment and it is open again and can be edited."
+
+msgid ""
+"Er wird wieder frei, wenn der Entwurf in Lexware gelöscht oder die Rechnung "
+"storniert und freigegeben wird."
+msgstr ""
+"It is released again once the draft is deleted in Lexware or the invoice is "
+"voided and released."
+
+msgid "Rechnung in Lexware öffnen"
+msgstr "Open invoice in Lexware"
 
 msgid "Zeiteintrag bearbeiten"
 msgstr "Edit time entry"
@@ -5325,6 +5377,12 @@ msgstr "Time entry"
 
 msgid "Zeiteintrag gespeichert."
 msgstr "Time entry saved."
+
+msgid "Der Zeiteintrag ist abgerechnet und kann nicht mehr geändert werden."
+msgstr "The time entry is billed and can no longer be changed."
+
+msgid "Der Zeiteintrag ist abgerechnet und kann nicht gelöscht werden."
+msgstr "The time entry is billed and cannot be deleted."
 
 msgid "Zeiteintrag gelöscht."
 msgstr "Time entry deleted."

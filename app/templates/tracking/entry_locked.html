@@ -1,0 +1,36 @@
+{% extends layout %}
+{% load i18n %}
+{% load timefmt icons %}
+{% block title %}{% trans "Zeiteintrag abgerechnet" %} · {{ brand.name }}{% endblock %}
+{% block content %}
+<div>
+  <p class="breadcrumb"><a href="{% url 'tracking:list' %}">{% trans "Aufgaben" %}</a></p>
+  <h1 class="flex items-center gap-2">{% icon "lock" size=20 %}{% trans "Zeiteintrag abgerechnet" %}</h1>
+</div>
+<div class="card flex max-w-2xl flex-col gap-4">
+  <div>
+    <div class="font-medium">{{ entry.task.name }}</div>
+    <div class="text-[13px] text-muted">{{ entry.task.project.customer.name }} · {{ entry.task.project.name }}</div>
+    <div class="mt-1 text-[13px] text-muted tabular-nums">{{ entry.started_at|date:date_format }}, {{ entry.started_at|time:"H:i" }} – {{ entry.ended_at|time:"H:i" }} · {{ entry.duration|hours:duration_format }} h</div>
+    {% if entry.description %}<p class="mt-2 text-sm whitespace-pre-line">{{ entry.description }}</p>{% endif %}
+  </div>
+  <p class="text-sm">
+    {% blocktrans trimmed with number=invoice.voucher_number|default:_("Entwurf") %}Der Eintrag ist mit der Rechnung {{ number }} abgerechnet und kann nicht mehr geändert oder gelöscht werden.{% endblocktrans %}
+    {% if invoice.origin == "lexware" and user.is_admin %}
+    {% trans "Setze die Zuordnung zurück, dann ist er wieder offen und lässt sich bearbeiten." %}
+    {% elif invoice.origin != "lexware" %}
+    {% trans "Er wird wieder frei, wenn der Entwurf in Lexware gelöscht oder die Rechnung storniert und freigegeben wird." %}
+    {% endif %}
+  </p>
+  <div class="flex flex-wrap gap-2 border-t border-line pt-4">
+    {% if invoice.origin == "lexware" and user.is_admin %}
+    <form method="post" action="{% url 'billing:entry_unassign' entry.pk %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-primary">{% trans "Zuordnung zurücksetzen" %}</button>
+    </form>
+    {% endif %}
+    {% if invoice.lexware_url and user.is_admin %}<a href="{{ invoice.lexware_url }}" target="_blank" rel="noopener" class="btn">{% trans "Rechnung in Lexware öffnen" %}</a>{% endif %}
+    <a href="{% url 'tracking:list' %}" class="btn btn-ghost" data-close-dialog>{% trans "Schließen" %}</a>
+  </div>
+</div>
+{% endblock %}

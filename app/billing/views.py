@@ -20,7 +20,7 @@ from billing.forms import BillingAgreementForm, PeriodForm
 from billing.models import BillingAgreement, Invoice
 from billing.periods import Period, period_containing, recent_periods
 from billing.queries import OVERDUE_STATUSES, newest_first
-from billing.services import assign_to_invoice, assignable_invoices, create_invoice
+from billing.services import assign_to_invoice, assignable_invoices, create_invoice, unassign_entries
 from billing.sync import sync_and_record
 from core.filters import filter_pills, query_with, selected_filters
 from core.ids import parse_uuid
@@ -38,6 +38,13 @@ async def _get_customer(pk: UUID) -> Customer:
     try:
         return await Customer.objects.aget(pk=pk)
     except Customer.DoesNotExist as exc:
+        raise Http404 from exc
+
+
+async def _get_invoice(pk: UUID) -> Invoice:
+    try:
+        return await Invoice.objects.select_related("customer").aget(pk=pk)
+    except Invoice.DoesNotExist as exc:
         raise Http404 from exc
 
 
@@ -148,10 +155,7 @@ async def invoice_sync(request: HttpRequest) -> HttpResponse:
 @require_GET
 async def invoice_entries(request: HttpRequest, invoice_pk: UUID) -> HttpResponse:
     """The time entries that are billed with an invoice, also those assigned to one written in Lexware."""
-    try:
-        invoice = await Invoice.objects.select_related("customer").aget(pk=invoice_pk)
-    except Invoice.DoesNotExist as exc:
-        raise Http404 from exc
+    invoice = await _get_invoice(invoice_pk)
     entries = [
         e
         async for e in TimeEntry.objects.filter(invoice=invoice)
@@ -164,6 +168,47 @@ async def invoice_entries(request: HttpRequest, invoice_pk: UUID) -> HttpRespons
         "total": sum((e.duration for e in entries), timedelta()),
     }
     return render(request, "billing/invoice_entries.html", context)
+
+
+def _unassigned_message(request: HttpRequest, count: int) -> None:
+    messages.success(
+        request,
+        ngettext(
+            "%(count)d Zeiteintrag wieder offen.",
+            "%(count)d Zeiteinträge wieder offen.",
+            count,
+        )
+        % {"count": count},
+    )
+
+
+@require_POST
+async def invoice_unassign(request: HttpRequest, invoice_pk: UUID) -> HttpResponse:
+    """Take all time back from an invoice written in Lexware."""
+    invoice = await _get_invoice(invoice_pk)
+    try:
+        count = await sync_to_async(unassign_entries)(invoice)
+    except LexwareError as exc:
+        messages.error(request, str(exc))
+    else:
+        _unassigned_message(request, count)
+    return redirect(_invoice_list_url(request))
+
+
+@require_POST
+async def entry_unassign(request: HttpRequest, entry_pk: UUID) -> HttpResponse:
+    """Take one time entry back from the invoice written in Lexware that it was assigned to."""
+    try:
+        entry = await TimeEntry.objects.select_related("invoice").aget(pk=entry_pk, invoice__isnull=False)
+    except TimeEntry.DoesNotExist as exc:
+        raise Http404 from exc
+    try:
+        count = await sync_to_async(unassign_entries)(entry.invoice, entry.pk)
+    except LexwareError as exc:
+        messages.error(request, str(exc))
+    else:
+        _unassigned_message(request, count)
+    return redirect("tracking:list")
 
 
 @require_POST

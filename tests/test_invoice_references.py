@@ -412,3 +412,117 @@ def test_assign_dialog_sorts_invoices_by_date_then_number(logged_in, customer, e
     html = logged_in.get(reverse("billing:invoice_assign", args=[customer.pk]), PERIOD).text
 
     assert html.index("RE-3") < html.index("RE-2") < html.index("RE-1")
+
+
+# Billed time is locked
+
+
+@pytest.fixture
+def assigned(customer, entry):
+    invoice = written_in_lexware(customer, voucher_number="RE-1")
+    assign_to_invoice(customer, invoice, date(2026, 10, 1), date(2026, 10, 31))
+    entry.refresh_from_db()
+    return invoice
+
+
+def test_billed_entry_cannot_be_edited(logged_in, task, entry, assigned):
+    url = reverse("tracking:edit", args=[entry.pk])
+    data = {"task": task.pk, "started_at": "2026-10-05T09:00", "ended_at": "2026-10-05T12:00", "description": "neu"}
+
+    page = logged_in.get(url, headers=DIALOG).text
+    response = logged_in.post(url, data)
+
+    assert "Zeiteintrag abgerechnet" in page and "mit der Rechnung RE-1 abgerechnet" in page
+    assert "Zuordnung zurücksetzen" in page and 'name="description"' not in page
+    assert response.status_code == 302
+    entry.refresh_from_db()
+    assert entry.description == "" and entry.invoice_id == assigned.pk
+
+
+def test_billed_entry_cannot_be_deleted(logged_in, entry, assigned):
+    response = logged_in.post(reverse("tracking:delete", args=[entry.pk]))
+
+    assert response.status_code == 302
+    assert TimeEntry.objects.filter(pk=entry.pk).exists()
+
+
+def test_unbilled_entry_can_still_be_edited_and_deleted(logged_in, task, entry):
+    url = reverse("tracking:edit", args=[entry.pk])
+    data = {"task": task.pk, "started_at": "2026-10-05T09:00", "ended_at": "2026-10-05T12:00", "description": "neu"}
+
+    assert 'name="description"' in logged_in.get(url).text
+    logged_in.post(url, data)
+    entry.refresh_from_db()
+    assert entry.description == "neu"
+    logged_in.post(reverse("tracking:delete", args=[entry.pk]))
+    assert not TimeEntry.objects.filter(pk=entry.pk).exists()
+
+
+def test_entry_list_shows_a_lock_for_billed_entries(logged_in, entry, assigned):
+    html = logged_in.get(reverse("tracking:list"), {"week": "2026-W41"}).text
+
+    assert "Abgerechnet, nicht mehr änderbar" in html and "Eintrag bearbeiten" not in html
+
+
+def test_unassigning_an_entry_opens_it_again(logged_in, task, entry, assigned):
+    response = logged_in.post(reverse("billing:entry_unassign", args=[entry.pk]))
+
+    assert response.status_code == 302
+    entry.refresh_from_db()
+    assert entry.invoice_id is None
+    assert 'name="description"' in logged_in.get(reverse("tracking:edit", args=[entry.pk])).text
+
+
+def test_unassigning_an_invoice_opens_all_its_time(logged_in, user, task, customer, entry, assigned):
+    second = TimeEntry.objects.create(
+        user=user,
+        task=task,
+        started_at=datetime(2026, 10, 6, 9, tzinfo=timezone.get_current_timezone()),
+        ended_at=datetime(2026, 10, 6, 10, tzinfo=timezone.get_current_timezone()),
+        invoice=assigned,
+    )
+
+    logged_in.post(reverse("billing:invoice_unassign", args=[assigned.pk]))
+
+    assert not TimeEntry.objects.filter(invoice=assigned).exists()
+    assert TimeEntry.objects.filter(pk=second.pk).exists()
+    assert "Zuordnung zurücksetzen" not in logged_in.get(reverse("billing:invoice_entries", args=[assigned.pk])).text
+
+
+def test_the_invoice_dialog_offers_to_unassign(logged_in, assigned):
+    html = logged_in.get(reverse("billing:invoice_entries", args=[assigned.pk])).text
+
+    assert reverse("billing:invoice_unassign", args=[assigned.pk]) in html
+
+
+def test_time_of_an_invoice_made_here_stays_billed(logged_in, customer, entry):
+    made_here = written_in_lexware(customer, origin=Invoice.Origin.APP, voucher_number="RE-9")
+    entry.invoice = made_here
+    entry.save()
+
+    logged_in.post(reverse("billing:entry_unassign", args=[entry.pk]))
+    logged_in.post(reverse("billing:invoice_unassign", args=[made_here.pk]))
+
+    entry.refresh_from_db()
+    assert entry.invoice_id == made_here.pk
+    assert (
+        reverse("billing:invoice_unassign", args=[made_here.pk])
+        not in logged_in.get(reverse("billing:invoice_entries", args=[made_here.pk])).text
+    )
+    assert "Zuordnung zurücksetzen" not in logged_in.get(reverse("tracking:edit", args=[entry.pk])).text
+
+
+def test_an_employee_cannot_unassign_billed_time(client, user, task, entry, assigned):
+    from accounts.models import User
+
+    mia = User.objects.create_user(username="mia", password="geheim-123", role=User.Role.EMPLOYEE)
+    entry.user = mia
+    entry.save()
+    client.force_login(mia)
+
+    page = client.get(reverse("tracking:edit", args=[entry.pk])).text
+
+    assert "Zeiteintrag abgerechnet" in page and "Zuordnung zurücksetzen" not in page
+    assert client.post(reverse("billing:entry_unassign", args=[entry.pk])).status_code in (302, 403, 404)
+    entry.refresh_from_db()
+    assert entry.invoice_id == assigned.pk

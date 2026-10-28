@@ -51,5 +51,11 @@
       {% endif %}
     </table>
   </div>
+  {% if invoice.origin == "lexware" and entries %}
+  <form method="post" action="{% url 'billing:invoice_unassign' invoice.pk %}" onsubmit="return confirm('{% filter escapejs %}{% trans "Die Zuordnung wirklich zurücksetzen? Die Zeiten sind danach wieder offen." %}{% endfilter %}')">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-sm">{% trans "Zuordnung zurücksetzen" %}</button>
+  </form>
+  {% endif %}
 </div>
 {% endblock %}

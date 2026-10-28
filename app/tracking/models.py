@@ -53,6 +53,11 @@ class TimeEntry(TimeStampedModel):
         return f"{self.task_id} – {self.started_at:%d.%m.%Y %H:%M}"
 
     @property
+    def is_locked(self) -> bool:
+        """Whether the entry is billed: it can no longer be changed or deleted until it is released."""
+        return self.invoice_id is not None
+
+    @property
     def is_running(self) -> bool:
         return self.ended_at is None
 

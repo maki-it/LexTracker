@@ -91,3 +91,18 @@ def assign_to_invoice(customer: Customer, invoice: Invoice, start: date, end: da
     if not draft.entries:
         raise LexwareError(_("Für diesen Zeitraum gibt es nichts abzurechnen."))
     return TimeEntry.objects.filter(pk__in=[e.pk for e in draft.entries], invoice__isnull=True).update(invoice=invoice)
+
+
+@transaction.atomic
+def unassign_entries(invoice: Invoice, entry_pk: UUID | None = None) -> int:
+    """Take time back from an invoice that was written in Lexware, so it is open and can be changed again.
+
+    All of the invoice's time, or only the entry ``entry_pk``. Invoices created here are not touched: their draft
+    exists in Lexware with this time on it, which only a deletion there (or a voiding) releases.
+    """
+    if invoice.origin != Invoice.Origin.LEXWARE:
+        raise LexwareError(_("Die Zeiten dieser Rechnung gehen nur frei, wenn der Entwurf in Lexware gelöscht wird."))
+    entries = TimeEntry.objects.filter(invoice=invoice)
+    if entry_pk:
+        entries = entries.filter(pk=entry_pk)
+    return entries.update(invoice=None)
