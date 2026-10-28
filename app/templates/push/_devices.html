@@ -14,33 +14,37 @@
   <ul class="flex flex-col gap-3">
     {% for device in push_devices %}
     <li class="rounded-lg border border-line" data-push-device data-endpoint-hash="{{ device.endpoint_hash }}">
-      <form method="post" action="{% url 'push:topics' device.pk %}" class="flex flex-col gap-3 px-3 py-2.5">
-        {% csrf_token %}
-        <div class="flex items-center gap-3">
-          <div class="min-w-0 flex-1">
-            <input type="text" name="name" value="{{ device.name }}" maxlength="100" class="input" aria-label="{% trans 'Name' %}">
-            <div class="mt-1 text-xs text-muted">
+      <details class="push-device group"{% if open_device == device.pk|stringformat:"s" %} open{% endif %}>
+        <summary>
+          <span class="min-w-0 flex-1">
+            <span class="block truncate text-sm font-semibold">{{ device.name }}</span>
+            <span class="mt-0.5 block text-xs font-normal text-muted">
               <span class="font-medium text-success" data-push-this hidden>{% trans "Dieses Gerät" %} ·</span>
               {% blocktrans trimmed with added=device.created_at|date:date_format %}Hinzugefügt {{ added }}{% endblocktrans %}
               · {% if device.last_used_at %}{% blocktrans trimmed with used=device.last_used_at|date:datetime_format %}zuletzt zugestellt {{ used }} Uhr{% endblocktrans %}{% else %}{% trans "noch nichts zugestellt" %}{% endif %}
-            </div>
+            </span>
+          </span>
+          {% icon "chevron-down" size=16 css_class="shrink-0 text-muted transition-transform group-open:rotate-180" %}
+        </summary>
+        <form method="post" action="{% url 'push:topics' device.pk %}" class="flex flex-col gap-3 border-t border-line px-3 py-2.5">
+          {% csrf_token %}
+          <input type="text" name="name" value="{{ device.name }}" maxlength="100" class="input" aria-label="{% trans 'Name' %}">
+          <div class="flex flex-col gap-2">
+            {% for topic, label, help in push_topics %}
+            <label class="flex items-start gap-2 text-sm">
+              <input type="checkbox" name="topics" value="{{ topic.value }}" class="mt-0.5"{% if topic.value in device.topics %} checked{% endif %}>
+              <span><span class="font-medium">{{ label }}</span><br><span class="text-xs text-muted">{{ help }}</span></span>
+            </label>
+            {% endfor %}
           </div>
-        </div>
-        <div class="flex flex-col gap-2">
-          {% for topic, label, help in push_topics %}
-          <label class="flex items-start gap-2 text-sm">
-            <input type="checkbox" name="topics" value="{{ topic.value }}" class="mt-0.5"{% if topic.value in device.topics %} checked{% endif %}>
-            <span><span class="font-medium">{{ label }}</span><br><span class="text-xs text-muted">{{ help }}</span></span>
-          </label>
-          {% endfor %}
-        </div>
-        <div class="flex flex-wrap items-center gap-2">
-          <button type="submit" class="btn btn-sm btn-primary">{% trans "Speichern" %}</button>
-          <button type="submit" formaction="{% url 'push:test' device.pk %}" class="btn btn-sm">{% trans "Test senden" %}</button>
-          <button type="submit" formaction="{% url 'push:remove' device.pk %}" class="btn btn-sm btn-ghost btn-danger ml-auto" data-push-remove
-                  onclick="return confirm('{% filter escapejs %}{% blocktrans trimmed with name=device.name %}„{{ name }}“ wirklich entfernen?{% endblocktrans %}{% endfilter %}')">{% trans "Entfernen" %}</button>
-        </div>
-      </form>
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="submit" class="btn btn-sm btn-primary">{% trans "Speichern" %}</button>
+            <button type="submit" formaction="{% url 'push:test' device.pk %}" class="btn btn-sm">{% trans "Test senden" %}</button>
+            <button type="submit" formaction="{% url 'push:remove' device.pk %}" class="btn btn-sm btn-ghost btn-danger ml-auto" data-push-remove
+                    onclick="return confirm('{% filter escapejs %}{% blocktrans trimmed with name=device.name %}„{{ name }}“ wirklich entfernen?{% endblocktrans %}{% endfilter %}')">{% trans "Entfernen" %}</button>
+          </div>
+        </form>
+      </details>
     </li>
     {% endfor %}
   </ul>

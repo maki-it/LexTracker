@@ -679,6 +679,15 @@ async function sha256Hex(text) {
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
+// The browser may refuse storage (private window), the device then simply stays folded.
+function pushOpenedKey() {
+  try {
+    return sessionStorage.getItem("pushOpen");
+  } catch {
+    return null;
+  }
+}
+
 async function showPushState(root) {
   const section = root.querySelector?.("[data-push]");
   if (!section) return;
@@ -696,7 +705,12 @@ async function showPushState(root) {
     const here = known !== "" && device.dataset.endpointHash === known;
     listed ||= here;
     device.querySelector("[data-push-this]").hidden = !here;
+    // The device that was just added shows its settings right away, the others stay folded.
+    if (here && pushOpenedKey() === known) device.querySelector("details").open = true;
   }
+  try {
+    sessionStorage.removeItem("pushOpen");
+  } catch {}
   show("active", listed);
   show("enable", !listed);
 }
@@ -726,6 +740,9 @@ document.addEventListener("click", async (event) => {
     subscription ||= await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: serverKey });
     const phone = window.matchMedia("(pointer: coarse)").matches;
     const { endpoint, keys } = subscription.toJSON();
+    try {
+      sessionStorage.setItem("pushOpen", await sha256Hex(endpoint));
+    } catch {}
     await postJson(section.dataset.subscribeUrl, {
       endpoint,
       keys,

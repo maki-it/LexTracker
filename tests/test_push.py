@@ -554,7 +554,8 @@ def test_the_choices_of_a_device_are_saved(logged_in, admin):
         {"topics": [Topic.WARNING, Topic.TIMER_LIVE, "unbekannt"], "name": "Pixel"},
     )
 
-    assert response.status_code == 302 and response.url.endswith("tab=notifications")
+    # The device stays unfolded after saving, so the choices can be checked.
+    assert response.status_code == 302 and response.url.endswith(f"tab=notifications&device={sub.pk}")
     sub.refresh_from_db()
     assert (sub.topics, sub.name) == ([Topic.WARNING, Topic.TIMER_LIVE], "Pixel")
 
@@ -619,6 +620,21 @@ def test_the_account_page_lists_the_devices_and_the_topics(logged_in, admin):
     assert "Fällige Erinnerungen" in page and "Überfällige Rechnungen" in page
     assert 'value="reminder" class="mt-0.5" checked' in page
     assert 'value="critical" class="mt-0.5">' in page
+
+
+def test_the_settings_of_a_device_are_folded_away_unless_asked_for(logged_in, admin):
+    subscribe(admin, name="Pixel 9")
+    _, second = subscribe(admin, name="Laptop")
+    url = reverse("account:settings") + "?tab=notifications"
+
+    folded = logged_in.get(url).content.decode()
+    unfolded = logged_in.get(f"{url}&device={second.pk}").content.decode()
+
+    assert folded.count('<details class="push-device group">') == 2
+    assert unfolded.count('<details class="push-device group">') == 1
+    assert unfolded.count('<details class="push-device group" open>') == 1
+    # The name and the last delivery are in the header, which stays visible.
+    assert "<summary>" in folded and "noch nichts zugestellt" in folded
 
 
 def test_employees_do_not_see_what_is_only_for_administrators(client, employee):
