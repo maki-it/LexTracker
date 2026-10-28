@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.15.0](https://github.com/maki-it/LexTracker/compare/lextracker-v0.14.0...lextracker-v0.15.0) (2026-10-28)
+
+
+### Features
+
+* **billing:** show assigned time, lock billed entries, sort invoices by date ([#214](https://github.com/maki-it/LexTracker/issues/214)) ([b02d859](https://github.com/maki-it/LexTracker/commit/b02d85946bf9641dacf8ab6e863e42abbc378ffc))
+
+
+### Dependencies
+
+* **python:** update python to &gt;=3.15.2 ([#138](https://github.com/maki-it/LexTracker/issues/138)) ([ee2f8aa](https://github.com/maki-it/LexTracker/commit/ee2f8aaddee7db22b9d2d36e716354b115249d58))
+
 ## [0.14.0](https://github.com/maki-it/LexTracker/compare/lextracker-v0.13.1...lextracker-v0.14.0) (2026-10-27)
 
 
