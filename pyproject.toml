@@ -1,6 +1,6 @@
 [project]
 name = "lextracker"
-version = "0.16.0"
+version = "0.17.0"
 description = "Zeiterfassung und Projektsteuerung mit Anbindung an Lexware Office"
 readme = "README.md"
 requires-python = ">=3.15.2"
