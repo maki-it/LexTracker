@@ -1,3 +1,4 @@
+import re
 from datetime import date, datetime, timedelta
 
 import pytest
@@ -550,3 +551,11 @@ def test_the_list_says_how_a_reminder_repeats(logged_in, admin, task):
 
     assert "↻ wöchentlich" in page and "bis 01.01.2030" in page
     assert "Beendet auch die Wiederholung" in page
+
+
+def test_repetition_fields_are_only_shown_while_it_repeats(logged_in, task):
+    page = logged_in.get(reverse("reminders:create") + f"?project={task.project.pk}")
+
+    assert page.text.count('data-shown-for="repeat!="') == 2
+    assert re.search(r'data-shown-for="repeat!="[^>]*>\s*<label class="field">\s*<span>Abstand', page.text)
+    assert re.search(r'data-shown-for="repeat!="[^>]*>\s*<label class="field">\s*<span>Wiederholen bis', page.text)
