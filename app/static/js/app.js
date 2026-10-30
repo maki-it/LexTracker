@@ -61,18 +61,25 @@ document.addEventListener("htmx:load", (event) => {
 document.addEventListener("DOMContentLoaded", () => document.querySelectorAll("form").forEach(syncDependentCheckboxes));
 
 // An element with data-shown-for="<name>=<value>" is shown only while the field <name> of its form has
-// that value, e.g. the customer access settings only for the role "customer". Hidden, its fields are not sent.
+// that value, e.g. the customer access settings only for the role "customer". With "<name>!=<value>" it is
+// shown for every other value, e.g. the repetition settings of a reminder unless it never repeats.
+// Hidden, its fields are not sent (a fieldset disables them).
 function syncShownFor(form) {
   for (const element of form.querySelectorAll("[data-shown-for]")) {
-    const [name, value] = element.dataset.shownFor.split("=");
+    const [, name, operator, value] = element.dataset.shownFor.match(/^([^=!]+)(!?=)(.*)$/);
     const field = form.elements[name];
     if (!field) continue;
-    element.hidden = element.disabled = field.value !== value;
+    const matches = field.value === value;
+    element.hidden = element.disabled = operator === "=" ? !matches : matches;
   }
 }
 document.addEventListener("change", (event) => {
   if (event.target.form) syncShownFor(event.target.form);
 });
+document.addEventListener("htmx:load", (event) => {
+  for (const form of event.detail.elt.querySelectorAll?.("form") ?? []) syncShownFor(form);
+});
+document.addEventListener("DOMContentLoaded", () => document.querySelectorAll("form").forEach(syncShownFor));
 
 // A list of checkboxes with data-checkbox-group can have a checkbox with data-select-all that ticks or unticks
 // all others at once. It is half ticked while only some are, and has no name, so it is not sent. A search field

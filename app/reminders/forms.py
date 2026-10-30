@@ -54,6 +54,8 @@ class ReminderForm(StyledFormMixin, forms.ModelForm):
         self.user = user
         # Only counts with a repetition; without one it is left empty.
         self.fields["repeat_every"].required = False
+        # Hidden while it never repeats (data-shown-for in app.js).
+        self.fields["repeat_every"].shown_for = self.fields["repeat_until"].shown_for = "repeat!="
         self.customer = customer
         self.project = project
         if not mail_configured:

@@ -4,6 +4,7 @@
 {% endfor %}
 {% for field in form.hidden_fields %}{{ field }}{% endfor %}
 {% for field in form.visible_fields %}
+{% if field.field.shown_for %}{# Only while another field has a value, see "data-shown-for" in app.js. #}<fieldset class="contents" data-shown-for="{{ field.field.shown_for }}">{% endif %}
 {% if field.widget_type == "checkboxselectmultiple" %}
 <fieldset class="field">
   <legend class="mb-1">{{ field.label }}</legend>
@@ -33,4 +34,5 @@
 </label>
 {% endif %}
 {% for error in field.errors %}<p class="-mt-3 text-sm text-danger">{{ error }}</p>{% endfor %}
+{% if field.field.shown_for %}</fieldset>{% endif %}
 {% endfor %}
