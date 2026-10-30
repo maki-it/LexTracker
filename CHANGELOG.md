@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.17.0](https://github.com/maki-it/LexTracker/compare/lextracker-v0.16.0...lextracker-v0.17.0) (2026-10-30)
+
+
+### Features
+
+* **reminders:** hide the repetition fields while a reminder never repeats ([#221](https://github.com/maki-it/LexTracker/issues/221)) ([e1d16fc](https://github.com/maki-it/LexTracker/commit/e1d16fc2a7588ff663dcaa1aa8d241e8c807320e))
+
+
+### Bug Fixes
+
+* **ui:** keep dialogs with entries open on a click beside them or Esc ([#222](https://github.com/maki-it/LexTracker/issues/222)) ([1bf23e0](https://github.com/maki-it/LexTracker/commit/1bf23e0d43be64c007396f11b03327c9de829257))
+
+
+### Dependencies
+
+* **project:** update dependency pytest-asyncio to &gt;=1.4.1 ([#218](https://github.com/maki-it/LexTracker/issues/218)) ([30b757c](https://github.com/maki-it/LexTracker/commit/30b757cf8d7cc65cea64112906d8a78ddfda9e98))
+* **project:** update dependency ruff to &gt;=0.17.3 ([#220](https://github.com/maki-it/LexTracker/issues/220)) ([a6ae734](https://github.com/maki-it/LexTracker/commit/a6ae734cf250cc1c14f063c69c39622a6807ff76))
+
 ## [0.16.0](https://github.com/maki-it/LexTracker/compare/lextracker-v0.15.0...lextracker-v0.16.0) (2026-10-28)
 
 
