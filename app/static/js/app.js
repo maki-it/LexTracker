@@ -8,17 +8,70 @@ document.addEventListener("htmx:afterSwap", (event) => {
   }
 });
 
+// Entries in the dialog must not get lost by a stray click beside it or by Esc. The form fields are compared with
+// their state right after the page was loaded into the dialog; as soon as they differ, only the X and "Abbrechen" close it.
+// A page the server sent back after a submit (e.g. with errors) holds what was typed, so it counts as changed.
+let dialogBaseline = null;
+let dialogSubmitted = false;
+const dialogFormState = () =>
+  JSON.stringify(
+    [...document.querySelectorAll("#dialog-body form")].flatMap((form) =>
+      [...new FormData(form)].map(([name, value]) => [name, value instanceof File ? [value.name, value.size] : value]),
+    ),
+  );
+const dialogHasInput = () => dialogBaseline !== null && (dialogSubmitted || dialogFormState() !== dialogBaseline);
+
+// After settling, when the scripts of the page have prepared its fields (e.g. hidden ones are disabled).
+document.addEventListener("htmx:afterSettle", (event) => {
+  if (event.target.id !== "dialog-body") return;
+  dialogBaseline = dialogFormState();
+  dialogSubmitted = event.detail.requestConfig?.verb !== "get" && dialogBaseline !== "[]";
+});
+document.getElementById("dialog").addEventListener("close", () => {
+  dialogBaseline = null;
+});
+
+// Shows that the dialog stays open on purpose: it pulses once.
+function keepDialog(dialog) {
+  dialog.classList.remove("dialog-kept");
+  void dialog.offsetWidth;
+  dialog.classList.add("dialog-kept");
+}
+
+// The back gesture of phones. Esc is handled further down, after the task search had its turn.
+document.getElementById("dialog").addEventListener("cancel", (event) => {
+  if (!dialogHasInput()) return;
+  event.preventDefault();
+  keepDialog(event.target);
+});
+
+// A click only counts as one on the backdrop when it started there too: selecting text in the dialog and
+// letting go beside it is a click on the dialog element as well.
+const isOutside = (dialog, event) => {
+  const box = dialog.getBoundingClientRect();
+  return event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom;
+};
+let pressedOnBackdrop = false;
+document.addEventListener(
+  "pointerdown",
+  (event) => {
+    const dialog = document.getElementById("dialog");
+    pressedOnBackdrop = event.target === dialog && isOutside(dialog, event);
+  },
+  true,
+);
+
 // Runs before htmx (capture phase), so a boosted "Abbrechen" link inside the dialog does not load a page.
 document.addEventListener(
   "click",
   (event) => {
     const dialog = document.getElementById("dialog");
-    // A click on the dark backdrop around the dialog closes it.
+    // A click on the dark backdrop around the dialog closes it, unless there are entries in it.
     if (event.target === dialog) {
-      const box = dialog.getBoundingClientRect();
-      const outside =
-        event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom;
-      if (outside) dialog.close();
+      if (pressedOnBackdrop && isOutside(dialog, event)) {
+        if (dialogHasInput()) keepDialog(dialog);
+        else dialog.close();
+      }
       return;
     }
     // "Abbrechen" links close the dialog when they are inside it, and navigate otherwise.
@@ -369,6 +422,15 @@ document.addEventListener("keydown", (event) => {
     event.preventDefault();
     showTaskResults(search, false);
   }
+});
+
+// Esc closes the dialog, but not while it holds entries. The browser would close it on the second Esc despite a
+// cancelled "cancel" event, so the key press is stopped here. The open suggestions of the task search take it first.
+document.addEventListener("keydown", (event) => {
+  const dialog = document.getElementById("dialog");
+  if (event.key !== "Escape" || event.defaultPrevented || !dialog.open || !dialogHasInput()) return;
+  event.preventDefault();
+  keepDialog(dialog);
 });
 
 document.addEventListener("htmx:load", (event) => {
