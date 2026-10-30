@@ -162,7 +162,7 @@
   </dialog>
   {% endwith %}
   {% endwith %}
-  {# Edit forms open in here, see core/dialogs.py. Esc, the X and a click beside it close it. #}
+  {# Edit forms open in here, see core/dialogs.py. Esc, the X and a click beside it close it, the last two only while nothing was typed in (app.js). #}
   <dialog id="dialog" class="dialog" aria-label="{% trans 'Bearbeiten' %}">
     <form method="dialog" class="dialog-close">
       <button type="submit" class="btn btn-ghost btn-sm btn-icon" aria-label="{% trans 'Schließen' %}" title="{% trans 'Schließen' %}">{% icon "x" %}</button>

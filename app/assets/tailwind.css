@@ -565,6 +565,17 @@
     @apply w-[min(64rem,calc(100vw-2rem))];
   }
 
+  /* Pulses when a click beside it or Esc did not close it because it holds entries (app.js). */
+  .dialog-kept {
+    @apply motion-safe:animate-[dialog-kept_0.25s_ease-out];
+  }
+
+  @keyframes dialog-kept {
+    50% {
+      transform: scale(1.015);
+    }
+  }
+
   .dialog-close {
     @apply absolute top-3 right-3;
   }
