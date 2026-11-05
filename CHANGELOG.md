@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.17.2](https://github.com/maki-it/LexTracker/compare/lextracker-v0.17.1...lextracker-v0.17.2) (2026-11-05)
+
+
+### Dependencies
+
+* **project:** update dependency pytest-asyncio to &gt;=1.4.1.post1 ([#226](https://github.com/maki-it/LexTracker/issues/226)) ([4f18cb9](https://github.com/maki-it/LexTracker/commit/4f18cb9c76a067efdd1949c5cdfc09233996dac9))
+
 ## [0.17.1](https://github.com/maki-it/LexTracker/compare/lextracker-v0.17.0...lextracker-v0.17.1) (2026-11-02)
 
 
