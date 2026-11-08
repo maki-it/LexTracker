@@ -66,6 +66,32 @@ def test_create_entry_manually(logged_in, user, task):
     assert entry.user == user
 
 
+def test_new_entry_of_a_non_billable_task_starts_unchecked(logged_in, task):
+    task.is_billable = False
+    task.save()
+
+    page_text = logged_in.get(reverse("tracking:create"), {"task": task.pk}).text
+    billable = next(line for line in page_text.splitlines() if 'name="is_billable"' in line)
+
+    assert "checked" not in billable
+
+
+def test_new_entry_of_a_billable_task_starts_checked(logged_in, task):
+    page_text = logged_in.get(reverse("tracking:create"), {"task": task.pk}).text
+    billable = next(line for line in page_text.splitlines() if 'name="is_billable"' in line)
+
+    assert "checked" in billable
+
+
+def test_task_suggestions_tell_whether_the_task_is_billable(logged_in, task):
+    Task.objects.create(project=task.project, name="Meetings", is_billable=False)
+
+    options = logged_in.get(reverse("tracking:task_search"), headers={"HX-Request": "true"}).text
+
+    assert options.count('data-billable="true"') == 1
+    assert options.count('data-billable="false"') == 1
+
+
 def test_new_entry_starts_as_a_duration_and_an_existing_one_shows_its_times(logged_in, user, task):
     page_text = logged_in.get(reverse("tracking:create")).text
 

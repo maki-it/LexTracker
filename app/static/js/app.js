@@ -338,6 +338,11 @@ function syncTaskValidity(search) {
 
 function pickTask(search, option) {
   const { input, picked } = taskParts(search);
+  // A different task decides again whether the entry is billable; the box stays as set when the same one is picked.
+  const billable = search.closest("form")?.elements.is_billable;
+  if (billable && option.dataset.billable && picked.value !== option.dataset.value) {
+    billable.checked = option.dataset.billable === "true";
+  }
   picked.value = option.dataset.value;
   input.value = option.dataset.label;
   search.querySelector("[data-task-name]").textContent = option.dataset.name;
