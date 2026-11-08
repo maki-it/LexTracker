@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.17.2](https://github.com/maki-it/LexTracker/compare/lextracker-v0.17.1...lextracker-v0.17.2) (2026-11-08)
+
+
+### Bug Fixes
+
+* **i18n:** refresh the English translation for the current gettext ([#230](https://github.com/maki-it/LexTracker/issues/230)) ([09130f5](https://github.com/maki-it/LexTracker/commit/09130f5c527169139f08f4bd0e1d163b091b5bbe))
+* **tracking:** start new time entries with the billable setting of their task ([#229](https://github.com/maki-it/LexTracker/issues/229)) ([ecae36d](https://github.com/maki-it/LexTracker/commit/ecae36d211a51e515fd944537ec23650f1ae92c7))
+
+
+### Dependencies
+
+* **project:** update dependency pytest-asyncio to &gt;=1.4.1.post1 ([#226](https://github.com/maki-it/LexTracker/issues/226)) ([4f18cb9](https://github.com/maki-it/LexTracker/commit/4f18cb9c76a067efdd1949c5cdfc09233996dac9))
+
 ## [0.17.1](https://github.com/maki-it/LexTracker/compare/lextracker-v0.17.0...lextracker-v0.17.1) (2026-11-02)
 
 
