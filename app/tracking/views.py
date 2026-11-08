@@ -253,6 +253,11 @@ async def entry_form(request: HttpRequest, pk: UUID | None = None) -> HttpRespon
     if not pk:
         now = timezone.localtime().replace(second=0, microsecond=0)
         initial = {"started_at": now - timedelta(hours=1), "ended_at": now, "task": request.GET.get("task")}
+        # A task given up front decides whether the entry starts as billable; one picked in the form does so (app.js).
+        if task_pk := parse_uuid(request.GET.get("task")):
+            billable = await open_tasks(request.user).filter(pk=task_pk).values_list("is_billable", flat=True).afirst()
+            if billable is not None:
+                initial["is_billable"] = billable
     rounding = (await AppSettings.aload()).time_rounding
     form = TimeEntryForm(request.POST or None, instance=entry, initial=initial, user=request.user, rounding=rounding)
     if request.method == "POST" and await sync_to_async(form.is_valid)():
