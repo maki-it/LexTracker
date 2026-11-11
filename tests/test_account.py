@@ -100,6 +100,23 @@ def test_login_with_mfa_asks_for_code(client, mfa_user):
     assert client.get(reverse("core:dashboard")).status_code == 200
 
 
+def assert_code_field_for_password_managers(page: str) -> None:
+    """Bitwarden and others fill the code for ``autocomplete="one-time-code"`` or a TOTP-like id."""
+    assert 'autocomplete="one-time-code"' in page
+    assert 'id="otp-code"' in page
+    assert 'inputmode="numeric"' in page
+    assert "pattern=" not in page  # recovery codes are not numeric
+
+
+def test_login_code_field_is_recognised_by_password_managers(client, mfa_user):
+    client.post(reverse("accounts:login"), {"username": "kim", "password": "geheim-123", "next": "/"})
+    assert_code_field_for_password_managers(client.get(reverse("accounts:login_code")).text)
+
+
+def test_mfa_setup_code_field_is_recognised_by_password_managers(logged_in):
+    assert_code_field_for_password_managers(logged_in.get(reverse("account:mfa_setup")).text)
+
+
 def test_recovery_code_works_once(client, mfa_user):
     _, _, codes = mfa_user
     client.post(reverse("accounts:login"), {"username": "kim", "password": "geheim-123"})
