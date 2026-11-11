@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.17.3](https://github.com/maki-it/LexTracker/compare/lextracker-v0.17.2...lextracker-v0.17.3) (2026-11-11)
+
+
+### Bug Fixes
+
+* **core:** redirect htmx requests to the login as a whole page ([#234](https://github.com/maki-it/LexTracker/issues/234)) ([85e1442](https://github.com/maki-it/LexTracker/commit/85e144282153575ff88a740b6f281603899519cb))
+
+
+### Dependencies
+
+* **project:** update dependency django to &gt;=6.1.3 ([#228](https://github.com/maki-it/LexTracker/issues/228)) ([6d2ecc3](https://github.com/maki-it/LexTracker/commit/6d2ecc3b8d6ceb819225a451ccad8c31feae9871))
+* **project:** update dependency ruff to &gt;=0.17.4 ([#232](https://github.com/maki-it/LexTracker/issues/232)) ([47fb2c5](https://github.com/maki-it/LexTracker/commit/47fb2c5d05859ae9bc126013c02436d4ab2afb24))
+
 ## [0.17.2](https://github.com/maki-it/LexTracker/compare/lextracker-v0.17.1...lextracker-v0.17.2) (2026-11-08)
 
 
