@@ -72,3 +72,53 @@ def test_hsts_is_off_by_default_and_read_from_the_environment(monkeypatch):
     monkeypatch.setenv("APP_HSTS_SECONDS", "-1")
     with pytest.raises(ValidationError):
         Env(_env_file=None)
+
+
+def test_htmx_request_without_login_redirects_the_whole_page(client, user):
+    # A plain redirect would swap the login page into the fragment's target.
+    response = client.get(
+        reverse("inbox:bell"),
+        HTTP_HX_REQUEST="true",
+        HTTP_HX_CURRENT_URL="http://testserver/reminders/?status=done",
+    )
+    assert response.status_code == 200
+    assert response.content == b""
+    assert response["HX-Redirect"] == f"{reverse('accounts:login')}?next=/reminders/%3Fstatus%3Ddone"
+    assert "Location" not in response
+
+
+def test_htmx_redirect_ignores_foreign_current_url(client, user):
+    response = client.get(
+        reverse("inbox:bell"),
+        HTTP_HX_REQUEST="true",
+        HTTP_HX_CURRENT_URL="https://evil.example/phish",
+    )
+    assert response["HX-Redirect"] == f"{reverse('accounts:login')}?next=/phish"
+    response = client.get(reverse("inbox:bell"), HTTP_HX_REQUEST="true", HTTP_HX_CURRENT_URL="//evil.example")
+    assert response["HX-Redirect"] == f"{reverse('accounts:login')}?next=/"
+
+
+def test_htmx_request_without_current_url_goes_to_the_login(client, user):
+    response = client.get(reverse("inbox:bell"), HTTP_HX_REQUEST="true")
+    assert response["HX-Redirect"] == f"{reverse('accounts:login')}?next=/"
+
+
+def test_htmx_post_without_login_redirects_the_whole_page(client, user):
+    response = client.post(
+        reverse("reminders:create"), HTTP_HX_REQUEST="true", HTTP_HX_CURRENT_URL="http://testserver/"
+    )
+    assert response.status_code == 200
+    assert response["HX-Redirect"].startswith(reverse("accounts:login"))
+
+
+def test_htmx_request_without_any_account_goes_to_the_setup(client):
+    response = client.get("/", HTTP_HX_REQUEST="true")
+    assert response.status_code == 200
+    assert response["HX-Redirect"] == reverse("setup:account")
+
+
+def test_htmx_request_when_logged_in_is_untouched(client, user):
+    client.force_login(user)
+    response = client.get(reverse("inbox:bell"), HTTP_HX_REQUEST="true")
+    assert response.status_code == 200
+    assert "HX-Redirect" not in response

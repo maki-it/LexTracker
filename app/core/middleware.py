@@ -1,10 +1,12 @@
 from collections.abc import Awaitable, Callable
+from urllib.parse import urlsplit
 
 from django.conf import settings
 from django.contrib.auth.views import redirect_to_login
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
 from django.utils.decorators import async_only_middleware
+from django.utils.http import url_has_allowed_host_and_scheme
 
 from accounts.models import User
 
@@ -32,6 +34,33 @@ PUBLIC_PREFIXES = (
 SETUP_PREFIX = "/setup/"
 
 
+def _current_page(request: HttpRequest) -> str:
+    """Path and query of the page an htmx request was sent from, to come back to after the login."""
+    current = request.headers.get("HX-Current-URL", "")
+    parts = urlsplit(current)
+    page = f"{parts.path}?{parts.query}" if parts.query else parts.path
+    if page.startswith("/") and url_has_allowed_host_and_scheme(page, allowed_hosts=None):
+        return page
+    return "/"
+
+
+def _redirect(request: HttpRequest, response: HttpResponse, page: str | None = None) -> HttpResponse:
+    """Send the visitor to ``response``'s address, also when an htmx request asked for a fragment.
+
+    A normal redirect is followed by the browser and the login page would be swapped into the fragment's target
+    (a half page inside the page that is still open). ``HX-Redirect`` makes htmx load the address as a whole page.
+    """
+    if not request.htmx:
+        return response
+    target = response["Location"]
+    if page is not None:
+        target = redirect_to_login(page, settings.LOGIN_URL)["Location"]
+    hx_response = HttpResponse(status=200)
+    hx_response["HX-Redirect"] = target
+    hx_response["Cache-Control"] = "no-store"
+    return hx_response
+
+
 @async_only_middleware
 def LoginRequiredMiddleware(get_response: Callable[[HttpRequest], Awaitable[HttpResponse]]):
     """Load the user asynchronously and require a login for every non-public page.
@@ -53,9 +82,10 @@ def LoginRequiredMiddleware(get_response: Callable[[HttpRequest], Awaitable[Http
         if not await User.objects.aexists():
             if request.path.startswith(SETUP_PREFIX):
                 return await get_response(request)
-            return redirect("setup:account")
+            return _redirect(request, redirect("setup:account"))
         if not request.path.startswith(PUBLIC_PREFIXES):
-            return redirect_to_login(request.get_full_path(), settings.LOGIN_URL)
+            login = redirect_to_login(request.get_full_path(), settings.LOGIN_URL)
+            return _redirect(request, login, _current_page(request))
         return await get_response(request)
 
     return middleware
