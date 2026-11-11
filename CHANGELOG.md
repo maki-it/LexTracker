@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.17.4](https://github.com/maki-it/LexTracker/compare/lextracker-v0.17.3...lextracker-v0.17.4) (2026-11-11)
+
+
+### Bug Fixes
+
+* **accounts:** make the two-factor code field easier for password managers ([#235](https://github.com/maki-it/LexTracker/issues/235)) ([071145b](https://github.com/maki-it/LexTracker/commit/071145b6a2c6474a6765c75f2c4f21853409afa5))
+
 ## [0.17.3](https://github.com/maki-it/LexTracker/compare/lextracker-v0.17.2...lextracker-v0.17.3) (2026-11-11)
 
 
