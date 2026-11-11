@@ -25,11 +25,27 @@ class LinkRequestForm(forms.Form):
 
 
 class CodeForm(forms.Form):
+    """Authenticator code or recovery code.
+
+    Password managers such as Bitwarden look for ``autocomplete="one-time-code"`` and for TOTP keywords in the id,
+    so both are set. No ``pattern``: a recovery code is not numeric.
+    """
+
     code = forms.CharField(
         label=_("Code"),
         max_length=20,
         widget=forms.TextInput(
-            attrs={"autofocus": True, "autocomplete": "one-time-code", "inputmode": "numeric", "class": "input"}
+            attrs={
+                "id": "otp-code",
+                "autofocus": True,
+                "autocomplete": "one-time-code",
+                "inputmode": "numeric",
+                "autocapitalize": "off",
+                "autocorrect": "off",
+                "spellcheck": "false",
+                "enterkeyhint": "go",
+                "class": "input",
+            }
         ),
     )
 
