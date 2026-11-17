@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.17.5](https://github.com/maki-it/LexTracker/compare/lextracker-v0.17.4...lextracker-v0.17.5) (2026-11-17)
+
+
+### Dependencies
+
+* **project:** update project dependencies ([#237](https://github.com/maki-it/LexTracker/issues/237)) ([b7c9bb1](https://github.com/maki-it/LexTracker/commit/b7c9bb1b89c7575cec462f56b49634d9b57d8a85))
+
 ## [0.17.4](https://github.com/maki-it/LexTracker/compare/lextracker-v0.17.3...lextracker-v0.17.4) (2026-11-11)
 
 
